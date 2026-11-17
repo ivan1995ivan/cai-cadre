@@ -1,0 +1,246 @@
+# CAI CADRE — stiva de pe server (cai-cadre.integratii.md).
+# Configurația se ia din .env de lângă acest fișier (șablon: .env.example).
+#
+#   docker compose up -d --build         # pornire / actualizare (tot deploy-ul)
+#   docker compose ps                    # toate serviciile trebuie să fie healthy
+#
+# Modelul e același ca la plinap / lear / salon / tolea de pe acest server:
+#   - TLS se termină la marginea Cloudflare; nginx publică DOAR pe
+#     127.0.0.1:${NGINX_PORT} (verificări locale). Intrarea publică e tunelul —
+#     serviciul `cloudflared` din această stivă ajunge la nginx prin rețeaua
+#     compose sub numele `cai-cadre-web`, deci ruta din panoul Cloudflare este
+#     http://cai-cadre-web:80. NICIODATĂ 0.0.0.0 — ar lăsa cererile să ocolească
+#     marginea (X-Forwarded-Proto falsificat).
+#   - numele proiectului compose e fixat (`name: cai-cadre`), volumele au prefixul
+#     `cai-cadre-` — serverul găzduiește mai multe stive, nu se pot amesteca.
+#   - fiecare serviciu are plafon de jurnale (altfel json-file umple discul).
+#   - baza are copie zilnică (serviciul `backup`, vezi README).
+#
+# Aplicația (`app`, codul în app/) e CAI CADRE (Django + React, al lui Anatol),
+# în spatele nginx: ascultă pe 0.0.0.0:8000 în rețeaua compose, răspunde 200 la
+# GET /health, rulează migrările la pornire (manage.py crm_upgrade). Datele
+# instanței (config.json cu conexiunea la bază, secret.json, media/, static/,
+# backups/) stau toate în volumul cai-cadre-data, montat în /data (CRM_INSTANCE_DIR).
+#
+# Tunelul pornește singur când TUNNEL_TOKEN din .env nu e gol: .env conține
+# COMPOSE_PROFILES=${TUNNEL_TOKEN:+tunnel}, deci profilul `tunnel` (serviciul
+# `cloudflared`) e activ doar cu token. Fără token stiva merge local, fără
+# ca `cloudflared` să repornească la nesfârșit.
+name: cai-cadre
+
+x-logging: &logging
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "5"
+
+# mediul aplicației — explicit, nu env_file: aplicația nu primește ce nu-i
+# trebuie (ex. TUNNEL_TOKEN). Aplicația intră ca `caicadre_app` (fără superuser),
+# rol creat la prima pornire a bazei de deploy/db/10-app-role.sh.
+x-app-env: &app-env
+  POSTGRES_HOST: db
+  POSTGRES_DB: caicadre
+  POSTGRES_USER: caicadre_app
+  POSTGRES_PASSWORD: ${APP_DB_PASSWORD:?completează APP_DB_PASSWORD în .env}
+  SECRET_KEY: ${SECRET_KEY:?completează SECRET_KEY în .env}
+  APP_ORIGINS: ${APP_ORIGINS:?completează APP_ORIGINS în .env}
+  TZ: ${TZ:-Europe/Chisinau}
+  CRM_INSTANCE_DIR: /data
+  # consola platformei (/__platform/console), protejată cu parolă
+  CRM_CONSOLE_PASSWORD: ${CRM_CONSOLE_PASSWORD:?completează CRM_CONSOLE_PASSWORD în .env}
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    <<: *logging
+    environment:
+      POSTGRES_DB: caicadre
+      POSTGRES_USER: caicadre
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?completează POSTGRES_PASSWORD în .env}
+      # rolul aplicației (fără superuser), creat de scriptul de mai jos
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?completează APP_DB_PASSWORD în .env}
+      TZ: ${TZ:-Europe/Chisinau}
+    volumes:
+      - cai-cadre-db:/var/lib/postgresql/data
+      # rulează o singură dată, când volumul e gol
+      - ./deploy/db:/docker-entrypoint-initdb.d:ro
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U caicadre -d caicadre"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  # Copia zilnică la 02:30 în ./backups (baza, fișierele instanței, media),
+  # retenție BACKUP_KEEP_DAYS zile, plus o copie imediat la pornire.
+  # Manual: docker compose exec backup cai-cadre-backup. backup.sh e montat ca
+  # fișier: după o editare containerul se recreează
+  # (docker compose up -d --no-deps --force-recreate backup), altfel rulează
+  # versiunea veche.
+  backup:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    <<: *logging
+    depends_on:
+      db:
+        condition: service_healthy
+      app:
+        condition: service_healthy     # volumul cai-cadre-data îl creează aplicația
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+      INSTANCE_SRC: /appdata
+      MEDIA_SRC: /appdata/media
+      TZ: ${TZ:-Europe/Chisinau}
+    volumes:
+      - ./backups:/backups
+      - ./backup.sh:/usr/local/bin/cai-cadre-backup:ro
+      # volumul aplicației, doar pentru citire: backup.sh arhivează fișierele
+      # instanței (INSTANCE_SRC) și oglindește /appdata/media (MEDIA_SRC); tot
+      # volumul, nu subpath, fiindcă media/ apare abia la prima încărcare
+      - type: volume
+        source: cai-cadre-data
+        target: /appdata
+        read_only: true
+        volume:
+          nocopy: true
+    security_opt:
+      - no-new-privileges:true
+    entrypoint:
+      - sh
+      - -c
+      - 'cai-cadre-backup || echo "backup inițial eșuat — cron reîncearcă la 02:30"; echo "30 2 * * * cai-cadre-backup" | crontab - && exec crond -f -l 8'
+    healthcheck:
+      # sănătos = o rulare completă reușită (baza + instanța + media) în ultimele
+      # 26 de ore; backup.sh atinge .last-ok doar la sfârșitul fără erori
+      test: ["CMD-SHELL", "find /backups -maxdepth 1 -name .last-ok -mmin -1560 | grep -q ."]
+      interval: 5m
+      timeout: 10s
+      retries: 2
+      start_period: 2m
+
+  # Restaurarea dintr-o copie din ./backups (restore.sh) — container de unică
+  # folosință, doar la cerere (profilul `restore` nu e în COMPOSE_PROFILES; `run`
+  # îl pornește explicit), deci fără restart și healthcheck. Cu aplicația oprită:
+  #   docker compose stop app && docker compose run --rm restore 2026-10-26 && docker compose up -d
+  # Pașii și proba restaurării (restore-check.sh): docs/instalare.md.
+  restore:
+    image: postgres:17-alpine
+    profiles: ["restore"]
+    <<: *logging
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      TZ: ${TZ:-Europe/Chisinau}
+    volumes:
+      - ./backups:/backups:ro
+      - ./restore.sh:/usr/local/bin/cai-cadre-restore:ro
+      - cai-cadre-data:/appdata             # aici se pun fișierele instanței și media
+    security_opt:
+      - no-new-privileges:true
+    entrypoint: ["cai-cadre-restore"]
+
+  app:
+    build: ./app
+    image: cai-cadre-app
+    restart: unless-stopped
+    <<: *logging
+    environment:
+      <<: *app-env
+    volumes:
+      - cai-cadre-data:/data                # instanța: configurația, cheile, fișierele încărcate (servite doar prin aplicație)
+    expose:
+      - "8000"                          # doar în rețeaua compose, nu pe gazdă
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8000/health || python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4)\""]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  web:
+    image: nginx:1.30-alpine
+    restart: unless-stopped
+    <<: *logging
+    environment:
+      TZ: ${TZ:-Europe/Chisinau}
+    volumes:
+      # tot folderul, nu fișierul singur: un fișier montat separat rămâne la
+      # inode-ul vechi după editare și `nginx -s reload` nu vede schimbarea
+      - ./deploy/nginx:/etc/nginx/conf.d:ro
+    ports:
+      - "127.0.0.1:${NGINX_PORT:-3960}:80"
+    # configurația nu se schimbă la rulare; nginx scrie doar pid-ul și fișierele temporare
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /run
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      default:
+        aliases:
+          - cai-cadre-web
+    healthcheck:
+      # prin proxy până la aplicație: nginx fără `app` nu e „healthy”
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  cloudflared:
+    image: cloudflare/cloudflared:2026.9.1
+    profiles: ["tunnel"]
+    restart: unless-stopped
+    <<: *logging
+    command: ["tunnel", "--no-autoupdate", "run"]
+    environment:
+      TZ: ${TZ:-Europe/Chisinau}
+      # `:?` nu se poate pune aici: compose îl verifică și cu profilul oprit.
+      # Gol nu ajunge niciodată: fără token profilul `tunnel` e inactiv.
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
+      # /ready pentru healthcheck — doar în container, nu pe gazdă
+      TUNNEL_METRICS: 127.0.0.1:20241
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      # sănătos = tunelul are cel puțin o conexiune activă cu marginea Cloudflare
+      test: ["CMD", "cloudflared", "tunnel", "--metrics", "127.0.0.1:20241", "ready"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    depends_on:
+      web:
+        condition: service_healthy
+
+volumes:
+  cai-cadre-db:
+  cai-cadre-data:
+
+# Subrețea fixă, în afara plajelor implicite ale Docker: pe acest server ele
+# sunt epuizate (2026-11-17, 31 de rețele — „all predefined address pools have
+# been fully subnetted”), deci o rețea fără subrețea dată nu se mai poate crea.
+# 10.219.0.0/28 = stiva; restore-check.sh își ia 10.219.0.16/28 prin
+# STACK_SUBNET, deploy/nginx-test.sh — 10.219.0.32/29. Ocupat deja pe gazdă din
+# 10.0.0.0/8: 10.66.66.0/24 (WireGuard), 10.218.0.0/29 (fac2ra-proxy).
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: ${STACK_SUBNET:-10.219.0.0/28}

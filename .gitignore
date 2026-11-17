@@ -1,0 +1,47 @@
+# Secrete / configurație locală
+.env
+.env.*
+!.env.example
+
+# Copii ale bazei (rămân pe server)
+backups/*
+!backups/.gitignore
+
+# Arhive aduse (se despachetează, nu se versionează)
+*.rar
+*.zip
+*.7z
+*.tar
+*.tar.gz
+*.tgz
+
+# Node
+node_modules/
+dist/
+.vite/
+.next/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Teste e2e
+test-results/
+playwright-report/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Documente de proiect ținute în afara depozitului
+*.pdf
+
+# Aplicația: ce se generează la build sau în dezvoltare
+app/staticfiles/
+app/media/

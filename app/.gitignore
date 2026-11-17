@@ -1,0 +1,43 @@
+# Mediu Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Datele instanței (configurație, chei, baza SQLite, fișiere încărcate) — NU intră în git
+instance/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Chei de licență (nu trebuie să ajungă niciodată în cod)
+*.pem
+
+# Editor / sistem
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+
+# Cache TypeScript
+*.tsbuildinfo
+releases/
+installer/build/
+installer/output/
+
+# Date de firmă și copii (nu intră în git): baza 1C, arhivele de cod, contractele clienților, exporturile de date
+Contabilitatea pe 1c/
+copii-cod/
+model contract/
+integrari/1C OData/*.xml
+
+# Configurația 1C de la care a pornit proiectul (Personal.cf, a clientului) — rămâne doar local
+*.cf
+*.dt
+
+# Parolele serverului Docker
+.env
+
+# Ofertele comerciale și documentele interne de preț (nu intră în cod)
+oferta/

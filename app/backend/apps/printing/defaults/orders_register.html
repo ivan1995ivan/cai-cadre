@@ -1,0 +1,14 @@
+{% gov_header %}
+
+<div class="doc-title">{{ texts.title }}</div>
+<div class="doc-subtitle">{{ register }} · anul {{ year }}</div>
+
+<table class="grid">
+  <thead><tr><th style="width:18mm">Nr.</th><th style="width:22mm">Data</th><th>Conținutul (titlul)</th><th>Angajații</th><th style="width:22mm">Starea</th><th style="width:20mm">Semnătura</th></tr></thead>
+  <tbody>
+  {% for r in rows %}<tr><td>{{ r.number }}</td><td>{{ r.date }}</td><td>{{ r.title }}</td><td>{{ r.employees }}</td><td>{{ r.status }}</td><td></td></tr>
+  {% empty %}<tr><td colspan="6" class="muted">—</td></tr>{% endfor %}
+  </tbody>
+</table>
+{% if gaps %}<p class="muted" style="margin-top:8px">Numere lipsă în registru: {{ gaps|join:", " }}</p>{% endif %}
+{% if texts.footer %}<div class="doc-footer">{{ texts.footer|linebreaksbr }}</div>{% endif %}

@@ -1,0 +1,57 @@
+@page { size: A4; margin: 12mm 10mm; }
+* { box-sizing: border-box; }
+body { font-family: "Segoe UI", Arial, sans-serif; font-size: 10.5pt; color: #1E2A30; margin: 0; }
+.muted { color: #6B7880; font-size: 9pt; }
+.doc-header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start;
+  border-bottom: 2px solid var(--accent, #1FA463); padding-bottom: 10px; margin-bottom: 14px; }
+.brand { display: flex; gap: 12px; align-items: center; }
+.logo { max-height: 56px; max-width: 180px; object-fit: contain; }
+.company { font-weight: 700; font-size: 12pt; }
+.title-block { text-align: right; }
+h1 { font-size: 16pt; margin: 0 0 2px; }
+h2.group { font-size: 11.5pt; margin: 16px 0 6px; color: var(--accent, #1FA463); }
+table.items { width: 100%; border-collapse: collapse; page-break-inside: auto; }
+table.items th { background: #E6F5EC; text-align: left; font-weight: 600; font-size: 9.5pt; }
+table.items th, table.items td { border: 1px solid #D5DEE2; padding: 4px 6px; vertical-align: middle; }
+table.items tr { page-break-inside: avoid; }
+.col-img { width: 22mm; text-align: center; }
+.col-img img { max-width: 20mm; max-height: 16mm; object-fit: contain; }
+.col-code { width: 26mm; white-space: nowrap; }
+.col-unit { width: 16mm; text-align: center; }
+.col-price { width: 28mm; text-align: right; white-space: nowrap; }
+.swatch { display: inline-block; width: 10px; height: 10px; border: 1px solid #999; border-radius: 2px;
+  margin-left: 4px; vertical-align: middle; }
+.doc-footer { margin-top: 18px; border-top: 1px solid #D5DEE2; padding-top: 6px; }
+@media screen { body { padding: 16px; background: #fff; } }
+.col-no { width: 8mm; text-align: center; }
+.col-qty { width: 24mm; text-align: right; white-space: nowrap; }
+.parties { margin-bottom: 10px; line-height: 1.5; }
+table.totals { margin: 10px 0 0 auto; border-collapse: collapse; min-width: 90mm; }
+table.totals td { padding: 3px 6px; text-align: right; }
+table.totals td:first-child { color: #6B7880; }
+table.totals tr.grand td { font-weight: 700; font-size: 12pt; border-top: 2px solid var(--accent, #1FA463); color: #1E2A30; }
+.terms { margin-top: 14px; line-height: 1.5; }
+.terms .notes { margin-top: 6px; }
+.sign { margin-top: 18px; position: relative; }
+.stamp { position: absolute; left: 60mm; top: -14mm; max-height: 32mm; opacity: 0.85; }
+
+/* CAI CADRE: antetul formelor oficiale cu Stema de Stat */
+.gov-header { text-align: center; margin-bottom: 10px; }
+.gov-header .stema { height: 22mm; }
+.gov-header .country { font-weight: 700; letter-spacing: 0.06em; font-size: 10pt; margin-top: 2px; }
+.gov-header .founder { font-size: 9.5pt; text-transform: uppercase; }
+.gov-header .institution { font-weight: 700; font-size: 11.5pt; margin-top: 2px; }
+.gov-header .requisites { font-size: 8.5pt; color: #444; border-bottom: 1.5px solid #222; padding-bottom: 6px; margin-top: 2px; }
+.annex { text-align: right; font-size: 9pt; line-height: 1.35; margin-bottom: 8px; }
+.doc-title { text-align: center; font-weight: 700; font-size: 13pt; margin: 8px 0 2px; text-transform: uppercase; }
+.doc-subtitle { text-align: center; margin-bottom: 10px; }
+table.grid { width: 100%; border-collapse: collapse; }
+table.grid th, table.grid td { border: 1px solid #555; padding: 3px 5px; font-size: 9.5pt; vertical-align: top; }
+table.grid th { background: #F0F0F0; text-align: center; font-weight: 600; }
+table.grid td.num { text-align: right; white-space: nowrap; }
+table.grid tr.section td { font-weight: 700; background: #FAFAFA; }
+table.grid tr.subtotal td { font-weight: 600; }
+table.grid tr.total td { font-weight: 700; border-top: 2px solid #222; }
+.signatures { margin-top: 22px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px 40px; font-size: 10pt; }
+.signatures .line { border-bottom: 1px solid #222; height: 18px; margin-top: 4px; }
+.signatures .who { font-size: 8.5pt; color: #444; }

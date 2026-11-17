@@ -1,0 +1,448 @@
+"""Timpul de muncă: calendarul de producție și norma lunară, tura planificată pe zi, graficul lunar și tabela de pontaj.
+
+Ziua unui raport de muncă se socotește așa (de la cel mai „tare” la cel mai „slab”):
+1. celula scrisă de mână în pontaj (rămâne la recalculare);
+2. absența angajatului (concediu, boală, delegare — din ordine și foi de boală) → codul ei (CO, CM, D...);
+3. contractul suspendat → „S”;
+4. tura din graficul lunar al secției (gărzile), dacă există;
+5. tura din graficul de lucru al raportului (săptămânal sau ciclic); fără grafic — 5 zile × (orele săptămânale / 5).
+
+Graficul săptămânal se micșorează după normă (0,5 normă din „5 × 8” = 4 ore pe zi); graficul pe ture nu — la cumul se pun
+mai puține ture în graficul lunar.
+"""
+import calendar as pycal
+from collections import defaultdict
+from datetime import date, datetime, time, timedelta
+from decimal import ROUND_HALF_UP, Decimal
+
+from django.db import transaction
+from django.db.models import Q
+from rest_framework.exceptions import ValidationError
+
+from apps.core.models import SystemSetting
+from apps.leave.models import WITHOUT_HOLIDAYS, Absence
+from apps.org import calendar as holidays
+from apps.org.models import Subdivision
+from apps.staff.models import Employment
+
+from .models import CalendarDay, JobSchedule, Roster, RosterLine, ShiftType, Timesheet, TimesheetLine
+
+# codurile absențelor în pontaj (după tipul absenței din dosar)
+ABSENCE_CODES = {
+    "annual": "CO", "extra": "CA", "unpaid": "CFP", "maternity": "CMT", "paternity": "CP", "childcare": "CIC",
+    "childcare_unpaid": "CICN", "study": "CS", "days_off": "ZL", "travel": "D", "training": "F", "sick": "CM",
+}
+CODE_LABELS = {
+    "CO": "Concediu de odihnă anual", "CA": "Concediu suplimentar", "CFP": "Concediu fără plată", "CMT": "Concediu de maternitate",
+    "CP": "Concediu paternal", "CIC": "Îngrijirea copilului (parțial plătit)", "CICN": "Îngrijirea copilului (neplătit)",
+    "CS": "Concediu de studii", "ZL": "Zile libere plătite", "D": "Deplasare", "F": "Perfecționare / EMC", "CM": "Concediu medical",
+    "S": "CIM suspendat", "A": "Absență nemotivată", "IN": "Învoire (absență permisă)",
+}
+MANUAL_CODES = ["A", "IN"]
+SETTINGS_KEY = "worktime_settings"
+DEFAULTS = {"min_rest_hours": 12, "max_duties": 0}
+ONE = Decimal("1")
+
+
+def get_settings() -> dict:
+    return {**DEFAULTS, **(SystemSetting.read(SETTINGS_KEY, {}) or {})}
+
+
+def _q(value) -> float:
+    return float(Decimal(str(value)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+
+
+def month_days(year: int, month: int) -> list:
+    if not (1 <= month <= 12):
+        raise ValidationError({"month": "Luna este între 1 și 12."})
+    return [date(year, month, d) for d in range(1, pycal.monthrange(year, month)[1] + 1)]
+
+
+def fmt_hours(value) -> str:
+    return format(Decimal(str(value)).normalize(), "f").replace(".", ",")
+
+
+# --- calendarul de producție -------------------------------------------------------------------------------------
+class Calendar:
+    """Sărbătorile și abaterile (zile transferate, scurtate) pe o perioadă."""
+
+    def __init__(self, start: date, end: date):
+        self.holidays = holidays.holidays_between(start, end)
+        self.overrides = {c.date: c for c in CalendarDay.objects.filter(date__gte=start, date__lte=end)}
+
+    def is_working(self, day: date) -> bool:
+        if day in self.overrides:
+            return self.overrides[day].working
+        return day.weekday() < 5 and day not in self.holidays
+
+    def hours_less(self, day: date) -> Decimal:
+        o = self.overrides.get(day)
+        return o.hours_less if o else Decimal("0")
+
+    def is_holiday(self, day: date) -> bool:
+        return day in self.holidays
+
+
+def month_norms(year: int) -> list:
+    """Calendarul pe an: zilele lucrătoare și norma de ore pe lună pentru 40, 35 și 30 de ore pe săptămână."""
+    cal = Calendar(date(year, 1, 1), date(year, 12, 31))
+    out = []
+    for m in range(1, 13):
+        days = [d for d in month_days(year, m) if cal.is_working(d)]
+        less = sum((cal.hours_less(d) for d in days), Decimal("0"))
+        out.append({"month": m, "working_days": len(days), "calendar_days": len(month_days(year, m)),
+                    "holidays": sorted(d for d in cal.holidays if d.month == m and d.year == year),
+                    **{f"norm_{h}": _q(Decimal(h) / 5 * len(days) - less) for h in (40, 35, 30)}})
+    return out
+
+
+# --- raportul de muncă pe zile -----------------------------------------------------------------------------------
+class JobDays:
+    """Ce știm despre un raport de muncă în lună: activ, subdiviziunea și norma pe zile, graficul, absențele."""
+
+    def __init__(self, job: Employment, days: list, absences: list):
+        self.job = job
+        self.history = sorted(job.history.all(), key=lambda h: (h.date, h.pk))
+        self.schedules = sorted(job.work_schedules.all(), key=lambda s: (s.date_from, s.pk))
+        self.absences = absences
+        self.suspended = self._suspensions(days[-1])
+
+    def values_on(self, day):
+        recs = [h for h in self.history if h.date <= day]
+        rec = recs[-1] if recs else None
+        if rec is None:
+            return self.job.subdivision_id, self.job.occupation_id, self.job.rate
+        return rec.subdivision_id, rec.occupation_id, rec.rate
+
+    def active(self, day) -> bool:
+        return self.job.date_from <= day and (self.job.end_date is None or day <= self.job.end_date)
+
+    def _suspensions(self, until):
+        periods, start = [], None
+        for h in self.history:
+            if h.event == "suspend":
+                start = h.date
+            elif h.event == "resume" and start:
+                periods.append((start, h.date - timedelta(days=1)))
+                start = None
+        if start:
+            periods.append((start, until))
+        return periods
+
+    def is_suspended(self, day) -> bool:
+        return any(a <= day <= b for a, b in self.suspended)
+
+    def absence(self, day):
+        return next((a for a in self.absences if a.date_from <= day <= a.date_to), None)
+
+    def schedule(self, day):
+        recs = [s for s in self.schedules if s.date_from <= day]
+        return recs[-1] if recs else None
+
+    def weekly_hours(self, day, subdivisions, occupations) -> Decimal:
+        js = self.schedule(day)
+        if js:
+            return js.schedule.weekly_hours
+        sub_id, occ_id, _ = self.values_on(day)
+        sub = subdivisions.get(sub_id)
+        if sub is not None and sub.reduced_hours:
+            return sub.reduced_hours
+        occ = occupations.get(occ_id)
+        return occ.weekly_hours if occ else Decimal("40")
+
+
+class Context:
+    """Datele comune ale unei luni (turele, calendarul, funcțiile, subdiviziunile, absențele)."""
+
+    def __init__(self, year: int, month: int):
+        from apps.org.models import Occupation
+
+        self.year, self.month = year, month
+        self.days = month_days(year, month)
+        self.cal = Calendar(self.days[0], self.days[-1])
+        self.shifts = {s.code: s for s in ShiftType.objects.all()}
+        self.subdivisions = {s.pk: s for s in Subdivision.objects.all()}
+        self.occupations = {o.pk: o for o in Occupation.objects.all()}
+        self.min_rest = Decimal(str(get_settings().get("min_rest_hours") or 0))
+
+    def jobs(self, subdivision: Subdivision):
+        """Raporturile de muncă care au măcar o zi în subdiviziune (cu sub-subdiviziunile) în luna dată."""
+        ids = subdivision.descendant_ids()
+        first, last = self.days[0], self.days[-1]
+        qs = (Employment.objects.filter(date_from__lte=last).filter(Q(end_date__isnull=True) | Q(end_date__gte=first))
+              .filter(Q(subdivision_id__in=ids) | Q(history__subdivision_id__in=ids)).distinct()
+              .select_related("employee", "occupation", "subdivision")
+              .prefetch_related("history", "work_schedules__schedule"))
+        jobs = list(qs)
+        emp_ids = {j.employee_id for j in jobs}
+        absences = defaultdict(list)
+        for a in Absence.objects.filter(employee_id__in=emp_ids, date_from__lte=last, date_to__gte=first):
+            absences[a.employee_id].append(a)
+        out = []
+        for job in jobs:
+            jd = JobDays(job, self.days, absences.get(job.employee_id, []))
+            mine = [d for d in self.days if jd.active(d) and jd.values_on(d)[0] in ids]
+            if mine:
+                jd.days = set(mine)
+                out.append(jd)
+        out.sort(key=lambda jd: (jd.job.employee.last_name, jd.job.employee.first_name, jd.job.kind != "main", jd.job.pk))
+        return out
+
+    def shift(self, code):
+        """(ore, ore de noapte, începutul, gardă) pentru codul turei; codurile numerice („8”, „4”) — ore de zi."""
+        if not code:
+            return None
+        s = self.shifts.get(code)
+        if s is not None:
+            return s.hours, s.night_hours, s.start or time(8), s.is_duty
+        try:
+            hours = Decimal(str(code).replace(",", "."))
+        except Exception:  # noqa: BLE001
+            return None
+        return hours, Decimal("0"), time(8), False
+
+    def planned(self, jd: JobDays, day: date) -> str:
+        """Codul turei din graficul de lucru al raportului (fără graficul lunar)."""
+        _sub, _occ, rate = jd.values_on(day)
+        js = jd.schedule(day)
+        if js is None or js.schedule.kind == "week":
+            if js is not None:
+                week = js.schedule.week or []
+                code = week[day.weekday()] if len(week) == 7 else ""
+                if day in self.cal.overrides and self.cal.overrides[day].working and not code:
+                    code = next((c for c in week if c), "")  # sâmbăta lucrătoare transferată: ca în zilele obișnuite
+                if not self.cal.is_working(day) and js.schedule.holidays_off:
+                    return ""
+                info = self.shift(code)
+                if info is None:
+                    return ""
+                hours = info[0] * rate - self.cal.hours_less(day)
+                return code if rate == ONE and not self.cal.hours_less(day) else fmt_hours(hours)
+            if not self.cal.is_working(day):
+                return ""
+            weekly = jd.weekly_hours(day, self.subdivisions, self.occupations)
+            return fmt_hours(weekly / 5 * rate - self.cal.hours_less(day))
+        cycle = js.schedule.cycle or []
+        if not cycle:
+            return ""
+        start = js.schedule.cycle_start or js.date_from
+        code = cycle[((day - start).days + js.cycle_offset) % len(cycle)]
+        if js.schedule.holidays_off and self.cal.is_holiday(day):
+            return ""
+        return code or ""
+
+    def norm(self, jd: JobDays) -> Decimal:
+        """Norma de ore a lunii pentru raport: zilele lucrătoare în care e în subdiviziune × orele pe zi × norma."""
+        total = Decimal("0")
+        for day in sorted(jd.days):
+            if self.cal.is_working(day):
+                _s, _o, rate = jd.values_on(day)
+                total += (jd.weekly_hours(day, self.subdivisions, self.occupations) / 5 - self.cal.hours_less(day)) * rate
+        return total
+
+
+# --- graficul lunar (gărzile) ---------------------------------------------------------------------------------------
+def _label(jd: JobDays, ctx: Context) -> dict:
+    job = jd.job
+    sub_id, occ_id, rate = jd.values_on(max(jd.days))
+    occ, sub = ctx.occupations.get(occ_id), ctx.subdivisions.get(sub_id)
+    return {"employment": job.pk, "employee": job.employee_id, "name": job.employee.full_name(),
+            "short_name": job.employee.short_name(), "tab_number": job.employee.tab_number, "kind": job.kind,
+            "kind_label": job.get_kind_display(), "occupation": occ.name_ro if occ else "",
+            "subdivision": sub.name_ro if sub else "", "rate": float(rate)}
+
+
+@transaction.atomic
+def fill_roster(roster: Roster, overwrite=False) -> int:
+    """Adaugă raporturile lipsă și le completează turele din graficul de lucru (cele existente rămân, dacă nu se cere)."""
+    ctx = Context(roster.year, roster.month)
+    lines = {ln.employment_id: ln for ln in roster.lines.all()}
+    added = 0
+    for i, jd in enumerate(ctx.jobs(roster.subdivision), start=1):
+        ln = lines.get(jd.job.pk)
+        if ln is None:
+            ln = RosterLine(roster=roster, employment=jd.job, sort=i * 10)
+            added += 1
+        elif ln.days and not overwrite:
+            continue
+        ln.days = {str(d.day): code for d in sorted(jd.days) if (code := ctx.planned(jd, d))}
+        ln.save()
+    return added
+
+
+def roster_report(roster: Roster) -> dict:
+    """Rândurile cu totalurile (ore, noapte, gărzi, norma) și avertismentele: norma depășită, odihnă prea scurtă,
+    tură într-o zi de absență."""
+    ctx = Context(roster.year, roster.month)
+    jobs = {jd.job.pk: jd for jd in ctx.jobs(roster.subdivision)}
+    rows, warnings = [], []
+    for ln in roster.lines.select_related("employment__employee").order_by("sort", "id"):
+        jd = jobs.get(ln.employment_id)
+        if jd is None:  # raportul nu mai e în secție în luna aceasta
+            jd = JobDays(ln.employment, ctx.days, list(ln.employment.employee.absences.all()))
+            jd.days = {d for d in ctx.days if jd.active(d)}
+        hours = night = Decimal("0")
+        duties = 0
+        absences = {}
+        prev_end = None
+        for day in ctx.days:
+            code = (ln.days or {}).get(str(day.day), "")
+            a = jd.absence(day)
+            if a is not None:
+                absences[str(day.day)] = ABSENCE_CODES.get(a.kind, "")
+            info = ctx.shift(code)
+            if info is None:
+                continue
+            h, n, start, duty = info
+            hours, night, duties = hours + h, night + n, duties + (1 if duty else 0)
+            begin = datetime.combine(day, start)
+            if prev_end is not None and ctx.min_rest and (begin - prev_end) < timedelta(hours=float(ctx.min_rest)):
+                rest = (begin - prev_end).total_seconds() / 3600
+                warnings.append({"kind": "rest", "employment": ln.employment_id, "name": ln.employment.employee.short_name(),
+                                 "day": day.day, "rest": round(max(rest, 0), 1)})
+            prev_end = begin + timedelta(hours=float(h))
+            if a is not None:
+                warnings.append({"kind": "absence", "employment": ln.employment_id, "name": ln.employment.employee.short_name(),
+                                 "day": day.day, "code": ABSENCE_CODES.get(a.kind, "")})
+        norm = ctx.norm(jd) if jd.days else Decimal("0")
+        if hours > norm and norm:
+            warnings.append({"kind": "norm", "employment": ln.employment_id, "name": ln.employment.employee.short_name(),
+                             "hours": _q(hours), "norm": _q(norm)})
+        max_duties = int(get_settings().get("max_duties") or 0)
+        if max_duties and duties > max_duties:
+            warnings.append({"kind": "duties", "employment": ln.employment_id, "name": ln.employment.employee.short_name(),
+                             "duties": duties, "max": max_duties})
+        rows.append({"id": ln.id, **_label(jd, ctx), "days": ln.days or {}, "absences": absences, "note": ln.note,
+                     "hours": _q(hours), "night": _q(night), "duties": duties, "norm": _q(norm), "diff": _q(hours - norm)})
+    return {"days": _days_header(ctx), "rows": rows, "warnings": warnings}
+
+
+def _days_header(ctx: Context) -> list:
+    return [{"day": d.day, "weekday": d.weekday(), "holiday": ctx.cal.is_holiday(d), "working": ctx.cal.is_working(d)}
+            for d in ctx.days]
+
+
+# --- tabela de pontaj ----------------------------------------------------------------------------------------------
+def _cell(ctx: Context, jd: JobDays, day: date, roster_days) -> dict | None:
+    a = jd.absence(day)
+    if a is not None:
+        if a.kind in WITHOUT_HOLIDAYS and ctx.cal.is_holiday(day):
+            return None
+        return {"c": ABSENCE_CODES.get(a.kind, "?")}
+    if jd.is_suspended(day):
+        return {"c": "S"}
+    code = roster_days.get(str(day.day), "") if roster_days is not None else ctx.planned(jd, day)
+    info = ctx.shift(code)
+    if info is None:
+        return None
+    hours, night, _start, _duty = info
+    cell = {"c": code, "h": float(hours), "n": float(night)}
+    if ctx.cal.is_holiday(day):
+        cell["hol"] = 1
+    return cell
+
+
+def line_totals(ctx: Context, jd: JobDays, days: dict) -> dict:
+    worked = hours = night = holiday = Decimal("0")
+    codes = defaultdict(int)
+    for cell in days.values():
+        h = Decimal(str(cell.get("h") or 0))
+        if h > 0:
+            worked += 1
+            hours += h
+            night += Decimal(str(cell.get("n") or 0))
+            if cell.get("hol"):
+                holiday += h
+        elif cell.get("c"):
+            codes[cell["c"]] += 1
+    norm = ctx.norm(jd) if jd.days else Decimal("0")
+    return {"days": int(worked), "hours": _q(hours), "night": _q(night), "holiday": _q(holiday), "norm": _q(norm),
+            "overtime": _q(max(hours - norm, Decimal("0"))), "missing": _q(max(norm - hours, Decimal("0"))),
+            "codes": dict(sorted(codes.items()))}
+
+
+@transaction.atomic
+def fill_timesheet(ts: Timesheet, keep_manual=True) -> int:
+    """Completează tabela: raporturile lipsă se adaugă; zilele se recalculează, cele scrise de mână rămân."""
+    if ts.status == "closed":
+        raise ValidationError({"detail": "Tabela este închisă."})
+    ctx = Context(ts.year, ts.month)
+    rosters = {ln.employment_id: ln.days or {} for ln in RosterLine.objects.filter(
+        roster__subdivision=ts.subdivision, roster__year=ts.year, roster__month=ts.month)}
+    lines = {ln.employment_id: ln for ln in ts.lines.all()}
+    added = 0
+    for i, jd in enumerate(ctx.jobs(ts.subdivision), start=1):
+        ln = lines.pop(jd.job.pk, None)
+        if ln is None:
+            ln = TimesheetLine(timesheet=ts, employment=jd.job, sort=i * 10)
+            added += 1
+        old = ln.days or {}
+        days = {}
+        for day in sorted(jd.days):
+            key = str(day.day)
+            if keep_manual and old.get(key, {}).get("m"):
+                days[key] = old[key]
+                continue
+            cell = _cell(ctx, jd, day, rosters.get(jd.job.pk))
+            if cell:
+                days[key] = cell
+        ln.days, ln.totals = days, line_totals(ctx, jd, days)
+        ln.save()
+    for ln in lines.values():  # raporturi care nu mai sunt în secție în luna aceasta (de ex. transfer anulat)
+        if not any(c.get("m") for c in (ln.days or {}).values()):
+            ln.delete()
+    return added
+
+
+def set_cell(line: TimesheetLine, day: int, code: str, hours=None, night=None) -> TimesheetLine:
+    """Corectarea de mână a unei zile: cod de absență (fără ore) sau tura / orele lucrate."""
+    ts = line.timesheet
+    if ts.status == "closed":
+        raise ValidationError({"detail": "Tabela este închisă."})
+    ctx = Context(ts.year, ts.month)
+    if not 1 <= day <= len(ctx.days):
+        raise ValidationError({"day": "Ziua nu este în lună."})
+    d = ctx.days[day - 1]
+    days = dict(line.days or {})
+    code = (code or "").strip()
+    if not code and hours in (None, "", 0, "0"):
+        days[str(day)] = {"c": "", "m": 1}
+    elif code in CODE_LABELS:
+        days[str(day)] = {"c": code, "m": 1}
+    else:
+        info = ctx.shift(code) if code else None
+        h = Decimal(str(hours).replace(",", ".")) if hours not in (None, "") else (info[0] if info else None)
+        if h is None or h < 0 or h > 24:
+            raise ValidationError({"hours": "Orele lucrate sunt între 0 și 24 (sau un cod de tură / absență)."})
+        n = Decimal(str(night).replace(",", ".")) if night not in (None, "") else (info[1] if info else Decimal("0"))
+        if n > h:
+            raise ValidationError({"night": "Orele de noapte nu pot fi mai multe decât cele lucrate."})
+        cell = {"c": code or fmt_hours(h), "h": float(h), "n": float(n), "m": 1}
+        if ctx.cal.is_holiday(d):
+            cell["hol"] = 1
+        days[str(day)] = cell
+    line.days = days
+    jd = JobDays(line.employment, ctx.days, list(line.employment.employee.absences.filter(
+        date_from__lte=ctx.days[-1], date_to__gte=ctx.days[0])))
+    ids = ts.subdivision.descendant_ids()
+    jd.days = {x for x in ctx.days if jd.active(x) and jd.values_on(x)[0] in ids}
+    line.totals = line_totals(ctx, jd, days)
+    line.save(update_fields=["days", "totals"])
+    return line
+
+
+def timesheet_report(ts: Timesheet) -> dict:
+    ctx = Context(ts.year, ts.month)
+    rows = []
+    for ln in ts.lines.select_related("employment__employee", "employment__occupation").prefetch_related(
+            "employment__history").order_by("sort", "id"):
+        jd = JobDays(ln.employment, ctx.days, [])
+        jd.days = set(ctx.days)
+        rows.append({"id": ln.id, **_label(jd, ctx), "days": ln.days or {}, "totals": ln.totals or {}, "note": ln.note})
+    return {"days": _days_header(ctx), "rows": rows, "codes": CODE_LABELS, "manual_codes": [*MANUAL_CODES, *CODE_LABELS]}
+
+
+def visible_ids(user):
+    from apps.staff import services as staff
+
+    return staff.visible_subdivision_ids(user, "worktime")

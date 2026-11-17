@@ -1,0 +1,37 @@
+{% gov_header %}
+
+<div class="doc-title">{{ texts.title }}</div>
+<div class="doc-subtitle">la data de {{ today }} · {{ count }} angajați</div>
+
+<table class="grid">
+  <thead>
+    <tr>
+      <th style="width:8mm">Nr.</th><th style="width:16mm">Nr. tabel</th><th>Numele, prenumele</th>
+      {% if not options.group_by_subdivision %}<th>Subdiviziunea</th>{% endif %}
+      <th>Funcția</th>{% if options.show_rate %}<th style="width:14mm">Norma</th>{% endif %}
+      <th style="width:28mm">Tipul</th><th style="width:22mm">Angajat la</th>
+      {% if options.show_idnp %}<th style="width:30mm">IDNP</th>{% endif %}
+      {% if options.show_phone %}<th style="width:26mm">Telefon</th>{% endif %}
+    </tr>
+  </thead>
+  <tbody>
+  {% if options.group_by_subdivision %}
+    {% for g in groups %}
+      <tr class="section"><td colspan="10">{{ g.name|default:"—" }} ({{ g.rows|length }})</td></tr>
+      {% for r in g.rows %}
+      <tr><td class="num">{{ r.no }}</td><td>{{ r.tab }}</td><td>{{ r.name }}</td><td>{{ r.occupation }}</td>
+        {% if options.show_rate %}<td class="num">{{ r.rate }}</td>{% endif %}<td>{{ r.kind }}</td><td>{{ r.date_from }}</td>
+        {% if options.show_idnp %}<td>{{ r.idnp }}</td>{% endif %}{% if options.show_phone %}<td>{{ r.phone }}</td>{% endif %}</tr>
+      {% endfor %}
+    {% endfor %}
+  {% else %}
+    {% for r in rows %}
+      <tr><td class="num">{{ r.no }}</td><td>{{ r.tab }}</td><td>{{ r.name }}</td><td>{{ r.subdivision }}</td><td>{{ r.occupation }}</td>
+        {% if options.show_rate %}<td class="num">{{ r.rate }}</td>{% endif %}<td>{{ r.kind }}</td><td>{{ r.date_from }}</td>
+        {% if options.show_idnp %}<td>{{ r.idnp }}</td>{% endif %}{% if options.show_phone %}<td>{{ r.phone }}</td>{% endif %}</tr>
+    {% endfor %}
+  {% endif %}
+  </tbody>
+</table>
+{% if texts.footer %}<div class="doc-footer">{{ texts.footer|linebreaksbr }}</div>{% endif %}
+<div class="signatures"><div>{{ texts.hr_label }}<div class="line"></div><div class="who">{{ company.hr_head }}</div></div></div>

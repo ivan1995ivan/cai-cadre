@@ -1,0 +1,33 @@
+{% gov_header %}
+
+<div style="display:flex; justify-content:space-between; margin:6px 0 18px">
+  <div>Nr. {{ number }}</div><div>{{ today }}</div>
+</div>
+
+<div class="doc-title">{{ texts.title }}</div>
+
+<p style="text-indent:12mm; line-height:1.7; font-size:11.5pt; margin-top:14px">
+  Prin prezenta se adeverește că {% if emp.sex_code == "F" %}dna{% else %}dl{% endif %} <b>{{ emp.full_name }}</b>{% if emp.idnp %}, IDNP {{ emp.idnp }}{% endif %},
+  născut(ă) la {{ emp.birth_date }}, are următoarea vechime în muncă, la data de {{ today }}:
+</p>
+
+<table class="grid" style="max-width:150mm; margin:6px auto 12px">
+  <tr><td>Vechimea totală în muncă</td><td class="num"><b>{{ seniority.total }}</b></td></tr>
+  <tr><td>Vechimea în sistemul sănătății</td><td class="num">{{ seniority.healthcare }}</td></tr>
+  <tr><td>Vechimea în specialitate</td><td class="num">{{ seniority.specialty }}</td></tr>
+  <tr><td>Vechimea în {{ company.name }}</td><td class="num">{{ seniority.institution }}</td></tr>
+</table>
+
+{% if options.show_periods %}
+<table class="grid">
+  <thead><tr><th style="width:24mm">De la</th><th style="width:24mm">Până la</th><th>Unitatea</th><th>Funcția</th></tr></thead>
+  <tbody>{% for p in periods %}<tr><td>{{ p.from }}</td><td>{{ p.to }}</td><td>{{ p.organization }}</td><td>{{ p.position }}</td></tr>{% endfor %}</tbody>
+</table>
+{% endif %}
+{% if purpose %}<p style="text-indent:12mm; font-size:11.5pt; margin-top:10px">Adeverința se eliberează pentru a fi prezentată la: {{ purpose }}.</p>{% endif %}
+{% if texts.footer %}<p style="font-size:10pt">{{ texts.footer|linebreaksbr }}</p>{% endif %}
+
+<div class="signatures" style="margin-top:30px">
+  <div>Director<div class="line"></div><div class="who">{{ company.director }}</div></div>
+  <div>{{ texts.hr_label }}<div class="line"></div><div class="who">{{ company.hr_head }}</div></div>
+</div>

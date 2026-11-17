@@ -1,0 +1,43 @@
+// CAI CADRE — Etapa 3: ordinele.
+export default {
+  org: {
+    pointTemplate: 'Textul punctului „ORDON:” (gol = textul livrat)',
+    pointTemplateHint: 'Câmpuri: {angajat} {tab} {functia} {sectia} {norma} {salariul} {sporuri} {din} {pana} {zile} {an_de} {an_pana} {motivul} {destinatia} {suma} {procent} {categoria} {sanctiunea} {abaterea} {text}',
+  },
+  staff: { tabs: { orders: 'Ordine și absențe' } },
+  ord: {
+    new: 'Ordin nou', searchHint: 'Nr., titlu sau angajat', number: 'Nr.', noNumber: 'ciornă', date: 'Data', type: 'Tipul ordinului',
+    title: 'Titlul („Cu privire la …”)', employees: 'Angajații', status: 'Starea', employeesMany: 'Angajații (se pot alege mai mulți)',
+    employeeOne: 'Angajatul', employeeHint: 'Căutați după nume, nr. de tabel sau IDNP; se pot adăuga și după creare.',
+    statuses: { draft: 'Ciornă', signed: 'Semnat', cancelled: 'Anulat' },
+    heading: 'Ordinul nr. {{number}} din {{date}}', draftHeading: 'Ordin (ciornă)', sign: 'Semnează',
+    signConfirm: 'La semnare ordinul primește numărul în registru și se aplică în dosare (angajări, concedii, transferuri...). Semnați?',
+    signed: 'Ordinul a fost semnat cu nr. {{number}}.', acknowledgeAll: 'Am luat cunoștință (azi)',
+    cancelByOrder: 'Anulează prin ordin', cancelConfirm: 'Se face ciorna ordinului de anulare. Efectele ordinului se întorc la semnarea anulării. Continuați?',
+    cancelledBy: 'Ordinul este anulat prin {{label}}; efectele lui au fost întoarse.',
+    appliedHint: 'Ordinul este semnat: efectele sunt aplicate în dosare. Pentru schimbări se emite un ordin de anulare / modificare.',
+    seq: 'Nr. în registru', seqHint: 'Gol = următorul număr la semnare', preamble: 'Preambulul (în temeiul …)', basis: 'Temei',
+    basisHint: 'Cererea salariatului nr. …, demersul șefului de secție, certificatul medical …', footer: 'Puncte finale',
+    footerHint: 'de ex. Controlul executării prezentului ordin îl asum.', signerPosition: 'Funcția', signerName: 'Numele',
+    approvals: 'Coordonat cu (vize)', addApproval: 'Adaugă viză', points: 'ORDON: (punctele ordinului)', regenerate: 'Refă textele',
+    noPoints: 'Ordinul nu are încă puncte: adăugați angajatul mai jos.', addPoint: 'Adaugă punctul', addEmployee: 'Adaugă angajatul (nume, nr. tabel, IDNP)',
+    noEmployee: 'Fără angajat', acknowledged: 'adus la cunoștință {{date}}', manualText: 'text scris manual', extract: 'Extras',
+    printOrder: 'Ordinul', pointText: 'Textul punctului', hide: 'ascunde', edit: 'scrie de mână',
+    textHint: 'Textul se compune singur din parametri la salvare. „Scrie de mână” — pentru un text propriu.',
+    gaps: 'Numere lipsă în registru: {{list}}', open: 'deschide ordinul', acknowledgedCol: 'Adus la cunoștință',
+    p: {
+      employment: 'Raportul de muncă', employmentHint: 'Gol = raportul de bază', newTerm: 'Noul termen al CIM', whatChanges: 'Ce se modifică',
+      postTaken: 'Funcția suplinită / cumulată', percent: 'Plata (%)', substituted: 'Pe durata absenței (cui)', compensation: 'Zile de concediu compensate',
+      days: 'Zile', workYearFrom: 'Anul de muncă: de la', workYearTo: 'Anul de muncă: până la', destination: 'Destinația (unde)',
+      purpose: 'Scopul', note: 'Mențiune', calc: '{{days}} zile, ultima zi {{to}} (sărbători excluse: {{holidays}})', absence: 'Concediul',
+      returnDate: 'Revine la muncă din', amount: 'Suma (lei)', forWhat: 'Pentru ce', sanctionRecord: 'Sancțiunea ridicată', sanction: 'Sancțiunea',
+      misconduct: 'Abaterea disciplinară', until: 'Până la', staffListHint: 'Ciorna statelor de personal care se aprobă prin ordin.',
+      cancels: 'Se anulează', hours: 'Ore', text: 'Textul punctului',
+    },
+    tab: {
+      orders: 'Ordinele', absences: 'Concedii și deplasări', sanctions: 'Sancțiuni disciplinare', incentives: 'Stimulări',
+      kind: 'Tipul', details: 'Detalii', order: 'Ordinul', status: 'Starea', recalled: 'rechemat la {{date}} ({{days}} zile rămase)',
+      lifted: 'ridicată la {{date}}', expired: 'stinsă', activeUntil: 'în vigoare până la {{date}}',
+    },
+  },
+}

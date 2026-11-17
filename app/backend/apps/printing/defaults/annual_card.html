@@ -1,0 +1,69 @@
+{% gov_header %}
+
+<div class="annex">{{ texts.annex|linebreaksbr }}</div>
+<div class="doc-title" style="font-size:11pt">{{ texts.title }}</div>
+<div class="doc-subtitle">pentru anul {{ card.year }} · în lei</div>
+
+<table style="width:100%; margin-bottom:6px; font-size:9pt"><tr>
+  <td style="width:50%; vertical-align:top; padding-right:8px">
+    <b>1. Date generale privind angajatorul</b>
+    <table class="grid">
+      <tr><td style="width:62mm">1.1. Denumirea angajatorului</td><td>{{ card.employer }}</td></tr>
+      <tr><td>1.2. Codul fiscal al angajatorului</td><td>{{ card.employer_idno }}</td></tr>
+    </table>
+  </td>
+  <td style="width:50%; vertical-align:top">
+    <b>2. Date generale privind angajatul</b>
+    <table class="grid">
+      <tr><td style="width:62mm">2.1. Numele și prenumele</td><td><b>{{ card.name }}</b> (nr. tabel {{ card.tab_number }})</td></tr>
+      <tr><td>2.2. Codul fiscal</td><td>{{ card.idnp }}</td></tr>
+      <tr><td>2.3. Domiciliul permanent</td><td>{{ card.address }}</td></tr>
+      <tr><td>2.4. Codul fiscal al soțului (soției)</td><td>{{ card.spouse_idnp }}</td></tr>
+      <tr><td>2.5. Data angajării</td><td>{{ card.hired }}</td></tr>
+      <tr><td>2.6. Data concedierii</td><td>{{ card.dismissed }}</td></tr>
+    </table>
+  </td>
+</tr></table>
+
+<table class="grid" style="max-width:150mm; margin-bottom:6px; font-size:9pt">
+  <tr><td style="width:80mm">3. Scutirile (codul din cerere)</td><td><b>{{ card.exemption_code }}</b></td></tr>
+  <tr><td>Data prezentării cererii privind acordarea scutirilor</td><td>{{ card.exemption_date }}</td></tr>
+  <tr><td>Suma totală a scutirilor acordate în an</td><td class="num">{{ card.total.exemption }}</td></tr>
+</table>
+
+<b style="font-size:9pt">4. Venitul achitat, scutirile, primele CNAM și impozitul pe venit reținut</b>
+<table class="grid" style="font-size:8.5pt">
+  <thead>
+    <tr>
+      <th rowspan="2" style="width:20mm">Data plății</th>
+      <th colspan="2">Venitul achitat în folosul angajatului</th>
+      <th rowspan="2" style="width:20mm">Suma scutirilor</th>
+      <th colspan="2">Prime de asigurare obligatorie de asistență medicală</th>
+      <th rowspan="2" style="width:24mm">Venitul impozabil</th>
+      <th rowspan="2" style="width:22mm">Impozitul calculat</th>
+      <th rowspan="2" style="width:24mm">Impozitul reținut, restituit (+/−)</th>
+      <th rowspan="2" style="width:24mm">Impozitul cumulat</th>
+    </tr>
+    <tr>
+      <th style="width:24mm">curent</th><th style="width:26mm">cumulat de la începutul anului</th>
+      <th style="width:22mm">curente</th><th style="width:24mm">cumulat</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for r in card.rows %}
+    <tr><td>{% if r.date %}{{ r.date }}{% if r.kind %}<br><span class="muted">{{ r.kind }}</span>{% endif %}{% else %}{{ r.month_name }}{% endif %}</td>
+      <td class="num">{{ r.gross }}</td><td class="num">{{ r.cum_gross }}</td><td class="num">{{ r.exemption }}</td>
+      <td class="num">{{ r.cnam }}</td><td class="num">{{ r.cum_cnam }}</td><td class="num">{{ r.taxable }}</td>
+      <td class="num">{{ r.tax_calc }}</td><td class="num">{{ r.tax }}</td><td class="num">{{ r.cum_tax }}</td></tr>
+  {% empty %}<tr><td colspan="10" class="muted">—</td></tr>{% endfor %}
+    <tr class="total"><td>Total pe an</td><td class="num">{{ card.total.gross }}</td><td></td><td class="num">{{ card.total.exemption }}</td>
+      <td class="num">{{ card.total.cnam }}</td><td></td><td class="num">{{ card.total.taxable }}</td>
+      <td class="num">{{ card.total.tax_calc }}</td><td class="num">{{ card.total.tax }}</td><td></td></tr>
+  </tbody>
+</table>
+
+<div class="signatures">
+  <div>{{ texts.accountant_label }}<div class="line"></div><div class="who">{{ company.chief_accountant }}</div></div>
+  <div>Data<div class="line"></div><div class="who">{{ today }}</div></div>
+</div>
+{% if texts.footer %}<div class="doc-footer">{{ texts.footer|linebreaksbr }}</div>{% endif %}

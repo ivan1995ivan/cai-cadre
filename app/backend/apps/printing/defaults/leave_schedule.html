@@ -1,0 +1,38 @@
+{% gov_header %}
+
+<div class="annex">{{ texts.approve|linebreaksbr }}{% if schedule.approved_by %}<br>{{ schedule.approved_by }}{% endif %}</div>
+
+<div class="doc-title">{{ texts.title }}</div>
+<div class="doc-subtitle">pe anul {{ schedule.year }} · {{ schedule.subdivision }}</div>
+
+<table class="grid">
+  <thead>
+    <tr>
+      <th style="width:8mm">Nr.</th>
+      <th>Funcția</th>
+      <th>Numele, prenumele</th>
+      <th style="width:16mm">Nr. de tabel</th>
+      <th style="width:14mm">Zile</th>
+      <th style="width:22mm">Data planificată</th>
+      <th style="width:22mm">Data efectivă</th>
+      <th style="width:24mm">Amânat la</th>
+      <th style="width:30mm">Mențiuni</th>
+      {% if options.show_signature %}<th style="width:22mm">Semnătura</th>{% endif %}
+    </tr>
+  </thead>
+  <tbody>
+  {% for r in rows %}
+    <tr>
+      <td class="num">{{ r.no }}</td><td>{{ r.occupation }}</td><td>{{ r.name }}</td><td>{{ r.tab_number }}</td>
+      <td class="num">{{ r.days }}</td><td>{{ r.planned }}</td><td>{{ r.actual }}</td><td>{{ r.moved }}</td><td>{{ r.note }}</td>
+      {% if options.show_signature %}<td></td>{% endif %}
+    </tr>
+  {% empty %}<tr><td colspan="10" class="muted">—</td></tr>{% endfor %}
+  </tbody>
+</table>
+
+<div class="signatures">
+  <div>{{ texts.head_label }}<div class="line"></div><div class="who">{{ schedule.head_name }}</div></div>
+  <div>{{ texts.hr_label }}<div class="line"></div><div class="who">{{ company.hr_head }}</div></div>
+</div>
+{% if texts.footer %}<div class="doc-footer">{{ texts.footer|linebreaksbr }}</div>{% endif %}

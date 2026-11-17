@@ -1,0 +1,37 @@
+// CAI CADRE — Etapa 7: cabinetul angajatului și cererile angajaților.
+export default {
+  menu: { employeeRequests: 'Cererile angajaților' },
+  pt: {
+    tabs: { home: 'Datele mele', orders: 'Ordinele mele', requests: 'Cererile mele', payslips: 'Fișele de calcul' },
+    leaveAvailable: 'Zile de concediu disponibile', days: 'zile', ordersTodo: 'Ordine de citit', requestsOpen: 'Cereri în lucru',
+    myData: 'Datele personale', seniority: 'Vechimea totală', address: 'Domiciliul', jobs: 'Funcțiile mele', since: 'din', until: 'până la',
+    absences: 'Concediile și absențele apropiate', noAbsences: 'Nu sunt absențe planificate.',
+    changeHint: 'Datele s-au schimbat? Depuneți o cerere „Modificarea datelor personale” la fila „Cererile mele”.',
+    orderType: 'Ordinul', read: 'Citește', ack: 'Am luat cunoștință', ackOn: 'Am luat cunoștință la {{date}}', acknowledged: 'Mulțumim — semnătura electronică a fost înregistrată.',
+    leaveRequests: 'Cererile de concediu', newLeave: 'Cerere de concediu', otherRequests: 'Adeverințe și alte cereri', newOther: 'Cerere nouă',
+    status: 'Starea', note: 'Mențiuni', order: 'ordinul', text: 'Conținutul', answer: 'Răspunsul', withdraw: 'Retrage', withdrawConfirm: 'Retrageți cererea?',
+    send: 'Trimite', sent: 'Cererea a fost trimisă.', reason: 'Motivul / mențiuni',
+    leaveHint: 'Cererea merge la șeful de secție, apoi la secția resurse umane pentru ordin. Primiți notificare la fiecare pas.',
+    whatChanges: 'Ce date s-au schimbat (numele, domiciliul, telefonul…)', forWhom: 'Pentru ce instituție / mențiuni', copies: 'Exemplare',
+    kinds: { certificate_work: 'Adeverință de la locul de muncă', certificate_seniority: 'Adeverință privind vechimea',
+      certificate_salary: 'Adeverință despre salariu', data_change: 'Modificarea datelor personale', other: 'Altă cerere' },
+    st: { done: 'Gata', rejected: 'Respinse', withdrawn: 'Retrase' },
+    month: 'Luna', position: 'Funcția', gross: 'Calculat', deductions: 'Rețineri', net: 'De plată',
+    inbox: {
+      open: 'Noi și în lucru', all: 'Toate', handle: 'Rezolvă', inWork: 'În lucru', reject: 'Respinge', done: 'Gata',
+      hint: 'Angajatul primește notificare (și e-mail) la fiecare schimbare a stării.',
+      printHint: 'Adeverința se tipărește din fișa angajatului (butonul „Tipar”).', answerHint: 'de ex. „Ridicați adeverința la cabinetul 12”',
+      openCard: 'Deschide fișa angajatului',
+    },
+    access: {
+      button: 'Cabinet', title: 'Accesul la cabinetul angajatului',
+      hint: 'Contul cu rolul „Angajat”: vede doar datele lui, ordinele lui și depune cereri. Parola temporară se schimbă la prima intrare.',
+      username: 'Utilizatorul', password: 'Parola', on: 'Activ', off: 'Oprit', none: 'Fără cont', lastLogin: 'Ultima intrare',
+      create: 'Creează accesul', newPassword: 'Parolă nouă', disable: 'Oprește accesul', offConfirm: 'Opriți accesul la cabinet?',
+      created: 'Transmiteți angajatului datele de intrare (parola se vede acum o singură dată):',
+      bulk: 'Conturi pentru cabinet', bulkConfirm: 'Creați conturi pentru toți angajații în funcție care nu au cont?',
+      bulkTitle: 'Conturi create: {{count}}', bulkHint: 'Parolele se văd doar acum — descărcați lista în Excel (butonul din tabel) și transmiteți-o angajaților.',
+      bulkFile: 'Conturi cabinet',
+    },
+  },
+}

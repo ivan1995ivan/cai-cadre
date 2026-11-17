@@ -1,0 +1,45 @@
+{% gov_header %}
+
+<div class="doc-title">{{ texts.title }}</div>
+<div class="doc-subtitle">nr. {{ doc.number }} din {{ doc.date }} · luna {{ doc.month }} {{ doc.year }} · {{ doc.subdivision }}</div>
+
+<table class="grid" style="font-size:8pt">
+  <thead>
+    <tr>
+      <th style="width:6mm">Nr.</th>
+      <th>Numele, prenumele · nr. tabel · funcția</th>
+      <th style="width:14mm">Norma</th>
+      <th style="width:12mm">Zile</th>
+      <th style="width:12mm">Ore</th>
+      <th style="width:20mm">Calculat (brut)</th>
+      <th style="width:20mm">Baza impozitului</th>
+      <th style="width:20mm">Baza CNAM</th>
+      <th style="width:18mm">Rețineri</th>
+      <th style="width:22mm">Rest înainte de impozit</th>
+      <th style="width:18mm">CAS angajator</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for r in rows %}
+    <tr>
+      <td class="num">{{ r.no }}</td>
+      <td>{{ r.name }} · {{ r.tab_number }}<br><span class="muted">{{ r.occupation }}{% if r.kind %} ({{ r.kind }}){% endif %}, {{ r.subdivision }}</span></td>
+      <td class="num">{{ r.rate }}</td><td class="num">{{ r.days }}</td><td class="num">{{ r.hours }}</td>
+      <td class="num">{{ r.gross }}</td><td class="num">{{ r.taxable }}</td><td class="num">{{ r.cnam_base }}</td>
+      <td class="num">{{ r.deductions }}</td><td class="num"><b>{{ r.net }}</b></td><td class="num">{{ r.cas }}</td>
+    </tr>
+  {% empty %}<tr><td colspan="11" class="muted">—</td></tr>{% endfor %}
+    <tr class="total">
+      <td></td><td>Total</td><td></td><td></td><td></td>
+      <td class="num">{{ doc.totals.gross }}</td><td class="num">{{ doc.totals.taxable }}</td><td class="num">{{ doc.totals.cnam_base }}</td>
+      <td class="num">{{ doc.totals.deductions }}</td><td class="num"><b>{{ doc.totals.net }}</b></td><td class="num">{{ doc.totals.cas }}</td>
+    </tr>
+  </tbody>
+</table>
+<p class="muted" style="margin-top:4px">Impozitul pe venit și prima CNAM se rețin la plată — în îndreptarea spre plată făcută în baza acestui calcul.</p>
+
+<div class="signatures">
+  <div>{{ texts.accountant_label }}<div class="line"></div><div class="who">{{ company.chief_accountant }}</div></div>
+  <div>{{ texts.made_by }}<div class="line"></div><div class="who"></div></div>
+</div>
+{% if texts.footer %}<div class="doc-footer">{{ texts.footer|linebreaksbr }}</div>{% endif %}

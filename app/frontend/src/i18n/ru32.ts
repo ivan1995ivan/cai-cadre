@@ -1,0 +1,43 @@
+// CAI CADRE — Этап 3: приказы.
+export default {
+  org: {
+    pointTemplate: 'Текст пункта «ПРИКАЗЫВАЮ:» (пусто = поставляемый текст)',
+    pointTemplateHint: 'Поля: {angajat} {tab} {functia} {sectia} {norma} {salariul} {sporuri} {din} {pana} {zile} {an_de} {an_pana} {motivul} {destinatia} {suma} {procent} {categoria} {sanctiunea} {abaterea} {text}',
+  },
+  staff: { tabs: { orders: 'Приказы и отсутствия' } },
+  ord: {
+    new: 'Новый приказ', searchHint: '№, заголовок или сотрудник', number: '№', noNumber: 'черновик', date: 'Дата', type: 'Вид приказа',
+    title: 'Заголовок («О …»)', employees: 'Сотрудники', status: 'Состояние', employeesMany: 'Сотрудники (можно выбрать нескольких)',
+    employeeOne: 'Сотрудник', employeeHint: 'Поиск по ФИО, табельному номеру или IDNP; можно добавить и после создания.',
+    statuses: { draft: 'Черновик', signed: 'Подписан', cancelled: 'Отменён' },
+    heading: 'Приказ № {{number}} от {{date}}', draftHeading: 'Приказ (черновик)', sign: 'Подписать',
+    signConfirm: 'При подписании приказ получает номер в журнале и применяется к личным делам (приём, отпуска, переводы...). Подписать?',
+    signed: 'Приказ подписан под № {{number}}.', acknowledgeAll: 'Ознакомлены (сегодня)',
+    cancelByOrder: 'Отменить приказом', cancelConfirm: 'Будет создан черновик приказа об отмене. Действия приказа отменятся при его подписании. Продолжить?',
+    cancelledBy: 'Приказ отменён {{label}}; его действия отменены.',
+    appliedHint: 'Приказ подписан: действия применены к личным делам. Для изменений издаётся приказ об отмене / изменении.',
+    seq: '№ в журнале', seqHint: 'Пусто = следующий номер при подписании', preamble: 'Преамбула (на основании …)', basis: 'Основание',
+    basisHint: 'Заявление работника № …, представление заведующего, больничный лист …', footer: 'Заключительные пункты',
+    footerHint: 'например, Контроль за исполнением приказа оставляю за собой.', signerPosition: 'Должность', signerName: 'ФИО',
+    approvals: 'Согласовано (визы)', addApproval: 'Добавить визу', points: 'ПРИКАЗЫВАЮ: (пункты приказа)', regenerate: 'Пересоставить тексты',
+    noPoints: 'В приказе ещё нет пунктов: добавьте сотрудника ниже.', addPoint: 'Добавить пункт', addEmployee: 'Добавить сотрудника (ФИО, таб. №, IDNP)',
+    noEmployee: 'Без сотрудника', acknowledged: 'ознакомлен {{date}}', manualText: 'текст вручную', extract: 'Выписка',
+    printOrder: 'Приказ', pointText: 'Текст пункта', hide: 'скрыть', edit: 'написать вручную',
+    textHint: 'Текст составляется из параметров при сохранении. «Написать вручную» — для своего текста.',
+    gaps: 'Пропущенные номера в журнале: {{list}}', open: 'открыть приказ', acknowledgedCol: 'Ознакомлен',
+    p: {
+      employment: 'Трудовые отношения', employmentHint: 'Пусто = основная должность', newTerm: 'Новый срок договора', whatChanges: 'Что меняется',
+      postTaken: 'Замещаемая / совмещаемая должность', percent: 'Оплата (%)', substituted: 'На время отсутствия (кого)', compensation: 'Дней компенсации отпуска',
+      days: 'Дней', workYearFrom: 'Рабочий год: с', workYearTo: 'Рабочий год: по', destination: 'Место назначения',
+      purpose: 'Цель', note: 'Отметка', calc: '{{days}} дн., последний день {{to}} (исключено праздников: {{holidays}})', absence: 'Отпуск',
+      returnDate: 'Выходит на работу с', amount: 'Сумма (лей)', forWhat: 'За что', sanctionRecord: 'Снимаемое взыскание', sanction: 'Взыскание',
+      misconduct: 'Дисциплинарный проступок', until: 'До', staffListHint: 'Черновик штатного расписания, утверждаемый приказом.',
+      cancels: 'Отменяется', hours: 'Часы', text: 'Текст пункта',
+    },
+    tab: {
+      orders: 'Приказы', absences: 'Отпуска и командировки', sanctions: 'Дисциплинарные взыскания', incentives: 'Поощрения',
+      kind: 'Вид', details: 'Подробно', order: 'Приказ', status: 'Состояние', recalled: 'отозван {{date}} (осталось {{days}} дн.)',
+      lifted: 'снято {{date}}', expired: 'погашено', activeUntil: 'действует до {{date}}',
+    },
+  },
+}

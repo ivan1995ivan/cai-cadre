@@ -1,0 +1,122 @@
+# Ce e nou
+
+## Versiunea 1.6.0: Panoul funcțiilor, ca în 1C
+- **Panoul funcțiilor** — se pornește în *Constante (instituția) → Module*. Secțiunile meniului stau **sus, ca file**, iar
+  clic pe o secțiune deschide panoul ei: **Schema de lucru** (documentele secțiunii ca iconițe mari, cu săgeată de la
+  documentul de bază la cel făcut din el), apoi **Registre**, **Clasificatoare** și **Rapoarte**. Meniul din stânga
+  dispare; favoritele sunt sub butonul ★ din antet. Oprit — totul ca până acum.
+- Fiecare vede în panou doar ce are în meniu: drepturile rolului și bifele lui. **Administrare** rămâne lista funcțiilor ei.
+- Fundalul panoului e gri deschis, benzile blocurilor și legăturile spre registre, clasificatoare și rapoarte — gri închis cu
+  text alb. Pe telefon meniul rămâne cel obișnuit.
+
+## Versiunea 1.5.1: fluturașii din îndreptare, Esc și ferestrele deschise, adeverința pentru bancă
+- **Fluturașii** (fișele de calcul) se fac acum din **îndreptarea spre plată pe salariu**, pentru angajații ei: tiparul,
+  PDF-ul și trimiterea pe e-mail (din îndreptarea aprobată sau achitată). Din calcul butoanele au ieșit.
+- **Esc** închide pagina deschisă (forma sau lista) și fila ei; cu modificări nesalvate întreabă „Salvați
+  modificările?” (Da / Nu / Anulare).
+- **`` Alt+` ``** — lista **Ferestrele deschise**: săgețile sau `` Alt+` `` mută, Enter deschide, cifra 1–9 deschide direct, Esc
+  închide lista.
+- **Adeverința privind salariul (pentru bancă)** în fișa angajatului → *Tipar*: ultimele 3, 6 sau 12 luni ori un interval
+  de luni — pe fiecare lună brutul, CNAM, impozitul, alte rețineri și netul, cu totalul și media lunară.
+- **Ordinele**: unul sau mai multe **temeiuri legale** (și la tipul ordinului); preambulul se compune din ele. Antetul și
+  punctele — ca în 1C, pe două coloane, cu eticheta în stânga.
+- **Esc** întreabă „Salvați modificările?” pe toate formele cu *Salvează* (ordinul, fișa angajatului, statele, setările).
+- **Rapoarte**: căutare după denumire și descriere.
+- **Cine e online, în timp real**: pagina se actualizează singură, iar în antet **● N** arată cine are programul deschis.
+- În tabele numele și numerele nu mai sunt butoane colorate: rândul se deschide cu dublu clic.
+- Adeverințele iau numărul la **Tipărește**, nu la previzualizare. Bifele din fereastra de tipar a formelor de cadre au
+  denumiri (*Cu IDNP*, *Cu salariul*…).
+
+## Versiunea 1.5.0: salariul în două documente — calculul și îndreptarea spre plată
+- **Calculul salariului** are acumulările, celelalte rețineri și CAS al angajatorului. **CNAM, scutirea și impozitul pe
+  venit nu mai sunt în calcul**: se rețin la plată, în **îndreptarea spre plată** (fostul stat de plată; meniul
+  *Îndreptările spre plată*).
+- Îndreptarea pe salariu se face **în baza calculului aprobat** (butonul *Îndreptare spre plată* din calcul: doar angajații
+  lui) sau **pe sold** (restul lunii din toate calculele aprobate). Impozitele se socotesc pe tot venitul plătit în lună,
+  minus ce s-a reținut deja din avans — avansul și salariul împreună rețin exact impozitul lunii. Coloana nouă: scutirea.
+- Calculul și îndreptările lui sunt legate: în titlul calculului — îndreptările făcute din el, în titlul îndreptării —
+  calculul de bază (clic — se deschide). Calculul cu o îndreptare aprobată nu se redeschide.
+- **Formele**: titlul cu numărul și data, starea; **data se scrie de mână** în antet (în îndreptare — și felul, baza, luna,
+  modalitatea), apoi *Salvează*; acțiunile în dreapta sus, **✕** ultimul închide forma și fila ei. La plecarea din formă cu
+  modificări nesalvate programul întreabă **„Salvați modificările?”** (Da / Nu / Anulare).
+- **Fișa personală anuală (anexa 8), IPC21 (tabelul 1) și IALS21** se fac doar din îndreptările **achitate**. Datoriile
+  salariale se arată înainte de impozit (brutul calculat minus brutul achitat).
+- La actualizare, calculele de dinainte își păstrează sumele brute și reținerile; rândurile de impozit, CNAM și avans din
+  ele se scot (impozitele reținute sunt deja în plățile achitate).
+
+## Versiunea 1.4.1: setările pe rol, foile de boală continuate
+- **Setările se bifează pe rol**: în *Roluri și drepturi → Meniul principal*, la sfârșit, e grupa **Setări**. Setarea
+  debifată nu apare în lista *Administrare → Setări* a rolului; cu toate debifate nu apare nici rândul **Setări**.
+- **La actualizarea de la 1.3** favoritele, meniul principal salvat și bifele de meniu ale rolurilor trec o dată pe
+  setările noi: rolul vede ce vedea înainte. Favoritele vechi (*Clasificatoare*, *Grafice de lucru și gărzi*,
+  *Setările salariului*) poartă denumirea setării și se scot cu steluța; funcțiile puse în grupa Setări a unei secțiuni
+  (de ex. *Import din Excel*) rămân în secțiunea lor.
+- **Foaia de boală continuată** de alta e încheiată: are eticheta *continuat* în loc de *deschis*, nu mai e scrisă cu
+  albastru și nu mai apare la *Doar cele deschise*.
+- Rândul marcat pentru ștergere rămâne gri și tăiat și în tema întunecată.
+- Filele din bara de jos poartă denumirea de acum a paginii, în limba interfeței.
+- Indicațiile din ecrane trimit la *Administrare → Setări → Roluri*.
+
+## Versiunea 1.4.0: toate setările într-un singur loc, culoarea rândurilor după stare
+- **Administrare → Setări**: toate setările programului pe o singură pagină, în ordine alfabetică, cu căutare după
+  denumire (fără diacritice: „campuri” găsește *Câmpuri obligatorii*); Enter deschide setarea rămasă singură.
+- Din secțiunile meniului a ieșit grupa **Setări**: în fiecare secțiune rămân **Registre** și **Rapoarte**. Utilizatorii și
+  rolurile s-au mutat și ele la Setări.
+- Fiecare clasificator e o setare separată (Funcții CORM, Tipuri de ordine, Vaccinuri…); graficele de lucru, turele,
+  calendarul de producție, evidența concediilor, tipurile de calcul, constantele salarizării, datele plătitorului pentru
+  raportări, alertele și poșta — la fel. Favoritele și filele cu adresele vechi duc singure la setarea nouă.
+- **Culoarea rândurilor după stare** în registre (ordine, cereri, concedii, grafice, pontaje, calcule, plăți, state,
+  atestări): **albastru** — documentul e în lucru, **verde** — e încheiat (semnat, aprobat, închis, achitat), negru — în
+  rest (ciornă, anulat, respins).
+
+## Versiunea 1.3.0: marcarea pentru ștergere, ca în 1C
+- **Șterge** din liste și din documente doar **marchează** obiectul: rămâne în bază, tăiat în liste, nu se mai alege în
+  câmpuri și nu se mai modifică; **Scoate marcajul** îl readuce. Documentul marcat nu mai contează în calcule (pontajul,
+  foaia de boală, formarea, examenele).
+- **Administrare → Ștergerea obiectelor marcate**: verificarea legăturilor (unde e folosit fiecare obiect) și ștergerea de
+  tot doar a obiectelor pe care nu le mai folosește nimic din bază.
+- Butonul de marcare și în calculul salariului, plată, graficul gărzilor, pontaj, graficul concediilor, planul de formare
+  și în dosarul candidatului.
+
+## Versiunea 1.2.1: fișa scurtă și echipamentul de lucru
+- **Fișa scurtă în lista angajaților**: la trecerea mouse-ului pe nume — fotografia, vârsta, vechimea (în instituție,
+  totală, în sănătate), raporturile de muncă, categoria, absența de azi, concediul disponibil.
+- **Mărimile echipamentului de lucru** în dosar (îmbrăcăminte, încălțăminte, înălțime), în importul din Excel și raportul
+  *Mărimile echipamentului de lucru* pe secții, cu numărul de bucăți pe mărimi.
+
+## Versiunea 1.2.0: salarizarea — corectări, impozitul la achitare, fluturașii pe e-mail
+- **Corectarea de mână a oricărei sume** din calculul salariului, inclusiv **impozitul, CNAM și CAS**; impozitele se refac
+  din sumele corectate; „Revine la suma calculată” șterge corectarea.
+- **Impozitul se reține la achitare**: în statul de plată — brutul, CNAM, impozitul și suma de plată pe fiecare angajat; la
+  avans se reține din avans, la salariu doar diferența. Brutul, netul sau impozitele se corectează de mână.
+- **IPC21 (tabelul 1)** și **fișa personală anexa 8** (forma 2018) — după datele achitării.
+- **Fluturașii în PDF** și **pe e-mail**: fiecărui angajat o arhivă ZIP cu parolă — ultimele 5 cifre ale IDNP.
+- **Cartea privind salariul** (fișa de evidență a retribuției), ca în POLARIS: pe angajat și pe luni, cu toate acumulările
+  și reținerile, Excel și tipar.
+
+## Versiunea 1.1.0: din CRM acoperiș gard — meniul, alegerea, formele
+- **Meniul pe grupe**, ca în 1C: în fiecare secțiune **Registre**, **Rapoarte** și **Setări**; rapoartele secțiunii se
+  deschid direct din meniu (Angajați → Rapoarte → Mișcarea cadrelor). Aceeași funcție poate sta în mai multe locuri;
+  în editorul meniului — lista **Funcții neafișate**. Cu meniul în stânga se vede tot arborele.
+- **Închide toate** în bara ferestrelor deschise.
+- **Alegerea angajatului**, ca în 1C: scrieți numele sau nr. de tabel, ori apăsați **…** — lista angajaților cu subdiviziunea,
+  funcția și starea, filtrul pe subdiviziune și pe cei care lucrează acum (la ordinele colective — mai mulți deodată).
+- **Alegerea subdiviziunii** peste tot ca arbore, cu căutare și butonul **…** (structura instituției).
+- **Forma** după gustul fiecăruia, ca în 1C: în dosarul angajatului, raportul de muncă, ordin, concediu, foaia de boală,
+  formare, atestare, utilizatori, subdiviziuni și clasificatoare — grupe, ordinea, lățimea și câmpurile ascunse; pentru
+  dvs. sau, de administrator, pentru toți.
+
+## Versiunea 1.0.0: prima versiune a CAI CADRE
+- **Instituția**: subdiviziunile, statele de personal cu versiuni și ocuparea posturilor, clasificatoarele (cu butonul
+  „…” la fiecare câmp).
+- **Angajații**: dosarul electronic (fișa MR-2), mai multe raporturi de muncă cu norma în procente, vechimea, importul din Excel.
+- **Ordinele** de personal cu efectul la semnare și registrul lor.
+- **Concediile** (soldul, graficul, cererile, foile de boală) și **timpul de muncă** (grafice, gărzi, pontaj).
+- **Salarizarea**: calculul, plata, IPC21 / IALS21 / IRM19 în Excel și XML.
+- **Formarea și atestarea** (EMC, creditele, calendarul atestării, planul anual), **sănătatea în muncă** (examene,
+  vaccinări, instructaj SSM), **evidența militară**.
+- **Termene și alerte** cu rezumatul pe e-mail, **panoul de start**, **catalogul de rapoarte**.
+- **Cabinetul angajatului**: datele proprii, ordinele cu „am luat cunoștință”, cererile, fișele de calcul.
+- **Limbile sistemului** (RO / RU / EN) se aleg în Constante.
+
+Instrucțiunea pentru fiecare ecran se deschide cu **?** din antet (sau F1).

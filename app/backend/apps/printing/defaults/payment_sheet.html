@@ -1,0 +1,37 @@
+{% gov_header %}
+
+<div class="doc-title">{{ texts.title }}</div>
+<div class="doc-subtitle">nr. {{ doc.number }} din {{ doc.date }} · {{ doc.kind }} pentru luna {{ doc.month }} {{ doc.year }} · {{ doc.method }}{% if doc.base %} · în baza calculului nr. {{ doc.base }}{% endif %}</div>
+
+<table class="grid" style="font-size:8.5pt">
+  <thead>
+    <tr>
+      <th style="width:7mm">Nr.</th>
+      <th style="width:14mm">Nr. tabel</th>
+      <th>Numele, prenumele</th>
+      <th style="width:18mm">Modalitatea</th>
+      <th style="width:20mm">Venitul (brut)</th>
+      <th style="width:17mm">CNAM</th>
+      <th style="width:17mm">Impozit</th>
+      <th style="width:17mm">Alte rețineri</th>
+      <th style="width:21mm">Suma (lei)</th>
+      <th style="width:26mm">Semnătura (numerar)</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for r in rows %}
+    <tr><td class="num">{{ r.no }}</td><td>{{ r.tab_number }}</td><td>{{ r.name }}</td><td>{{ r.method }}</td>
+      <td class="num">{{ r.gross }}</td><td class="num">{{ r.cnam }}</td><td class="num">{{ r.income_tax }}</td><td class="num">{{ r.deductions }}</td>
+      <td class="num"><b>{{ r.amount }}</b></td><td>{% if not r.cash %}<span class="muted">card</span>{% endif %}</td></tr>
+  {% empty %}<tr><td colspan="10" class="muted">—</td></tr>{% endfor %}
+    <tr class="total"><td></td><td></td><td>Total ({{ doc.count }})</td><td></td><td class="num">{{ doc.gross }}</td><td class="num">{{ doc.cnam }}</td>
+      <td class="num">{{ doc.income_tax }}</td><td class="num">{{ doc.deductions }}</td><td class="num">{{ doc.total }}</td><td></td></tr>
+  </tbody>
+</table>
+{% if doc.paid_on %}<p class="muted" style="margin-top:6px">Achitat la {{ doc.paid_on }}{% if doc.reference %} · {{ doc.reference }}{% endif %}</p>{% endif %}
+
+<div class="signatures">
+  <div>{{ texts.accountant_label }}<div class="line"></div><div class="who">{{ company.chief_accountant }}</div></div>
+  <div>{{ texts.cashier_label }}<div class="line"></div><div class="who"></div></div>
+</div>
+{% if texts.footer %}<div class="doc-footer">{{ texts.footer|linebreaksbr }}</div>{% endif %}

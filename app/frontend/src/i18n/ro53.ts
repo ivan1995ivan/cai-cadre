@@ -1,0 +1,41 @@
+// CAI CADRE 1.5.0: salariul în două documente — calculul (acumulări, rețineri, CAS) și îndreptarea spre plată (CNAM,
+// scutirea și impozitul pe venit, reținute la plată); „Salvați modificările?” la plecarea din formă.
+export default {
+  common: { closeForm: 'Închide' },
+  unsaved: {
+    title: 'Salvați modificările?', text: 'Datele din formă s-au schimbat și nu sunt salvate.',
+    yes: 'Da', no: 'Nu', cancel: 'Anulare',
+  },
+  menu: { payrollPayments: 'Îndreptările spre plată' },
+  pay: {
+    heading: 'Calculul salariului nr. {{number}} din {{date}}', month: 'Luna', net: 'Rămas (înainte de impozit)',
+    approveConfirm: 'Calculul aprobat nu se mai schimbă; sumele intră în media pentru concedii și în îndreptarea spre plată. Aprobați?',
+    addItemHint: 'Rândul rămâne la recalculare; CAS se reface singur. Impozitul și CNAM se rețin la plată.',
+    corrected: 'Corectat',
+    correctHint: 'Suma scrisă de mână înlocuiește suma calculată de același tip (salariul, un spor, CAS); un tip fără calcul automat (premiu unic, reținere) se adaugă. Impozitul pe venit și CNAM nu sunt în calcul — se rețin în îndreptarea spre plată și se corectează acolo.',
+    legend: 'Fiecare rând e un raport de muncă (de bază, cumul, contract); boala și premiile merg la raportul de bază. Deschideți rândul pentru acumulări și rețineri. Impozitul pe venit, CNAM și scutirea nu sunt aici: se rețin la plată, în îndreptarea spre plată făcută din calculul aprobat.',
+    toPayment: 'Îndreptare spre plată', toPaymentHint: 'Îndreptarea pe salariu în baza acestui calcul: angajații lui, cu CNAM, scutirea și impozitul reținute la plată.',
+    paymentRef: 'Îndreptarea nr. {{number}} din {{date}}',
+    type: { autos: { income_tax: 'Impozitul pe venit (la plată)', cnam: 'CNAM (la plată)' } },
+  },
+  pp: {
+    tabs: { payments: 'Îndreptările spre plată' },
+    new: 'Îndreptare nouă', heading: 'Îndreptarea spre plată nr. {{number}} din {{date}}',
+    base: 'În baza calculului', onBalance: 'Pe sold — restul lunii din toate calculele aprobate', onBalanceShort: 'pe sold',
+    baseLabel: 'Calculul nr. {{number}} · {{month}}.{{year}}', baseRef: 'În baza: {{label}}',
+    baseHint: 'Calculul aprobat: doar angajații lui, cel mult suma lui. Pe sold — tot ce a rămas de plătit în lună, din toate calculele aprobate.',
+    advanceNoBase: 'Avansul nu se face în baza unui calcul.', monthFromBase: 'Luna calculului de bază.',
+    refillHint: 'La salvare, altă bază, alt fel, altă lună sau altă modalitate completează rândurile din nou.',
+    reopenConfirm: 'Îndreptarea revine la ciornă. Continuați?',
+    owed: 'Calculat (brut − rețineri)',
+    emptyHint: 'Pentru luna aleasă nu există îndreptări spre plată. „Îndreptare nouă” — avansul (în timpul lunii) sau salariul (în baza calculului aprobat sau pe sold).',
+    newHint: 'Avansul: procentul din constante × salariul de funcție × norma raportului de bază. Salariul: brutul din calcul minus ce s-a plătit deja în lună. CNAM, scutirea și impozitul se socotesc pe tot venitul lunii, minus ce s-a reținut deja. Cardul — angajații cu IBAN în dosar; ceilalți — numerar.',
+    debtsHint: 'La sfârșitul lunii alese, înainte de impozit: brutul calculelor aprobate minus celelalte rețineri, minus brutul achitat (salariu și avans). Negativ — plătit în plus.',
+    advanceLegend: 'Din avans se rețin CNAM 9 % și impozitul 12 % din rest. La îndreptarea pe salariu impozitele lunii se socotesc pe tot venitul, cu scutirea, minus ce s-a reținut din avans.',
+    salaryLegend: 'Brutul vine din calcul (cel de bază sau, pe sold, toate calculele aprobate ale lunii), minus ce s-a plătit deja. CNAM, scutirea lunii și impozitul — pe tot venitul plătit în lună, minus ce s-a reținut deja. Se pot corecta în ciornă; după achitare intră în fișa anuală, IPC21 și IALS21.',
+  },
+  tax: {
+    ipcHint: 'Darea de seamă lunară (până la 25 a lunii următoare). Tabelul 1: venitul achitat în lună și impozitul, CNAM reținute — din îndreptările spre plată achitate. Tabelul 2: baza CAS pe persoane — din calculele aprobate ale lunii. Declarația electronică se completează din ele.',
+    ialsHint: 'Nota de informare anuală (până la 25 ianuarie): venitul achitat în an, scutirile cu codul din cerere, CNAM și impozitul reținut, pe persoane — din îndreptările spre plată achitate.',
+  },
+}

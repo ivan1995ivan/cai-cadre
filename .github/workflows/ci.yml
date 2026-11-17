@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  infra:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate docker-compose.yml
+        env:
+          POSTGRES_PASSWORD: ci-only
+          APP_DB_PASSWORD: ci-only
+          SECRET_KEY: ci-only-secret-key-that-is-long-enough-000000
+          APP_ORIGINS: https://ci.invalid
+          CRM_CONSOLE_PASSWORD: ci-only-console
+        run: docker compose -f docker-compose.yml config -q
+      - name: Shell syntax
+        run: |
+          for f in backup.sh restore.sh restore-check.sh deploy/db/10-app-role.sh deploy/nginx-test.sh; do
+            sh -n "$f"
+          done
+      - name: nginx — sintaxa și comportamentul
+        # nginx pornit cu deploy/nginx și o aplicație-ecou în locul lui `app`:
+        # ce se închide din internet, CSP, X-Forwarded-For, limita de autentificare
+        run: ./deploy/nginx-test.sh
+
+  app-tests:
+    # testele aplicației CAI CADRE (app/backend): pytest cu SQLite, fără Postgres
+    runs-on: ubuntu-latest
+    container: python:3.13-slim
+    defaults:
+      run:
+        working-directory: app/backend
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        # unixodbc: mssql-django îl încarcă la pornire (ca în Dockerfile);
+        # mysqlclient cere compilator și nu e folosit în teste
+        run: |
+          apt-get update -qq && apt-get install -y -qq --no-install-recommends unixodbc >/dev/null
+          grep -v -E "^mysqlclient" requirements.txt > /tmp/req.txt && pip install -q -r /tmp/req.txt
+      - name: pytest
+        run: pytest -q -p no:cacheprovider
+
+  app-frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app/frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/frontend/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck

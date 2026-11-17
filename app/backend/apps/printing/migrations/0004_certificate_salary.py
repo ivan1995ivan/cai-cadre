@@ -1,0 +1,17 @@
+"""Tipul nou de document: adeverința privind salariul (pentru bancă)."""
+from django.db import migrations, models
+
+
+class Migration(migrations.Migration):
+
+    dependencies = [
+        ('printing', '0003_alter_printtemplate_doc_type'),
+    ]
+
+    operations = [
+        migrations.AlterField(
+            model_name='printtemplate',
+            name='doc_type',
+            field=models.CharField(choices=[('order', 'Ordin (un angajat)'), ('order_collective', 'Ordin colectiv (mai mulți angajați)'), ('order_extract', 'Extras din ordin'), ('staff_list', 'State de personal'), ('employee_card', 'Fișa personală (MR-2)'), ('certificate_work', 'Adeverință de la locul de muncă'), ('certificate_seniority', 'Adeverință de vechime'), ('certificate_salary', 'Adeverință privind salariul (pentru bancă)'), ('contract', 'Contract individual de muncă'), ('timesheet', 'Tabel de pontaj'), ('roster', 'Graficul lunar al secției (gărzi)'), ('leave_schedule', 'Graficul concediilor'), ('orders_register', 'Registrul ordinelor'), ('employee_list', 'Lista angajaților'), ('payslip', 'Fișa de calcul (salariu)'), ('payroll_sheet', 'Stat de calcul / de plată'), ('payment_sheet', 'Stat de plată'), ('bank_list', 'Lista pentru bancă'), ('annual_card', 'Fișa personală anuală a veniturilor'), ('report', 'Raport (din catalogul de rapoarte)')], db_index=True, max_length=24),
+        ),
+    ]

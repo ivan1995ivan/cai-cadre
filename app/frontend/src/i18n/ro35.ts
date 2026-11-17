@@ -1,0 +1,43 @@
+// CAI CADRE — Etapa 4b (partea 1): salarizarea.
+export default {
+  staff: { tabs: { pay: 'Salariu' } },
+  print: { docTypes: { payslip: 'Fișa de calcul (fluturașul)', payroll_sheet: 'Stat de calcul' } },
+  pay: {
+    new: 'Calcul nou', whole: 'toată instituția', lines: 'Raporturi', gross: 'Calculat (brut)', tax: 'Impozit', net: 'De plată', cas: 'CAS angajator',
+    exemption: 'Scutire', deductions: 'Alte rețineri', calculatedAt: 'Calculat la',
+    emptyHint: 'Pentru luna aleasă nu există calcule. „Calcul nou” — toată instituția sau o subdiviziune; se completează singur din pontaj, raporturi de muncă, concedii, foi de boală și ordine.',
+    newHint: 'Gol — toată instituția într-un singur calcul.',
+    heading: 'Calculul salariului nr. {{number}} — {{month}} {{year}}', calculate: 'Recalculează', calculated: 'Recalculat.', check: 'Verificat',
+    approve: 'Aprobă', approveConfirm: 'Calculul aprobat nu se mai schimbă; sumele intră în media pentru concedii și în plata salariului. Aprobați?',
+    reopenConfirm: 'Calculul revine la ciornă. Continuați?', printSheet: 'Stat de calcul', printSlips: 'Fișele de calcul', printSlip: 'Fișa de calcul',
+    item: 'Tipul de calcul', manual: 'de mână', employer: 'angajator', qty: 'Cant.', base: 'Baza', amount: 'Suma', note: 'Explicația',
+    noTimesheet: 'Fără tabelă de pontaj: s-a luat norma întreagă a lunii.', addItem: 'Adaugă rând de mână', addItemFor: 'Rând de mână — {{name}}',
+    addItemHint: 'Rândul rămâne la recalculare; impozitul, CNAM și CAS se refac singure.', itemDocument: 'Temeiul (ordinul, titlul, cererea)',
+    legend: 'Fiecare rând e un raport de muncă (de bază, cumul, contract); scutirea, boala și premiile merg la raportul de bază. Deschideți rândul pentru acumulări și rețineri. Impozitul: 12 % din (venit impozabil − CNAM 9 % − scutirea lunară din cerere).',
+    tabs: { types: 'Tipuri de calcul', constants: 'Constante' },
+    const: {
+      name: 'Denumirea', value: 'Valoarea', unit: 'Unitatea', dateFrom: 'În vigoare din', source: 'Temeiul', filter: 'Toate constantele',
+      hint: 'La schimbarea legii se adaugă un rând nou cu „în vigoare din”; calculul lunii ia valoarea valabilă la sfârșitul lunii.',
+    },
+    type: {
+      category: 'Categoria', categories: { accrual: 'Acumulare', deduction: 'Reținere', employer: 'Contribuția angajatorului' },
+      formula: 'Formula', formulas: { auto: 'Automat (pontaj, concedii, ordine)', fixed: 'Sumă fixă (din rândul angajatului)', pct_salary: '% din salariul de funcție',
+        pct_base: '% din baza de calcul', hourly: 'Tarif orar × ore', scale: '% pe trepte (vechime / categorie)' },
+      auto: 'Calculul automat', autos: { none: '—', salary: 'Salariul de funcție pro-rata', allowance: 'Sporurile fixe din raport', combination: 'Plata pentru cumul',
+        night: 'Munca de noapte', holiday: 'Zile de sărbătoare', overtime: 'Ore suplimentare', leave: 'Concediu de odihnă (media × zile)', leave_comp: 'Compensarea concediului',
+        sick: 'Boală (zilele angajatorului)', bonus: 'Premii din ordine', aid: 'Ajutor material din ordine', income_tax: 'Impozitul pe venit', cnam: 'CNAM', cas: 'CAS angajator' },
+      percent: '%', base: 'Baza de calcul', baseHint: 'Tipurile ale căror sume formează baza (pentru % din bază și pentru trepte).',
+      scale: 'Treptele', scaleHint: 'Vechime: „2:5, 5:10, 10:15” (de la ani: %). Categorie: „second:10, first:15, superior:20”.',
+      scalePlaceholder: '2:5, 5:10, 10:15', taxable: 'Impozabil', exemptMonth: 'Plafon neimpozabil pe lună (lei)', exemptYear: 'Plafon neimpozabil pe an (lei)',
+      exemptAvg: 'Plafon neimpozabil: % din salariul mediu', inAverage: 'În medie', ipc: 'Codul sursei (IPC21 / IALS21)', account: 'Contul contabil', onPayslip: 'Pe fișa de calcul',
+      hint: 'Tipurile automate se calculează din pontaj, concedii, foi de boală și ordine. Cele pe trepte — pentru toți, după vechime sau categorie. Celelalte se pun pe angajat în fișă (Salariu) sau de mână în calcul.',
+    },
+    ex: {
+      title: 'Cererea de scutire la impozitul pe venit', hint: 'Codul fiscal, art. 33–35: scutirea personală (P) sau majorată (M), pentru soț / soție (S), pentru persoanele întreținute (N, H — cu dizabilitate). Se acordă lunar 1/12 din suma anuală, la raportul de bază.',
+      date: 'Depusă la', kind: 'Scutirea personală', kinds: { personal: 'Personală (P)', major: 'Majorată (M)', none: 'Fără' }, spouse: 'Soț / soție',
+      spouseName: 'Soțul / soția (numele, IDNP)', dependents: 'Întreținuți', disabled: 'cu dizabilitate', addDependent: 'Adaugă persoana întreținută',
+      code: 'Codul', documents: 'Documentele anexate', dateFrom: 'Se aplică din', dateFromHint: 'Gol — de la începutul anului.',
+    },
+    items: { title: 'Sporuri și rețineri personale', hint: 'Spor individual (% din salariu), plata la contract, sindicat, pensie alimentară, împrumut — cu perioada de valabilitate. Gol la „raportul de muncă” — cel de bază.' },
+  },
+}

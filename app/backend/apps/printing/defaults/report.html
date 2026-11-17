@@ -1,0 +1,37 @@
+{% gov_header %}
+
+<div class="doc-title">{{ report.title }}</div>
+{% if report.subtitle %}<div class="doc-subtitle">{{ report.subtitle }}</div>{% endif %}
+
+{% if report.summary %}
+<table class="totals" style="margin: 0 0 10px 0">
+  {% for s in report.summary %}<tr><td style="text-align:left">{{ s.label }}</td><td>{{ s.value }}</td></tr>{% endfor %}
+</table>
+{% endif %}
+
+{% if report.rows %}
+<table class="grid">
+  <thead>
+    <tr><th style="width:8mm">Nr.</th>{% for c in report.columns %}<th>{{ c.title }}</th>{% endfor %}</tr>
+  </thead>
+  <tbody>
+  {% for r in report.rows %}
+    {% if r.section %}
+    <tr class="section"><td colspan="{{ report.colspan }}">{{ r.section }}</td></tr>
+    {% else %}
+    <tr{% if r.bold %} class="section"{% endif %}><td class="num">{{ r.no }}</td>{% for v in r.cells %}<td{% if v.num %} class="num"{% endif %}>{{ v.text }}</td>{% endfor %}</tr>
+    {% endif %}
+  {% endfor %}
+  {% if report.totals %}
+    <tr class="section"><td></td>{% for v in report.totals %}<td{% if v.num %} class="num"{% endif %}>{{ v.text }}</td>{% endfor %}</tr>
+  {% endif %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if texts.footer %}<div class="doc-footer">{{ texts.footer|linebreaksbr }}</div>{% endif %}
+{% if report.signatures %}
+<div class="signatures">{% for s in report.signatures %}<div>{{ s.label }}<div class="line"></div><div class="who">{{ s.name }}</div></div>{% endfor %}</div>
+{% else %}
+<div class="signatures"><div>{{ texts.signer_label }}<div class="line"></div><div class="who">{{ company.hr_head }}</div></div></div>
+{% endif %}

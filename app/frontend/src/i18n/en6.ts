@@ -1,0 +1,43 @@
+// CAI CADRE — Stage 4b (part 1): payroll.
+export default {
+  staff: { tabs: { pay: 'Payroll' } },
+  print: { docTypes: { payslip: 'Payslip', payroll_sheet: 'Payroll sheet' } },
+  pay: {
+    new: 'New calculation', whole: 'whole institution', lines: 'Employments', gross: 'Gross', tax: 'Income tax', net: 'Net pay', cas: 'Employer social insurance',
+    exemption: 'Exemption', deductions: 'Other deductions', calculatedAt: 'Calculated at',
+    emptyHint: 'There are no calculations for the chosen month. “New calculation” — the whole institution or one department; it fills itself from timesheets, employments, leave, sick leave and orders.',
+    newHint: 'Empty — the whole institution in one calculation.',
+    heading: 'Payroll no. {{number}} — {{month}} {{year}}', calculate: 'Recalculate', calculated: 'Recalculated.', check: 'Checked',
+    approve: 'Approve', approveConfirm: 'An approved calculation no longer changes; its amounts enter the average pay and the payment. Approve?',
+    reopenConfirm: 'The calculation goes back to draft. Continue?', printSheet: 'Payroll sheet', printSlips: 'Payslips', printSlip: 'Payslip',
+    item: 'Pay type', manual: 'manual', employer: 'employer', qty: 'Qty', base: 'Base', amount: 'Amount', note: 'Explanation',
+    noTimesheet: 'No timesheet: the full monthly norm was assumed.', addItem: 'Add manual row', addItemFor: 'Manual row — {{name}}',
+    addItemHint: 'The row survives recalculation; income tax, CNAM and CAS are recomputed automatically.', itemDocument: 'Grounds (order, writ, request)',
+    legend: 'Each row is an employment (main, second job, contract); the exemption, sick pay and bonuses go to the main one. Expand a row for accruals and deductions. Tax: 12% of (taxable income − 9% CNAM − monthly exemption from the request).',
+    tabs: { types: 'Pay types', constants: 'Constants' },
+    const: {
+      name: 'Name', value: 'Value', unit: 'Unit', dateFrom: 'Effective from', source: 'Grounds', filter: 'All constants',
+      hint: 'When the law changes, add a new row with “effective from”; the monthly calculation takes the value in force at month end.',
+    },
+    type: {
+      category: 'Category', categories: { accrual: 'Accrual', deduction: 'Deduction', employer: 'Employer contribution' },
+      formula: 'Formula', formulas: { auto: 'Automatic (timesheet, leave, orders)', fixed: 'Fixed amount (from the employee row)', pct_salary: '% of base salary',
+        pct_base: '% of calculation base', hourly: 'Hourly rate × hours', scale: '% by step (seniority / category)' },
+      auto: 'Automatic calculation', autos: { none: '—', salary: 'Base salary pro rata', allowance: 'Fixed allowances', combination: 'Combination pay',
+        night: 'Night work', holiday: 'Holiday work', overtime: 'Overtime', leave: 'Annual leave (average × days)', leave_comp: 'Leave compensation',
+        sick: 'Sick pay (employer days)', bonus: 'Bonuses from orders', aid: 'Financial aid from orders', income_tax: 'Income tax', cnam: 'CNAM', cas: 'Employer CAS' },
+      percent: '%', base: 'Calculation base', baseHint: 'The types whose amounts form the base (for % of base and for steps).',
+      scale: 'Steps', scaleHint: 'Seniority: “2:5, 5:10, 10:15” (from years: %). Category: “second:10, first:15, superior:20”.',
+      scalePlaceholder: '2:5, 5:10, 10:15', taxable: 'Taxable', exemptMonth: 'Tax-free limit per month (MDL)', exemptYear: 'Tax-free limit per year (MDL)',
+      exemptAvg: 'Tax-free limit: % of average salary', inAverage: 'In average', ipc: 'Income source code (IPC21 / IALS21)', account: 'Account', onPayslip: 'On payslip',
+      hint: 'Automatic types are computed from timesheets, leave, sick leave and orders. Step types apply to everyone by seniority or category. The others are assigned to the employee (Payroll tab) or added manually in the calculation.',
+    },
+    ex: {
+      title: 'Income tax exemption request', hint: 'Tax Code art. 33–35: personal (P) or increased (M) exemption, spouse (S), dependents (N, H — with disability). Granted monthly as 1/12 of the yearly amount, on the main employment.',
+      date: 'Filed on', kind: 'Personal exemption', kinds: { personal: 'Personal (P)', major: 'Increased (M)', none: 'None' }, spouse: 'Spouse',
+      spouseName: 'Spouse (name, IDNP)', dependents: 'Dependents', disabled: 'with disability', addDependent: 'Add dependent',
+      code: 'Code', documents: 'Attached documents', dateFrom: 'Applies from', dateFromHint: 'Empty — from the start of the year.',
+    },
+    items: { title: 'Personal allowances and deductions', hint: 'Individual allowance (% of salary), contract pay, union fee, alimony, loan — with a validity period. Empty “employment” — the main one.' },
+  },
+}

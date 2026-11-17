@@ -1,0 +1,28 @@
+{% gov_header %}
+
+<div class="doc-title">{{ texts.title }}</div>
+<div class="doc-subtitle">nr. {{ doc.number }} din {{ doc.date }} · {{ texts.intro }} · {{ doc.kind|lower }} pentru luna {{ doc.month }} {{ doc.year }}</div>
+
+<table class="grid" style="font-size:9pt">
+  <thead>
+    <tr>
+      <th style="width:8mm">Nr.</th>
+      <th>Numele, prenumele</th>
+      <th style="width:30mm">IDNP</th>
+      <th style="width:58mm">IBAN</th>
+      <th style="width:26mm">Suma (lei)</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for r in rows %}
+    <tr><td class="num">{{ r.no }}</td><td>{{ r.name }}</td><td>{{ r.idnp }}</td><td>{{ r.iban }}</td><td class="num">{{ r.amount }}</td></tr>
+  {% empty %}<tr><td colspan="5" class="muted">—</td></tr>{% endfor %}
+    <tr class="total"><td></td><td>Total ({{ doc.count }})</td><td></td><td></td><td class="num">{{ doc.total }}</td></tr>
+  </tbody>
+</table>
+
+<div class="signatures">
+  <div>Director<div class="line"></div><div class="who">{{ company.director }}</div></div>
+  <div>{{ texts.accountant_label }}<div class="line"></div><div class="who">{{ company.chief_accountant }}</div></div>
+</div>
+{% if texts.footer %}<div class="doc-footer">{{ texts.footer|linebreaksbr }}</div>{% endif %}

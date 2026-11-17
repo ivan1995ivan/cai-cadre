@@ -1,0 +1,42 @@
+{% for s in slips %}
+<div style="page-break-inside:avoid; border:1px solid #999; padding:6px 10px; margin-bottom:10px; font-size:9pt">
+  <div style="display:flex; justify-content:space-between">
+    <div><b>{{ company.name }}</b><br><span class="muted">{{ texts.title }} · luna {{ doc.month }} {{ doc.year }}</span></div>
+    <div style="text-align:right"><b>{{ s.name }}</b> · nr. tabel {{ s.tab_number }}</div>
+  </div>
+  {% for j in s.jobs %}
+  <div class="muted" style="margin-top:6px">{{ j.occupation }}{% if j.kind %} ({{ j.kind }}){% endif %}, {{ j.subdivision }} · norma {{ j.rate }} · salariul de funcție {{ j.salary }} · zile / ore {{ j.days }} / {{ j.hours }}</div>
+  <div style="display:flex; gap:12px; margin-top:2px">
+    <table class="grid" style="flex:1">
+      <thead><tr><th>Acumulări</th><th style="width:14mm">Cant.</th><th style="width:12mm">%</th><th style="width:22mm">Suma</th></tr></thead>
+      <tbody>
+      {% for a in j.accruals %}<tr><td>{{ a.name }}{% if a.note %}<br><span class="muted">{{ a.note }}</span>{% endif %}</td><td class="num">{{ a.qty }}</td><td class="num">{{ a.pct }}</td><td class="num">{{ a.amount }}</td></tr>{% endfor %}
+      <tr class="total"><td colspan="3">Total calculat</td><td class="num">{{ j.gross }}</td></tr>
+      </tbody>
+    </table>
+    <table class="grid" style="flex:1">
+      <thead><tr><th>Rețineri</th><th style="width:22mm">Suma</th></tr></thead>
+      <tbody>
+      {% for d in j.deductions_list %}<tr><td>{{ d.name }}{% if d.note %}<br><span class="muted">{{ d.note }}</span>{% endif %}</td><td class="num">{{ d.amount }}</td></tr>{% empty %}<tr><td class="muted">—</td><td></td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endfor %}
+  {% if s.settle %}
+  <table class="grid" style="margin-top:6px">
+    <thead><tr><th>Decontarea lunii{% if not s.settle.final %} (impozitele pe tot venitul lunii, cât se rețin la plată){% endif %}</th><th style="width:26mm">Suma</th></tr></thead>
+    <tbody>
+      <tr><td>Total calculat</td><td class="num">{{ s.settle.gross }}</td></tr>
+      <tr><td>Prima de asigurare medicală (CNAM)</td><td class="num">{{ s.settle.cnam }}</td></tr>
+      <tr><td>Impozitul pe venit{% if s.settle.exemption %} <span class="muted">(scutirea {{ s.settle.exemption }})</span>{% endif %}</td><td class="num">{{ s.settle.income_tax }}</td></tr>
+      <tr><td>Alte rețineri</td><td class="num">{{ s.settle.deductions }}</td></tr>
+      <tr class="total"><td>Salariul lunii, net</td><td class="num">{{ s.settle.net }}</td></tr>
+      <tr><td>Achitat: avans</td><td class="num">{{ s.settle.paid_advance }}</td></tr>
+      <tr><td>Achitat: salariu</td><td class="num">{{ s.settle.paid_salary }}</td></tr>
+      <tr class="total"><td><b>Rest de plată</b></td><td class="num"><b>{{ s.settle.rest }}</b></td></tr>
+    </tbody>
+  </table>
+  {% endif %}
+  {% if texts.footer %}<div class="muted" style="margin-top:4px">{{ texts.footer }}</div>{% endif %}
+</div>
+{% endfor %}

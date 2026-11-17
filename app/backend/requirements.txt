@@ -1,0 +1,25 @@
+Django>=6.0,<6.1
+djangorestframework>=3.16
+djangorestframework-simplejwt>=5.5
+cryptography>=45
+waitress>=3.0
+whitenoise>=6.9
+requests>=2.32
+defusedxml>=0.7
+openpyxl>=3.1             # importul din Excel (1C)
+segno>=1.6                # coduri QR pe etichete
+pypdf>=5                  # documentele produselor: mai multe PDF-uri într-unul, la tipar
+reportlab>=4.4            # fluturașii de salariu în PDF (trimiși pe e-mail), fără browser pe server
+psutil>=7                 # consola serverului: CPU, memoria, discul
+argon2-cffi>=23           # parolele: intrare rapidă (Argon2 în loc de PBKDF2)
+
+# Drivere baze de date (asistentul de instalare arată care sunt disponibile)
+psycopg[binary]>=3.2      # PostgreSQL
+mysqlclient>=2.2          # MySQL / MariaDB  (alternativ: PyMySQL)
+PyMySQL>=1.1
+oracledb>=2.0             # Oracle (mod „thin”, fără client Oracle instalat)
+mssql-django>=1.6         # Microsoft SQL Server
+
+# Teste
+pytest>=8
+pytest-django>=4.9

@@ -1,0 +1,38 @@
+{% gov_header %}
+
+{% if order.cancelled %}<div style="border:2px solid #c00; color:#c00; text-align:center; padding:4px; margin:6px 0; font-weight:700">ANULAT {% if order.cancelled_by %}prin {{ order.cancelled_by }}{% endif %}</div>{% endif %}
+
+<div class="doc-title" style="font-size:15pt; letter-spacing:0.2em">{{ texts.title }}</div>
+<div style="display:flex; justify-content:space-between; margin:8px 0 14px">
+  <div>{{ order.date }}</div><div>{{ texts.city }}</div><div>nr. <b>{{ order.number }}</b></div>
+</div>
+
+<p style="font-weight:700; margin:0 0 10px">{{ order.title }}</p>
+{% if order.preamble %}<p style="text-indent:12mm; text-align:justify; margin:0 0 8px">{{ order.preamble|linebreaksbr }}</p>{% endif %}
+
+<p style="font-weight:700; letter-spacing:0.15em; margin:10px 0 6px">{{ texts.ordain }}</p>
+<ol style="margin:0 0 10px; padding-left:8mm; text-align:justify; line-height:1.5">
+  {% for p in points %}<li style="margin-bottom:6px">{{ p.text|linebreaksbr }}</li>{% endfor %}
+</ol>
+{% if order.footer %}<p style="text-align:justify">{{ order.footer|linebreaksbr }}</p>{% endif %}
+{% if order.basis %}<p style="margin-top:10px"><b>Temei:</b> {{ order.basis|linebreaksbr }}</p>{% endif %}
+
+<div style="display:flex; justify-content:space-between; margin-top:26px; font-weight:700">
+  <div>{{ order.signer_position }}</div><div style="min-width:60mm; border-bottom:1px solid #222"></div><div>{{ order.signer_name }}</div>
+</div>
+
+{% if order.approvals %}
+<div style="margin-top:18px; font-size:9.5pt"><b>Coordonat:</b>
+  {% for a in order.approvals %}<div style="display:flex; gap:12px; margin-top:6px"><span style="min-width:60mm">{{ a.position }}</span><span style="min-width:40mm; border-bottom:1px solid #555"></span><span>{{ a.name }}</span></div>{% endfor %}
+</div>
+{% endif %}
+
+{% if acquaint %}
+<div style="margin-top:18px; font-size:9.5pt"><b>{{ texts.acquaint }}</b>
+  <table class="grid" style="margin-top:4px">
+    <thead><tr><th style="width:8mm">Nr.</th><th>Numele, prenumele</th><th style="width:30mm">Data</th><th style="width:40mm">Semnătura</th></tr></thead>
+    <tbody>{% for a in acquaint %}<tr><td class="num">{{ forloop.counter }}</td><td>{{ a.name }}</td><td>{{ a.acknowledged }}</td><td></td></tr>{% endfor %}</tbody>
+  </table>
+</div>
+{% endif %}
+{% if texts.footer %}<div class="doc-footer">{{ texts.footer|linebreaksbr }}</div>{% endif %}

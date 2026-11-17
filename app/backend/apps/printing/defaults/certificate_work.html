@@ -1,0 +1,21 @@
+{% gov_header %}
+
+<div style="display:flex; justify-content:space-between; margin:6px 0 18px">
+  <div>Nr. {{ number }}</div><div>{{ today }}</div>
+</div>
+
+<div class="doc-title">{{ texts.title }}</div>
+
+<p style="text-indent:12mm; line-height:1.7; font-size:11.5pt; margin-top:14px">
+  Prin prezenta se adeverește că {% if emp.sex_code == "F" %}dna{% else %}dl{% endif %} <b>{{ emp.full_name }}</b>{% if options.show_idnp and emp.idnp %}, IDNP {{ emp.idnp }}{% endif %},
+  {% if main %}activează în {{ company.name }} din {{ main.date_from }}, în funcția de <b>{{ main.occupation }}</b>
+  ({{ main.subdivision }}{% if main.rate != "1" %}, {{ main.rate }} normă{% endif %}){% if main.contract %}, în baza contractului individual de muncă nr. {{ main.contract }}{% if main.contract_date %} din {{ main.contract_date }}{% endif %}{% endif %}{% if options.show_salary and main.salary %}, cu salariul de funcție de {{ main.salary }} lei{% endif %}.
+  {% else %}nu are raporturi de muncă active în {{ company.name }}.{% endif %}
+</p>
+{% if purpose %}<p style="text-indent:12mm; font-size:11.5pt">Adeverința se eliberează pentru a fi prezentată la: {{ purpose }}.</p>{% endif %}
+{% if texts.footer %}<p style="text-indent:12mm; font-size:11.5pt">{{ texts.footer|linebreaksbr }}</p>{% endif %}
+
+<div class="signatures" style="margin-top:36px">
+  <div>Director<div class="line"></div><div class="who">{{ company.director }}</div></div>
+  <div>{{ texts.hr_label }}<div class="line"></div><div class="who">{{ company.hr_head }}</div></div>
+</div>

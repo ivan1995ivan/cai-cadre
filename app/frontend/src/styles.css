@@ -1,0 +1,357 @@
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.2s;
+}
+
+/* Instrucțiunile (Markdown) din panoul de ajutor */
+.help-article {
+  line-height: 1.6;
+}
+.help-article h1 {
+  font-size: 1.5em;
+  margin-top: 0;
+}
+.help-article h2 {
+  font-size: 1.2em;
+  margin-top: 1.5em;
+}
+.help-article h3 {
+  font-size: 1.05em;
+}
+.help-article img {
+  max-width: 100%;
+}
+.help-article table {
+  border-collapse: collapse;
+  width: 100%;
+}
+.help-article th,
+.help-article td {
+  border: 1px solid var(--ant-color-border);
+  padding: 4px 8px;
+  text-align: left;
+}
+.help-article code {
+  background: var(--ant-color-fill-tertiary);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+.help-article blockquote {
+  border-left: 3px solid var(--ant-color-primary);
+  margin: 1em 0;
+  padding: 0.25em 1em;
+  background: var(--ant-color-primary-bg);
+}
+
+/* Butoane și câmpuri mai vii (cerut 2026-10-03): apăsarea se simte, cardurile au o umbră ușoară. */
+.ant-btn:not(:disabled):active {
+  transform: translateY(1px);
+}
+.ant-btn {
+  transition: all 0.15s ease;
+}
+.ant-btn-primary:not(:disabled):hover {
+  filter: brightness(1.05);
+}
+.ant-card {
+  box-shadow: 0 1px 2px rgba(20, 40, 50, 0.04), 0 2px 8px rgba(20, 40, 50, 0.06);
+}
+
+/* Butoanele în relief (3D, implicit) sau plate (2D): alegerea fiecăruia din Profilul meu → html[data-buttons].
+   3D: lumină sus, muchie întunecată jos, umbră sub buton; la apăsare coboară și umbra intră înăuntru. */
+:root[data-buttons='3d'] {
+  --crm-btn-gloss: linear-gradient(180deg, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0) 55%, rgba(0, 0, 0, 0.10) 100%);
+  --crm-btn-relief: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 -2px 0 rgba(0, 0, 0, 0.20), 0 2px 5px rgba(0, 0, 0, 0.20);
+}
+:root[data-buttons='3d'] .ant-btn-variant-solid:not(:disabled) {
+  background-image: var(--crm-btn-gloss);
+  box-shadow: var(--crm-btn-relief);
+}
+:root[data-buttons='3d'] .ant-btn:is(.ant-btn-variant-outlined, .ant-btn-variant-dashed):not(:disabled) {
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.10), rgba(0, 0, 0, 0.05));
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.08), 0 1px 3px rgba(20, 40, 50, 0.14);
+}
+:root[data-buttons='3d'] .ant-btn:is(.ant-btn-variant-solid, .ant-btn-variant-outlined, .ant-btn-variant-dashed):not(:disabled):active {
+  transform: translateY(2px);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.22);
+}
+:root[data-buttons='2d'] .ant-btn {
+  box-shadow: none;
+}
+.ant-form-item-label > label {
+  font-weight: 500;
+}
+
+/* Ecranul de intrare: panoul verde de prezentare (stânga) și formularul (dreapta); pe telefon doar formularul. */
+.login-page { min-height: 100vh; display: grid; grid-template-columns: minmax(320px, 44%) 1fr; }
+.login-hero {
+  display: flex; flex-direction: column; justify-content: center; padding: 48px 56px; color: #fff;
+  background: radial-gradient(circle at 15% 15%, rgba(255, 255, 255, 0.16), transparent 45%),
+    linear-gradient(150deg, #1FA463 0%, #15834D 55%, #0F5F38 100%);
+}
+.login-hero-mark {
+  width: 64px; height: 64px; border-radius: 18px; display: grid; place-items: center; font-size: 32px;
+  background: rgba(255, 255, 255, 0.18); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+}
+.login-hero-list { list-style: none; padding: 0; margin: 16px 0 0; display: grid; gap: 12px; font-size: 15px; }
+.login-hero-list .anticon { color: #B9F5D0; margin-right: 8px; }
+.login-main { display: grid; place-items: center; padding: 16px; }
+.login-card { box-shadow: 0 12px 40px rgba(16, 60, 35, 0.10); }
+@media (max-width: 820px) {
+  .login-page { grid-template-columns: 1fr; }
+  .login-hero { display: none; }
+}
+
+/* Asistentul AI: răspunsurile în Markdown (paragrafe strânse, tabele cu chenar) */
+.assistant-md p { margin: 4px 0; }
+.assistant-md ul, .assistant-md ol { margin: 4px 0; padding-inline-start: 20px; }
+.assistant-table { border-collapse: collapse; margin: 6px 0; font-size: 13px; }
+.assistant-table th, .assistant-table td { border: 1px solid var(--ant-color-border-secondary); padding: 2px 8px; }
+.assistant-table th { background: var(--ant-color-fill-quaternary); }
+/* cifrele din rapoarte care se pot detalia */
+.report-drill:hover { text-decoration: underline dotted; }
+/* Formularul facturii / avizului (e-Factura sau formular tipizat): alegerea trebuie să sară în ochi */
+.form-choice.ant-segmented { font-weight: 700; border: 2px solid #D64545; padding: 2px; }
+.form-choice .ant-segmented-item { color: #D64545; }
+.form-choice .ant-segmented-item-selected { background: #D64545; color: #fff; }
+.form-choice .ant-segmented-item-selected:hover, .form-choice .ant-segmented-item-selected .ant-segmented-item-label { color: #fff; }
+
+/* Legăturile spre documente, clienți etc. (în fișe, liste, ferestre): butoane pline, colorate, cu text alb.
+   Se aplică legăturilor fără clasă (react-router Link, <a onClick>) și Typography.Link, în afara meniurilor,
+   filelor, paginării și a celorlalte elemente Ant Design care au legături proprii. */
+.doc-btn,
+.app-content a:not([class], .ant-menu a, .ant-tabs-nav a, .ant-pagination a, .ant-breadcrumb a, .ant-dropdown a, .ant-upload a, .ant-picker a, .ant-table-column-sorters a, .ant-anchor a, .help-article a, .assistant-md a),
+.app-content a.ant-typography:not(.ant-typography-ellipsis),
+.ant-modal-body a:not([class], .ant-tabs-nav a, .ant-pagination a, .ant-upload a, .ant-picker a, .help-article a, .assistant-md a),
+.ant-drawer-body a:not([class], .ant-tabs-nav a, .ant-pagination a, .ant-upload a, .ant-picker a, .help-article a, .assistant-md a) {
+  display: inline-block; max-width: 100%; box-sizing: border-box;
+  padding: 1px 9px; border-radius: 7px; line-height: 20px; font-weight: 600; font-size: 13px;
+  background: var(--crm-link-btn, var(--ant-color-primary)); color: #fff !important;
+  text-decoration: none !important; cursor: pointer; vertical-align: middle; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; transition: background 0.15s;
+  background-image: var(--crm-btn-gloss, none); box-shadow: var(--crm-btn-relief, none);
+}
+.doc-btn:hover,
+.app-content a:not([class], .ant-menu a, .ant-tabs-nav a, .ant-pagination a, .ant-breadcrumb a, .ant-dropdown a, .ant-upload a, .ant-picker a, .ant-table-column-sorters a, .ant-anchor a, .help-article a, .assistant-md a):hover,
+.app-content a.ant-typography:not(.ant-typography-ellipsis):hover,
+.ant-modal-body a:not([class], .ant-tabs-nav a, .ant-pagination a, .ant-upload a, .ant-picker a, .help-article a, .assistant-md a):hover,
+.ant-drawer-body a:not([class], .ant-tabs-nav a, .ant-pagination a, .ant-upload a, .ant-picker a, .help-article a, .assistant-md a):hover {
+  background: var(--crm-link-btn-hover, var(--ant-color-primary-hover)); color: #fff !important;
+  background-image: var(--crm-btn-gloss, none);
+}
+/* butonul-număr din liste: se deschide cu un clic, ca rândul */
+.doc-btn { margin: 1px 0; }
+/* în tabele legăturile (numele, numerele) sunt text simplu, nu butoane: rândul se deschide cu dublu clic, iar clicul pe
+   legătură merge în continuare (la trecerea mouse-ului — culoarea temei, subliniat) */
+.app-content .ant-table-cell a:not(.ant-btn), .ant-modal-body .ant-table-cell a:not(.ant-btn),
+.ant-drawer-body .ant-table-cell a:not(.ant-btn), .ant-table-cell .doc-btn {
+  display: inline; max-width: none; padding: 0; margin: 0; border-radius: 0; line-height: inherit; font-weight: inherit; font-size: inherit;
+  background: none !important; background-image: none !important; box-shadow: none !important; color: inherit !important;
+  white-space: normal; overflow: visible;
+}
+.app-content .ant-table-cell a:not(.ant-btn):hover, .ant-modal-body .ant-table-cell a:not(.ant-btn):hover,
+.ant-drawer-body .ant-table-cell a:not(.ant-btn):hover, .ant-table-cell .doc-btn:hover {
+  background: none !important; color: var(--ant-color-primary) !important; text-decoration: underline !important;
+}
+
+/* Lista Administrare → Setări: rânduri simple (cu clasă, deci nu butoanele legăturilor din conținut) */
+.settings-link { display: flex; align-items: center; gap: 8px; padding: 5px 0; break-inside: avoid; color: var(--ant-color-text); }
+.settings-link:hover { color: var(--ant-color-primary); }
+
+/* Starea documentului în registre (components/rowTone.ts): în lucru — albastru, procesat — verde, în rest — culoarea textului */
+.ant-table-row.row-work > td { color: #1668dc; }
+.ant-table-row.row-done > td { color: #2e9e5b; }
+html[data-theme='dark'] .ant-table-row.row-work > td { color: #5a9cf8; }
+html[data-theme='dark'] .ant-table-row.row-done > td { color: #49b97a; }
+
+/* Obiectul marcat pentru ștergere (ca în 1C): rândul tăiat și estompat, butoanele lui rămân de folosit */
+.ant-table-row.row-marked > td { color: var(--ant-color-text-tertiary, #999); text-decoration: line-through; }
+.ant-table-row.row-marked > td .doc-btn,
+.ant-table-row.row-marked > td a { text-decoration: line-through !important; opacity: 0.6; }
+.ant-table-row.row-marked > td .ant-btn,
+.ant-table-row.row-marked > td .ant-tag { text-decoration: none; }
+
+/* Tema „Ca în 1C” (atributul data-theme='onec' pe <html>): fundalul galben al formelor, tabelele albe cu grilă,
+   butoanele gri cu gradient și butonul principal galben, chenarele subțiri, fără umbre și fără relief —
+   indiferent de stilul ales (3D / Clasic / Plat). */
+html[data-theme='onec'] body { font-family: Arial, 'Segoe UI', Tahoma, sans-serif; }
+html[data-theme='onec'] .ant-btn {
+  box-shadow: none !important;
+  transform: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+html[data-theme='onec'] .ant-btn-variant-outlined:not(:disabled),
+html[data-theme='onec'] .ant-btn-variant-dashed:not(:disabled) {
+  background-image: linear-gradient(180deg, #FFFFFF 0%, #F1F1F1 55%, #E2E2E2 100%) !important;
+  color: #222222;
+}
+html[data-theme='onec'] .ant-btn-variant-outlined:not(:disabled):hover {
+  background-image: linear-gradient(180deg, #FFFFFF 0%, #FFF8DC 60%, #FBEAB0 100%) !important;
+  border-color: #B89A2E;
+}
+html[data-theme='onec'] .ant-btn-variant-outlined.ant-btn-dangerous:not(:disabled) { color: #C0392B; }
+html[data-theme='onec'] .ant-btn-variant-solid.ant-btn-color-primary:not(:disabled) {
+  background-image: linear-gradient(180deg, #FFF0A8 0%, #F9DA55 55%, #EEC22A 100%) !important;
+  border: 1px solid #B8921A;
+  color: #222222 !important;
+  font-weight: 600;
+}
+html[data-theme='onec'] .ant-btn-variant-solid.ant-btn-color-primary:not(:disabled):hover {
+  background-image: linear-gradient(180deg, #FFF6C9 0%, #FBE27A 55%, #F2CC40 100%) !important;
+}
+html[data-theme='onec'] .ant-btn-variant-solid.ant-btn-color-dangerous:not(:disabled) { color: #FFFFFF !important; }
+html[data-theme='onec'] .ant-card {
+  box-shadow: none !important;
+  border: 1px solid #D9CB8C;
+}
+html[data-theme='onec'] .ant-card-head { min-height: 38px; }
+html[data-theme='onec'] .ant-input-outlined,
+html[data-theme='onec'] .ant-input-number-outlined,
+html[data-theme='onec'] .ant-picker-outlined,
+html[data-theme='onec'] .ant-select-outlined .ant-select-selector { box-shadow: none !important; }
+html[data-theme='onec'] .ant-form-item-label > label { font-weight: 400; color: #333333; }
+html[data-theme='onec'] .ant-form-item { margin-bottom: 12px; }
+/* tabelele ca în 1C: albe, cu grilă pe toate celulele, antetul gri deschis cu gradient, rândul curent galben */
+html[data-theme='onec'] .ant-table-wrapper .ant-table { border: 1px solid #C9C4AE; border-radius: 2px; }
+html[data-theme='onec'] .ant-table-wrapper .ant-table-thead > tr > th {
+  background-image: linear-gradient(180deg, #FAF9F4 0%, #ECE9DC 100%);
+  border-right: 1px solid #D9D5C3;
+  font-weight: 400;
+  color: #333333;
+}
+html[data-theme='onec'] .ant-table-wrapper .ant-table-thead > tr > th::before { display: none; }
+html[data-theme='onec'] .ant-table-wrapper .ant-table-tbody > tr > td { border-right: 1px solid #ECE8D8; border-bottom-color: #ECE8D8; }
+html[data-theme='onec'] .ant-table-wrapper .ant-table-summary > tr > td,
+html[data-theme='onec'] .ant-table-wrapper .ant-table-summary td { background: #F7F3E4; border-top: 1px solid #C9C4AE; }
+/* filele ca în 1C: chenar și fundal pe fila aleasă */
+html[data-theme='onec'] .ant-tabs-top > .ant-tabs-nav .ant-tabs-tab { padding: 6px 10px; }
+html[data-theme='onec'] .ant-tabs-top > .ant-tabs-nav .ant-tabs-tab-active { background: #FFFFFF; border: 1px solid #D9CB8C; border-bottom-color: #FFFFFF; border-radius: 3px 3px 0 0; }
+html[data-theme='onec'] .ant-tabs-top > .ant-tabs-nav .ant-tabs-tab + .ant-tabs-tab { margin-left: 4px; }
+/* ferestrele de alegere (produse, clienți) și dialogurile: antet galben, chenar gri */
+html[data-theme='onec'] .ant-modal .ant-modal-container,
+html[data-theme='onec'] .ant-modal .ant-modal-content { border: 1px solid #B7A660; border-radius: 3px; box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25); }
+html[data-theme='onec'] .ant-modal .ant-modal-header { border-bottom: 1px solid #D9CB8C; padding-bottom: 8px; }
+html[data-theme='onec'] .ant-layout-header { border-bottom: 1px solid #D4B640 !important; }
+html[data-theme='onec'] .ant-layout-sider { border-inline-end: 1px solid #D9CB8C !important; }
+html[data-theme='onec'] .ant-tag { border-radius: 2px; }
+
+/* Subsolul tabelului de poziții (totalurile sub coloanele lor, ca în 1C) — în toate temele */
+.doc-totals td { font-weight: 600; white-space: nowrap; }
+.doc-totals td.doc-totals-main { font-size: 14px; }
+
+/* Antetul ofertei ca în 1C: eticheta la stânga câmpului, rânduri dese */
+.offer-1c.ant-form-horizontal .ant-form-item { margin-bottom: 8px; }
+.offer-1c.ant-form-horizontal .ant-form-item-label { padding-inline-end: 2px; }
+.offer-1c.ant-form-horizontal .ant-form-item-label > label { white-space: nowrap; }
+.offer-1c .ant-collapse-header { padding-inline-start: 0 !important; }
+
+/* Tema „1C”: în formele obișnuite eticheta stă la stânga câmpului (ca în 1C) dacă e loc — câmpul are cel puțin 300 px;
+   în coloanele înguste rămâne deasupra. Doar pentru câmpurile cu lățime dată de pagină (coloana grilei, forma,
+   cardul, fereastra): într-un rând flexibil (Space, coloană „auto”) lățimea vine din conținut și containerul ar
+   strânge câmpul la zero (mesajul de eroare ajungea câte o literă pe rând). */
+html[data-theme='onec'] .ant-form-vertical .ant-form-item { margin-bottom: 10px; }
+html[data-theme='onec'] .ant-form-vertical > .ant-form-item,
+html[data-theme='onec'] .ant-form-vertical :is(.ant-col[class*='ant-col-'], .ant-card-body, .ant-modal-body, .ant-drawer-body,
+  .ant-collapse-content-box, .ant-tabs-tabpane) > .ant-form-item { container-type: inline-size; }
+@container (min-width: 300px) {
+  html[data-theme='onec'] .ant-form-vertical .ant-form-item .ant-form-item-row { flex-direction: row; align-items: flex-start; flex-wrap: nowrap; }
+  html[data-theme='onec'] .ant-form-vertical .ant-form-item .ant-form-item-label {
+    flex: 0 0 auto; max-width: 42%; padding: 5px 6px 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  html[data-theme='onec'] .ant-form-vertical .ant-form-item .ant-form-item-label > label::after { content: ':'; margin-inline-start: 1px; }
+  html[data-theme='onec'] .ant-form-vertical .ant-form-item .ant-form-item-control { flex: 1 1 0; min-width: 0; }
+}
+
+/* Documentele fără efect (ciornă, anulate) — gri, ca documentele neînregistrate din 1C */
+.doc-row-inactive td { color: var(--ant-color-text-tertiary); }
+
+/* Câmpurile din antetul documentelor ca în 1C (components/HField): eticheta la stânga, valoarea la dreapta */
+.hfield { display: flex; align-items: center; gap: 6px; min-height: 32px; margin-bottom: 6px; }
+.hfield-label { white-space: nowrap; color: var(--ant-color-text-secondary); }
+.hfield-control { flex: 1; min-width: 0; }
+/* … și câmpurile puse într-un rând (Space: Suma + Data): eticheta lângă câmp, fără container */
+html[data-theme='onec'] .ant-form-vertical .ant-space-item > .ant-form-item .ant-form-item-row { flex-direction: row; align-items: flex-start; flex-wrap: nowrap; }
+html[data-theme='onec'] .ant-form-vertical .ant-space-item > .ant-form-item .ant-form-item-label { flex: none; padding: 5px 6px 0 0; white-space: nowrap; }
+html[data-theme='onec'] .ant-form-vertical .ant-space-item > .ant-form-item .ant-form-item-label > label::after { content: ':'; margin-inline-start: 1px; }
+.doc-row-section td { background: var(--ant-color-fill-quaternary); }
+/* forma documentului (calculul, îndreptarea spre plată): titlul cu numărul și starea nu se strânge sub butoane —
+   acțiunile din dreapta sus trec pe rândul următor (aliniate la dreapta) când nu mai încap lângă titlu */
+.doc-form > .ant-card-head .ant-card-head-wrapper { flex-wrap: wrap; row-gap: 8px; padding: 8px 0; }
+.doc-form > .ant-card-head .ant-card-head-title { flex: 1 0 auto; max-width: 100%; white-space: normal; }
+.doc-form > .ant-card-head .ant-card-extra { margin-inline-start: auto; }
+/* antetul și rândurile documentelor ca în 1C: eticheta în stânga câmpului, rândurile strânse */
+.doc-head .ant-form-item { margin-bottom: 8px; }
+.doc-head .ant-form-item-label { padding-inline-end: 8px; }
+.doc-head .ant-form-item-extra { font-size: 12px; min-height: 0; }
+
+/* Panoul funcțiilor (Constante → Module, layout/SectionPanel.tsx), ca în 1C: secțiunile sus ca file, iar panoul secțiunii
+   pe un fundal gri deschis; benzile blocurilor și legăturile spre registre / clasificatoare / rapoarte — gri închis cu text
+   alb, ca să se citească ușor. */
+:root {
+  --fn-bg: #E4E7EB; --fn-card: #F3F5F7; --fn-band: #4A5563; --fn-link: #5C6774; --fn-link-hover: #3B4450;
+  --fn-tab: #DDE1E6; --fn-tab-text: #2B323B;
+}
+html[data-theme='dark'] {
+  --fn-bg: #1A231D; --fn-card: #202B24; --fn-band: #4A5563; --fn-link: #3F4955; --fn-link-hover: #56626F;
+  --fn-tab: #243029; --fn-tab-text: #E3EFE7;
+}
+.fn-sections {
+  position: sticky; top: 64px; z-index: 9; display: flex; flex-wrap: wrap; gap: 4px 6px; padding: 8px 16px 0;
+  background: var(--ant-color-bg-layout); border-bottom: 2px solid var(--fn-band);
+}
+.fn-section {
+  display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border: 1px solid var(--ant-color-border);
+  border-bottom: 0; border-radius: 6px 6px 0 0; background: var(--fn-tab); color: var(--fn-tab-text); font: inherit;
+  cursor: pointer; min-width: 120px;
+}
+.fn-section:hover { background: var(--fn-card); }
+.fn-section.is-active { background: var(--fn-band); border-color: var(--fn-band); color: #fff; font-weight: 600; }
+.fn-section:focus-visible { outline: 2px solid var(--ant-color-primary); outline-offset: 1px; }
+
+.fn-panel { background: var(--fn-bg); border-radius: 8px; padding: 16px 20px 20px; min-height: calc(100vh - 220px); }
+.fn-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.fn-head h1 { margin: 0; font-size: 26px; font-weight: 400; color: var(--ant-color-text); }
+.fn-head-icon { font-size: 28px; color: var(--ant-color-primary); display: inline-flex; }
+
+.fn-block { background: var(--fn-card); border-radius: 6px; overflow: hidden; }
+.fn-block-title {
+  margin: 0; padding: 6px 12px; background: var(--fn-band); color: #fff; font-size: 14px; font-weight: 600; letter-spacing: 0.02em;
+}
+.fn-block-body { padding: 12px; }
+.fn-scheme { margin-bottom: 16px; }
+.fn-scheme .fn-block-body { padding: 18px 16px; }
+.fn-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; align-items: start; }
+
+.fn-tiles { display: flex; flex-wrap: wrap; align-items: flex-start; row-gap: 18px; }
+.fn-tile {
+  display: flex; flex-direction: column; align-items: center; gap: 8px; width: 128px; padding: 10px 6px; border-radius: 8px;
+  color: var(--ant-color-text); text-align: center; line-height: 1.3;
+}
+.fn-tile:hover, .fn-tile:focus-visible { background: var(--fn-bg); color: var(--ant-color-text); }
+.fn-tile:hover .fn-tile-label { text-decoration: underline; }
+.fn-tile-icon {
+  display: grid; place-items: center; width: 56px; height: 56px; border-radius: 12px; font-size: 28px;
+  background: var(--ant-color-bg-container); color: var(--ant-color-primary); border: 1px solid var(--ant-color-border-secondary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.fn-tile-label { font-weight: 500; }
+/* între două documente: săgeata când al doilea se face din primul, altfel doar spațiu */
+.fn-flow { display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 76px; }
+.fn-flow.is-linked { width: 44px; color: var(--fn-band); font-size: 18px; }
+html[data-theme='dark'] .fn-flow.is-linked { color: #9AA6B2; }
+
+.fn-links { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.fn-link {
+  display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 4px; background: var(--fn-link);
+  color: #fff !important; line-height: 1.35;
+}
+.fn-link:hover, .fn-link:focus-visible { background: var(--fn-link-hover); color: #fff !important; }
+.fn-link-icon { display: inline-flex; opacity: 0.9; }

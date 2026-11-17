@@ -1,0 +1,37 @@
+// CAI CADRE — Stage 7: employee cabinet and employee requests.
+export default {
+  menu: { employeeRequests: 'Employee requests' },
+  pt: {
+    tabs: { home: 'My data', orders: 'My orders', requests: 'My requests', payslips: 'Payslips' },
+    leaveAvailable: 'Leave days available', days: 'days', ordersTodo: 'Orders to read', requestsOpen: 'Open requests',
+    myData: 'Personal data', seniority: 'Total seniority', address: 'Address', jobs: 'My positions', since: 'since', until: 'until',
+    absences: 'Upcoming leave and absences', noAbsences: 'No planned absences.',
+    changeHint: 'Has your data changed? Submit a "Personal data change" request in "My requests".',
+    orderType: 'Order', read: 'Read', ack: 'I have read it', ackOn: 'Read on {{date}}', acknowledged: 'Thank you — your electronic acknowledgement is recorded.',
+    leaveRequests: 'Leave requests', newLeave: 'Leave request', otherRequests: 'Certificates and other requests', newOther: 'New request',
+    status: 'Status', note: 'Notes', order: 'order', text: 'Content', answer: 'Answer', withdraw: 'Withdraw', withdrawConfirm: 'Withdraw the request?',
+    send: 'Send', sent: 'The request was sent.', reason: 'Reason / notes',
+    leaveHint: 'The request goes to the head of department, then to HR for the order. You are notified at each step.',
+    whatChanges: 'What changed (name, address, phone…)', forWhom: 'For which institution / notes', copies: 'Copies',
+    kinds: { certificate_work: 'Employment certificate', certificate_seniority: 'Seniority certificate', certificate_salary: 'Salary certificate',
+      data_change: 'Personal data change', other: 'Other request' },
+    st: { done: 'Done', rejected: 'Rejected', withdrawn: 'Withdrawn' },
+    month: 'Month', position: 'Position', gross: 'Gross', deductions: 'Deductions', net: 'Net pay',
+    inbox: {
+      open: 'New and in progress', all: 'All', handle: 'Handle', inWork: 'In progress', reject: 'Reject', done: 'Done',
+      hint: 'The employee is notified (and e-mailed) at every status change.',
+      printHint: 'Print the certificate from the employee record ("Print").', answerHint: 'e.g. "Pick up the certificate in room 12"',
+      openCard: 'Open the employee record',
+    },
+    access: {
+      button: 'Cabinet', title: 'Employee cabinet access',
+      hint: 'An account with the "Employee" role: sees only own data and orders, submits requests. The temporary password is changed at first login.',
+      username: 'Username', password: 'Password', on: 'Active', off: 'Disabled', none: 'No account', lastLogin: 'Last login',
+      create: 'Create access', newPassword: 'New password', disable: 'Disable access', offConfirm: 'Disable cabinet access?',
+      created: 'Give the employee the login details (the password is shown only now):',
+      bulk: 'Cabinet accounts', bulkConfirm: 'Create accounts for all current employees without one?',
+      bulkTitle: 'Accounts created: {{count}}', bulkHint: 'Passwords are shown only now — download the list to Excel and give it to the employees.',
+      bulkFile: 'Cabinet accounts',
+    },
+  },
+}

@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="ro" translate="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CAI ERP — consola serverului</title>
+<style>
+  :root { --accent: #1fa463; --bg: #eef7f1; --card: #fff; --text: #123; --muted: #678; --line: #e2eee6;
+          --red: #d33; --amber: #c80; --green: #1a9a5a; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
+  main { max-width: 1200px; margin: 0 auto; padding: 20px 16px 40px; }
+  header { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 16px; }
+  header h1 { font-size: 20px; margin: 0; flex: 1; }
+  header a { color: #07a; text-decoration: none; }
+  .muted { color: var(--muted); }
+  .card { background: var(--card); border-radius: 10px; padding: 14px 16px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,.07); }
+  .stats { display: flex; flex-wrap: wrap; gap: 10px; }
+  .stat { background: #f5faf6; border-radius: 8px; padding: 8px 12px; min-width: 120px; }
+  .stat b { display: block; font-size: 16px; }
+  .stat small { color: var(--muted); }
+  .bar { height: 5px; background: var(--line); border-radius: 3px; margin-top: 5px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--accent); }
+  .bar i.hot { background: var(--red); }
+  .alert { padding: 8px 12px; border-radius: 8px; margin-bottom: 6px; border-left: 4px solid; background: #fff; }
+  .alert.error { border-color: var(--red); background: #fff3f3; }
+  .alert.warning { border-color: var(--amber); background: #fff9ec; }
+  .alert.info { border-color: var(--accent); background: #effafb; }
+  .base-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .base-head h2 { font-size: 17px; margin: 0; }
+  .pill { font-size: 12px; padding: 2px 9px; border-radius: 10px; background: var(--line); }
+  .pill.on { background: #dff5ea; color: var(--green); }
+  .pill.off { background: #ffe6e6; color: var(--red); }
+  .pill.lock { background: #fff1d6; color: var(--amber); }
+  .actions { margin-left: auto; display: flex; flex-wrap: wrap; gap: 6px; }
+  button { background: var(--accent); color: #fff; border: 0; border-radius: 7px; padding: 6px 12px; font-size: 13px; cursor: pointer; }
+  button.light { background: #e3eef0; color: #234; }
+  button.danger { background: #fbe3e3; color: var(--red); }
+  button.small { padding: 3px 8px; font-size: 12px; }
+  button:disabled { opacity: .5; cursor: default; }
+  input { padding: 7px 9px; border: 1px solid #bcd; border-radius: 7px; font-size: 14px; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--line); margin: 12px 0 8px; }
+  .tabs button { background: none; color: var(--muted); border-radius: 7px 7px 0 0; padding: 7px 12px; }
+  .tabs button.sel { color: var(--text); background: #f0f8f9; font-weight: 600; }
+  .scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 500; white-space: nowrap; }
+  td.num, th.num { text-align: right; white-space: nowrap; }
+  td code { font-size: 12px; word-break: break-all; }
+  .empty { color: var(--muted); padding: 10px 0; }
+  .login { max-width: 360px; margin: 80px auto; }
+  .login input { width: 100%; margin: 10px 0; }
+  .err { color: var(--red); }
+  .toast { position: fixed; right: 16px; bottom: 16px; background: #123; color: #fff; padding: 10px 14px; border-radius: 8px; max-width: 420px; display: none; }
+</style>
+</head>
+<body>
+<main id="app"><p class="muted">Se încarcă…</p></main>
+<div class="toast" id="toast"></div>
+<script>
+const API = '/__platform/console/api'
+const state = { data: null, tab: {}, usage: {}, timer: null, loginNeeded: false }
+
+const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
+const bytes = (n) => {
+  if (n == null) return '—'
+  const u = ['B', 'KB', 'MB', 'GB', 'TB']; let i = 0
+  while (n >= 1024 && i < u.length - 1) { n /= 1024; i++ }
+  return `${n.toFixed(i ? 1 : 0)} ${u[i]}`
+}
+const dt = (iso) => (iso ? new Date(iso).toLocaleString('ro-RO', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—')
+const since = (iso) => {
+  if (!iso) return '—'
+  let s = Math.max(0, (Date.now() - new Date(iso)) / 1000)
+  if (s < 60) return `${Math.round(s)} s`
+  if (s < 3600) return `${Math.round(s / 60)} min`
+  if (s < 86400) return `${Math.floor(s / 3600)} h ${Math.round((s % 3600) / 60)} min`
+  return `${Math.floor(s / 86400)} zile`
+}
+const ms = (v) => (v >= 60000 ? `${(v / 60000).toFixed(1)} min` : v >= 1000 ? `${(v / 1000).toFixed(1)} s` : `${v} ms`)
+
+function toast(text, bad) {
+  const el = document.getElementById('toast')
+  el.textContent = text; el.style.background = bad ? '#b22' : '#123'; el.style.display = 'block'
+  clearTimeout(el._t); el._t = setTimeout(() => (el.style.display = 'none'), 5000)
+}
+
+async function call(path, body) {
+  const opts = body === undefined ? {} : { method: 'POST', body: JSON.stringify(body),
+    headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'crm-console' } }
+  const r = await fetch(API + path, { credentials: 'same-origin', ...opts })
+  const data = await r.json().catch(() => ({}))
+  if (r.status === 401 && data.login) { state.loginNeeded = data; renderLogin(); throw new Error('login') }
+  if (!r.ok) throw new Error(data.detail || `Eroare ${r.status}`)
+  return data
+}
+
+async function load() {
+  try {
+    state.data = await call('/state')
+    state.loginNeeded = false
+    render()
+  } catch (e) {
+    if (e.message !== 'login') toast(e.message, true)
+  }
+}
+
+async function act(body, confirmText) {
+  if (confirmText && !confirm(confirmText)) return
+  try {
+    const res = await call('/action', body)
+    if (res.closed !== undefined) toast(`Sesiuni închise: ${res.closed}`)
+    else toast('Gata.')
+    load()
+  } catch (e) { if (e.message !== 'login') toast(e.message, true) }
+}
+
+function renderLogin() {
+  const info = state.loginNeeded || {}
+  document.getElementById('app').innerHTML = `
+    <div class="card login"><h2>Consola serverului</h2>
+      <p class="muted">${info.has_password ? 'Intrați cu parola consolei.' : 'Parola consolei nu e pusă încă. Deschideți consola de pe calculatorul-server și puneți-o acolo.'}</p>
+      <form id="lf"><input type="password" id="pw" placeholder="Parola consolei" autocomplete="current-password" ${info.has_password ? 'autofocus' : 'disabled'}>
+      <button ${info.has_password ? '' : 'disabled'}>Intră</button><p class="err" id="lerr"></p></form></div>`
+  document.getElementById('lf').onsubmit = async (ev) => {
+    ev.preventDefault()
+    try { await call('/login', { password: document.getElementById('pw').value }); load() }
+    catch (e) { document.getElementById('lerr').textContent = e.message }
+  }
+}
+
+function sysBlock(sys) {
+  if (!sys.available) return '<div class="card muted">CPU și memoria serverului nu se pot citi (lipsește biblioteca psutil).</div>'
+  const pct = (p) => `<div class="bar"><i class="${p >= 90 ? 'hot' : ''}" style="width:${Math.min(p, 100)}%"></i></div>`
+  return `<div class="card stats">
+    <div class="stat"><small>CPU (${sys.cpus} nuclee)</small><b>${sys.cpu.toFixed(0)}%</b>${pct(sys.cpu)}</div>
+    <div class="stat"><small>Memoria</small><b>${bytes(sys.memory_used)} / ${bytes(sys.memory_total)}</b>${pct(sys.memory_percent)}</div>
+    ${sys.disks.map((d) => `<div class="stat"><small>Discul ${esc(d.path)}</small><b>${bytes(d.used)} / ${bytes(d.total)}</b>${pct(d.percent)}</div>`).join('')}
+    <div class="stat"><small>Serverul pornit</small><b>${since(sys.boot)}</b></div></div>`
+}
+
+function table(cols, rows, empty) {
+  if (!rows.length) return `<div class="empty">${empty}</div>`
+  return `<div class="scroll"><table><thead><tr>${cols.map((c) => `<th class="${c.num ? 'num' : ''}">${c.t}</th>`).join('')}</tr></thead>
+    <tbody>${rows.map((r) => `<tr>${cols.map((c) => `<td class="${c.num ? 'num' : ''}">${c.v(r)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`
+}
+
+function baseTabs(b) {
+  const r = b.report
+  if (!r) return `<div class="empty">${esc(b.report_error || (b.running ? '' : 'Baza nu e pornită.'))}</div>`
+  const tabs = [
+    ['sessions', `Sesiuni (${r.sessions.length})`],
+    ['active', `În lucru (${r.active.length})`],
+    ['slow', `Cereri lente (${r.slow.length})`],
+    ['usage', 'Consumul'],
+  ]
+  if (r.pg) tabs.push(['pg', `PostgreSQL (${r.pg.length})`])
+  const sel = state.tab[b.id] || 'sessions'
+  let body = ''
+  if (sel === 'sessions') {
+    body = table([
+      { t: 'Utilizatorul', v: (s) => `${esc(s.user)} <span class="muted">${esc(s.username)}</span>` },
+      { t: 'De unde', v: (s) => `${esc(s.ip)}<br><span class="muted">${esc(s.device)}</span>` },
+      { t: 'Intrat', v: (s) => dt(s.created_at) },
+      { t: 'Ultima acțiune', v: (s) => `${since(s.last_seen)} în urmă<br><span class="muted">${esc(s.last_path)}</span>` },
+      { t: '', v: (s) => `<button class="small danger" data-act="close_session" data-sid="${esc(s.sid)}">Închide</button>
+          <button class="small light" data-act="close_user" data-username="${esc(s.username)}">Toate ale lui</button>` },
+    ], r.sessions, 'Nimeni n-a lucrat în ultima jumătate de oră.')
+  } else if (sel === 'active') {
+    body = table([
+      { t: 'Utilizatorul', v: (a) => esc(a.user) },
+      { t: 'Ce face', v: (a) => `<code>${esc(a.method)} ${esc(a.path)}</code>` },
+      { t: 'De cât timp', v: (a) => `${a.seconds >= 60 ? '<b class="err">' : ''}${a.seconds} s${a.seconds >= 60 ? '</b>' : ''}`, num: true },
+      { t: 'Interogări', v: (a) => a.queries, num: true },
+      { t: 'IP', v: (a) => esc(a.ip) },
+    ], r.active, 'Nicio cerere în lucru acum.')
+  } else if (sel === 'slow') {
+    body = `<p class="muted">Cererile de peste ${ms(r.slow_ms)} (ultimele 100). Pragul:
+        <button class="small light" data-act="slow_ms">Schimbă</button></p>` + table([
+      { t: 'Când', v: (x) => dt(x.at) },
+      { t: 'Cine', v: (x) => esc(x.user) },
+      { t: 'Ce', v: (x) => `<code>${esc(x.method)} ${esc(x.path)}</code>${x.status >= 400 ? ` <span class="err">${x.status}</span>` : ''}` },
+      { t: 'Timp', v: (x) => ms(x.ms), num: true },
+      { t: 'În baza de date', v: (x) => ms(x.db_ms), num: true },
+      { t: 'Interogări', v: (x) => x.queries, num: true },
+    ], r.slow, 'Nicio cerere lentă.')
+  } else if (sel === 'usage') {
+    const period = state.usage[b.id] || 'today'
+    const rows = period === 'today' ? r.usage_today : r.usage_week
+    const total = rows.reduce((s, x) => s + x.ms, 0) || 1
+    body = `<p><button class="small ${period === 'today' ? '' : 'light'}" data-usage="today">Azi</button>
+        <button class="small ${period === 'week' ? '' : 'light'}" data-usage="week">7 zile</button>
+        <span class="muted">— timpul de server consumat de fiecare utilizator</span></p>` + table([
+      { t: 'Utilizatorul', v: (x) => esc(x.user) },
+      { t: 'Cereri', v: (x) => x.requests, num: true },
+      { t: 'Timp de server', v: (x) => `${ms(x.ms)} <span class="muted">(${Math.round((x.ms / total) * 100)}%)</span>`, num: true },
+      { t: 'În baza de date', v: (x) => ms(x.db_ms), num: true },
+      { t: 'Interogări', v: (x) => x.queries, num: true },
+      { t: 'Lente', v: (x) => (x.slow ? `<b class="err">${x.slow}</b>` : 0), num: true },
+    ], rows, 'Nicio cerere în perioada aleasă.')
+  } else if (sel === 'pg') {
+    body = table([
+      { t: 'PID', v: (q) => q.pid, num: true },
+      { t: 'Starea', v: (q) => `${esc(q.state)}${q.wait ? `<br><span class="muted">${esc(q.wait)}</span>` : ''}` },
+      { t: 'De cât timp', v: (q) => `${q.seconds ?? 0} s`, num: true },
+      { t: 'Blocată de', v: (q) => (q.blocked_by.length ? `<b class="err">${q.blocked_by.join(', ')}</b>` : '') },
+      { t: 'Interogarea', v: (q) => `<code>${esc(q.query)}</code>` },
+      { t: '', v: (q) => `<button class="small danger" data-act="cancel_query" data-pid="${q.pid}">Oprește</button>` },
+    ], r.pg, 'Nicio interogare în lucru.')
+  }
+  return `<div class="tabs">${tabs.map(([k, label]) => `<button data-tab="${k}" class="${k === sel ? 'sel' : ''}">${label}</button>`).join('')}</div>${body}`
+}
+
+function baseCard(b) {
+  const r = b.report || {}
+  const status = b.stopped ? '<span class="pill off">oprită de administrator</span>'
+    : b.running ? '<span class="pill on">pornită</span>' : '<span class="pill">oprită</span>'
+  const lock = b.blocked ? `<span class="pill lock" title="${esc(b.block_message)}">intrarea blocată</span>` : ''
+  const backup = r.backup || {}
+  const tasks = (r.tasks || []).map((t) => `${esc(t.name)} (${t.seconds} s)`).join(', ')
+  return `<div class="card" data-base="${esc(b.id)}">
+    <div class="base-head"><h2>${esc(b.name)}</h2>${status}${lock}<span class="muted">port ${b.port}${r.version ? ` · v${esc(r.version)}` : ''}</span>
+      <div class="actions">
+        ${b.running ? `<button class="light" data-act="restart">Repornește</button><button class="danger" data-act="stop">Oprește</button>`
+                    : `<button data-act="start">Pornește</button>`}
+        ${b.blocked ? `<button class="light" data-act="unblock">Deblochează intrarea</button>` : `<button class="light" data-act="block">Blochează intrarea</button>`}
+      </div></div>
+    <div class="stats">
+      <div class="stat"><small>CPU</small><b>${b.cpu == null ? '—' : b.cpu.toFixed(1) + '%'}</b></div>
+      <div class="stat"><small>Memoria</small><b>${bytes(b.memory)}</b></div>
+      <div class="stat"><small>Pornită de</small><b>${b.running ? since(b.started) : '—'}</b></div>
+      <div class="stat"><small>Baza de date${r.vendor ? ` (${esc(r.vendor)})` : ''}</small><b>${bytes(r.db_size)}</b></div>
+      <div class="stat"><small>Fișierele</small><b>${bytes(r.media_size)}</b></div>
+      <div class="stat"><small>Ultima copie de rezervă</small><b>${backup.last ? dt(backup.last.created) : '—'}</b></div>
+      <div class="stat"><small>Sarcini de fundal</small><b style="font-size:13px">${tasks || 'nimic în lucru'}</b></div>
+    </div>
+    ${baseTabs(b)}</div>`
+}
+
+function render() {
+  const d = state.data
+  const app = document.getElementById('app')
+  const keep = document.activeElement && document.activeElement.id === 'newpw' ? document.activeElement.value : null
+  app.innerHTML = `
+    <header><h1>Consola serverului</h1><span class="muted">actualizat ${dt(d.now)} · la 5 secunde</span>
+      <a href="/__platform/">← Bazele</a>${d.local ? '' : ' <a href="#" id="logout">Ieșire</a>'}</header>
+    ${sysBlock(d.system)}
+    ${d.alerts.length ? `<div class="card"><b>Alerte</b><div style="margin-top:8px">${d.alerts.map((a) =>
+      `<div class="alert ${a.level}">${a.base ? `<b>${esc(a.base)}:</b> ` : ''}${esc(a.text)}</div>`).join('')}</div></div>` : ''}
+    ${d.bases.map(baseCard).join('')}
+    ${d.local ? `<div class="card"><b>Parola consolei</b> <span class="muted">— pentru intrarea în consolă din rețea
+      ${d.has_password ? '(pusă)' : '(nepusă: din rețea consola nu se deschide)'}</span>
+      <form id="pwf" style="margin-top:8px"><input type="password" id="newpw" placeholder="Parola nouă (cel puțin 8 caractere)" autocomplete="new-password">
+      <button>Salvează</button></form></div>` : ''}`
+  if (keep !== null) { const el = document.getElementById('newpw'); el.value = keep; el.focus() }
+}
+
+document.addEventListener('click', (ev) => {
+  const btn = ev.target.closest('button, a#logout')
+  if (!btn) return
+  if (btn.id === 'logout') { ev.preventDefault(); call('/logout', {}).finally(() => location.reload()); return }
+  const card = btn.closest('[data-base]')
+  const base = card && card.dataset.base
+  const b = base && state.data.bases.find((x) => x.id === base)
+  if (btn.dataset.tab) { state.tab[base] = btn.dataset.tab; render(); return }
+  if (btn.dataset.usage) { state.usage[base] = btn.dataset.usage; render(); return }
+  const a = btn.dataset.act
+  if (!a) return
+  if (a === 'stop') act({ action: 'stop', base }, `Opriți baza „${b.name}”? Utilizatorii ei nu vor mai putea lucra până o porniți.`)
+  else if (a === 'restart') act({ action: 'restart', base }, `Reporniți baza „${b.name}”? Cererile în lucru se întrerup.`)
+  else if (a === 'start') act({ action: 'start', base })
+  else if (a === 'block') {
+    const message = prompt('Mesajul pentru utilizatori (cât intrarea e blocată intră doar administratorii):',
+      'Baza este închisă temporar pentru lucrări de întreținere. Încercați mai târziu.')
+    if (message !== null) act({ action: 'block', base, message })
+  } else if (a === 'unblock') act({ action: 'unblock', base })
+  else if (a === 'slow_ms') {
+    const value = prompt('Pragul cererilor lente, în milisecunde:', String(b.report ? b.report.slow_ms : 3000))
+    if (value !== null) act({ action: 'slow_ms', base, value })
+  } else if (a === 'close_session') act({ action: 'close_session', base, sid: btn.dataset.sid }, 'Închideți sesiunea? Utilizatorul va trebui să intre din nou.')
+  else if (a === 'close_user') act({ action: 'close_user', base, username: btn.dataset.username }, `Închideți toate sesiunile lui ${btn.dataset.username}?`)
+  else if (a === 'cancel_query') act({ action: 'cancel_query', base, pid: Number(btn.dataset.pid) }, `Opriți interogarea ${btn.dataset.pid}?`)
+})
+
+document.addEventListener('submit', async (ev) => {
+  if (ev.target.id !== 'pwf') return
+  ev.preventDefault()
+  const pw = document.getElementById('newpw').value
+  try { await call('/action', { action: 'set_password', password: pw }); toast('Parola consolei a fost salvată.'); document.getElementById('newpw').value = ''; load() }
+  catch (e) { if (e.message !== 'login') toast(e.message, true) }
+})
+
+load()
+setInterval(() => { if (!document.hidden && !state.loginNeeded) load() }, 5000)
+</script>
+</body>
+</html>

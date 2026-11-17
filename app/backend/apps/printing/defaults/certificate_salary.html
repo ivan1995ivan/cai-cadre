@@ -1,0 +1,45 @@
+{% gov_header %}
+
+<div style="display:flex; justify-content:space-between; margin:6px 0 18px">
+  <div>Nr. {{ number }}</div><div>{{ today }}</div>
+</div>
+
+<div class="doc-title">{{ texts.title }}</div>
+
+<p style="text-indent:12mm; line-height:1.6; font-size:11pt; margin-top:12px">
+  Prin prezenta se adeverește că {% if emp.sex_code == "F" %}dna{% else %}dl{% endif %} <b>{{ emp.full_name }}</b>{% if options.show_idnp and emp.idnp %}, IDNP {{ emp.idnp }}{% endif %},
+  {% if main %}este {% if emp.sex_code == "F" %}angajată{% else %}angajat{% endif %} al {{ company.name }}{% if company.idno %} (IDNO {{ company.idno }}){% endif %} din {{ main.date_from }},
+  în funcția de <b>{{ main.occupation }}</b> ({{ main.subdivision }}{% if main.rate != "1" %}, {{ main.rate }} normă{% endif %}),
+  cu contract individual de muncă {% if main.date_to %}pe durată determinată, până la {{ main.date_to }}{% else %}pe durată nedeterminată{% endif %}{% if main.contract %} nr. {{ main.contract }}{% if main.contract_date %} din {{ main.contract_date }}{% endif %}{% endif %}{% if main.salary %}, cu salariul de funcție de {{ main.salary }} lei{% endif %}.
+  {% else %}nu are raporturi de muncă active în {{ company.name }}.{% endif %}
+</p>
+
+<p style="text-indent:12mm; font-size:11pt; margin:6px 0">Salariul în perioada {{ salary.from }} – {{ salary.to }} (lei):</p>
+<table class="grid" style="font-size:10pt">
+  <thead><tr><th>Luna</th><th>Calculat (brut)</th><th>Prima CNAM</th><th>Impozitul pe venit</th><th>Alte rețineri</th><th>Salariul net</th></tr></thead>
+  <tbody>
+  {% for r in salary.rows %}
+    <tr><td>{{ r.month }} {{ r.year }}</td><td class="num">{{ r.gross }}</td><td class="num">{{ r.cnam }}</td><td class="num">{{ r.income_tax }}</td><td class="num">{{ r.deductions }}</td><td class="num">{{ r.net }}</td></tr>
+  {% empty %}
+    <tr><td colspan="6" class="muted">În perioada aleasă nu sunt calcule aprobate ale salariului.</td></tr>
+  {% endfor %}
+  {% if salary.rows %}
+    <tr class="total"><td>Total</td><td class="num">{{ salary.total.gross }}</td><td class="num">{{ salary.total.cnam }}</td><td class="num">{{ salary.total.income_tax }}</td><td class="num">{{ salary.total.deductions }}</td><td class="num">{{ salary.total.net }}</td></tr>
+    <tr class="total"><td>Media lunară ({{ salary.count }} luni)</td><td class="num">{{ salary.average.gross }}</td><td class="num">{{ salary.average.cnam }}</td><td class="num">{{ salary.average.income_tax }}</td><td class="num">{{ salary.average.deductions }}</td><td class="num">{{ salary.average.net }}</td></tr>
+  {% endif %}
+  </tbody>
+</table>
+
+<p style="text-indent:12mm; font-size:11pt; margin-top:10px">
+  {% if salary.deductions %}Din salariu se fac rețineri lunare (în medie pe lună):
+  {% for d in salary.deductions %}{{ d.name }} — {{ d.monthly }} lei{% if not forloop.last %}; {% endif %}{% endfor %}.
+  {% else %}Din salariu nu se fac alte rețineri lunare decât impozitul pe venit și prima CNAM.{% endif %}
+</p>
+{% if purpose %}<p style="text-indent:12mm; font-size:11pt">Adeverința se eliberează pentru a fi prezentată la: {{ purpose }}.</p>{% endif %}
+{% if texts.footer %}<p style="text-indent:12mm; font-size:11pt">{{ texts.footer|linebreaksbr }}</p>{% endif %}
+
+<div class="signatures" style="margin-top:32px">
+  <div>Director<div class="line"></div><div class="who">{{ company.director }}</div></div>
+  <div>Contabil-șef<div class="line"></div><div class="who">{{ company.chief_accountant }}</div></div>
+</div>
+<div class="muted" style="margin-top:8px">L.Ș.</div>
