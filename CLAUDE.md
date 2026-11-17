@@ -40,14 +40,14 @@ pornească de unde s-a rămas, nu de la zero.
 - **Stiva — pornită** (2026-11-17, Ion): `.env` cu parole generate și
   `TUNNEL_TOKEN` (tunel propriu), toate cele cinci servicii `healthy`,
   `http://127.0.0.1:3960/health` → 1.6.0, `installed: false` (aplicația așteaptă
-  asistentul de instalare). `cloudflared` e conectat la Cloudflare, dar la
-  2026-11-17 `cai-cadre.integratii.md` nu avea încă Public Hostname (NXDOMAIN).
+  asistentul de instalare). Public Hostname `cai-cadre.integratii.md →
+  http://cai-cadre-web:80` pus de Ion; verificat prin tunel: `/health` → 200,
+  `/__platform/…` și `POST /api/setup/install/` → 404, `..` → 400,
+  `http://` → 301, CSP și HSTS prezente.
 
 ## Următorii pași (de aici pornește sesiunea următoare)
 
-0. **Deschiderea**: (a) Ion — Public Hostname în panoul Cloudflare, la tunelul
-   acestei stive: `cai-cadre.integratii.md → http://cai-cadre-web:80`; apoi
-   `curl -I https://cai-cadre.integratii.md/health` → 200. (b) asistentul de
+0. **Deschiderea**: (a) ~~Public Hostname~~ — făcut. (b) asistentul de
    instalare, doar local: `ssh -L 3960:127.0.0.1:3960 <utilizator>@<server>`,
    `http://127.0.0.1:3960`, valorile din `docs/instalare.md`. (c) proba
    restaurării (`./restore-check.sh`) după prima copie cu aplicația instalată.
