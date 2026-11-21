@@ -12,9 +12,12 @@ const ACTION_COLOR: Record<string, string> = { add: 'green', modify: 'blue', sto
 /** Tipurile care se pun pe angajat (fără cele automate), pentru alegere în rânduri. */
 export function usePersonalTypes() {
   const localName = useLocalName()
+  const { t } = useTranslation()
   const { data } = useFetch<PayType[]>('/payroll/types/', { active: 1, personal: 1 })
   const types = data ?? []
-  return { types, options: types.map((x) => ({ value: x.id, label: `${x.code} — ${localName(x)} (${x.category_label})` })) }
+  // categoria în limba interfeței (eticheta serverului e în română)
+  return { types, options: types.map((x) => ({ value: x.id,
+    label: `${x.code} — ${localName(x)} (${t(`pay.type.categories.${x.category}`, { defaultValue: x.category_label })})` })) }
 }
 
 /** Rândurile din fila „Salariu” ale angajatului (pentru „modifică” / „oprește”: alegerea rândului). */

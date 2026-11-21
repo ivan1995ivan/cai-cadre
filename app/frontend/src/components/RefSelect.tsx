@@ -77,7 +77,7 @@ export default function RefSelect({ spec, value, onChange, allowClear = true, di
     <>
       <Space.Compact style={{ width: '100%', ...style }}>
         <Select<number | number[]> showSearch optionFilterProp="label" allowClear={allowClear} disabled={disabled} mode={mode}
-          placeholder={placeholder} value={value ?? undefined} options={options} style={{ width: '100%' }}
+          placeholder={placeholder} value={value ?? undefined} options={options} style={{ flex: '1 1 0', minWidth: 0 }}
           onChange={(v) => onChange?.(v ?? null)} />
         <Tooltip title={t('picker.open')}>
           <Button icon={<EllipsisOutlined />} disabled={disabled} onClick={() => setOpen(true)} aria-label={t('picker.open')} />

@@ -37,7 +37,7 @@ export default function LocalityInput({ value, onChange, placeholder, disabled }
     <>
       <Space.Compact style={{ width: '100%' }}>
         <AutoComplete value={value} options={options} disabled={disabled} placeholder={placeholder ?? t('picker.typeOrPick')} allowClear
-          onSearch={setText} onChange={(v) => onChange?.(v ?? '')} style={{ width: '100%' }} />
+          onSearch={setText} onChange={(v) => onChange?.(v ?? '')} style={{ flex: '1 1 0', minWidth: 0 }} />
         <Tooltip title={t('picker.openList')}>
           <Button disabled={disabled} icon={<EllipsisOutlined />} onClick={() => setListOpen(true)} aria-label={t('picker.openList')} />
         </Tooltip>

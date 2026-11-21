@@ -88,6 +88,10 @@ export default function CrudTable({ endpoint, fields, canEdit, defaults = {}, ex
     if (f.type === 'color') return value ? <Tag color={String(value)}>{String(value)}</Tag> : null
     if (f.type === 'select') return f.options?.find((o) => o.value === value)?.label ?? ''
     if (f.type === 'date') return value ? dayjs(String(value)).format('DD.MM.YYYY') : ''
+    // zecimalele de pe server („10.000”, „1200.00”) — ca număr, fără zerourile de la coadă (10, 1 200), ca în restul tabelelor
+    if (f.type === 'number' && value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value))) {
+      return Number(value).toLocaleString('ro-MD', { maximumFractionDigits: 4 })
+    }
     return value as ReactNode
   }
 

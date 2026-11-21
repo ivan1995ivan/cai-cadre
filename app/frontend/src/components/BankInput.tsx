@@ -78,7 +78,7 @@ export default function BankInput({ value, onChange, onPick, placeholder, disabl
       <Space.Compact style={{ width: '100%' }}>
         <AutoComplete value={value} disabled={disabled} placeholder={placeholder ?? t('picker.typeOrPick')} allowClear
           options={found.map((b) => ({ key: b.id, value: b.name, bank: b, label: <>{b.name} <span style={{ opacity: 0.6 }}>· {b.bic} · {b.country}</span></> }))}
-          onSearch={setText} onChange={(v) => onChange?.(v ?? '')} style={{ width: '100%' }}
+          onSearch={setText} onChange={(v) => onChange?.(v ?? '')} style={{ flex: '1 1 0', minWidth: 0 }}
           onSelect={(_, option) => onPick?.((option as { bank: Bank }).bank)} />
         <Tooltip title={t('picker.openList')}>
           <Button disabled={disabled} icon={<EllipsisOutlined />} onClick={() => setListOpen(true)} aria-label={t('picker.openList')} />

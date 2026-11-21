@@ -44,7 +44,7 @@ def test_hire_order_with_pay_items_sign_and_cancel(admin_client, org):  # noqa: 
     # fila „Salariu”: sursa cu legătura; rândul din ordin nu se schimbă / nu se șterge de mână
     data = admin_client.get("/api/payroll/employee-items/", {"employee": dan.id}).data
     assert data[0]["source"] == {"kind": "order", "id": order["id"], "label": f"Ordinul nr. {signed['number']} din 02.03.2026",
-                                 "status": "signed"}
+                                 "status": "signed", "number": signed["number"], "date": date(2026, 3, 2)}
     assert admin_client.patch(f"/api/payroll/employee-items/{rows[0].id}/", {"percent": "20"}, format="json").status_code == 400
     assert admin_client.patch(f"/api/payroll/employee-items/{rows[0].id}/", {"note": "verificat"}, format="json").status_code == 200
     assert admin_client.delete(f"/api/payroll/employee-items/{rows[0].id}/").status_code == 400
@@ -142,6 +142,7 @@ def test_change_document_approve_unapprove_and_order_of_undo(admin_client, org):
     assert admin_client.delete(f"/api/payroll/item-changes/{doc.id}/").status_code == 400
     src = admin_client.get("/api/payroll/employee-items/", {"employee": ion.id}).data[0]["source"]
     assert src["kind"] == "change" and src["id"] == doc.id and doc.number in src["label"]
+    assert src["number"] == doc.number and src["date"] == doc.date  # fila „Salariu” scrie sursa în limba interfeței
     # al doilea document oprește pensia; anularea primului se oprește până nu se anulează al doilea
     r = admin_client.post("/api/payroll/item-changes/", {"date": "2026-06-01", "lines": [
         {"employee": ion.id, "pay_type": ptype("PENSIE").id, "action": "stop", "document": "Hotărârea de încetare"}]}, format="json")

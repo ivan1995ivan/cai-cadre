@@ -56,7 +56,7 @@ export default function PayItemChangesPage() {
         columns={[
           { title: t('ord.number'), dataIndex: 'number', width: 140, render: (v: string, r) => <a onClick={() => navigate(`/payroll/item-changes/${r.id}`)}>{v}</a> },
           { title: t('ord.date'), dataIndex: 'date', width: 100, render: (v: string) => dayjs(v).format('DD.MM.YYYY') },
-          { title: t('ord.status'), dataIndex: 'status', width: 110, render: (v: string, r) => <Tag color={STATUS_COLOR[v]}>{r.status_label}</Tag> },
+          { title: t('ord.status'), dataIndex: 'status', width: 110, render: (v: string, r) => <Tag color={STATUS_COLOR[v]}>{t(`pay.pl.status.${v}`, { defaultValue: r.status_label })}</Tag> },
           { title: t('pay.pl.employees'), dataIndex: 'employees' },
           { title: t('pay.pl.rows'), key: 'n', width: 80, align: 'right', render: (_: unknown, r) => r.lines.length },
           { title: t('org.notes'), dataIndex: 'note' },
@@ -71,7 +71,7 @@ function JobSelect({ employee, value, onChange, disabled }: { employee: number |
   const { data: jobs } = useFetch<Employment[]>(employee ? '/staff/employments/' : null, { employee })
   return <Select allowClear style={{ width: 240 }} placeholder={t('pay.pl.mainJob')} disabled={disabled} value={value ?? undefined}
     onChange={(v) => onChange(v ?? null)}
-    options={(jobs ?? []).filter((j) => j.status !== 'ended').map((j) => ({ value: j.id, label: `${j.kind_label}: ${j.occupation_name}` }))} />
+    options={(jobs ?? []).filter((j) => j.status !== 'ended').map((j) => ({ value: j.id, label: `${t(`staff.kinds.${j.kind}`, { defaultValue: j.kind_label })}: ${j.occupation_name}` }))} />
 }
 
 function LineRow({ line, set, onRemove, typeOptions, disabled }: {
@@ -155,7 +155,7 @@ export function PayItemChangeEditor() {
   if (!doc) return <Spin />
   const set = (i: number, patch: Partial<PayItemChangeLine>) => { setLines(lines.map((l, k) => (k === i ? { ...l, ...patch } : l))); setDirty(true) }
   return (
-    <Card title={<Space wrap>{t('menu.payItemChanges')}<b>{doc.number}</b><Tag color={STATUS_COLOR[doc.status]}>{doc.status_label}</Tag></Space>}
+    <Card title={<Space wrap>{t('menu.payItemChanges')}<b>{doc.number}</b><Tag color={STATUS_COLOR[doc.status]}>{t(`pay.pl.status.${doc.status}`, { defaultValue: doc.status_label })}</Tag></Space>}
       extra={<Space wrap>
         {draft && <Button icon={<SaveOutlined />} onClick={() => save()}>{t('common.save')}</Button>}
         {draft && hasPerm('payroll.approve') && <Popconfirm title={t('pay.pl.approveConfirm')} onConfirm={() => act('approve')}>

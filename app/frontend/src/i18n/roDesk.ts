@@ -6,6 +6,7 @@ export default {
     menuBar: 'Bara de meniu', toolbar: 'Bara de unelte', statusBar: 'Bara de stare', mobileMenu: 'Meniul',
     menu: { file: 'Fișier', windows: 'Ferestre', help: 'Ajutor' },
     tab: { order: 'Ordinul {{number}}', payroll: 'Calculul {{number}}', itemChange: 'Modificarea {{number}}', payment: 'Îndreptarea {{number}}' },
+    src: { order: 'Ordinul nr. {{number}} din {{date}}', change: 'Modificarea acumulărilor nr. {{number}} din {{date}}' },
     noFavorites: '(nimic la favorite)', closeWindow: 'Închide fereastra', admin: 'Administrator',
     tool: {
       new: 'Nou', noNew: 'Nou — fereastra deschisă nu are ce crea',

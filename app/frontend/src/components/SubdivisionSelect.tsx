@@ -80,7 +80,7 @@ export default function SubdivisionSelect({ value, onChange, mode, allowClear = 
     <>
       <Space.Compact style={{ width: '100%', ...style }}>
         <TreeSelect<number | number[]> showSearch treeNodeFilterProp="label" treeDefaultExpandAll allowClear={allowClear} disabled={disabled}
-          multiple={mode === 'multiple'} placeholder={placeholder} value={value ?? undefined} treeData={tree} style={{ width: '100%' }}
+          multiple={mode === 'multiple'} placeholder={placeholder} value={value ?? undefined} treeData={tree} style={{ flex: '1 1 0', minWidth: 0 }}
           popupMatchSelectWidth={false} onChange={(v) => onChange?.(v ?? null)} />
         <Tooltip title={t('subPicker.open')}>
           <Button icon={<EllipsisOutlined />} disabled={disabled} onClick={() => { setQ(''); setOpen(true) }} aria-label={t('subPicker.open')} />

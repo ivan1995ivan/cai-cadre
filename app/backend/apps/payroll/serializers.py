@@ -140,10 +140,12 @@ class EmployeePayItemSerializer(serializers.ModelSerializer):
         """De unde vine rândul: {kind: order | change | manual, id, label}."""
         if obj.order_item_id:
             order = obj.order_item.order
-            return {"kind": "order", "id": order.pk, "label": f"Ordinul nr. {order.reference()}", "status": order.status}
+            return {"kind": "order", "id": order.pk, "label": f"Ordinul nr. {order.reference()}", "status": order.status,
+                    "number": order.number, "date": order.date}
         if obj.change_line_id:
             doc = obj.change_line.change
-            return {"kind": "change", "id": doc.pk, "label": f"Modificarea acumulărilor {doc.reference()}", "status": doc.status}
+            return {"kind": "change", "id": doc.pk, "label": f"Modificarea acumulărilor {doc.reference()}", "status": doc.status,
+                    "number": doc.number, "date": doc.date}
         return {"kind": "manual", "id": None, "label": "", "status": ""}
 
     def validate(self, attrs):

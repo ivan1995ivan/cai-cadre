@@ -78,7 +78,9 @@ export default function EmployeeSelect({ value, onChange, mode, label, allowClea
     <>
       <Space.Compact style={{ width: '100%', ...style }}>
         <Select<number | number[]> showSearch filterOption={false} allowClear={allowClear} disabled={disabled} mode={mode}
-          placeholder={placeholder ?? t('empPicker.typeOrPick')} value={value ?? undefined} options={options} style={{ width: '100%' }}
+          placeholder={placeholder ?? t('empPicker.typeOrPick')} value={value ?? undefined} options={options}
+          // flex + minWidth 0: numele lung al celui ales se strânge în câmp, butonul „…” rămâne în lățimea dată (nu trece peste vecin)
+          style={{ flex: '1 1 0', minWidth: 0 }}
           onSearch={search} notFoundContent={null} onChange={(v) => emit(v ?? null)} />
         <Tooltip title={t('empPicker.open')}>
           <Button icon={<EllipsisOutlined />} disabled={disabled} onClick={() => setListOpen(true)} aria-label={t('empPicker.open')} />

@@ -9,6 +9,7 @@ export default {
     menuBar: 'Menu bar', toolbar: 'Toolbar', statusBar: 'Status bar', mobileMenu: 'Menu',
     menu: { file: 'File', windows: 'Windows', help: 'Help' },
     tab: { order: 'Order {{number}}', payroll: 'Payroll {{number}}', itemChange: 'Change {{number}}', payment: 'Payment {{number}}' },
+    src: { order: 'Order No. {{number}} of {{date}}', change: 'Pay item change No. {{number}} of {{date}}' },
     noFavorites: '(no favorites)', closeWindow: 'Close window', admin: 'Administrator',
     tool: {
       new: 'New', noNew: 'New — the open window has nothing to create',

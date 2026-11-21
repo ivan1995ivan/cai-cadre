@@ -127,7 +127,9 @@ export default function PayTab({ employee }: { employee: number }) {
       const src = v as PayItemSource | undefined
       if (!src || src.kind === 'manual') return <Typography.Text type="secondary">{t('pay.pl.manual')}</Typography.Text>
       const to = src.kind === 'order' ? `/orders/${src.id}` : `/payroll/item-changes/${src.id}`
-      return <Space size={4}><Link to={to}>{src.label}</Link>{src.status === 'cancelled' && <Tag color="red">{t('pay.pl.cancelled')}</Tag>}</Space>
+      const label = src.number && src.date
+        ? t(`desk.src.${src.kind}`, { number: src.number, date: dayjs(src.date).format('DD.MM.YYYY') }) : src.label
+      return <Space size={4}><Link to={to}>{label}</Link>{src.status === 'cancelled' && <Tag color="red">{t('pay.pl.cancelled')}</Tag>}</Space>
     } },
     { key: 'note', label: t('org.notes'), inTable: false, extra: t('pay.pl.noteHint') },
   ]

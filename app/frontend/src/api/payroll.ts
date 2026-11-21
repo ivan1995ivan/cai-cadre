@@ -65,7 +65,8 @@ export interface EmployeePayItem {
 }
 
 /** De unde vine rândul din fila „Salariu”: ordinul, documentul „Modificarea acumulărilor planificate” sau de mână. */
-export interface PayItemSource { kind: 'order' | 'change' | 'manual'; id: number | null; label: string; status: string }
+/** De unde vine rândul; `number` / `date` — pentru denumirea în limba interfeței (`label` e în română). */
+export interface PayItemSource { kind: 'order' | 'change' | 'manual'; id: number | null; label: string; status: string; number?: string; date?: string }
 
 export type PayAction = 'add' | 'modify' | 'stop'
 export const PAY_ACTIONS: PayAction[] = ['add', 'modify', 'stop']
