@@ -1,0 +1,37 @@
+# Setările salariului (constantele 2026)
+
+Pentru cine configurează salarizarea: *Administrare → Setări → Constantele salarizării* și *Tipuri de calcul*. Fiecare
+constantă are **„în vigoare din”**: la schimbarea legii se adaugă un rând nou cu data lui, cel vechi rămâne pentru lunile
+trecute. Temeiul neconfirmat încă din textul oficial are eticheta **„de verificat”** — valoarea se corectează aici, fără
+programator.
+
+**Preîncărcate la instalare și la actualizare** (rândurile lipsă se adaugă pe cod și dată; cele schimbate de dvs. rămân):
+
+| Constanta | 2026 | 2027 (adoptat) | Temeiul |
+|---|---|---|---|
+| Salariul minim pe țară | 6 300 lei; 169 ore (37,28 lei/oră) | — | HG 771/2025 |
+| Salariul mediu lunar prognozat | 17 400 lei | — | HG 773/2025 |
+| Scutirea personală P / majorată M | 29 700 / 34 620 | 40 020 / 46 680 | CF art. 33; Legea 247 din 22.10.2026 |
+| Scutirea pentru soț / soție Sm | 21 780 | — | CF art. 34 alin. (2) |
+| Întreținutul N / cu dizabilitate H | 9 900 / 21 780 | 11 040 / — | CF art. 35 alin. (1); Legea 247/2026 |
+| Venitul maxim al întreținutului | 12 400 lei / an | — | CF art. 35 alin. (2) lit. b) |
+| Plafonul pentru P / M; alerta | 360 000 lei; 90 % | — | CF art. 33 alin. (1) |
+| CAS angajator; timp parțial — minim | 24 %; 25 % din CAS pe salariul minim | — | Legea 489/1999 art. 22 alin. (1), anexa 1 |
+| Ore suplimentare | primele 2 ore / zi 150 %, următoarele 200 % | — | CM art. 157 |
+| Sărbători / zile de repaus | salariu lunar +100 % în normă, +200 % peste; tarif pe oră 200 % | — | CM art. 158 |
+| Boala — zilele angajatorului | 5 pe certificat, cel mult 15 pe an; 75 % | — | Legea 289/2004 art. 4 |
+| Boala — venitul mediu | 12 luni, cel mult 5 salarii medii pe lună | — | Legea 289/2004 art. 7 |
+| Accident de muncă / boală profesională | 20 de zile, 100 % (de verificat) | — | Legea 756/1999 |
+| Salariul mediu pentru concedii | 3 luni | — | HG 426/2004 |
+
+Valorile pentru 2027 marcate „—” nu sunt adoptate încă (proiectele de acte nu se pun): când apare actul, adăugați rândul cu
+data 01.01.2027.
+
+**Tipurile de calcul noi** (automate): **MINIM** „Completare până la salariul minim”, **BOALAACC** „Indemnizația pentru
+accident de muncă / boală profesională (zilele angajatorului)”, **CASMIN** „CAS pe diferența până la baza minimă”. Un tip
+automat se poate face inactiv (de exemplu MINIM), dar legea cere salariul minim — avertismentul rămâne.
+
+**La actualizarea unei instalări vechi** migrația corectează doar ce a rămas cu valoarea livrată: salariul minim 5 500 → 6 300,
+salariul mediu 17 200 → 17 400, temeiurile vechi; sporul unic pentru orele suplimentare devine plata primelor ore (100 + spor).
+Cererile de scutire „pe an” devin cereri cu valabilitate de la / până la, persoanele întreținute — rânduri; cererile cu „S”
+(abrogată) apar „De verificat”.
