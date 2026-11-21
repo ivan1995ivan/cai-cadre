@@ -21,6 +21,7 @@ import { useFetch } from '../../api/hooks'
 import { PAYMENT_STATUS_COLOR, PAYROLL_STATUS_COLOR, downloadFile, money, type Payment, type PaymentLine, type Payroll } from '../../api/payroll'
 import { useApp } from '../../auth/AppContext'
 import PayslipMail from './PayslipMail'
+import { useTabTitle } from '../../layout/tabs'
 
 interface Header { date: Dayjs; kind: Payment['kind']; payroll: number | null; ym: Dayjs; method: Payment['method']; note: string }
 
@@ -102,6 +103,7 @@ export default function PaymentEditor() {
   }
   useUnsavedGuard(dirty, saveHeader)
   const title = doc ? t('pp.heading', { number: doc.number, date: dayjs(doc.date).format('DD.MM.YYYY') }) : ''
+  useTabTitle(doc ? t('desk.tab.payment', { number: doc.number }) : null)
 
   if (!doc) return <Card><Spin /></Card>
   const run = async (fn: () => Promise<unknown>, ok?: string) => {

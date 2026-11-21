@@ -8,6 +8,7 @@ export default {
   desk: {
     menuBar: 'Menu bar', toolbar: 'Toolbar', statusBar: 'Status bar', mobileMenu: 'Menu',
     menu: { file: 'File', windows: 'Windows', help: 'Help' },
+    tab: { order: 'Order {{number}}', payroll: 'Payroll {{number}}', payment: 'Payment {{number}}' },
     noFavorites: '(no favorites)', closeWindow: 'Close window', admin: 'Administrator',
     tool: {
       new: 'New', noNew: 'New — the open window has nothing to create',

@@ -22,6 +22,7 @@ import {
   AT_PAYMENT_AUTOS, PAYMENT_STATUS_COLOR, PAYROLL_STATUS_COLOR, money, type Payment, type PayrollItem, type PayrollLine, type PayrollReport,
 } from '../../api/payroll'
 import { useApp, useLocalName } from '../../auth/AppContext'
+import { useTabTitle } from '../../layout/tabs'
 
 /** Ce se corectează: un rând calculat (se pune un rând de mână de același tip, care îl înlocuiește) sau un rând nou. */
 interface Editing { line: PayrollLine; item?: PayrollItem }
@@ -74,6 +75,7 @@ export default function PayrollEditor() {
   }
   useUnsavedGuard(dirty, saveHeader)
   const title = data ? t('pay.heading', { number: data.number, date: dayjs(data.date).format('DD.MM.YYYY') }) : ''
+  useTabTitle(data ? t('desk.tab.payroll', { number: data.number }) : null)
 
   if (!data) return <Card loading={loading}><Spin /></Card>
   const run = async (fn: () => Promise<unknown>, ok?: string) => {

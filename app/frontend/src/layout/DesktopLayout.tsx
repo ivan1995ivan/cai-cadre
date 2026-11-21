@@ -172,7 +172,9 @@ function DesktopShell() {
   }, [save])
 
   const screenTitle = screenTitleOf(t, location.pathname, sections, current)
-  const windowTitle = `${PRODUCT.name} — ${companyName}`
+  // denumirea completă a întreprinderii, cu forma juridică (Company.display_name)
+  const fullName = branding?.display_names?.[lang] || companyName
+  const windowTitle = `${PRODUCT.name} — ${fullName}`
   useEffect(() => {
     const old = document.title
     document.title = windowTitle
@@ -327,7 +329,7 @@ function DesktopShell() {
     <div className={`dk-shell${mobile ? ' is-mobile' : ''}`}>
       <header className="dk-titlebar">
         <img src={logo} alt="" />
-        <span className="dk-title-text" title={windowTitle}>{mobile ? companyName : windowTitle}</span>
+        <span className="dk-title-text" title={windowTitle}>{mobile ? fullName : windowTitle}</span>
         {platform && platform.count > 1 && platform.base && <span className="dk-title-base">[{platform.base.name}]</span>}
       </header>
       {!mobile && <MenuBar menus={menus} label={t('desk.menuBar')} />}

@@ -86,6 +86,8 @@ export interface Branding {
   military_enabled?: boolean
   function_panel?: boolean
   languages?: Lang[]
+  /** denumirea completă, cu forma juridică („Exemplu SRL”), pe limbi */
+  display_names?: Partial<Record<Lang, string>>
 }
 
 export interface BankAccount {

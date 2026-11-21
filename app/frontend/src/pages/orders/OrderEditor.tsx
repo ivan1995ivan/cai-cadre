@@ -20,6 +20,7 @@ import ItemParams, { paramsIn, paramsOut } from './ItemParams'
 import EmployeeSelect from '../../components/EmployeeSelect'
 import FormLayout from '../../components/FormLayout'
 import MarkButton, { MarkedBanner } from '../../components/MarkButton'
+import { useTabTitle } from '../../layout/tabs'
 
 /** Câmpurile antetului și ale punctelor, ca în 1C: eticheta în stânga, câmpul în dreapta (clasa `doc-head` din styles.css). */
 export const DOC_HEAD = { layout: 'horizontal' as const, labelAlign: 'left' as const, labelWrap: true, labelCol: { flex: '150px' },
@@ -89,6 +90,7 @@ export default function OrderEditor() {
     }
   }
   useUnsavedGuard(dirty && !!canEdit, () => saveAll(true))
+  useTabTitle(order ? (order.number ? t('desk.tab.order', { number: order.number }) : t('ord.draftHeading')) : null)
 
   const sign = async () => {
     setBusy(true)

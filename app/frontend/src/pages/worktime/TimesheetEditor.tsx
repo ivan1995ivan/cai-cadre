@@ -14,6 +14,7 @@ import { MONTH_STATUS_COLOR, fmtH, type DayHeader, type TimesheetCell, type Time
 import { useApp } from '../../auth/AppContext'
 import { cellStyle, dayTitle, useDocActions } from './MonthDocs'
 import { useShifts } from './WorktimePage'
+import { useTabTitle } from '../../layout/tabs'
 
 /** Celula pontajului: orele lucrate (cu noaptea dedesubt) sau codul absenței; cele scrise de mână — subliniate. */
 function Cell({ cell, onClick }: { cell?: TimesheetCell; onClick?: () => void }) {
@@ -34,6 +35,7 @@ export default function TimesheetEditor() {
   const navigate = useNavigate()
   const { hasPerm } = useApp()
   const { data, loading, reload } = useFetch<TimesheetReport>(`/worktime/timesheets/${id}/report/`)
+  useTabTitle(data ? t('wt.ts.heading', { month: dayjs().month(data.month - 1).format('MMMM'), year: data.year, subdivision: data.subdivision_name }) : null)
   const shifts = useShifts()
   const { post } = useDocActions('/worktime/timesheets/', id, reload)
   const [printOpen, setPrintOpen] = useState(false)

@@ -30,6 +30,7 @@ import OrdersTab from './OrdersTab'
 import { STATUS_COLOR } from './EmployeesList'
 import FormLayout from '../../components/FormLayout'
 import { useEditGuard } from '../../components/UnsavedGuard'
+import { useTabTitle } from '../../layout/tabs'
 
 const DATE_FIELDS = ['birth_date']
 const PRINT_DOCS = [
@@ -59,6 +60,8 @@ export default function EmployeeCard() {
   const [salaryRange, setSalaryRange] = useState<[dayjs.Dayjs, dayjs.Dayjs]>([dayjs().subtract(6, 'month'), dayjs().subtract(1, 'month')])
   const canEdit = hasPerm(isNew ? 'employees.create' : 'employees.edit')
   const { touch, clean } = useEditGuard(() => save(), canEdit)
+  // fila ferestrei poartă numele angajatului (nu „Angajați · #50”)
+  useTabTitle(emp?.full_name)
   const sensitive = hasPerm('employees.sensitive')
 
   const load = async () => {
@@ -173,14 +176,15 @@ export default function EmployeeCard() {
   return (
     <Space direction="vertical" style={{ width: '100%' }} size={16}>
       <Card>
-        <Row gutter={16} align="middle" wrap={false}>
+        {/* pe ecranul îngust butoanele trec sub nume (fără wrap={false}: textul vechimii se strângea câte o literă pe rând) */}
+        <Row gutter={[16, 12]} align="middle">
           <Col flex="none">
             <Upload accept=".jpg,.jpeg,.png,.webp" showUploadList={false} disabled={!canEdit} beforeUpload={uploadPhoto}>
               <Avatar size={88} src={e.photo || undefined} icon={!e.photo && <UserOutlined />} style={{ cursor: canEdit ? 'pointer' : 'default' }} />
               {canEdit && <div style={{ textAlign: 'center', fontSize: 12 }}><CameraOutlined /> {t('staff.photo')}</div>}
             </Upload>
           </Col>
-          <Col flex="auto">
+          <Col flex="auto" style={{ minWidth: 0, flexBasis: 220 }}>
             <Space wrap>
               <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate('/employees')} />
               <Typography.Title level={4} style={{ margin: 0 }}>{e.full_name}</Typography.Title>

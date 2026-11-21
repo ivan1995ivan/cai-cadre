@@ -36,6 +36,19 @@ def test_migration_moves_only_the_old_default(before_desktop):
     assert dict(back.objects.values_list("id", "default_theme")) == {1: "green", 2: "turquoise", 3: "onec"}
 
 
+def test_branding_has_the_full_name_for_the_title_bar(seeded, client):
+    company = Company.get()
+    company.name_ro, company.name_ru, company.name_en, company.legal_form = "Exemplu", "Пример", "", "SRL"
+    company.save()
+    assert client.get("/api/public/branding/").json()["display_names"] == {"ro": "Exemplu SRL", "ru": "Пример SRL", "en": "Exemplu SRL"}
+    company.name_ro, company.legal_form = "Exemplu SRL", "SRL"  # forma scrisă deja în denumire nu se repetă
+    company.save()
+    assert client.get("/api/public/branding/").json()["display_names"]["ro"] == "Exemplu SRL"
+    company.legal_form = ""
+    company.save()
+    assert client.get("/api/public/branding/").json()["display_names"]["ru"] == "Пример"
+
+
 def test_new_company_and_branding_default_to_desktop(seeded, client):
     assert Company.get().default_theme == "desktop"
     assert client.get("/api/public/branding/").json()["default_theme"] == "desktop"

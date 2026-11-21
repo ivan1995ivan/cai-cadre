@@ -99,6 +99,8 @@ class BrandingSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
         data["languages"] = instance.enabled_languages()
+        # denumirea completă, cu forma juridică („Exemplu SRL”), în fiecare limbă — bara de titlu a programului
+        data["display_names"] = {lang: instance.display_name(lang) for lang in ("ro", "ru", "en")}
         return data
 
 

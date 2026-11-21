@@ -14,6 +14,7 @@ import { MONTH_STATUS_COLOR, fmtH, type RosterReport, type RosterRow, type Roste
 import { useApp } from '../../auth/AppContext'
 import { cellStyle, dayTitle, useDocActions } from './MonthDocs'
 import { shiftOptions, useShifts } from './WorktimePage'
+import { useTabTitle } from '../../layout/tabs'
 
 /** Graficul de ture al subdiviziunii: turele fiecărui raport de muncă pe zilele lunii (verificările din CM art. 101). */
 export default function RosterEditor() {
@@ -22,6 +23,7 @@ export default function RosterEditor() {
   const navigate = useNavigate()
   const { hasPerm } = useApp()
   const { data, loading, reload } = useFetch<RosterReport>(`/worktime/rosters/${id}/report/`)
+  useTabTitle(data ? t('wt.ro.heading', { month: dayjs().month(data.month - 1).format('MMMM'), year: data.year, subdivision: data.subdivision_name }) : null)
   const shifts = useShifts()
   const { run, post } = useDocActions('/worktime/rosters/', id, reload)
   const [printOpen, setPrintOpen] = useState(false)
