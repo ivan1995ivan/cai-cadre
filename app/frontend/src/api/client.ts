@@ -85,9 +85,44 @@ export function takeLogoutReason(): string {
   }
 }
 
+/**
+ * Legătura cu serverul (bara de stare a aspectului clasic de birou): după ultimul răspuns — „online” când serverul a
+ * răspuns (orice cod, și o greșeală de formă), „fără legătură” când cererea n-a ajuns (rețeaua, browserul offline) sau
+ * serverul din spatele proxy-ului nu răspunde (502 / 503 / 504).
+ */
+export type Connection = 'online' | 'offline'
+let connection: Connection = typeof navigator !== 'undefined' && navigator.onLine === false ? 'offline' : 'online'
+const connectionListeners = new Set<() => void>()
+function setConnection(next: Connection) {
+  if (next === connection) return
+  connection = next
+  connectionListeners.forEach((l) => l())
+}
+export const connectionState = {
+  get: () => connection,
+  subscribe: (listener: () => void) => {
+    connectionListeners.add(listener)
+    return () => { connectionListeners.delete(listener) }
+  },
+}
+if (typeof window !== 'undefined') {
+  window.addEventListener('offline', () => setConnection('offline'))
+  window.addEventListener('online', () => {
+    // rețeaua a revenit: serverul se întreabă, nu se presupune
+    axios.get('/api/setup/status/').then(() => setConnection('online')).catch(() => undefined)
+  })
+}
+
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    setConnection('online')
+    return response
+  },
   async (error: AxiosError) => {
+    if (!axios.isCancel(error)) {
+      const status = error.response?.status
+      setConnection(!error.response || status === 502 || status === 503 || status === 504 ? 'offline' : 'online')
+    }
     const original = error.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined
     const body = error.response?.data as { code?: string; detail?: string } | undefined
     if (error.response?.status === 401 && (body?.code === 'session_closed' || body?.code === 'maintenance')) {

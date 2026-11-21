@@ -226,7 +226,7 @@ function AppTable<T extends object>(props: TableProps<T> & {
           <Button type="text" size="small" icon={<SettingOutlined />} onClick={() => setOpen(true)} />
         </Tooltip>
         <Tooltip title={t('listTools.excel')}>
-          <Button type="text" size="small" icon={<FileExcelOutlined />} loading={exporting} onClick={startExport} />
+          <Button type="text" size="small" icon={<FileExcelOutlined />} loading={exporting} onClick={startExport} data-cmd="excel" />
         </Tooltip>
       </Space>
     ),

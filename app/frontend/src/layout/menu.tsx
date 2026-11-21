@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   ApartmentOutlined, BarChartOutlined, CalendarOutlined, FileTextOutlined, FolderOutlined, HomeOutlined, ReadOutlined,
@@ -140,7 +140,10 @@ export function hiddenItems(sections: MenuSection[]): NavItem[] {
 
 export function useSectionName() {
   const { t, i18n } = useTranslation()
-  return (s: MenuSection) => (i18n.language === 'ru' ? s.name_ru || s.name_ro : s.name_ro || s.name_ru) || t(`menuSections.${s.key}`, { defaultValue: s.key })
+  const lang = i18n.language
+  // aceeași funcție cât nu se schimbă limba: altfel meniul principal (useMainMenu) s-ar reface la fiecare desenare
+  return useCallback((s: MenuSection) => (lang === 'ru' ? s.name_ru || s.name_ro : s.name_ro || s.name_ru)
+    || t(`menuSections.${s.key}`, { defaultValue: s.key }), [t, lang])
 }
 
 /** Unde stau secțiunile meniului principal: sus (grupele secțiunii alese în stânga, ca în 1C) sau în stânga (tot arborele). */
@@ -250,4 +253,16 @@ export function useSectionPanel(section: MenuSectionView | undefined): SectionPa
       .sort((a, b) => navLabel(t, a).localeCompare(navLabel(t, b), i18n.language))
     return { top, tiles, linked, registers, classifiers, reports, plain: false }
   }, [section, settings, t, i18n.language])
+}
+
+/** Clasificatoarele fiecărei secțiuni (aceleași ca la Clasificatoare din Panoul funcțiilor: ale funcțiilor secțiunii pe
+ *  care utilizatorul le vede la Setări), pentru submeniul „Clasificatoare” al barei de meniu clasice. */
+export function useSectionClassifiers(sections: MenuSectionView[]): Record<string, NavItem[]> {
+  const settings = useVisibleSettings()
+  const { t, i18n } = useTranslation()
+  return useMemo(() => Object.fromEntries(sections.map((sec) => {
+    const wanted = new Set(sec.navItems.flatMap((i) => PANEL_CLASSIFIERS[i.key] ?? []))
+    const items = settings.filter((s) => wanted.has(s.key)).sort((a, b) => navLabel(t, a).localeCompare(navLabel(t, b), i18n.language))
+    return [sec.key, items]
+  })), [sections, settings, t, i18n.language])
 }

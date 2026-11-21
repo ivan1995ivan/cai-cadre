@@ -168,8 +168,8 @@ body {
 /* Starea documentului în registre (components/rowTone.ts): în lucru — albastru, procesat — verde, în rest — culoarea textului */
 .ant-table-row.row-work > td { color: #1668dc; }
 .ant-table-row.row-done > td { color: #2e9e5b; }
-html[data-theme='dark'] .ant-table-row.row-work > td { color: #5a9cf8; }
-html[data-theme='dark'] .ant-table-row.row-done > td { color: #49b97a; }
+html[data-scheme='dark'] .ant-table-row.row-work > td { color: #5a9cf8; }
+html[data-scheme='dark'] .ant-table-row.row-done > td { color: #49b97a; }
 
 /* Obiectul marcat pentru ștergere (ca în 1C): rândul tăiat și estompat, butoanele lui rămân de folosit */
 .ant-table-row.row-marked > td { color: var(--ant-color-text-tertiary, #999); text-decoration: line-through; }
@@ -253,21 +253,21 @@ html[data-theme='onec'] .ant-tag { border-radius: 2px; }
 .offer-1c.ant-form-horizontal .ant-form-item-label > label { white-space: nowrap; }
 .offer-1c .ant-collapse-header { padding-inline-start: 0 !important; }
 
-/* Tema „1C”: în formele obișnuite eticheta stă la stânga câmpului (ca în 1C) dacă e loc — câmpul are cel puțin 300 px;
+/* Tema „1C” și aspectul „Clasic de birou”: în formele obișnuite eticheta stă la stânga câmpului (ca în 1C) dacă e loc — câmpul are cel puțin 300 px;
    în coloanele înguste rămâne deasupra. Doar pentru câmpurile cu lățime dată de pagină (coloana grilei, forma,
    cardul, fereastra): într-un rând flexibil (Space, coloană „auto”) lățimea vine din conținut și containerul ar
    strânge câmpul la zero (mesajul de eroare ajungea câte o literă pe rând). */
-html[data-theme='onec'] .ant-form-vertical .ant-form-item { margin-bottom: 10px; }
-html[data-theme='onec'] .ant-form-vertical > .ant-form-item,
-html[data-theme='onec'] .ant-form-vertical :is(.ant-col[class*='ant-col-'], .ant-card-body, .ant-modal-body, .ant-drawer-body,
+html:is([data-theme='onec'], [data-look='desktop']) .ant-form-vertical .ant-form-item { margin-bottom: 10px; }
+html:is([data-theme='onec'], [data-look='desktop']) .ant-form-vertical > .ant-form-item,
+html:is([data-theme='onec'], [data-look='desktop']) .ant-form-vertical :is(.ant-col[class*='ant-col-'], .ant-card-body, .ant-modal-body, .ant-drawer-body,
   .ant-collapse-content-box, .ant-tabs-tabpane) > .ant-form-item { container-type: inline-size; }
 @container (min-width: 300px) {
-  html[data-theme='onec'] .ant-form-vertical .ant-form-item .ant-form-item-row { flex-direction: row; align-items: flex-start; flex-wrap: nowrap; }
-  html[data-theme='onec'] .ant-form-vertical .ant-form-item .ant-form-item-label {
+  html:is([data-theme='onec'], [data-look='desktop']) .ant-form-vertical .ant-form-item .ant-form-item-row { flex-direction: row; align-items: flex-start; flex-wrap: nowrap; }
+  html:is([data-theme='onec'], [data-look='desktop']) .ant-form-vertical .ant-form-item .ant-form-item-label {
     flex: 0 0 auto; max-width: 42%; padding: 5px 6px 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  html[data-theme='onec'] .ant-form-vertical .ant-form-item .ant-form-item-label > label::after { content: ':'; margin-inline-start: 1px; }
-  html[data-theme='onec'] .ant-form-vertical .ant-form-item .ant-form-item-control { flex: 1 1 0; min-width: 0; }
+  html:is([data-theme='onec'], [data-look='desktop']) .ant-form-vertical .ant-form-item .ant-form-item-label > label::after { content: ':'; margin-inline-start: 1px; }
+  html:is([data-theme='onec'], [data-look='desktop']) .ant-form-vertical .ant-form-item .ant-form-item-control { flex: 1 1 0; min-width: 0; }
 }
 
 /* Documentele fără efect (ciornă, anulate) — gri, ca documentele neînregistrate din 1C */
@@ -278,9 +278,9 @@ html[data-theme='onec'] .ant-form-vertical :is(.ant-col[class*='ant-col-'], .ant
 .hfield-label { white-space: nowrap; color: var(--ant-color-text-secondary); }
 .hfield-control { flex: 1; min-width: 0; }
 /* … și câmpurile puse într-un rând (Space: Suma + Data): eticheta lângă câmp, fără container */
-html[data-theme='onec'] .ant-form-vertical .ant-space-item > .ant-form-item .ant-form-item-row { flex-direction: row; align-items: flex-start; flex-wrap: nowrap; }
-html[data-theme='onec'] .ant-form-vertical .ant-space-item > .ant-form-item .ant-form-item-label { flex: none; padding: 5px 6px 0 0; white-space: nowrap; }
-html[data-theme='onec'] .ant-form-vertical .ant-space-item > .ant-form-item .ant-form-item-label > label::after { content: ':'; margin-inline-start: 1px; }
+html:is([data-theme='onec'], [data-look='desktop']) .ant-form-vertical .ant-space-item > .ant-form-item .ant-form-item-row { flex-direction: row; align-items: flex-start; flex-wrap: nowrap; }
+html:is([data-theme='onec'], [data-look='desktop']) .ant-form-vertical .ant-space-item > .ant-form-item .ant-form-item-label { flex: none; padding: 5px 6px 0 0; white-space: nowrap; }
+html:is([data-theme='onec'], [data-look='desktop']) .ant-form-vertical .ant-space-item > .ant-form-item .ant-form-item-label > label::after { content: ':'; margin-inline-start: 1px; }
 .doc-row-section td { background: var(--ant-color-fill-quaternary); }
 /* forma documentului (calculul, îndreptarea spre plată): titlul cu numărul și starea nu se strânge sub butoane —
    acțiunile din dreapta sus trec pe rândul următor (aliniate la dreapta) când nu mai încap lângă titlu */
@@ -299,7 +299,7 @@ html[data-theme='onec'] .ant-form-vertical .ant-space-item > .ant-form-item .ant
   --fn-bg: #E4E7EB; --fn-card: #F3F5F7; --fn-band: #4A5563; --fn-link: #5C6774; --fn-link-hover: #3B4450;
   --fn-tab: #DDE1E6; --fn-tab-text: #2B323B;
 }
-html[data-theme='dark'] {
+html[data-scheme='dark'] {
   --fn-bg: #1A231D; --fn-card: #202B24; --fn-band: #4A5563; --fn-link: #3F4955; --fn-link-hover: #56626F;
   --fn-tab: #243029; --fn-tab-text: #E3EFE7;
 }
@@ -346,7 +346,7 @@ html[data-theme='dark'] {
 /* între două documente: săgeata când al doilea se face din primul, altfel doar spațiu */
 .fn-flow { display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 76px; }
 .fn-flow.is-linked { width: 44px; color: var(--fn-band); font-size: 18px; }
-html[data-theme='dark'] .fn-flow.is-linked { color: #9AA6B2; }
+html[data-scheme='dark'] .fn-flow.is-linked { color: #9AA6B2; }
 
 .fn-links { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .fn-link {
@@ -355,3 +355,431 @@ html[data-theme='dark'] .fn-flow.is-linked { color: #9AA6B2; }
 }
 .fn-link:hover, .fn-link:focus-visible { background: var(--fn-link-hover); color: #fff !important; }
 .fn-link-icon { display: inline-flex; opacity: 0.9; }
+
+/* ============================================================================================================
+   Aspectul „Clasic de birou” (temele desktop / desktop_dark → html[data-look='desktop'], layout/DesktopLayout.tsx):
+   programul arată ca o aplicație de birou (Windows / Qt), nu ca un site. Culorile — variabilele de mai jos (luminoase și
+   întunecate); tokenii Ant Design (scrisul, rândurile dese, colțurile drepte, fără animații) — theme/themes.ts.
+   ============================================================================================================ */
+html[data-look='desktop'] {
+  --dk-face: #F0F0F0;          /* ferestrele, panourile, barele */
+  --dk-client: #E4E4E4;        /* zona ferestrelor (în spatele ferestrei active) */
+  --dk-field: #FFFFFF;
+  --dk-text: #1A1A1A;
+  --dk-text-soft: #5A5A5A;
+  --dk-disabled: #8C8C8C;
+  --dk-frame: #B4B4B4;         /* chenarul ferestrelor și al barelor */
+  --dk-etch: #CFD8E0;          /* chenarul grupelor (GroupBox) */
+  --dk-grid: #E2E2E2;          /* liniile tabelelor */
+  --dk-light: #FFFFFF;         /* muchia luminată a reliefului */
+  --dk-dark: #A0A0A0;          /* muchia umbrită a reliefului */
+  --dk-sep: #CFCFCF;
+  --dk-hover: #E5F3FF;
+  --dk-select: #CCE8FF;
+  --dk-select-border: #99D1FF;
+  --dk-focus: #3399FF;
+  --dk-link: #0066CC;
+  --dk-icon: #3B4A5A;
+  --dk-group-title: #1E3287;
+  --dk-title-from: #26476F;    /* bara de titlu a programului */
+  --dk-title-to: #5A86BA;
+  --dk-title-text: #FFFFFF;
+  --dk-dialog-from: #EEF3F9;   /* bara de titlu a dialogurilor */
+  --dk-dialog-to: #D9E3EE;
+  --dk-dialog-frame: #7D93AD;
+  --dk-btn-from: #FDFDFD;
+  --dk-btn-to: #E4E4E4;
+  --dk-btn-border: #ACACAC;
+  --dk-btn-hover-from: #EEF7FD;
+  --dk-btn-hover-to: #D5ECFA;
+  --dk-btn-hover-border: #3C7FB1;
+  --dk-btn-down-from: #C9E6F7;
+  --dk-btn-down-to: #ACD7F0;
+  --dk-btn-down-border: #2C628B;
+  --dk-bar-from: #FAFAFA;      /* bara de unelte, antetul ferestrelor */
+  --dk-bar-to: #E9E9E9;
+  --dk-head-from: #FFFFFF;     /* antetul tabelelor */
+  --dk-head-to: #EEF0F2;
+  --dk-tab-from: #F6F6F6;
+  --dk-tab-to: #E0E0E0;
+  --dk-popup-border: #979797;
+  --dk-close-hover: #E81123;
+  --dk-ok: #2E9E5B;
+  --dk-bad: #D64545;
+  /* panoul funcțiilor (SectionPanel) în culorile programului */
+  --fn-bg: #E4E4E4; --fn-card: #F0F0F0; --fn-band: #4A5A6E; --fn-link: #5C6B7D; --fn-link-hover: #3E4C5E;
+  --fn-tab: #E0E0E0; --fn-tab-text: #1A1A1A;
+}
+html[data-look='desktop'][data-scheme='dark'] {
+  --dk-face: #2B2B2B;
+  --dk-client: #1E1E1E;
+  --dk-field: #1E1E1E;
+  --dk-text: #E8E8E8;
+  --dk-text-soft: #B5B5B5;
+  --dk-disabled: #7A7A7A;
+  --dk-frame: #4A4A4A;
+  --dk-etch: #4A5560;
+  --dk-grid: #3A3A3A;
+  --dk-light: #3C3C3C;
+  --dk-dark: #151515;
+  --dk-sep: #474747;
+  --dk-hover: #2A3A4A;
+  --dk-select: #264F78;
+  --dk-select-border: #3A6EA5;
+  --dk-focus: #4CA3F0;
+  --dk-link: #6CB4F5;
+  --dk-icon: #C8D2DC;
+  --dk-group-title: #8FB8E8;
+  --dk-title-from: #1B2A3D;
+  --dk-title-to: #2E4A6B;
+  --dk-dialog-from: #3A3F45;
+  --dk-dialog-to: #30353B;
+  --dk-dialog-frame: #5A6A7D;
+  --dk-btn-from: #444444;
+  --dk-btn-to: #383838;
+  --dk-btn-border: #626262;
+  --dk-btn-hover-from: #44515D;
+  --dk-btn-hover-to: #3A4651;
+  --dk-btn-hover-border: #4C8BC5;
+  --dk-btn-down-from: #2F4A63;
+  --dk-btn-down-to: #2A4259;
+  --dk-btn-down-border: #6CA6DC;
+  --dk-bar-from: #333333;
+  --dk-bar-to: #2B2B2B;
+  --dk-head-from: #363636;
+  --dk-head-to: #2F2F2F;
+  --dk-tab-from: #353535;
+  --dk-tab-to: #2C2C2C;
+  --dk-popup-border: #5A5A5A;
+  --fn-bg: #1E1E1E; --fn-card: #2B2B2B; --fn-band: #3E4E62; --fn-link: #3F4955; --fn-link-hover: #56626F;
+  --fn-tab: #333333; --fn-tab-text: #E8E8E8;
+}
+
+html[data-look='desktop'] body {
+  font-family: 'Segoe UI', system-ui, -apple-system, 'Noto Sans', Tahoma, Arial, sans-serif;
+  font-size: 13px;
+  color: var(--dk-text);
+  transition: none;
+  -webkit-font-smoothing: auto;
+}
+/* fără animații și fără umbre mari */
+html[data-look='desktop'] .ant-btn { transition: none !important; }
+html[data-look='desktop'] .ant-btn:not(:disabled):active { transform: none !important; }
+html[data-look='desktop'] .ant-btn-primary:not(:disabled):hover { filter: none; }
+html[data-look='desktop'] .ant-card { box-shadow: none !important; }
+
+/* ---- fereastra programului -------------------------------------------------------------------------------- */
+.dk-shell {
+  display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden;
+  background: var(--dk-client); color: var(--dk-text);
+}
+.dk-titlebar {
+  flex: none; display: flex; align-items: center; gap: 6px; height: 24px; padding: 0 8px;
+  background: linear-gradient(90deg, var(--dk-title-from), var(--dk-title-to)); color: var(--dk-title-text);
+  font-size: 12px; font-weight: 600; user-select: none; white-space: nowrap;
+}
+.dk-titlebar img { width: 16px; height: 16px; object-fit: contain; }
+.dk-title-text { overflow: hidden; text-overflow: ellipsis; }
+.dk-title-base { opacity: 0.85; font-weight: 400; }
+
+/* ---- bara de meniu ---------------------------------------------------------------------------------------- */
+.dk-menubar {
+  flex: none; display: flex; align-items: stretch; flex-wrap: wrap; min-height: 22px; padding: 0 2px; position: relative; z-index: 1040;
+  background: var(--dk-face); border-bottom: 1px solid var(--dk-frame); outline: none; font-size: 12px; user-select: none;
+}
+.dk-menu-slot { position: relative; display: flex; }
+.dk-menu-title {
+  display: flex; align-items: center; padding: 0 8px; margin: 1px 0; border: 1px solid transparent; background: none;
+  color: var(--dk-text); font: inherit; cursor: default; white-space: nowrap;
+}
+.dk-menu-title:hover, .dk-menu-title.is-hot { background: var(--dk-hover); border-color: var(--dk-select-border); }
+.dk-menu-title.is-open { background: var(--dk-select); border-color: var(--dk-select-border); }
+.dk-menu-title.is-current { font-weight: 600; }
+.dk-mnemonic.is-shown { text-decoration: underline; }
+.dk-menu-popup {
+  position: absolute; top: 100%; left: var(--dk-shift, 0px); z-index: 1050; width: max-content; min-width: 230px; max-width: 460px; padding: 2px;
+  background: var(--dk-face); border: 1px solid var(--dk-popup-border); box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.28);
+  color: var(--dk-text); font-size: 12px; cursor: default;
+}
+.dk-submenu { top: -3px; left: calc(100% - 2px); }
+.dk-submenu.is-flipped { left: auto; right: calc(100% - 2px); }
+.dk-menu-item {
+  position: relative; display: grid; grid-template-columns: 24px minmax(0, 1fr) auto 14px; align-items: center; height: 22px;
+  padding-right: 2px; border: 1px solid transparent; white-space: nowrap;
+}
+.dk-menu-item.is-hot { background: var(--dk-select); border-color: var(--dk-select-border); }
+.dk-menu-item.is-disabled { color: var(--dk-disabled); }
+.dk-menu-item.is-disabled.is-hot { background: transparent; border-color: var(--dk-sep); }
+.dk-menu-icon { display: inline-flex; justify-content: center; font-size: 13px; color: var(--dk-icon); }
+.dk-menu-item.is-disabled .dk-menu-icon { color: var(--dk-disabled); opacity: 0.7; }
+.dk-menu-label { overflow: hidden; text-overflow: ellipsis; padding-right: 8px; }
+.dk-menu-key { padding-left: 24px; color: var(--dk-text-soft); }
+.dk-menu-arrow { font-size: 10px; text-align: center; }
+.dk-menu-sep { height: 1px; margin: 3px 2px 3px 26px; background: var(--dk-sep); }
+
+/* ---- bara de unelte --------------------------------------------------------------------------------------- */
+.dk-toolbar {
+  flex: none; display: flex; align-items: center; gap: 1px; padding: 2px 4px; min-height: 30px;
+  background: linear-gradient(180deg, var(--dk-bar-from), var(--dk-bar-to)); border-bottom: 1px solid var(--dk-frame);
+}
+.dk-tool-wrap { display: inline-flex; }
+.dk-tool {
+  display: inline-grid; place-items: center; width: 26px; height: 24px; padding: 0; border: 1px solid transparent;
+  background: none; color: var(--dk-icon); font-size: 15px; cursor: default;
+}
+.dk-tool:hover:not(:disabled) { background: var(--dk-hover); border-color: var(--dk-select-border); }
+.dk-tool:active:not(:disabled) { background: var(--dk-select); border-color: var(--dk-focus); }
+.dk-tool:focus-visible { outline: 1px dotted var(--dk-text); outline-offset: -3px; }
+.dk-tool:disabled { color: var(--dk-disabled); opacity: 0.45; }
+.dk-tool.tone-new:not(:disabled) { color: #2B7A3D; }
+.dk-tool.tone-save:not(:disabled) { color: #1F5FA8; }
+.dk-tool.tone-print:not(:disabled) { color: #4A4A4A; }
+.dk-tool.tone-excel:not(:disabled) { color: #217346; }
+.dk-tool.tone-refresh:not(:disabled) { color: #2B7A3D; }
+.dk-tool.tone-windows:not(:disabled), .dk-tool.tone-help:not(:disabled), .dk-tool.tone-home:not(:disabled) { color: #1F5FA8; }
+html[data-scheme='dark'] .dk-tool:not(:disabled) { color: var(--dk-icon) !important; }
+.dk-tool-sep { width: 1px; height: 18px; margin: 0 4px; background: var(--dk-sep); box-shadow: 1px 0 0 var(--dk-light); }
+.dk-tool-fill { flex: 1; }
+
+/* ---- ferestrele deschise ca file (MDI) -------------------------------------------------------------------- */
+.dk-mdi {
+  flex: none; display: flex; align-items: flex-end; gap: 0; padding: 3px 4px 0; overflow-x: auto; overflow-y: hidden;
+  background: var(--dk-client); border-bottom: 1px solid var(--dk-frame); scrollbar-width: thin;
+}
+.dk-mdi-tab {
+  flex: none; display: inline-flex; align-items: center; gap: 6px; max-width: 240px; height: 22px; padding: 0 3px 0 8px;
+  margin-right: -1px; border: 1px solid var(--dk-frame); border-bottom: 0;
+  background: linear-gradient(180deg, var(--dk-tab-from), var(--dk-tab-to)); color: var(--dk-text);
+  font-size: 12px; cursor: default; user-select: none; white-space: nowrap;
+}
+.dk-mdi-tab:hover { background: linear-gradient(180deg, var(--dk-btn-hover-from), var(--dk-btn-hover-to)); }
+.dk-mdi-tab.is-active {
+  position: relative; z-index: 1; height: 24px; margin-bottom: -1px; padding-bottom: 1px; background: var(--dk-face);
+  border-top: 2px solid var(--dk-focus); font-weight: 600;
+}
+.dk-mdi-title { overflow: hidden; text-overflow: ellipsis; }
+.dk-mdi-close {
+  display: inline-grid; place-items: center; width: 16px; height: 16px; padding: 0; border: 1px solid transparent; background: none;
+  color: var(--dk-text-soft); font-size: 9px; cursor: default;
+}
+.dk-mdi-close:hover { background: var(--dk-close-hover); border-color: var(--dk-close-hover); color: #FFFFFF; }
+
+/* ---- zona ferestrei active -------------------------------------------------------------------------------- */
+.dk-client { flex: 1; min-height: 0; overflow: auto; padding: 6px; background: var(--dk-client); }
+
+/* ---- bara de stare ---------------------------------------------------------------------------------------- */
+.dk-statusbar {
+  flex: none; display: flex; align-items: stretch; gap: 2px; height: 23px; padding: 2px 2px 1px; overflow: hidden;
+  background: var(--dk-face); border-top: 1px solid var(--dk-frame); font-size: 12px; color: var(--dk-text);
+}
+.dk-status-cell {
+  display: flex; align-items: center; gap: 5px; min-width: 0; padding: 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  border: 1px solid; border-color: var(--dk-dark) var(--dk-light) var(--dk-light) var(--dk-dark);
+}
+.dk-status-grow { flex: 1; display: block; line-height: 18px; color: var(--dk-text-soft); }
+.dk-status-user { max-width: 260px; }
+.dk-status-tool { padding: 0 1px; }
+.dk-status-tool:empty { display: none; }
+.dk-status-tool .ant-btn { height: 16px; min-width: 0; padding: 0 4px; font-size: 12px; line-height: 16px; border: 0; }
+.dk-status-tool .ant-btn .anticon { font-size: 12px; }
+.dk-status-tool .ant-badge .ant-badge-count { transform: translate(40%, -30%) scale(0.85); box-shadow: none; }
+.dk-conn-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--dk-ok); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2); }
+.dk-conn.is-offline { color: var(--dk-bad); font-weight: 600; }
+.dk-conn.is-offline .dk-conn-dot { background: var(--dk-bad); }
+
+/* ---- telefonul -------------------------------------------------------------------------------------------- */
+.dk-shell.is-mobile .dk-toolbar { gap: 0; padding: 2px; overflow-x: auto; }
+.dk-shell.is-mobile .dk-tool { width: 32px; height: 30px; font-size: 16px; }
+.dk-shell.is-mobile .dk-tool-sep { margin: 0 2px; }
+.dk-shell.is-mobile .dk-client { padding: 4px; }
+.dk-shell.is-mobile .dk-status-user { flex: 0 1 auto; }
+.dk-shell.is-mobile .dk-status-grow { flex: 1 1 0; padding: 0; border: 0; }
+.dk-shell.is-mobile .dk-mdi-tab { max-width: 170px; }
+
+/* ---- butoanele: dreptunghiulare, cu relief discret (2D — plate) ------------------------------------------ */
+html[data-look='desktop'] .ant-btn:is(.ant-btn-variant-outlined, .ant-btn-variant-dashed, .ant-btn-variant-solid, .ant-btn-variant-filled):not(:disabled) {
+  background: linear-gradient(180deg, var(--dk-btn-from), var(--dk-btn-to)) !important;
+  border-color: var(--dk-btn-border) !important;
+  color: var(--dk-text) !important;
+  box-shadow: none !important;
+  text-shadow: none;
+}
+html[data-look='desktop'] .ant-btn:is(.ant-btn-variant-outlined, .ant-btn-variant-dashed, .ant-btn-variant-solid, .ant-btn-variant-filled):not(:disabled):hover {
+  background: linear-gradient(180deg, var(--dk-btn-hover-from), var(--dk-btn-hover-to)) !important;
+  border-color: var(--dk-btn-hover-border) !important;
+}
+html[data-look='desktop'] .ant-btn:is(.ant-btn-variant-outlined, .ant-btn-variant-dashed, .ant-btn-variant-solid, .ant-btn-variant-filled):not(:disabled):active {
+  background: linear-gradient(180deg, var(--dk-btn-down-from), var(--dk-btn-down-to)) !important;
+  border-color: var(--dk-btn-down-border) !important;
+}
+/* butonul principal al formei — ca butonul implicit al unui dialog Windows: chenarul albastru */
+html[data-look='desktop'] .ant-btn-variant-solid.ant-btn-color-primary:not(:disabled) {
+  border-color: var(--dk-btn-hover-border) !important;
+  box-shadow: inset 0 0 0 1px rgba(60, 127, 177, 0.35) !important;
+}
+html[data-look='desktop'] .ant-btn.ant-btn-dangerous:not(:disabled),
+html[data-look='desktop'] .ant-btn.ant-btn-color-dangerous:not(:disabled) { color: #B3261E !important; }
+html[data-look='desktop'][data-scheme='dark'] .ant-btn.ant-btn-dangerous:not(:disabled),
+html[data-look='desktop'][data-scheme='dark'] .ant-btn.ant-btn-color-dangerous:not(:disabled) { color: #FF8A80 !important; }
+html[data-look='desktop'][data-buttons='2d'] .ant-btn:is(.ant-btn-variant-outlined, .ant-btn-variant-dashed, .ant-btn-variant-solid, .ant-btn-variant-filled):not(:disabled) {
+  background: var(--dk-btn-to) !important;
+}
+html[data-look='desktop'] .ant-btn:is(.ant-btn-variant-text, .ant-btn-variant-link):not(:disabled):hover {
+  background: var(--dk-hover);
+}
+html[data-look='desktop'] .ant-btn:focus-visible { outline: 1px dotted var(--dk-text) !important; outline-offset: -4px !important; }
+
+/* ---- câmpurile: albe, chenar de 1 px, fără inel de focus ------------------------------------------------- */
+html[data-look='desktop'] :is(.ant-input-outlined, .ant-input-number-outlined, .ant-picker-outlined, .ant-select-outlined .ant-select-selector) {
+  box-shadow: none !important;
+}
+html[data-look='desktop'] .ant-form-item-label > label { font-weight: 400; color: var(--dk-text); }
+html[data-look='desktop'] .ant-form-item-explain, html[data-look='desktop'] .ant-form-item-extra { font-size: 12px; }
+/* etichetele în stânga, pe o coloană de aceeași lățime, ca în dialogurile de program; în aspectul clasic și în coloanele
+   mai înguste (de la 220 px), ca rândurile formei să nu amestece etichete deasupra și în stânga */
+@container (min-width: 220px) {
+  html[data-look='desktop'] .ant-form-vertical .ant-form-item .ant-form-item-row { flex-direction: row; align-items: flex-start; flex-wrap: nowrap; }
+  html[data-look='desktop'] .ant-form-vertical .ant-form-item .ant-form-item-label {
+    flex: 0 0 clamp(80px, 36%, 170px); max-width: none; padding: 3px 6px 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  html[data-look='desktop'] .ant-form-vertical .ant-form-item .ant-form-item-label > label::after { content: ':'; margin-inline-start: 1px; }
+  html[data-look='desktop'] .ant-form-vertical .ant-form-item .ant-form-item-control { flex: 1 1 0; min-width: 0; }
+}
+html[data-look='desktop'] .ant-form-vertical .ant-space-item > .ant-form-item .ant-form-item-label { padding-top: 3px; }
+html[data-look='desktop'] .hfield { min-height: 26px; margin-bottom: 4px; }
+
+/* ---- ferestrele (Card) și grupele cu chenar și titlu (Card în Card, ca GroupBox) -------------------------- */
+html[data-look='desktop'] .ant-card { border: 1px solid var(--dk-frame); background: var(--dk-face); }
+html[data-look='desktop'] .ant-card > .ant-card-head {
+  background: linear-gradient(180deg, var(--dk-bar-from), var(--dk-bar-to)); border-bottom: 1px solid var(--dk-frame);
+}
+html[data-look='desktop'] .ant-card > .ant-card-head .ant-card-head-title { font-weight: 600; }
+html[data-look='desktop'] .ant-card .ant-card {
+  margin-top: 8px; border-color: var(--dk-etch); background: transparent;
+}
+html[data-look='desktop'] .ant-card .ant-card > .ant-card-head {
+  min-height: 0; padding: 0 8px; margin-top: -9px; background: none; border-bottom: 0;
+}
+html[data-look='desktop'] .ant-card .ant-card > .ant-card-head .ant-card-head-wrapper { align-items: center; }
+html[data-look='desktop'] .ant-card .ant-card > .ant-card-head .ant-card-head-title {
+  flex: none; padding: 0 4px; background: var(--dk-face); color: var(--dk-group-title); font-weight: 400;
+}
+html[data-look='desktop'] .ant-card .ant-card > .ant-card-head .ant-card-extra { background: var(--dk-face); padding: 0 4px; }
+html[data-look='desktop'] .ant-card .ant-card > .ant-card-body { padding-top: 10px; }
+/* titlurile secțiunilor din forme (Divider cu text) — ca titlul unei grupe */
+html[data-look='desktop'] .ant-divider-horizontal.ant-divider-with-text { margin: 10px 0 6px; font-size: 12px; color: var(--dk-group-title); }
+html[data-look='desktop'] .ant-divider { border-color: var(--dk-etch); }
+html[data-look='desktop'] .ant-typography:is(h1, h2, h3, h4, h5) { margin-bottom: 0.4em; }
+
+/* ---- tabelele: albe, cu grilă pe toate celulele, antetul gri, rândul ales albastru ------------------------ */
+html[data-look='desktop'] .ant-table-wrapper .ant-table { border: 1px solid var(--dk-frame); }
+html[data-look='desktop'] .ant-table-wrapper .ant-table-thead > tr > th {
+  background-image: linear-gradient(180deg, var(--dk-head-from), var(--dk-head-to));
+  border-right: 1px solid var(--dk-grid); border-bottom: 1px solid var(--dk-frame); font-weight: 400; white-space: nowrap;
+}
+html[data-look='desktop'] .ant-table-wrapper .ant-table-thead > tr > th::before { display: none; }
+html[data-look='desktop'] .ant-table-wrapper .ant-table-tbody > tr > td { border-right: 1px solid var(--dk-grid); border-bottom-color: var(--dk-grid); }
+html[data-look='desktop'] .ant-table-wrapper .ant-table-tbody > tr.ant-table-row-selected > td { box-shadow: inset 0 1px 0 var(--dk-select-border), inset 0 -1px 0 var(--dk-select-border); }
+html[data-look='desktop'] .ant-table-wrapper :is(.ant-table-summary > tr > td, .ant-table-summary td) { background: var(--dk-face); border-top: 1px solid var(--dk-frame); }
+html[data-look='desktop'] .ant-table-wrapper .ant-table-pagination { margin: 6px 0 0 !important; }
+html[data-look='desktop'] .ant-table-wrapper .ant-table-cell .ant-btn-sm { height: 18px; }
+/* rândul rămâne de ~24 px și cu o stare (Tag) sau un buton mic în el */
+html[data-look='desktop'] .ant-table-wrapper .ant-table-cell .ant-tag { line-height: 16px; padding-inline: 4px; font-size: 12px; margin-block: 0; }
+
+/* ---- filele din fereastră: ca filele unei foi de proprietăți ----------------------------------------------- */
+html[data-look='desktop'] .ant-tabs-top > .ant-tabs-nav::before { border-bottom-color: var(--dk-frame); }
+html[data-look='desktop'] .ant-tabs-top > .ant-tabs-nav .ant-tabs-ink-bar { display: none; }
+html[data-look='desktop'] .ant-tabs-top:not(.ant-tabs-card) > .ant-tabs-nav .ant-tabs-tab {
+  padding: 3px 10px; margin: 0 2px 0 0; border: 1px solid transparent; border-bottom: 0;
+  background: linear-gradient(180deg, var(--dk-tab-from), var(--dk-tab-to)); border-color: var(--dk-frame);
+}
+html[data-look='desktop'] .ant-tabs-top:not(.ant-tabs-card) > .ant-tabs-nav .ant-tabs-tab + .ant-tabs-tab { margin-left: 0; }
+html[data-look='desktop'] .ant-tabs-top:not(.ant-tabs-card) > .ant-tabs-nav .ant-tabs-tab-active {
+  background: var(--dk-face); position: relative; z-index: 1; margin-bottom: -1px; padding-bottom: 4px;
+}
+html[data-look='desktop'] .ant-tabs-top > .ant-tabs-nav .ant-tabs-tab-active .ant-tabs-tab-btn { font-weight: 600; text-shadow: none; }
+
+/* ---- dialogurile: bara de titlu, chenarul ferestrei, butoanele OK / Anulează dreapta jos ------------------ */
+html[data-look='desktop'] .ant-modal .ant-modal-container {
+  padding: 0; border: 1px solid var(--dk-dialog-frame); box-shadow: 3px 3px 12px rgba(0, 0, 0, 0.35);
+}
+html[data-look='desktop'] .ant-modal .ant-modal-header {
+  margin: 0; padding: 4px 34px 4px 8px; background: linear-gradient(180deg, var(--dk-dialog-from), var(--dk-dialog-to));
+  border-bottom: 1px solid var(--dk-frame); user-select: none;
+}
+html[data-look='desktop'] .ant-modal .ant-modal-title { font-size: 12px; font-weight: 600; line-height: 18px; }
+html[data-look='desktop'] .ant-modal .ant-modal-close {
+  top: 2px; inset-inline-end: 3px; width: 26px; height: 20px; border-radius: 0; color: var(--dk-text);
+}
+html[data-look='desktop'] .ant-modal .ant-modal-close:hover { background: var(--dk-close-hover); color: #FFFFFF; }
+html[data-look='desktop'] .ant-modal .ant-modal-close-x { font-size: 12px; line-height: 20px; }
+html[data-look='desktop'] .ant-modal .ant-modal-body { padding: 12px; }
+html[data-look='desktop'] .ant-modal .ant-modal-footer { margin: 0; padding: 4px 12px 10px; border-top: 0; background: none; }
+html[data-look='desktop'] :is(.ant-modal-footer, .ant-modal-confirm-btns) .ant-btn { min-width: 76px; }
+/* OK înaintea lui Anulează, ca în dialogurile Windows (doar subsolul obișnuit: Anulează + butonul principal) */
+html[data-look='desktop'] :is(.ant-modal-footer, .ant-modal-confirm-btns):has(> .ant-btn:first-child:not(.ant-btn-primary) + .ant-btn-primary:last-child) {
+  display: flex; flex-direction: row-reverse; justify-content: flex-start; gap: 6px;
+}
+html[data-look='desktop'] :is(.ant-modal-footer, .ant-modal-confirm-btns):has(> .ant-btn:first-child:not(.ant-btn-primary) + .ant-btn-primary:last-child) > .ant-btn {
+  margin: 0 !important;
+}
+html[data-look='desktop'] .ant-modal-confirm .ant-modal-body { padding: 14px 14px 10px; }
+html[data-look='desktop'] .ant-drawer .ant-drawer-header {
+  padding: 5px 8px; background: linear-gradient(180deg, var(--dk-dialog-from), var(--dk-dialog-to)); border-bottom: 1px solid var(--dk-frame);
+}
+html[data-look='desktop'] .ant-drawer .ant-drawer-title { font-size: 12px; font-weight: 600; }
+html[data-look='desktop'] .ant-drawer .ant-drawer-content { background: var(--dk-face); }
+
+/* ---- listele derulante, meniurile, indicațiile -------------------------------------------------------------- */
+html[data-look='desktop'] :is(.ant-dropdown-menu, .ant-select-dropdown, .ant-picker-dropdown .ant-picker-panel-container, .ant-popover-inner, .ant-cascader-dropdown) {
+  border: 1px solid var(--dk-popup-border); box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.28) !important;
+}
+html[data-look='desktop'] .ant-dropdown-menu { padding: 2px; background: var(--dk-face); }
+html[data-look='desktop'] .ant-dropdown-menu .ant-dropdown-menu-item { padding: 3px 18px 3px 8px; border: 1px solid transparent; }
+html[data-look='desktop'] .ant-dropdown-menu .ant-dropdown-menu-item-active { background: var(--dk-select) !important; border-color: var(--dk-select-border); }
+html[data-look='desktop'] .ant-popover .ant-popover-arrow, html[data-look='desktop'] .ant-tooltip .ant-tooltip-arrow { display: none; }
+html[data-look='desktop'] .ant-tooltip .ant-tooltip-inner {
+  min-height: 0; padding: 2px 6px; border: 1px solid #767676; font-size: 12px; box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.2);
+}
+html[data-look='desktop'] .ant-tag { border-radius: 0; }
+html[data-look='desktop'] .ant-alert { border-radius: 0; }
+
+/* ---- legăturile din ferestre: legături de program (albastre, subliniate), nu butoane colorate -------------- */
+html[data-look='desktop'] .doc-btn,
+html[data-look='desktop'] .app-content a:not([class], .ant-menu a, .ant-tabs-nav a, .ant-pagination a, .ant-breadcrumb a, .ant-dropdown a, .ant-upload a, .ant-picker a, .ant-table-column-sorters a, .ant-anchor a, .help-article a, .assistant-md a),
+html[data-look='desktop'] .app-content a.ant-typography:not(.ant-typography-ellipsis),
+html[data-look='desktop'] .ant-modal-body a:not([class], .ant-tabs-nav a, .ant-pagination a, .ant-upload a, .ant-picker a, .help-article a, .assistant-md a),
+html[data-look='desktop'] .ant-drawer-body a:not([class], .ant-tabs-nav a, .ant-pagination a, .ant-upload a, .ant-picker a, .help-article a, .assistant-md a) {
+  padding: 0; border-radius: 0; font-weight: 400; font-size: inherit; line-height: inherit;
+  background: none !important; background-image: none !important; box-shadow: none !important;
+  color: var(--dk-link) !important; text-decoration: underline !important; text-underline-offset: 2px;
+}
+html[data-look='desktop'] .doc-btn:hover,
+html[data-look='desktop'] .app-content a:not([class], .ant-menu a, .ant-tabs-nav a, .ant-pagination a, .ant-breadcrumb a, .ant-dropdown a, .ant-upload a, .ant-picker a, .ant-table-column-sorters a, .ant-anchor a, .help-article a, .assistant-md a):hover,
+html[data-look='desktop'] .app-content a.ant-typography:not(.ant-typography-ellipsis):hover,
+html[data-look='desktop'] .ant-modal-body a:not([class], .ant-tabs-nav a, .ant-pagination a, .ant-upload a, .ant-picker a, .help-article a, .assistant-md a):hover,
+html[data-look='desktop'] .ant-drawer-body a:not([class], .ant-tabs-nav a, .ant-pagination a, .ant-upload a, .ant-picker a, .help-article a, .assistant-md a):hover {
+  background: none !important; color: #C00000 !important;
+}
+/* în tabele: textul rândului (se deschide cu dublu clic), ca până acum */
+html[data-look='desktop'] :is(.app-content, .ant-modal-body, .ant-drawer-body) .ant-table-cell :is(a:not(.ant-btn), .doc-btn) {
+  color: inherit !important; text-decoration: none !important;
+}
+html[data-look='desktop'] :is(.app-content, .ant-modal-body, .ant-drawer-body) .ant-table-cell :is(a:not(.ant-btn), .doc-btn):hover {
+  color: var(--dk-link) !important; text-decoration: underline !important;
+}
+
+/* ---- panoul funcțiilor și ecranul de intrare în aspectul clasic --------------------------------------------- */
+html[data-look='desktop'] :is(.fn-panel, .fn-block, .fn-tile, .fn-tile-icon, .fn-link) { border-radius: 0; }
+html[data-look='desktop'] .fn-panel { min-height: 0; border: 1px solid var(--dk-frame); }
+html[data-look='desktop'] .fn-head h1 { font-size: 18px; }
+html[data-look='desktop'] .fn-tile-icon { box-shadow: none; }
+html[data-look='desktop'] .login-page { grid-template-columns: 1fr; background: var(--dk-client); }
+html[data-look='desktop'] .login-hero { display: none; }
+html[data-look='desktop'] .login-card {
+  border: 1px solid var(--dk-dialog-frame); box-shadow: 3px 3px 12px rgba(0, 0, 0, 0.3) !important; background: var(--dk-face);
+}
+html[data-look='desktop'] .login-card > .ant-card-head {
+  min-height: 24px; padding: 0 8px; background: linear-gradient(90deg, var(--dk-title-from), var(--dk-title-to)); border-bottom: 0;
+}
+html[data-look='desktop'] .login-card > .ant-card-head .ant-card-head-title { color: var(--dk-title-text); font-size: 12px; font-weight: 600; }

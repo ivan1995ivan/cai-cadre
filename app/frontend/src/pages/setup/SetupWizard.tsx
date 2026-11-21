@@ -361,7 +361,7 @@ export default function SetupWizard() {
           )}
 
           {current === 'company' && (
-            <Form form={companyForm} layout="vertical" initialValues={{ default_theme: 'green', legal_form: 'SRL' }}>
+            <Form form={companyForm} layout="vertical" initialValues={{ default_theme: 'desktop', legal_form: 'SRL' }}>
               <Typography.Title level={4}>{t('setup.companyTitle')}</Typography.Title>
               <Typography.Paragraph type="secondary">{t('setup.companyHint')}</Typography.Paragraph>
               <Row gutter={16}>

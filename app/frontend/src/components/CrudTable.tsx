@@ -101,7 +101,7 @@ export default function CrudTable({ endpoint, fields, canEdit, defaults = {}, ex
         </Space>
         <Space>
           {extra}
-          {canEdit && <Button icon={<PlusOutlined />} onClick={() => open()}>{t('common.add')}</Button>}
+          {canEdit && <Button icon={<PlusOutlined />} onClick={() => open()} data-cmd="new">{t('common.add')}</Button>}
         </Space>
       </Space>
       <Table

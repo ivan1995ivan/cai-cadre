@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, Navigate, Outlet, useLocation, useNavigate, useNavigationType } from 'react-router-dom'
+import { Link, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Avatar, Button, Drawer, Dropdown, Grid, Layout, Menu, Segmented, Space, Tag, Tooltip, Typography } from 'antd'
 import type { MenuProps } from 'antd'
 import {
@@ -14,54 +14,28 @@ import LicenseBanner from '../components/LicenseBanner'
 import HelpDrawer from '../components/HelpDrawer'
 import NotificationsBell from '../components/NotificationsBell'
 import OnlineNow from '../components/OnlineNow'
-import { PALETTES, type ThemeChoice } from '../theme/themes'
+import { isDesktopLook, PALETTES, type ThemeChoice } from '../theme/themes'
 import type { Lang } from '../api/types'
 
 export { ADMIN_NAV, NAV, SETTINGS_NAV, type NavItem } from './nav'
-import { movedTo, navLabel, SETTINGS_NAV, type NavItem } from './nav'
-import {
-  itemOfPath, menuKey, panelPath, pathOfKey, ROUTE_ITEMS, useFunctionPanel, useMainMenu, useMenuSide, useSectionPanel,
-  type MenuSectionView, type MenuSide,
-} from './menu'
+import { movedTo, navLabel, type NavItem } from './nav'
+import { itemOfPath, menuKey, pathOfKey, ROUTE_ITEMS, useMenuSide, type MenuSectionView, type MenuSide } from './menu'
 import { useFavorites } from './favorites'
 import { OpenTabsBar, TabsProvider } from './tabs'
 import WindowKeys from './windowKeys'
+import DesktopLayout from './DesktopLayout'
 
 export type { MenuSide } from './menu'
+export { helpKeyFor } from './shell'
+import { helpKeyFor, screenTitleOf, useHelpKey, useHistoryNav, usePlatform, useSectionChoice } from './shell'
 
-/** Cheia instrucțiunii pentru ruta curentă: "/admin/users" → "admin/users", "/" → "start". */
-export function helpKeyFor(pathname: string) {
-  if (pathname.startsWith('/panel/')) return 'panel' // panoul oricărei secțiuni are aceeași instrucțiune
-  const clean = pathname.replace(/\/\d+.*$/, '').replace(/^\/|\/$/g, '')
-  return clean || 'start'
-}
-
-/** Platforma cu mai multe baze (launcher.py): numele bazei curente; null când serverul rulează fără platformă. */
-function usePlatform() {
-  const [info, setInfo] = useState<{ base: { id: string; name: string } | null; count: number } | null>(null)
-  useEffect(() => {
-    fetch('/__platform/current').then((r) => (r.ok ? r.json() : null)).then(setInfo).catch(() => setInfo(null))
-  }, [])
-  return info
-}
-
-/**
- * Înapoi / Înainte ca în browser, dar știind când nu mai e unde: react-router ține poziția în istoric (`history.state.idx`);
- * după o navigare nouă (PUSH) nu mai e „înainte”.
- */
-function useHistoryNav() {
-  const location = useLocation()
-  const type = useNavigationType()
-  const idx: number = (window.history.state as { idx?: number } | null)?.idx ?? 0
-  const seen = useRef({ key: location.key, furthest: idx })
-  if (seen.current.key !== location.key) {
-    // socotit la desenare (nu în efect), ca butoanele să fie corecte chiar de la prima afișare a paginii noi
-    seen.current = { key: location.key, furthest: type === 'PUSH' ? idx : Math.max(seen.current.furthest, idx) }
-  }
-  return { canBack: idx > 0, canForward: idx < seen.current.furthest }
-}
-
+/** Aspectul programului după tema folosită: program clasic de birou (DesktopLayout) sau meniul lateral (WebLayout). */
 export default function AppLayout() {
+  const { themeName } = useApp()
+  return isDesktopLook(themeName) ? <DesktopLayout /> : <WebLayout />
+}
+
+function WebLayout() {
   const { t } = useTranslation()
   const { me, logout, companyName, branding, themeName, themeChoice, setThemeChoice, lang, setLang, languages } = useApp()
   const platform = usePlatform()
@@ -75,64 +49,14 @@ export default function AppLayout() {
   const dark = PALETTES[themeName].dark
   const { canBack, canForward } = useHistoryNav()
   const moved = movedTo(location.pathname, location.search)
-  // F1 — instrucțiunea ecranului curent, ca în 1C (și oprește ajutorul browserului)
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'F1') return
-      e.preventDefault()
-      setHelpOpen(true)
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  useHelpKey(useCallback(() => setHelpOpen(true), []))
 
   // Meniul principal ca în 1C: secțiunile sus și grupele secțiunii alese (Registre / Rapoarte / Setări) în stânga —
   // sau tot arborele în stânga, la alegere. Cu Panoul funcțiilor (Constante → Module): secțiunile sus ca file, fiecare
   // cu panoul ei (/panel/<secțiune>), fără meniul din stânga.
-  const sections = useMainMenu()
+  const { sections, fnPanel, selectedItem, current, active, pickSection } = useSectionChoice()
   const [menuSide, setMenuSide] = useMenuSide()
-  const fnPanel = useFunctionPanel()
   const sectionsLeft = !mobile && !fnPanel && menuSide === 'left'
-  const panelKey = location.pathname.startsWith('/panel/') ? location.pathname.split('/')[2] : null
-  // adresa curentă cu parametrii (filele din modul: /training?tab=plans)
-  const full = location.pathname + location.search
-  const matches = (path: string) => (path === '/' ? location.pathname === '/' : full.startsWith(path))
-  // funcția cu adresa cea mai lungă potrivită („/reports/movement”, nu și „/reports”) și secțiunea ei; o setare deschisă
-  // (Valute, Ture, un clasificator) ține de funcția „Setări”, chiar dacă adresa ei seamănă cu a unui registru (/leave/settings)
-  const menuFunctions = sections.flatMap((sec) => sec.navItems)
-  const selectedItem = itemOfPath(SETTINGS_NAV, location.pathname)
-    ? menuFunctions.find((i) => i.key === 'settings')
-    : menuFunctions.filter((i) => matches(i.path)).sort((a, b) => b.path.length - a.path.length)[0]
-  const [chosen, setChosen] = useState<string | null>(() => {
-    try { return localStorage.getItem('crm.section') } catch { return null }
-  })
-  const remember = (key: string) => {
-    setChosen(key)
-    try { localStorage.setItem('crm.section', key) } catch { /* fără stocare */ }
-  }
-  // Panoul funcțiilor: fila secțiunii din care s-a deschis pagina rămâne aleasă — și pentru un clasificator din panoul ei,
-  // și pentru o funcție care stă în mai multe secțiuni
-  const chosenSection = sections.find((sec) => sec.key === chosen)
-  const chosenPanel = useSectionPanel(fnPanel ? chosenSection : undefined)
-  const openSetting = itemOfPath(SETTINGS_NAV, location.pathname)
-  const keepsChosen = !!chosenSection && (openSetting
-    ? !!chosenPanel?.classifiers.some((i) => i.key === openSetting.key)
-    : !!selectedItem && chosenSection.navItems.includes(selectedItem))
-  const current = fnPanel && panelKey ? sections.find((sec) => sec.key === panelKey)
-    : fnPanel && keepsChosen ? chosenSection
-    : selectedItem && sections.find((sec) => sec.navItems.includes(selectedItem))
-  useEffect(() => {
-    if (!fnPanel || !panelKey) return
-    setChosen(panelKey)
-    try { localStorage.setItem('crm.section', panelKey) } catch { /* fără stocare */ }
-  }, [fnPanel, panelKey])
-  const active = current ?? sections.find((sec) => sec.key === chosen) ?? sections[0]
-  const pickSection = (key: string) => {
-    const sec = sections.find((x) => x.key === key)
-    remember(key)
-    if (fnPanel) navigate(panelPath(key))
-    else if (sec && !sec.navItems.some((i) => matches(i.path))) navigate(sec.navItems[0].path)
-  }
   const { favorites, isFavorite, toggle: toggleFavorite } = useFavorites()
   const itemLabel = (item: NavItem) => {
     const starred = isFavorite(item.path)
@@ -190,15 +114,6 @@ export default function AppLayout() {
     if (currentKey) setOpenKeys((keys) => (keys.includes(`s:${currentKey}`) ? keys : [...keys, `s:${currentKey}`]))
   }, [currentKey])
 
-  /** Denumirea ecranului curent (pentru fișa de ajutor): setarea sau funcția din meniu cu calea cea mai lungă potrivită;
-   *  la o setare — „Administrare → Setări → Valute”. */
-  const screenTitle = (pathname: string) => {
-    if (pathname.startsWith('/panel/')) return [current?.label, t('fnPanel.title')].filter(Boolean).join(' → ')
-    const setting = itemOfPath(SETTINGS_NAV, pathname)
-    const item = setting ? ROUTE_ITEMS.find((i) => i.key === 'settings') : itemOfPath(ROUTE_ITEMS, pathname)
-    const section = item && sections.find((sec) => sec.navItems.some((i) => i.key === item.key))
-    return item ? [section?.label, navLabel(t, item), setting && navLabel(t, setting)].filter(Boolean).join(' → ') : ''
-  }
   const logo = (dark && branding?.logo_dark) || branding?.logo_small || branding?.logo
   const brand = (
     <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 20px', minHeight: 64 }}>
@@ -364,7 +279,7 @@ export default function AppLayout() {
         <WindowKeys />
       </Layout>
       <HelpDrawer open={helpOpen} onClose={() => setHelpOpen(false)} helpKey={helpKeyFor(location.pathname)}
-        screen={screenTitle(location.pathname)} />
+        screen={screenTitleOf(t, location.pathname, sections, current)} />
     </Layout>
     </TabsProvider>
   )

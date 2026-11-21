@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useContext, useEffect, useRef, useState } from 'react'
 
 import { api } from './client'
 import { rememberList } from './listSources'
+import { PageScopeContext } from './pageScope'
 
 /** Încarcă o resursă; se reîncarcă la schimbarea parametrilor. */
 export function useFetch<T>(url: string | null, params?: Record<string, unknown>) {
@@ -32,6 +33,10 @@ export function useFetch<T>(url: string | null, params?: Record<string, unknown>
   useEffect(() => {
     reload()
   }, [reload])
+
+  // „Reîmprospătează” din bara de unelte (aspectul clasic de birou) reîncarcă datele paginii deschise
+  const scope = useContext(PageScopeContext)
+  useEffect(() => (scope && url ? scope.addLoader(reload) : undefined), [scope, url, reload])
 
   return { data, loading, error, reload, setData }
 }

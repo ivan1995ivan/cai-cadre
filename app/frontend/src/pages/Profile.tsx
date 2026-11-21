@@ -1,16 +1,16 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button, Card, Col, Descriptions, Form, Input, Row, Segmented, Space, Tag, Typography, message } from 'antd'
+import { Button, Card, Col, Descriptions, Form, Input, Row, Segmented, Select, Space, Tag, Typography, message } from 'antd'
 
 import { api, errorText, fieldErrors } from '../api/client'
 import { useApp, useLocalName } from '../auth/AppContext'
 import { LANG_LABELS, type Lang } from '../api/types'
-import type { ButtonStyle, Density, ThemeChoice } from '../theme/themes'
+import { DEFAULT_THEME, type ButtonStyle, type Density, type ThemeChoice } from '../theme/themes'
 import { useEditGuard } from '../components/UnsavedGuard'
 
 export default function Profile() {
   const { t } = useTranslation()
-  const { me, updateMe, themeChoice, setThemeChoice, density, setDensity, buttons, setButtons, lang, setLang, languages } = useApp()
+  const { me, branding, updateMe, themeChoice, setThemeChoice, density, setDensity, buttons, setButtons, lang, setLang, languages } = useApp()
   const localName = useLocalName()
   const [form] = Form.useForm()
   const [pwdForm] = Form.useForm()
@@ -68,8 +68,12 @@ export default function Profile() {
             <Space orientation="vertical" size="middle">
               <div>
                 <Typography.Text type="secondary">{t('header.theme')}</Typography.Text><br />
-                <Segmented<ThemeChoice> value={themeChoice || 'green'} style={{ flexWrap: 'wrap' }} onChange={setThemeChoice}
-                  options={(['green', 'turquoise', 'blue', 'dark', 'onec', 'auto'] as ThemeChoice[]).map((v) => ({ value: v, label: t(`themes.${v}`) }))} />
+                <Select<ThemeChoice> value={themeChoice} style={{ width: 280, display: 'block' }} onChange={setThemeChoice}
+                  options={[
+                    { value: '', label: t('profile.companyTheme', { theme: t(`themes.${branding?.default_theme || DEFAULT_THEME}`) }) },
+                    ...(['desktop', 'desktop_dark', 'green', 'turquoise', 'blue', 'dark', 'onec', 'auto'] as ThemeChoice[])
+                      .map((v) => ({ value: v, label: t(`themes.${v}`) })),
+                  ]} />
               </div>
               <div>
                 <Typography.Text type="secondary">{t('profile.density')}</Typography.Text><br />

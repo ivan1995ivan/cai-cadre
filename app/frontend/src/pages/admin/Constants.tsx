@@ -119,7 +119,7 @@ export default function Constants() {
                         background: PALETTES[name].dark ? PALETTES[name].siderBg : '#fff', borderRadius: 6, padding: 8,
                         height: 64, display: 'grid', placeItems: 'center', border: `2px solid ${PALETTES[name].primary}`,
                       }}>
-                        <img src={(name === 'dark' && company.logo_dark) || url} alt="" style={{ maxHeight: 44, maxWidth: '100%' }} />
+                        <img src={(PALETTES[name].dark && company.logo_dark) || url} alt="" style={{ maxHeight: 44, maxWidth: '100%' }} />
                       </div>
                     </Col>
                   ))}

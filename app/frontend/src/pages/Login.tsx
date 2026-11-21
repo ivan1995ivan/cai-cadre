@@ -5,7 +5,7 @@ import { CheckCircleFilled, LockOutlined, IdcardOutlined, UserOutlined } from '@
 
 import { errorText, takeLogoutReason } from '../api/client'
 import { useApp } from '../auth/AppContext'
-import { PALETTES } from '../theme/themes'
+import { isDesktopLook, PALETTES } from '../theme/themes'
 import { LANG_LABELS, type Lang } from '../api/types'
 import DevelopedBy from '../components/DevelopedBy'
 import { PRODUCT } from '../product'
@@ -43,7 +43,9 @@ export default function Login() {
         </ul>
       </aside>
       <main className="login-main">
-      <Card className="login-card" style={{ width: '100%', maxWidth: 400 }}>
+      {/* aspectul clasic de birou: fereastra de intrare cu bara ei de titlu */}
+      <Card className="login-card" style={{ width: '100%', maxWidth: 400 }}
+        title={isDesktopLook(themeName) ? `${PRODUCT.name} — ${t('login.title')}` : undefined}>
         <Space orientation="vertical" size="large" style={{ width: '100%' }}>
           <div style={{ textAlign: 'center' }}>
             {logo ? (

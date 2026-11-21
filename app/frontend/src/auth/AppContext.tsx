@@ -6,7 +6,7 @@ import 'dayjs/locale/ru'
 
 import { api, setSessionExpiredHandler, tokens } from '../api/client'
 import type { Branding, Lang, Me } from '../api/types'
-import { resolveTheme, type ButtonStyle, type Density, type ThemeChoice, type ThemeName } from '../theme/themes'
+import { DEFAULT_THEME, resolveTheme, type ButtonStyle, type Density, type ThemeChoice, type ThemeName } from '../theme/themes'
 
 const LOCAL_THEME = 'crm.theme'
 const LOCAL_LANG = 'crm.lang'
@@ -115,7 +115,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [lang])
 
   const themeChoice: ThemeChoice = me ? me.theme : localTheme
-  const themeName = resolveTheme(themeChoice, branding?.default_theme || 'green', prefersDark)
+  const themeName = resolveTheme(themeChoice, branding?.default_theme || DEFAULT_THEME, prefersDark)
   const density: Density = me?.density || 'normal'
   const buttons: ButtonStyle = me?.buttons || '3d'
 

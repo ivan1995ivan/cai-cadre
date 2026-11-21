@@ -1,15 +1,17 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useBlocker } from 'react-router-dom'
 import { App, Button, Space } from 'antd'
 
+import { PageScopeContext } from '../api/pageScope'
 import { useTabs } from '../layout/tabs'
 
 /**
  * „Salvați modificările?” (ca în 1C) când se pleacă din forma cu modificări nesalvate — Esc, ✕, altă filă, meniul,
  * înapoi: Da — se salvează și se pleacă (dacă salvarea nu reușește, se rămâne în formă), Nu — se pleacă fără ele,
  * Anulare (sau Esc) — se rămâne. La închiderea sau reîncărcarea paginii browserul își pune întrebarea lui.
- * Hook-ul nu randează nimic: fereastra o deschide singur. `save` a salvat dacă nu întoarce `false` și nu aruncă (de ex.
+ * Hook-ul nu randează nimic: fereastra o deschide singur. În aspectul clasic de birou se salvează și cu „Salvează” din
+ * bara de unelte (Ctrl+S), vezi api/pageScope. `save` a salvat dacă nu întoarce `false` și nu aruncă (de ex.
  * un câmp obligatoriu gol). Un singur gardian pe pagină.
  */
 export function useUnsavedGuard(dirty: boolean, save: () => Promise<unknown>) {
@@ -19,6 +21,22 @@ export function useUnsavedGuard(dirty: boolean, save: () => Promise<unknown>) {
   const blocker = useBlocker(({ currentLocation, nextLocation }) => dirty && currentLocation.pathname !== nextLocation.pathname)
   const saveRef = useRef(save)
   saveRef.current = save
+
+  // „Salvează” din bara de unelte și Ctrl+S (aspectul clasic de birou) fac ce face „Da” din întrebare
+  const scope = useContext(PageScopeContext)
+  const guardId = useRef<number | null>(null)
+  useEffect(() => {
+    if (!scope) return
+    const id = scope.addGuard({ dirty: false, save: () => saveRef.current() })
+    guardId.current = id
+    return () => {
+      scope.removeGuard(id)
+      guardId.current = null
+    }
+  }, [scope])
+  useEffect(() => {
+    if (scope && guardId.current !== null) scope.updateGuard(guardId.current, { dirty, save: () => saveRef.current() })
+  }, [scope, dirty])
 
   useEffect(() => {
     if (!dirty) return

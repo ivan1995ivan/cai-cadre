@@ -12,7 +12,15 @@ const OVERLAYS = [
   '.ant-modal-wrap:not([style*="display: none"])', '.ant-drawer-open', '.ant-select-dropdown:not(.ant-select-dropdown-hidden)',
   '.ant-picker-dropdown:not(.ant-picker-dropdown-hidden)', '.ant-dropdown:not(.ant-dropdown-hidden)', '.ant-popover:not(.ant-popover-hidden)',
   '.ant-image-preview-wrap', '.ant-tour',
+  // bara de meniu a aspectului clasic de birou, cât e aleasă din tastatură (Alt) sau are un meniu deschis
+  '.dk-menubar:focus-within', '.dk-menu-popup',
 ].join(',')
+
+/** „Ferestrele deschise” deschise din altă parte (bara de unelte, meniul Ferestre). */
+const showListeners = new Set<() => void>()
+export function showOpenWindows() {
+  showListeners.forEach((l) => l())
+}
 
 function overlayOpen() {
   return Array.from(document.querySelectorAll<HTMLElement>(OVERLAYS)).some((el) => el.offsetParent !== null || el.getClientRects().length > 0)
@@ -38,6 +46,16 @@ export default function WindowKeys() {
   // ultimele valori pentru ascultătorul de taste (pus o singură dată)
   const state = useRef({ open, sel, items, current })
   state.current = { open, sel, items, current }
+
+  useEffect(() => {
+    const show = () => {
+      const { current: here, items: list } = state.current
+      setSel((here + 1) % list.length)
+      setOpen(true)
+    }
+    showListeners.add(show)
+    return () => { showListeners.delete(show) }
+  }, [])
 
   useEffect(() => {
     const go = (i: number) => {

@@ -12,7 +12,7 @@ import AppLayout, { ADMIN_NAV, ComingSoon, NAV, SETTINGS_NAV, type NavItem } fro
 import { DICT_KINDS, navLabel } from './layout/nav'
 import SectionPanel from './layout/SectionPanel'
 import SessionGuards from './components/SessionGuards'
-import { buildTheme, PALETTES } from './theme/themes'
+import { buildTheme, isDesktopLook, PALETTES } from './theme/themes'
 import Dashboard from './pages/Dashboard'
 import AlertsPage, { AlertSettingsPage, SmtpSettingsPage } from './pages/AlertsPage'
 import Login from './pages/Login'
@@ -146,6 +146,9 @@ function Themed({ children }: { children: React.ReactNode }) {
   const theme = buildTheme(themeName, density, branding?.primary_color || undefined, buttons)
   useEffect(() => {
     document.documentElement.dataset.theme = themeName // tema „Ca în 1C” are și reguli în styles.css
+    // aspectul (program clasic de birou sau meniul lateral) și culorile (luminoase / întunecate), pentru regulile din styles.css
+    document.documentElement.dataset.look = isDesktopLook(themeName) ? 'desktop' : 'web'
+    document.documentElement.dataset.scheme = PALETTES[themeName].dark ? 'dark' : 'light'
     document.body.style.background = PALETTES[themeName].bg
     document.body.style.colorScheme = PALETTES[themeName].dark ? 'dark' : 'light'
     document.documentElement.dataset.buttons = buttons

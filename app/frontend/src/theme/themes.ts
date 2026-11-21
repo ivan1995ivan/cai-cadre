@@ -1,6 +1,6 @@
 import { theme as antdTheme, type ThemeConfig } from 'antd'
 
-export type ThemeName = 'green' | 'turquoise' | 'blue' | 'dark' | 'onec'
+export type ThemeName = 'desktop' | 'desktop_dark' | 'green' | 'turquoise' | 'blue' | 'dark' | 'onec'
 export type ThemeChoice = ThemeName | 'auto' | ''
 export type Density = 'normal' | 'compact'
 /** Butoanele: plate (2D) sau în relief (3D) — alegerea fiecărui utilizator, în Profilul meu. */
@@ -16,9 +16,37 @@ interface Palette {
   siderText: string
   highlight: string
   dark: boolean
+  /** aspectul programului: „desktop” — program clasic de birou (bara de titlu, meniul, bara de unelte, bara de stare,
+   *  ferestrele ca file); altfel — meniul lateral, ca până acum */
+  look?: 'desktop'
 }
 
 export const PALETTES: Record<ThemeName, Palette> = {
+  // Program clasic de birou (implicit): ferestre gri deschis, câmpuri și tabele albe cu chenar subțire, selecția albastră
+  desktop: {
+    primary: '#0067C0',
+    primaryForText: '#0067C0',
+    bg: '#E9E9E9',
+    surface: '#F0F0F0',
+    text: '#1A1A1A',
+    siderBg: '#F0F0F0',
+    siderText: '#1A1A1A',
+    highlight: '#CCE8FF',
+    dark: false,
+    look: 'desktop',
+  },
+  desktop_dark: {
+    primary: '#4CA3F0',
+    primaryForText: '#1F6FB8',
+    bg: '#1E1E1E',
+    surface: '#2B2B2B',
+    text: '#E8E8E8',
+    siderBg: '#2B2B2B',
+    siderText: '#E8E8E8',
+    highlight: '#264F78',
+    dark: true,
+    look: 'desktop',
+  },
   green: {
     primary: '#1FA463',
     primaryForText: '#15834D',
@@ -102,10 +130,22 @@ export function alpha(hex: string, a: number): string {
   return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`
 }
 
+/** Tema implicită când întreprinderea n-a ales alta (și înainte să vină datele ei de la server). */
+export const DEFAULT_THEME: ThemeName = 'desktop'
+
+/** Tema are aspectul de program clasic de birou (layout/DesktopLayout). */
+export const isDesktopLook = (name: ThemeName) => PALETTES[name]?.look === 'desktop'
+
+/** Tema aleasă → tema folosită. „Automat” urmează sistemul: întunecată noaptea, cea a întreprinderii ziua — în aspectul
+ *  clasic de birou varianta lui întunecată / luminoasă, ca aspectul să nu se schimbe odată cu culorile. */
 export function resolveTheme(choice: ThemeChoice, companyDefault: ThemeName, prefersDark: boolean): ThemeName {
-  if (choice === 'auto') return prefersDark ? 'dark' : companyDefault === 'dark' ? 'green' : companyDefault
+  const company = companyDefault in PALETTES ? companyDefault : DEFAULT_THEME
+  if (choice === 'auto') {
+    if (isDesktopLook(company)) return prefersDark ? 'desktop_dark' : 'desktop'
+    return prefersDark ? 'dark' : company === 'dark' ? 'green' : company
+  }
   if (choice && choice in PALETTES) return choice as ThemeName
-  return companyDefault
+  return company
 }
 
 /** Tema „Ca în 1C”: câmpuri și tabele albe cu chenar gri, colțuri aproape drepte, rânduri dese, scris Arial 13 px. */
@@ -160,7 +200,121 @@ function onecTheme(density: Density): ThemeConfig {
   }
 }
 
+/**
+ * Tema „Clasic de birou”: aspectul unui program de birou (Windows / Qt) — scrisul sistemului de 12–13 px, rânduri dese,
+ * colțuri drepte, fără umbre mari și fără animații, ferestrele și panourile gri deschis, câmpurile și tabelele albe cu
+ * chenar de 1 px, rândul ales albastru deschis. Restul (bara de titlu, chenarele grupelor, dialogurile cu bară de titlu,
+ * butoanele în relief discret) vine din styles.css, după html[data-look='desktop'].
+ */
+function desktopTheme(dark: boolean, density: Density): ThemeConfig {
+  const p = PALETTES[dark ? 'desktop_dark' : 'desktop']
+  const compact = density === 'compact'
+  const c = dark
+    ? { field: '#1E1E1E', border: '#5C5C5C', borderSoft: '#3D3D3D', hover: '#2A3A4A', selected: '#264F78', selectedHover: '#2D5C8A',
+      header: '#333333', grid: '#3A3A3A', menuHover: '#3A4A5A', link: '#6CB4F5', textSoft: '#B5B5B5' }
+    : { field: '#FFFFFF', border: '#ABADB3', borderSoft: '#D5D5D5', hover: '#E5F3FF', selected: '#CCE8FF', selectedHover: '#B8DEFF',
+      header: '#F3F3F3', grid: '#E2E2E2', menuHover: '#CCE8FF', link: '#0066CC', textSoft: '#5A5A5A' }
+  const algorithms = [dark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm]
+  return {
+    algorithm: algorithms,
+    token: {
+      colorPrimary: p.primary,
+      colorInfo: p.primary,
+      colorLink: c.link,
+      colorSuccess: STATUS_COLORS.success,
+      colorWarning: STATUS_COLORS.warning,
+      colorError: STATUS_COLORS.error,
+      colorBgLayout: p.bg,
+      colorBgContainer: c.field,
+      colorBgElevated: p.surface,
+      colorText: p.text,
+      colorTextSecondary: c.textSoft,
+      colorBorder: c.border,
+      colorBorderSecondary: c.borderSoft,
+      colorSplit: c.borderSoft,
+      fontFamily: "'Segoe UI', system-ui, -apple-system, 'Noto Sans', Tahoma, Arial, sans-serif",
+      fontSize: compact ? 12 : 13,
+      fontSizeSM: 12,
+      fontSizeLG: compact ? 13 : 14,
+      fontSizeHeading1: 20,
+      fontSizeHeading2: 18,
+      fontSizeHeading3: 16,
+      fontSizeHeading4: 14,
+      fontSizeHeading5: 13,
+      lineHeight: 1.45,
+      borderRadius: 0,
+      borderRadiusLG: 0,
+      borderRadiusSM: 0,
+      borderRadiusXS: 0,
+      borderRadiusOuter: 0,
+      controlHeight: compact ? 22 : 24,
+      controlHeightSM: compact ? 18 : 20,
+      controlHeightLG: compact ? 26 : 28,
+      controlOutline: 'transparent',
+      controlOutlineWidth: 0,
+      controlItemBgActive: c.selected,
+      controlItemBgActiveHover: c.selectedHover,
+      controlItemBgHover: c.hover,
+      padding: 12,
+      paddingLG: 16,
+      paddingMD: 14,
+      paddingSM: 8,
+      paddingXS: 6,
+      margin: 12,
+      marginLG: 16,
+      boxShadow: '2px 2px 6px rgba(0, 0, 0, 0.28)',
+      boxShadowSecondary: '2px 2px 4px rgba(0, 0, 0, 0.28)',
+      boxShadowTertiary: 'none',
+      motion: false,
+      wireframe: true,
+    },
+    components: {
+      Layout: { siderBg: p.siderBg, headerBg: p.surface, bodyBg: p.bg, triggerBg: p.siderBg, triggerColor: p.siderText },
+      Menu: { itemBg: 'transparent', itemSelectedBg: c.selected, itemSelectedColor: p.text, itemHoverBg: c.hover, itemHeight: 26,
+        itemMarginBlock: 0, itemMarginInline: 0, itemBorderRadius: 0, subMenuItemBorderRadius: 0, activeBarBorderWidth: 0 },
+      Button: { fontWeight: 400, paddingInline: 10, paddingInlineSM: 6, primaryShadow: 'none', defaultShadow: 'none', dangerShadow: 'none',
+        defaultBg: dark ? '#3A3A3A' : '#E8E8E8', defaultBorderColor: dark ? '#6A6A6A' : '#ADADAD', defaultColor: p.text,
+        defaultHoverBg: dark ? '#43505C' : '#E5F1FB', defaultHoverBorderColor: '#3C7FB1', defaultHoverColor: p.text,
+        defaultActiveBg: dark ? '#2F4A63' : '#CCE4F7', defaultActiveBorderColor: '#2C628B', defaultActiveColor: p.text,
+        primaryColor: p.text },
+      Input: { colorBgContainer: c.field, activeShadow: 'none', hoverBorderColor: '#7EB4EA', activeBorderColor: '#3399FF', paddingInline: 4,
+        paddingInlineSM: 3 },
+      InputNumber: { colorBgContainer: c.field, activeShadow: 'none', hoverBorderColor: '#7EB4EA', activeBorderColor: '#3399FF', paddingInline: 4 },
+      Select: { colorBgContainer: c.field, activeOutlineColor: 'transparent', hoverBorderColor: '#7EB4EA', activeBorderColor: '#3399FF',
+        optionSelectedBg: c.selected, optionActiveBg: c.hover, optionHeight: 22, optionPadding: '2px 6px', optionSelectedFontWeight: 400 },
+      DatePicker: { colorBgContainer: c.field, activeShadow: 'none', hoverBorderColor: '#7EB4EA', activeBorderColor: '#3399FF' },
+      Checkbox: { borderRadiusSM: 0 },
+      Radio: { buttonSolidCheckedBg: p.primary, dotSize: 6, radioSize: 13 },
+      Card: { headerFontSize: 13, headerFontSizeSM: 12, headerHeight: 30, headerHeightSM: 26, headerPadding: 8, bodyPadding: 10,
+        bodyPaddingSM: 8, colorBgContainer: p.surface, headerBg: dark ? '#333333' : '#F7F7F7', extraColor: p.text },
+      Tabs: { cardBg: dark ? '#262626' : '#E3E3E3', cardHeight: 26, cardPadding: '3px 10px', cardGutter: 2, horizontalMargin: '0 0 8px 0',
+        horizontalItemPadding: '4px 10px', horizontalItemGutter: 2, titleFontSize: compact ? 12 : 13, itemSelectedColor: p.text,
+        itemHoverColor: p.text, inkBarColor: 'transparent', itemColor: p.text },
+      Table: { colorBgContainer: c.field, headerBg: c.header, headerColor: p.text, headerSplitColor: c.borderSoft, rowHoverBg: c.hover,
+        rowSelectedBg: c.selected, rowSelectedHoverBg: c.selectedHover, borderColor: c.grid, footerBg: c.header,
+        cellPaddingBlock: 3, cellPaddingInline: 6, cellPaddingBlockMD: 3, cellPaddingInlineMD: 6, cellPaddingBlockSM: 2,
+        cellPaddingInlineSM: 5, headerBorderRadius: 0, cellFontSize: compact ? 12 : 13, cellFontSizeSM: compact ? 12 : 13,
+        cellFontSizeMD: compact ? 12 : 13, selectionColumnWidth: 28, expandIconBg: c.field },
+      // paddingul antetului / corpului / subsolului (bara de titlu a dialogului) — din `wireframe` și din styles.css
+      Modal: { titleFontSize: 12, titleLineHeight: 1.6, contentBg: p.surface, headerBg: dark ? '#3A3A3A' : '#DDE6F0' },
+      Drawer: { footerPaddingBlock: 6, footerPaddingInline: 12 },
+      Descriptions: { labelBg: c.header, itemPaddingBottom: 4, titleMarginBottom: 6 },
+      Collapse: { headerBg: c.header, headerPadding: '4px 8px', contentPadding: '8px 10px', contentBg: p.surface },
+      Segmented: { itemSelectedBg: c.field, trackBg: dark ? '#3A3A3A' : '#DADADA', trackPadding: 1 },
+      Tag: { defaultBg: c.header },
+      Dropdown: { paddingBlock: 3, controlPaddingHorizontal: 10 },
+      Tooltip: { colorBgSpotlight: dark ? '#3A3A3A' : '#FFFFE1', colorTextLightSolid: p.text, borderRadius: 0 },
+      Form: { itemMarginBottom: 8, verticalLabelPadding: '0 0 2px', labelFontSize: compact ? 12 : 13 },
+      List: { itemPadding: '4px 6px', itemPaddingSM: '3px 6px' },
+      Pagination: { itemSize: 22, itemSizeSM: 20 },
+      Alert: { defaultPadding: '6px 10px', withDescriptionPadding: '8px 12px' },
+      Badge: { indicatorHeight: 16, indicatorHeightSM: 14 },
+    },
+  }
+}
+
 export function buildTheme(name: ThemeName, density: Density, customPrimary?: string, buttons: ButtonStyle = '3d'): ThemeConfig {
+  if (isDesktopLook(name)) return desktopTheme(PALETTES[name].dark, density)
   if (name === 'onec') return onecTheme(density)
   const p = PALETTES[name]
   // Culoarea proprie a firmei (din Constante) înlocuiește culoarea principală în temele luminoase.
