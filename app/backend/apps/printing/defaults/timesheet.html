@@ -14,6 +14,7 @@
       <th style="width:9mm">Noapte</th>
       <th style="width:9mm">Sărb.</th>
       <th style="width:10mm">Norma</th>
+      {% for h in hour_types %}<th style="width:11mm" title="{{ h.name }}">{{ h.code }}</th>{% endfor %}
       <th style="width:20mm">Absențe (zile)</th>
     </tr>
   </thead>
@@ -21,18 +22,21 @@
   {% for r in rows %}
     <tr>
       <td rowspan="2" class="num">{{ r.no }}</td>
-      <td rowspan="2">{{ r.name }} · {{ r.tab_number }}<br><span class="muted">{{ r.occupation }}{% if r.kind %} ({{ r.kind }}){% endif %} · {{ r.rate }}</span></td>
+      <td rowspan="2">{{ r.name }} · {{ r.tab_number }}<br><span class="muted">{{ r.occupation }}{% if r.kind %} ({{ r.kind }}){% endif %} · {{ r.rate }}{% if r.pay %}<br>{{ r.pay }}{% endif %}</span></td>
       {% for c in r.top %}<td style="text-align:center">{{ c }}</td>{% endfor %}
       <td rowspan="2" class="num">{{ r.days }}</td><td rowspan="2" class="num">{{ r.hours }}</td>
       <td rowspan="2" class="num">{{ r.night_total }}</td><td rowspan="2" class="num">{{ r.holiday }}</td>
-      <td rowspan="2" class="num">{{ r.norm }}</td><td rowspan="2">{{ r.codes }}</td>
+      <td rowspan="2" class="num">{{ r.norm }}</td>
+      {% for v in r.hour_types %}<td rowspan="2" class="num">{{ v }}</td>{% endfor %}
+      <td rowspan="2">{{ r.codes }}</td>
     </tr>
     <tr>{% for c in r.night %}<td style="text-align:center; color:#555">{{ c }}</td>{% endfor %}</tr>
   {% empty %}<tr><td colspan="40" class="muted">—</td></tr>{% endfor %}
   </tbody>
 </table>
 <p class="muted" style="margin-top:6px">Rândul de sus — orele lucrate sau codul absenței; rândul de jos — orele de noapte.
-{% for l in legend %}{{ l.code }} — {{ l.label }}{% if not forloop.last %}; {% endif %}{% endfor %}</p>
+{% for l in legend %}{{ l.code }} — {{ l.label }}{% if not forloop.last %}; {% endif %}{% endfor %}
+{% if hour_types %}<br>Orele pe tipuri (efective → de plată, cu orele garantate): {% for h in hour_types %}{{ h.code }} — {{ h.name }}{% if not forloop.last %}; {% endif %}{% endfor %}.{% endif %}</p>
 
 <div class="signatures">
   <div>{{ texts.head_label }}<div class="line"></div><div class="who">{{ doc.head_name }}</div></div>

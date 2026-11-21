@@ -57,7 +57,9 @@ class PayType(models.Model):
     # cheia motorului de calcul pentru formula „auto” (apps.payroll.engine)
     AUTO = [
         ("salary", "Salariul de funcție (pro-rata la orele lucrate)"), ("allowance", "Sporurile fixe din raportul de muncă (%)"),
-        ("combination", "Plata pentru cumul (% din salariul de funcție)"), ("night", "Munca de noapte (+ % la tariful orar)"),
+        ("combination", "Plata pentru cumularea funcțiilor / suplinire (CM art. 156, din raportul de muncă)"),
+        ("hour_types", "Ore pe tipuri: ore plătite × tariful (cu orele garantate)"),
+        ("night", "Munca de noapte (+ % la tariful orar)"),
         ("holiday", "Munca în zile de sărbătoare (+ % la tariful orar)"), ("overtime", "Ore suplimentare (+ % la tariful orar)"),
         ("leave", "Indemnizația de concediu de odihnă (media × zile)"), ("leave_comp", "Compensarea concediului nefolosit"),
         ("sick", "Incapacitate temporară: zilele plătite de angajator"),

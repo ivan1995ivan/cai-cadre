@@ -1,4 +1,6 @@
 """Tiparul tabelei de pontaj și al graficului de ture al subdiviziunii."""
+from decimal import Decimal
+
 from django.utils import timezone
 
 from apps.printing.renderer import company_context
@@ -23,6 +25,30 @@ def _lang(request):
     return request.query_params.get("lang") if request.query_params.get("lang") in ("ro", "ru", "en") else "ro"
 
 
+PAY_SHORT = {"salary": "salariu", "hourly": "tarif orar", "hour_types": "tarife pe tipuri de ore", "mixed": "salariu + tarife"}
+COMBINATION_SHORT = {"combination": "cumulare", "substitution": "suplinire", "acting": "interimat"}
+
+
+def pay_label(row) -> str:
+    """„salariu + tarife; cumulare: Instructor 30 %” — remunerarea liniei pentru tipar."""
+    parts = [PAY_SHORT.get(row.get("pay_mode"), "")]
+    for c in row.get("combinations") or []:
+        v = format(Decimal(str(c["value"])).normalize(), "f").replace(".", ",")
+        unit = {"pct_own": " %", "pct_other": " %", "fixed": " lei", "hourly": " lei/oră"}.get(c["pay_mode"], "")
+        parts.append(f"{COMBINATION_SHORT.get(c['kind'], '')}: {c['occupation']} {v}{unit}")
+    return "; ".join(p for p in parts if p)
+
+
+def _typed(s) -> str:
+    """Celula tipului de ore în tipar: orele efective și, dacă diferă, cele de plată (cu garanția)."""
+    if not s:
+        return ""
+    text = _n(s["hours"]) or "0"
+    if s.get("guaranteed") is not None and s["paid"] != s["hours"]:
+        text += f" → {_n(s['paid'])}"
+    return text
+
+
 def _top(cell) -> str:
     if not cell:
         return ""
@@ -41,9 +67,12 @@ def timesheet_context(request, ts: Timesheet, lang="ro") -> dict:
                      "night": [_n((cells.get(str(d)) or {}).get("n")) for d in numbers],
                      "days": t.get("days", 0), "hours": _n(t.get("hours")), "night_total": _n(t.get("night")),
                      "holiday": _n(t.get("holiday")), "norm": _n(t.get("norm")), "overtime": _n(t.get("overtime")),
-                     "codes": ", ".join(f"{k} {v}" for k, v in (t.get("codes") or {}).items())})
+                     "codes": ", ".join(f"{k} {v}" for k, v in (t.get("codes") or {}).items()),
+                     "hour_types": [_typed(r["hour_types"].get(c["code"])) for c in report["hour_types"]],
+                     "pay": pay_label(r)})
     used = sorted({k for r in report["rows"] for k in (r["totals"].get("codes") or {})})
     return {"company": company_context(request, lang), "lang": lang, "options": {}, "rows": rows, "days": report["days"],
+            "hour_types": [{"code": c["code"], "name": c["name_ro"]} for c in report["hour_types"]],
             "legend": [{"code": c, "label": services.CODE_LABELS.get(c, c)} for c in used],
             "doc": {"subdivision": ts.subdivision.name_ro, "month": MONTHS[ts.month], "year": ts.year,
                     "status": ts.get_status_display(), "head_name": ts.subdivision.head_name},

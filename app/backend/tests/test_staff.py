@@ -290,18 +290,23 @@ def test_several_jobs_with_percent_rate_cumul_pay_and_service_contract(admin_cli
     org_services.approve(sl)
     a = make_emp()
     hire(a, org, date_from=date(2020, 1, 1))
+    # cumulul intern: raport separat, cu modalitatea lui de remunerare (S4b) — aici tarif orar
+    bad = admin_client.post("/api/staff/employments/", {"employee": a.id, "kind": "internal", "subdivision": org["ati"].id,
+                                                        "occupation": org["anest"].id, "rate": "0.25", "pay_mode": "hourly",
+                                                        "date_from": "2025-01-01"}, format="json")
+    assert bad.status_code == 400 and "tariful orar" in str(bad.data)
     r = admin_client.post("/api/staff/employments/", {"employee": a.id, "kind": "internal", "subdivision": org["ati"].id,
-                                                      "occupation": org["anest"].id, "rate": "0.25", "combination_pct": "50",
-                                                      "date_from": "2025-01-01"}, format="json")
+                                                      "occupation": org["anest"].id, "rate": "0.25", "pay_mode": "hourly",
+                                                      "hourly_rate": "95", "date_from": "2025-01-01"}, format="json")
     assert r.status_code == 201, r.data
-    assert Decimal(r.data["combination_pct"]) == 50
+    assert (r.data["pay_mode"], Decimal(r.data["hourly_rate"])) == ("hourly", 95)
     job = Employment.objects.get(pk=r.data["id"])
-    assert job.history.get().combination_pct == Decimal("50")
-    r = admin_client.post(f"/api/staff/employments/{job.id}/change/", {"date": "2025-06-01", "combination_pct": "30"},
+    assert (job.history.get().pay_mode, job.history.get().hourly_rate) == ("hourly", Decimal("95"))
+    r = admin_client.post(f"/api/staff/employments/{job.id}/change/", {"date": "2025-06-01", "hourly_rate": "110"},
                           format="json")
     assert r.status_code == 200, r.data
     job.refresh_from_db()
-    assert job.combination_pct == Decimal("30") and job.history.count() == 2
+    assert job.hourly_rate == Decimal("110") and job.history.count() == 2 and job.history.last().event == "change"
     # contract de prestări servicii: nu ocupă post, nu intră în vechime, nu dă concediu
     c = make_emp("Ceban", "Dan")
     services.hire(c, kind="contractor", subdivision=org["ati"], occupation=org["anest"], rate=Decimal("0.5"),
@@ -317,12 +322,24 @@ def test_combination_order_sets_cumul_pay_and_import_percent_rate(admin_client, 
 
     a = make_emp()
     hire(a, org, date_from=date(2020, 1, 1))
+    base = a.employments.get()
+    # cumularea funcțiilor (CM art. 156): pe același contract — înregistrarea pe raportul de bază, nu un raport nou
     order = make_order(admin_client, "combination", [a])
-    set_params(admin_client, order, {"subdivision": org["ati"].id, "occupation": org["anest"].id, "rate": "0.5",
-                                     "percent": "50", "date_from": "2026-03-02", "date_to": "2026-08-31"})
+    item = set_params(admin_client, order, {"subdivision": org["ati"].id, "occupation": org["anest"].id, "percent": "50",
+                                            "date_from": "2026-03-02", "date_to": "2026-08-31"})
+    assert "fără eliberare de la munca de bază" in item["text"] and "plata de 50% din salariul de funcție" in item["text"]
+    sign(admin_client, order)
+    assert a.employments.count() == 1
+    rec = base.combinations.get()
+    assert (rec.kind, rec.occupation_id, rec.pay_mode, rec.value, rec.date_to) == (
+        "combination", org["anest"].id, "pct_own", Decimal("50"), date(2026, 8, 31))
+    # ca raport separat (cumul intern cu pontaj propriu) — la cerere
+    order = make_order(admin_client, "combination", [a])
+    set_params(admin_client, order, {"mode": "separate", "subdivision": org["ati"].id, "occupation": org["anest"].id,
+                                     "rate": "0.5", "base_salary": "15200", "date_from": "2026-03-02", "date_to": "2026-08-31"})
     sign(admin_client, order)
     job = a.employments.get(kind="internal")
-    assert (job.rate, job.combination_pct, job.allowance_pct) == (Decimal("0.5"), Decimal("50"), Decimal("0"))
+    assert (job.rate, job.base_salary, job.allowance_pct, job.combinations.count()) == (Decimal("0.5"), Decimal("15200"), Decimal("0"), 0)
     rows = [["Numele", "Prenumele", "Subdiviziunea (cod sau denumire)", "Funcția", "Tipul angajării", "Norma", "Data angajării"],
             ["Rusu", "Ana", "TR1", "Medic traumatolog-ortoped", "de bază", "50%", "01.01.2020"],
             ["Rusu", "Ana", "ATI", "Medic anesteziolog-reanimatolog", "prestări servicii", 25, "01.01.2021"]]

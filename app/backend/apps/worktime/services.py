@@ -460,7 +460,7 @@ def fill_timesheet(ts: Timesheet, keep_manual=True) -> int:
         ln.days, ln.totals = days, line_totals(ctx, jd, days, rosters.get(jd.job.pk))
         ln.save()
     for ln in lines.values():  # raporturi care nu mai sunt în secție în luna aceasta (de ex. transfer anulat)
-        if not any(c.get("m") for c in (ln.days or {}).values()):
+        if not any(c.get("m") for c in (ln.days or {}).values()) and not ln.typed_hours:
             ln.delete()
     return added
 
@@ -504,15 +504,71 @@ def set_cell(line: TimesheetLine, day: int, code: str, hours=None, night=None) -
     return line
 
 
-def timesheet_report(ts: Timesheet) -> dict:
+def typed_by_job(year: int, month: int, employment_ids) -> dict:
+    """Orele pe tipuri ale raporturilor în lună, din toate tabelele lunii (un raport cu două linii — adunate)."""
+    from . import hour_types
+
+    parts = defaultdict(list)
+    for ln in TimesheetLine.objects.filter(timesheet__year=year, timesheet__month=month, timesheet__deletion_mark=False,
+                                           employment_id__in=list(employment_ids)).only("employment_id", "typed_hours"):
+        if ln.typed_hours:
+            parts[ln.employment_id].append(ln.typed_hours)
+    return {k: hour_types.merge(v) for k, v in parts.items()}
+
+
+def timesheet_report(ts: Timesheet, only_line=None) -> dict:
+    """Rândurile tabelei cu zilele, totalurile și orele pe tipuri (efective, garantate, de plată — apps.worktime.hour_types),
+    plus coloanele tipurilor de ore: cele cu tarif pe raporturile din tabelă, cele scrise și cele „pentru toți”."""
+    from apps.staff.models import FunctionCombination
+
+    from . import hour_types
+    from .models import HourType, JobHourRate
+
     ctx = Context(ts.year, ts.month)
-    rows = []
-    for ln in ts.lines.select_related("employment__employee", "employment__occupation").prefetch_related(
-            "employment__history").order_by("sort", "id"):
-        jd = JobDays(ln.employment, ctx.days, [])
+    first, last = ctx.days[0], ctx.days[-1]
+    lines = list(ts.lines.select_related("employment__employee", "employment__occupation").prefetch_related(
+        "employment__history").order_by("sort", "id"))
+    if only_line is not None:
+        lines = [ln for ln in lines if ln.pk == only_line]
+    job_ids = {ln.employment_id for ln in lines}
+    types = {t.code: t for t in HourType.objects.all()}
+    rates = defaultdict(list)
+    for r in JobHourRate.objects.filter(employment_id__in=job_ids).select_related("hour_type"):
+        rates[r.employment_id].append(r)
+    combos = defaultdict(list)
+    for c in (FunctionCombination.objects.filter(employment_id__in=job_ids, date_from__lte=last)
+              .filter(Q(date_to__isnull=True) | Q(date_to__gte=first)).select_related("occupation", "hour_type")):
+        combos[c.employment_id].append(c)
+    absences = defaultdict(list)
+    for a in Absence.objects.filter(employee_id__in={ln.employment.employee_id for ln in lines}, date_from__lte=last,
+                                    date_to__gte=first):
+        absences[a.employee_id].append(a)
+    typed = typed_by_job(ts.year, ts.month, job_ids)
+    conf = hour_types.settings()
+    rows, used = [], set()
+    for ln in lines:
+        jd = JobDays(ln.employment, ctx.days, absences.get(ln.employment.employee_id, []))
         jd.days = set(ctx.days)
-        rows.append({"id": ln.id, **_label(jd, ctx), "days": ln.days or {}, "totals": ln.totals or {}, "note": ln.note})
-    return {"days": _days_header(ctx), "rows": rows, "codes": CODE_LABELS, "manual_codes": [*MANUAL_CODES, *CODE_LABELS]}
+        summary = hour_types.summarize(ctx, jd, typed.get(ln.employment_id, {}), rates.get(ln.employment_id, []), types, conf)
+        used |= set(summary)
+        for c in combos.get(ln.employment_id, []):
+            if c.pay_mode == "hourly" and c.hour_type_id:
+                used.add(c.hour_type.code)
+        rec = ln.employment.history.filter(date__lte=last).order_by("-date", "-id").first()
+        mode = rec.pay_mode if rec else ln.employment.pay_mode
+        rows.append({"id": ln.id, **_label(jd, ctx), "days": ln.days or {}, "totals": ln.totals or {}, "note": ln.note,
+                     "typed": (ln.typed_hours or {}), "hour_types": summary,
+                     "hour_warnings": hour_types.warnings(summary, ln.totals or {}),
+                     "pay_mode": mode, "rate_codes": sorted({r.hour_type.code for r in rates.get(ln.employment_id, [])
+                                                             if r.in_force(first, last)}),
+                     "combinations": [{"kind": c.kind, "occupation": c.occupation.name_ro, "pay_mode": c.pay_mode,
+                                       "value": float(c.value), "text": str(c)} for c in combos.get(ln.employment_id, [])]})
+    used |= {t.code for t in types.values() if t.in_all_timesheets and t.is_active and not t.deletion_mark}
+    columns = [{"code": t.code, "name_ro": t.name_ro, "name_ru": t.name_ru, "name_en": t.name_en, "entry": t.entry,
+                "work_time": t.work_time, "is_active": t.is_active and not t.deletion_mark}
+               for t in sorted((types[c] for c in used if c in types), key=lambda t: (t.sort, t.code))]
+    return {"days": _days_header(ctx), "rows": rows, "codes": CODE_LABELS, "manual_codes": [*MANUAL_CODES, *CODE_LABELS],
+            "hour_types": columns}
 
 
 def visible_ids(user):

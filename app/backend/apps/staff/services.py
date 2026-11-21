@@ -10,10 +10,12 @@ from django.db.models import Q
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
-from .models import CIVIL_KINDS, OCCUPYING_KINDS, Employee, Employment, EmploymentHistory, PriorExperience
+from .models import (CIVIL_KINDS, OCCUPYING_KINDS, PAY_MODES, Employee, Employment, EmploymentHistory, FunctionCombination,
+                     PriorExperience)
 
-SNAPSHOT = ("subdivision_id", "occupation_id", "rate", "base_salary", "allowance_pct", "combination_pct")
-SNAPSHOT_FIELDS = ["subdivision", "occupation", "rate", "base_salary", "allowance_pct", "combination_pct"]
+SNAPSHOT = ("subdivision_id", "occupation_id", "rate", "base_salary", "allowance_pct", "pay_mode", "hourly_rate")
+SNAPSHOT_FIELDS = ["subdivision", "occupation", "rate", "base_salary", "allowance_pct", "pay_mode", "hourly_rate"]
+MODES = {k for k, _ in PAY_MODES}
 
 
 # --- numărul de tabel ---------------------------------------------------------------
@@ -58,8 +60,8 @@ def can_see(employee, user, module="employees") -> bool:
 def _snapshot(emp: Employment, event: str, day, order="", note="", user=None) -> EmploymentHistory:
     return EmploymentHistory.objects.create(
         employment=emp, event=event, date=day, subdivision_id=emp.subdivision_id, occupation_id=emp.occupation_id,
-        rate=emp.rate, base_salary=emp.base_salary, allowance_pct=emp.allowance_pct, combination_pct=emp.combination_pct,
-        order=order, note=note,
+        rate=emp.rate, base_salary=emp.base_salary, allowance_pct=emp.allowance_pct, pay_mode=emp.pay_mode,
+        hourly_rate=emp.hourly_rate, order=order, note=note,
         created_by=user)
 
 
@@ -84,10 +86,23 @@ def _check_rate(rate):
         raise ValidationError({"rate": "Norma este între 0,01 și 1,5 unități."})
 
 
+def _check_pay(fields, current=None):
+    """Modalitatea de remunerare și tariful orar: „Tarif orar” cere tariful; tariful orar nu e negativ."""
+    mode = fields.get("pay_mode", getattr(current, "pay_mode", "salary"))
+    if mode not in MODES:
+        raise ValidationError({"pay_mode": "Modalitatea de remunerare nu există."})
+    hourly = fields.get("hourly_rate", getattr(current, "hourly_rate", Decimal("0")))
+    if hourly is not None and Decimal(hourly) < 0:
+        raise ValidationError({"hourly_rate": "Tariful orar nu poate fi negativ."})
+    if mode == "hourly" and not hourly:
+        raise ValidationError({"hourly_rate": "La modalitatea „Tarif orar” dați tariful orar de bază (lei pe oră)."})
+
+
 @transaction.atomic
 def hire(employee: Employee, *, user=None, order="", event="hire", **fields) -> Employment:
     """Raport de muncă nou (angajare, cumul, suplinire) + prima înregistrare în istoric."""
     _check_rate(fields.get("rate", Decimal("1")))
+    _check_pay(fields)
     kind = fields.get("kind", "main")
     if kind in ("main", "main_student") and employee.employments.filter(kind__in=("main", "main_student")).exclude(
             status="ended").exists():
@@ -110,12 +125,17 @@ def change(emp: Employment, day, *, user=None, order="", note="", event="change"
     if day < emp.date_from:
         raise ValidationError({"date": "Data modificării este înaintea angajării."})
     allowed = {"subdivision", "subdivision_id", "occupation", "occupation_id", "rate", "base_salary", "allowance_pct",
-               "combination_pct"}
+               "pay_mode", "hourly_rate"}
     unknown = set(fields) - allowed
     if unknown:
         raise ValidationError({"detail": f"Câmpuri necunoscute: {', '.join(sorted(unknown))}"})
     if "rate" in fields:
         _check_rate(fields["rate"])
+    _check_pay(fields, emp)
+    if "pay_mode" in fields:
+        from apps.worktime import rates
+
+        rates.check_mode_change(emp, day, fields["pay_mode"])
     current = {f: getattr(emp, f) for f in SNAPSHOT}
     for key, value in fields.items():
         setattr(emp, key, value)
@@ -181,11 +201,30 @@ def terminate(emp: Employment, day, reason=None, *, user=None, order="", note=""
     emp.status, emp.end_date, emp.termination_reason, emp.end_order = "ended", day, reason, order
     emp.save(update_fields=["status", "end_date", "termination_reason", "end_order"])
     _snapshot(emp, "end", day, order=order, note=note, user=user)
+    # cumulările / suplinirile pe acest raport și suplinirile acestui raport (de pe raportul altuia) se încheie odată cu el
+    emp.closed_combinations = close_combinations(
+        FunctionCombination.objects.filter(Q(employment=emp) | Q(substitutes=emp)), day)
     # suplinirile acestui raport încetează odată cu el
     for sub in emp.substituted_by.exclude(status="ended"):
-        terminate(sub, day, user=user, order=order, note="Încetarea raportului suplinit")
+        done = terminate(sub, day, user=user, order=order, note="Încetarea raportului suplinit")
+        emp.closed_combinations += done.closed_combinations
     refresh_status(emp.employee)
     return emp
+
+
+def close_combinations(qs, day) -> list:
+    """Înregistrările de cumulare în vigoare după `day` primesc „până la” = `day`; întoarce [(id, „până la” de dinainte)]."""
+    closed = []
+    for rec in qs.filter(date_from__lte=day).filter(Q(date_to__isnull=True) | Q(date_to__gt=day)):
+        closed.append((rec.pk, rec.date_to.isoformat() if rec.date_to else None))
+        rec.date_to = day
+        rec.save(update_fields=["date_to"])
+    return closed
+
+
+def reopen_combinations(closed):
+    for pk, before in closed or []:
+        FunctionCombination.objects.filter(pk=pk).update(date_to=date.fromisoformat(before) if before else None)
 
 
 # --- vechimea în muncă ------------------------------------------------------------------

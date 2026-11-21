@@ -10,7 +10,7 @@ from apps.org.models import Occupation, Subdivision
 from apps.payroll import engine
 from apps.payroll.models import EmployeePayItem, ExemptionRequest, PayConstant, Payment, Payroll, PayType
 from apps.staff import services as staff
-from apps.staff.models import Employee, PriorExperience
+from apps.staff.models import Employee, FunctionCombination, PriorExperience
 from apps.worktime import services as worktime
 from apps.worktime.models import Timesheet
 
@@ -56,7 +56,8 @@ def test_constants_history_and_type_validation(admin_client, seeded):
     assert bad.status_code == 400
     # sporurile HG 837/2016 (vechimea, categoria) și gărzile nu se mai preîncarcă; NOCIV rămâne (Codul muncii, art. 139)
     assert not PayType.objects.filter(code__in=("VECH", "CATEG", "GARDA")).exists() and PayType.objects.filter(code="NOCIV").exists()
-    assert PayType.objects.get(code="SINDICAT").base_codes == ["SAL", "MINIM", "SPOR", "CUMUL", "NOCIV", "NOAPTE", "SARB", "SUPL", "CO", "PREMIU"]
+    # S4b: orele pe tipuri (ORE) intră în baza sindicatului
+    assert PayType.objects.get(code="SINDICAT").base_codes == ["SAL", "MINIM", "SPOR", "CUMUL", "ORE", "NOCIV", "NOAPTE", "SARB", "SUPL", "CO", "PREMIU"]
     ok = admin_client.post("/api/payroll/types/", {"code": "TRANSP", "name_ro": "Compensație transport", "formula": "fixed",
                                                    "taxable": False, "cas": False, "cnam": False}, format="json")
     assert ok.status_code == 201 and PayType.objects.get(code="TRANSP").is_system is False
@@ -125,7 +126,10 @@ def test_monthly_calculation_tax_exemption_scales_and_approval(admin_client, org
 def test_timesheet_sick_bonus_union_cumul_and_contract(admin_client, org):
     ana, job = person(org, "Rusu", "Ana", occ="nurse", salary="9200", hired=date(2024, 3, 1))
     cumul = staff.hire(ana, kind="internal", subdivision=org["ati"], occupation=org["anest"], rate=Decimal("0.25"),
-                       base_salary=Decimal("15200"), combination_pct=Decimal("30"), date_from=date(2025, 1, 1))
+                       base_salary=Decimal("15200"), date_from=date(2025, 1, 1))
+    # ca după migrația S4b a vechiului „plata pentru cumul 30 %” de pe raport: înregistrarea de cumulare pe același raport
+    FunctionCombination.objects.create(employment=cumul, occupation=org["anest"], pay_mode="pct_own", value=Decimal("30"),
+                                       date_from=date(2025, 1, 1))
     dan, _ = person(org, "Ceban", "Dan", kind="contractor", sub="ati", occ="anest", salary="0", rate="0.5", hired=date(2026, 1, 1))
     EmployeePayItem.objects.create(employee=dan, pay_type=PayType.objects.get(code="CONTRACT"), amount=Decimal("6000"), date_from=date(2026, 1, 1))
     EmployeePayItem.objects.create(employee=ana, pay_type=PayType.objects.get(code="SINDICAT"), date_from=date(2026, 1, 1))
@@ -151,7 +155,8 @@ def test_timesheet_sick_bonus_union_cumul_and_contract(admin_client, org):
     assert main.taxable == main.cnam_base == main.gross  # boala: fără CAS, dar cu impozit și CNAM
     second = lines[("Rusu", "internal")]
     it2 = items_of(second)
-    # 15 200 × 0,25 = 3 800 pe lună, pro-rata la orele lucrate (boala ține și la cumul): 24,5 din 38,5 ore; + 30 % cumul
+    # 15 200 × 0,25 = 3 800 pe lună, pro-rata la orele lucrate (boala ține și la cumul): 24,5 din 38,5 ore; + 30 % cumulare
+    # (toată luna: zilele 22 / 22)
     assert it2["SAL"].amount == Decimal("2418.18") and it2["CUMUL"].amount == Decimal("725.45")
     assert "BOALA" not in it2 and "PREMIU" not in it2 and "SINDICAT" not in it2  # cele pe persoană merg la raportul de bază
     contract = lines[("Ceban", "contractor")]

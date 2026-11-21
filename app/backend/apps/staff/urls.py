@@ -12,6 +12,7 @@ router.register("education", views.EducationViewSet, basename="education")
 router.register("experience", views.ExperienceViewSet, basename="experience")
 router.register("military", views.MilitaryViewSet, basename="military")
 router.register("employments", views.EmploymentViewSet, basename="employment")
+router.register("combinations", views.FunctionCombinationViewSet, basename="function-combination")
 
 urlpatterns = [
     path("import/<str:code>/", ImportView.as_view()),

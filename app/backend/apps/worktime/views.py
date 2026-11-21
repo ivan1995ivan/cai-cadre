@@ -5,6 +5,7 @@ from django.utils import timezone
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -13,10 +14,12 @@ from apps.org.models import Subdivision
 from apps.staff import services as staff
 from apps.staff.models import Employment
 
-from . import export, printing, services
-from .models import CalendarDay, JobSchedule, Roster, RosterLine, ShiftType, Timesheet, TimesheetLine, WorkSchedule
-from .serializers import (CalendarDaySerializer, JobScheduleSerializer, RosterLineSerializer, RosterSerializer,
-                          ShiftTypeSerializer, TimesheetLineSerializer, TimesheetSerializer, WorkScheduleSerializer)
+from . import export, hour_types, printing, services
+from .models import (CalendarDay, HourType, JobHourRate, JobSchedule, OccupationHourRate, Roster, RosterLine, ShiftType, Timesheet,
+                     TimesheetLine, WorkSchedule)
+from .serializers import (CalendarDaySerializer, HourTypeSerializer, JobHourRateSerializer, JobScheduleSerializer,
+                          OccupationHourRateSerializer, RosterLineSerializer, RosterSerializer, ShiftTypeSerializer,
+                          TimesheetLineSerializer, TimesheetSerializer, WorkScheduleSerializer)
 
 
 # --- clasificatoarele: turele, graficele de lucru, calendarul --------------------------------------------------
@@ -29,6 +32,79 @@ class ShiftTypeViewSet(DeletionMarkMixin, viewsets.ModelViewSet):
     def get_queryset(self):
         qs = super().get_queryset()
         return qs.filter(is_active=True, deletion_mark=False) if self.request.query_params.get("active") else qs
+
+
+class HourTypeViewSet(DeletionMarkMixin, viewsets.ModelViewSet):
+    """Clasificatorul tipurilor de ore (Setări → Tipuri de ore)."""
+
+    perm_module = ("worktime", "dictionaries")
+    serializer_class = HourTypeSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        qs = HourType.objects.select_related("pay_type")
+        return qs.filter(is_active=True, deletion_mark=False) if self.request.query_params.get("active") else qs
+
+    def check_delete(self, instance):
+        if instance.is_system:
+            raise ValidationError({"detail": "Tipul livrat cu sistemul nu se șterge; îl puteți face inactiv."})
+
+
+class JobHourRateViewSet(viewsets.ModelViewSet):
+    """Tarifele pe tipuri de ore ale raportului de muncă (fila „Raporturi de muncă”). Cele din ordine se schimbă doar prin ordin."""
+
+    perm_module = ("employees", "contracts")
+    serializer_class = JobHourRateSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        qs = JobHourRate.objects.select_related("hour_type", "employment__employee", "order_item__order")
+        p = self.request.query_params
+        if p.get("employment"):
+            qs = qs.filter(employment_id=p["employment"])
+        elif p.get("employee"):
+            qs = qs.filter(employment__employee_id=p["employee"])
+        elif self.action == "list":
+            return qs.none()
+        return qs
+
+    def _check(self, employment: Employment):
+        if not staff.can_see(employment.employee, self.request.user):
+            raise NotFound()
+
+    def perform_create(self, serializer):
+        self._check(serializer.validated_data["employment"])
+        serializer.save()
+
+    def perform_update(self, serializer):
+        self._check(serializer.instance.employment)
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        self._check(instance.employment)
+        if instance.order_item_id:
+            raise ValidationError({"detail": "Tariful vine dintr-un ordin; se scoate prin anularea ordinului."})
+        instance.delete()
+
+
+class OccupationHourRateViewSet(viewsets.ModelViewSet):
+    """Tarifele-tip pe ore ale funcției: la angajare completează tabelul „Tarife pe tipuri de ore” din ordin."""
+
+    serializer_class = OccupationHourRateSerializer
+    pagination_class = None
+
+    @property
+    def perm_module(self):
+        if self.request.method in ("GET", "HEAD", "OPTIONS"):
+            return ("dictionaries", "payroll_settings", "orders")
+        return ("dictionaries", "payroll_settings")
+
+    def get_queryset(self):
+        qs = OccupationHourRate.objects.select_related("hour_type")
+        occ = self.request.query_params.get("occupation")
+        if occ:
+            return qs.filter(occupation_id=occ)
+        return qs if self.action != "list" else qs.none()
 
 
 class WorkScheduleViewSet(DeletionMarkMixin, viewsets.ModelViewSet):
@@ -65,7 +141,7 @@ class SettingsView(APIView):
     perm_module = "worktime"
 
     def get(self, request):
-        return Response(services.get_settings())
+        return Response({**services.get_settings(), hour_types.SETTINGS_KEY: hour_types.settings()})
 
     def put(self, request):
         if not request.user.has_crm_perm("settings.edit"):
@@ -73,6 +149,8 @@ class SettingsView(APIView):
         from apps.core.models import SystemSetting
 
         cfg = services.get_settings()
+        if hour_types.SETTINGS_KEY in request.data:
+            cfg[hour_types.SETTINGS_KEY] = hour_types.check_settings(request.data[hour_types.SETTINGS_KEY])
         for key in ("min_rest_hours", "max_night_shifts"):
             if key in request.data:
                 try:
@@ -243,7 +321,7 @@ class TimesheetViewSet(MonthDocMixin, viewsets.ModelViewSet):
     model = Timesheet
     serializer_class = TimesheetSerializer
     perm_actions = {"report": "view", "fill": "edit", "submit": "edit", "close": "approve", "reopen": "approve",
-                    "print": "view", "set_cell": "edit", "export_xlsx": "export"}
+                    "print": "view", "set_cell": "edit", "set_hours": "edit", "export_xlsx": "export"}
 
     def fill_new(self, doc):
         services.fill_timesheet(doc)
@@ -272,6 +350,25 @@ class TimesheetViewSet(MonthDocMixin, viewsets.ModelViewSet):
             raise ValidationError({"day": "Ziua lipsește."}) from None
         line = services.set_cell(line, day, request.data.get("code", ""), request.data.get("hours"), request.data.get("night"))
         return Response(TimesheetLineSerializer(line).data)
+
+    @action(detail=True, methods=["post"], url_path="set-hours")
+    def set_hours(self, request, pk=None):
+        """Orele unui tip pe linie: POST {line, code, days: {zi: ore}} sau {line, code, month: ore}; amândouă goale — se scot."""
+        ts = self.get_object()
+        self._editable(ts)
+        line = ts.lines.filter(pk=request.data.get("line")).first()
+        if line is None:
+            raise ValidationError({"line": "Rândul nu există."})
+        ht = HourType.objects.filter(code=str(request.data.get("code") or "").strip().upper()).first()
+        if ht is None:
+            raise ValidationError({"code": "Tipul de ore nu există."})
+        days = request.data.get("days")
+        if days is not None and not isinstance(days, dict):
+            raise ValidationError({"days": "Zilele sunt un obiect {zi: ore}."})
+        if (days or request.data.get("month") not in (None, "")) and (not ht.is_active or ht.deletion_mark):
+            raise ValidationError({"code": f"Tipul de ore {ht.code} nu este activ."})
+        hour_types.set_hours(line, ht, days=days, month=request.data.get("month"))
+        return Response(services.timesheet_report(ts, only_line=line.pk)["rows"][0])
 
     @action(detail=True, methods=["post"])
     def submit(self, request, pk=None):
@@ -349,3 +446,50 @@ class EmployeeMonthView(APIView):
                                    "status": ln.timesheet.get_status_display(), "occupation": ln.employment.occupation.name_ro,
                                    "kind": ln.employment.get_kind_display(), "rate": float(ln.employment.rate),
                                    "days": ln.days, "totals": ln.totals} for ln in lines]})
+
+
+class TimesheetImportView(APIView):
+    """Importul orelor pe tipuri din Excel în tabela de pontaj: GET …/template/ — șablonul; POST (fișier) — încercarea
+    (dry_run=1) sau importul. Tabela trebuie să se poată modifica (ciornă; transmisă — cu dreptul „aprobă”)."""
+
+    perm_module = "worktime"
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def _timesheet(self, request, pk):
+        ts = Timesheet.objects.filter(pk=pk).select_related("subdivision").first()
+        ids = services.visible_ids(request.user)
+        if ts is None or (ids is not None and ts.subdivision_id not in ids):
+            raise NotFound()
+        return ts
+
+    def get(self, request, pk, code):
+        from django.http import HttpResponse
+
+        from apps.core import excel_import
+
+        from .imports import hours_spec
+
+        self._timesheet(request, pk)
+        response = HttpResponse(excel_import.template(hours_spec()),
+                                content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        response["Content-Disposition"] = 'attachment; filename="sablon-ore-pe-tipuri.xlsx"'
+        return response
+
+    def post(self, request, pk, code):
+        from apps.core import excel_import
+
+        from .imports import hours_spec
+
+        ts = self._timesheet(request, pk)
+        if not request.user.has_crm_perm("worktime.edit"):
+            raise PermissionDenied("Pontajul îl completează cine are dreptul „modifică” la timpul de muncă.")
+        ensure_not_marked(ts)
+        if ts.status == "closed" or (ts.status == "submitted" and not request.user.has_crm_perm("worktime.approve")):
+            raise ValidationError({"detail": "Tabela nu se mai modifică (transmisă sau închisă)."})
+        upload = request.FILES.get("file")
+        if not upload:
+            raise ValidationError({"file": "Alegeți fișierul Excel (.xlsx)."})
+        if upload.size > 10 * 1024 * 1024:
+            raise ValidationError({"file": "Fișierul e prea mare (cel mult 10 MB)."})
+        dry_run = str(request.data.get("dry_run", "1")) in ("1", "true", "True")
+        return Response(excel_import.run(hours_spec(), upload.read(), dry_run=dry_run, context={"timesheet": ts}))

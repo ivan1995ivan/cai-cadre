@@ -94,6 +94,9 @@ def sign(order: Order, user=None) -> Order:
             pay = effects.apply_pay_items(item, order, item.result)
             if pay:
                 item.result["pay_items"] = pay
+            hour_rates = effects.apply_hour_rates(item, order, item.result)
+            if hour_rates or item.result.get("hour_rates"):
+                item.result["hour_rates"] = [*(item.result.get("hour_rates") or []), *hour_rates]
             refresh_text(item)
             item.save(update_fields=["result", "employment", "params", "text"])
     order.status, order.signed_at, order.signed_by = "signed", timezone.now(), user
@@ -121,6 +124,7 @@ def undo_order(target: Order, cancelled_by: Order):
     _apply, undo = effects.for_type(target.order_type)
     for item in target.items.select_related("employee").order_by("-sort", "-id"):
         effects.undo_pay_items(item, item.result or {})  # întâi acumulările (stau pe raportul pe care îl poate șterge efectul)
+        effects.undo_hour_rates(item, item.result or {})  # și tarifele pe ore
         if undo:
             undo(item, item.result or {})
         item.result = {**(item.result or {}), "undone": True}

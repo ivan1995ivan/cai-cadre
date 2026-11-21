@@ -12,11 +12,11 @@ from apps.core.deletion import DeletionMarkMixin
 from apps.org.models import DictItem
 
 from . import printing, services
-from .models import (AccessLog, Education, Employee, EmployeeDocument, Employment, FamilyMember, MilitaryRecord,
-                     PriorExperience)
+from .models import (AccessLog, Education, Employee, EmployeeDocument, Employment, FamilyMember, FunctionCombination,
+                     MilitaryRecord, PriorExperience)
 from .serializers import (AccessLogSerializer, ContractRowSerializer, EducationSerializer, EmployeeDocumentSerializer, EmployeeListSerializer,
-                          EmployeeSerializer, EmploymentSerializer, FamilyMemberSerializer, MilitaryRecordSerializer,
-                          PriorExperienceSerializer)
+                          EmployeeSerializer, EmploymentSerializer, FamilyMemberSerializer, FunctionCombinationSerializer,
+                          MilitaryRecordSerializer, PriorExperienceSerializer)
 
 
 def _date(value, field="date"):
@@ -318,7 +318,7 @@ class EmploymentViewSet(EmployeeChildViewSet):
 
     def perform_update(self, serializer):
         # valorile cu istoric (funcție, secție, normă, salariu) se schimbă prin „Modificare”, nu prin editare simplă
-        tracked = {"subdivision", "occupation", "rate", "base_salary", "allowance_pct", "combination_pct", "employee", "kind",
+        tracked = {"subdivision", "occupation", "rate", "base_salary", "allowance_pct", "pay_mode", "hourly_rate", "employee", "kind",
                    "date_from"}
         changed = {k for k, v in serializer.validated_data.items() if k in tracked and getattr(serializer.instance, k) != v}
         if changed and not self.request.data.get("correction"):
@@ -356,7 +356,10 @@ class EmploymentViewSet(EmployeeChildViewSet):
                     raise ValidationError({name: "Nu există."})
                 if obj.pk != getattr(emp, f"{name}_id"):
                     fields[name] = obj
-        for f in ("rate", "base_salary", "allowance_pct", "combination_pct"):
+        mode = request.data.get("pay_mode")
+        if mode and mode != emp.pay_mode:
+            fields["pay_mode"] = mode
+        for f in ("rate", "base_salary", "allowance_pct", "hourly_rate"):
             if request.data.get(f) not in (None, ""):
                 try:
                     value = Decimal(str(request.data[f]).replace(",", "."))
@@ -392,3 +395,40 @@ class EmploymentViewSet(EmployeeChildViewSet):
         emp = services.terminate(self._emp(), day, reason, user=request.user, order=request.data.get("order", ""),
                                  note=request.data.get("note", ""))
         return Response(self.get_serializer(emp).data)
+
+
+class FunctionCombinationViewSet(viewsets.ModelViewSet):
+    """Cumularea funcțiilor / suplinirea / interimatul pe raportul de muncă (fila „Raporturi de muncă”); de regulă vin din
+    ordine, aici — datele inițiale și corecțiile. Cele din ordine se schimbă doar prin ordin."""
+
+    perm_module = ("employees", "contracts")
+    serializer_class = FunctionCombinationSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        qs = FunctionCombination.objects.select_related("employment__employee", "occupation", "subdivision", "hour_type",
+                                                        "order_item__order")
+        p = self.request.query_params
+        if p.get("employment"):
+            qs = qs.filter(employment_id=p["employment"])
+        elif p.get("employee"):
+            qs = qs.filter(employment__employee_id=p["employee"])
+        elif self.action == "list":
+            return qs.none()
+        visible = services.scope_employees(Employee.objects.all(), self.request.user)
+        return qs.filter(employment__employee__in=visible)
+
+    def perform_create(self, serializer):
+        if not services.can_see(serializer.validated_data["employment"].employee, self.request.user):
+            raise NotFound()
+        serializer.save()
+
+    def perform_update(self, serializer):
+        if "employment" in serializer.validated_data and serializer.validated_data["employment"] != serializer.instance.employment:
+            raise ValidationError({"employment": "Înregistrarea nu se mută la alt raport."})
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        if instance.order_item_id:
+            raise ValidationError({"detail": "Cumularea vine dintr-un ordin; se scoate prin anularea ordinului."})
+        instance.delete()

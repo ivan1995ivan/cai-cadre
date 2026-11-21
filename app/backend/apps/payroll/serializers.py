@@ -103,6 +103,13 @@ class PayTypeSerializer(serializers.ModelSerializer):
         return attrs
 
 
+def hour_codes() -> set:
+    """Codurile tipurilor de ore (Ore.COD, OrePlatite.COD … în formule)."""
+    from apps.worktime.models import HourType
+
+    return set(HourType.objects.values_list("code", flat=True))
+
+
 def type_candidate(instance, attrs) -> PayType:
     """Tipul așa cum ar fi după salvare (nesalvat): valorile noi peste cele vechi."""
     fields = {f.name: getattr(instance, f.name) for f in PayType._meta.concrete_fields} if instance else {}
@@ -126,7 +133,8 @@ def check_type(instance, attrs) -> PayType:
     if cand.formula == "expr":
         try:
             parsed = formula.check(cand.expression, type_codes=known,
-                                   constant_codes=set(PayConstant.objects.values_list("code", flat=True)))
+                                   constant_codes=set(PayConstant.objects.values_list("code", flat=True)),
+                                   hour_codes=hour_codes())
         except formula.FormulaError as exc:
             raise serializers.ValidationError({"expression": exc.text()}) from None
         refs = parsed.refs

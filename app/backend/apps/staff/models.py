@@ -1,7 +1,9 @@
 """Dosarul angajatului (fișa personală MR-2 electronică) — Etapa 2 din PLAN.md.
 
 Persoana (`Employee`) are mai multe raporturi de muncă (`Employment`): de bază, cumul intern / extern, suplinire,
-prestări servicii. Fiecare raport are istoricul lui (`EmploymentHistory`): funcția, subdiviziunea, norma și salariul „din data”.
+prestări servicii. Fiecare raport are istoricul lui (`EmploymentHistory`): funcția, subdiviziunea, norma, salariul și
+modalitatea de remunerare „din data”. Cumularea funcțiilor, suplinirea și interimatul în cadrul aceluiași contract (CM art. 156)
+nu sunt raporturi separate: sunt înregistrări pe raport (`FunctionCombination`), cu plata lor.
 Ordinele (Etapa 3) vor scrie în istoric prin `services`; până atunci istoricul se completează la angajare și la import.
 """
 import re
@@ -207,6 +209,15 @@ OCCUPYING_KINDS = {"main", "main_student", "internal", "external"}
 # raporturile „de bază” (locul de muncă de bază al persoanei): scutirile, vechimea în întreprindere, rapoartele „doar de bază”
 MAIN_KINDS = ("main", "main_student")
 CIVIL_KINDS = {"contractor"}
+# modalitatea de remunerare a raportului (pe funcție): baza plății; tarifele pe tipuri de ore (apps.worktime.JobHourRate) se
+# plătesc la „pe tipuri de ore” și la „mixt”
+PAY_MODES = [
+    ("salary", "Salariu lunar"),
+    ("hourly", "Tarif orar"),
+    ("hour_types", "Pe tipuri de ore"),
+    ("mixed", "Mixt: salariu lunar + tarife pe tipuri de ore"),
+]
+RATE_MODES = {"hour_types", "mixed"}  # modalitățile care plătesc tarifele pe tipuri de ore
 
 
 class Employment(models.Model):
@@ -221,8 +232,8 @@ class Employment(models.Model):
     rate = models.DecimalField("Norma (unități)", max_digits=4, decimal_places=2, default=Decimal("1"))
     base_salary = models.DecimalField("Salariul de funcție", max_digits=12, decimal_places=2, default=Decimal("0"))
     allowance_pct = models.DecimalField("Sporuri fixe (%)", max_digits=6, decimal_places=2, default=Decimal("0"))
-    combination_pct = models.DecimalField("Plata pentru cumul (% din salariul funcției)", max_digits=6, decimal_places=2,
-                                          default=Decimal("0"))
+    pay_mode = models.CharField("Modalitatea de remunerare", max_length=10, choices=PAY_MODES, default="salary")
+    hourly_rate = models.DecimalField("Tariful orar de bază (lei pe oră)", max_digits=10, decimal_places=2, default=Decimal("0"))
     date_from = models.DateField("Data angajării")
     date_to = models.DateField("Pe durată determinată până la", null=True, blank=True)
     probation_until = models.DateField("Perioada de probă până la", null=True, blank=True)
@@ -263,7 +274,8 @@ class EmploymentHistory(models.Model):
     rate = models.DecimalField(max_digits=4, decimal_places=2)
     base_salary = models.DecimalField(max_digits=12, decimal_places=2)
     allowance_pct = models.DecimalField(max_digits=6, decimal_places=2, default=Decimal("0"))
-    combination_pct = models.DecimalField(max_digits=6, decimal_places=2, default=Decimal("0"))
+    pay_mode = models.CharField(max_length=10, choices=PAY_MODES, default="salary")
+    hourly_rate = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0"))
     order = models.CharField("Actul (ordinul)", max_length=80, blank=True)
     note = models.CharField("Observații", max_length=300, blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
@@ -271,6 +283,56 @@ class EmploymentHistory(models.Model):
 
     class Meta:
         ordering = ["date", "id"]
+
+
+class FunctionCombination(models.Model):
+    """Funcția exercitată în plus în cadrul aceluiași contract individual de muncă, fără eliberare de la munca de bază
+    (Codul muncii, art. 156): cumularea funcțiilor (profesiilor), suplinirea salariatului temporar absent, interimatul.
+    Nu e raport de muncă separat (n-are normă, pontaj, CIM propriu) — e o plată în plus pe raportul de bază, după modalitatea
+    ei. Cumulul (intern / extern) rămâne raport separat (`Employment` cu felul lui)."""
+
+    KINDS = [("combination", "Cumularea funcțiilor (profesiilor)"), ("substitution", "Suplinirea salariatului temporar absent"),
+             ("acting", "Interimatul funcției")]
+    PAY_MODES = [("pct_own", "% din salariul funcției proprii"), ("pct_other", "% din salariul funcției cumulate / suplinite"),
+                 ("fixed", "Sumă fixă pe lună"), ("hourly", "Pe ore, cu tarif")]
+
+    employment = models.ForeignKey(Employment, on_delete=models.CASCADE, related_name="combinations",
+                                   verbose_name="Raportul de muncă (de bază)")
+    kind = models.CharField("Felul", max_length=12, choices=KINDS, default="combination")
+    occupation = models.ForeignKey(Occupation, on_delete=models.PROTECT, related_name="+", verbose_name="Funcția cumulată / suplinită")
+    subdivision = models.ForeignKey(Subdivision, on_delete=models.PROTECT, null=True, blank=True, related_name="+",
+                                    verbose_name="Subdiviziunea funcției")
+    substitutes = models.ForeignKey(Employment, on_delete=models.SET_NULL, null=True, blank=True, related_name="substituted_in",
+                                    verbose_name="Pe cine suplinește (raportul)")
+    substituted_name = models.CharField("Pe cine suplinește (numele)", max_length=160, blank=True)
+    pay_mode = models.CharField("Modalitatea plății", max_length=10, choices=PAY_MODES, default="pct_own")
+    value = models.DecimalField("Valoarea (%, lei sau lei pe oră)", max_digits=12, decimal_places=2)
+    other_salary = models.DecimalField("Salariul funcției cumulate / suplinite (la „% din salariul ei”)", max_digits=12,
+                                       decimal_places=2, null=True, blank=True)
+    hour_type = models.ForeignKey("worktime.HourType", on_delete=models.PROTECT, null=True, blank=True, related_name="+",
+                                  verbose_name="Tipul de ore (la plata pe ore)")
+    date_from = models.DateField("De la")
+    date_to = models.DateField("Până la", null=True, blank=True)
+    order = models.CharField("Ordinul (nr., data)", max_length=80, blank=True)
+    order_item = models.ForeignKey("orders.OrderItem", on_delete=models.PROTECT, null=True, blank=True,
+                                   related_name="combinations", verbose_name="Din punctul ordinului")
+    note = models.CharField("Observații", max_length=300, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ["employment", "date_from", "id"]
+        verbose_name = "Cumularea funcțiilor / suplinirea"
+
+    def __str__(self):
+        return f"{self.get_kind_display()}: {self.occupation.name_ro} ({self.value_text()})"
+
+    def value_text(self) -> str:
+        v = format(self.value.normalize(), "f").replace(".", ",") if self.value is not None else ""
+        return {"pct_own": f"{v} % din salariul propriu", "pct_other": f"{v} % din salariul funcției",
+                "fixed": f"{v} lei pe lună", "hourly": f"{v} lei pe oră"}.get(self.pay_mode, v)
+
+    def in_force(self, start, end) -> bool:
+        return self.date_from <= end and (self.date_to is None or self.date_to >= start)
 
 
 class AccessLog(models.Model):

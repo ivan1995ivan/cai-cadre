@@ -73,7 +73,13 @@ TYPES = [
     ("SPOR", "Sporuri fixe (din raportul de muncă)", "Постоянные надбавки", "Fixed allowances", "accrual", "auto", "allowance", "0", [], [], T, T, T, "0", "0", T, "SAL", 20),
     # CM art. 131 alin. (3): salariul de funcție sub salariul minim × norma se completează (fără sporuri, premii)
     ("MINIM", "Completare până la salariul minim", "Доплата до минимальной зарплаты", "Top-up to the minimum wage", "accrual", "auto", "min_wage", "0", [], [], T, T, T, "0", "0", T, "SAL", 15),
-    ("CUMUL", "Plata pentru cumul de funcții", "Доплата за совмещение", "Combination pay", "accrual", "auto", "combination", "0", [], [], T, T, T, "0", "0", T, "SAL", 30),
+    # cumularea funcțiilor / suplinirea / interimatul pe același CIM (CM art. 156) — din înregistrările de pe raport; cumulul
+    # (intern / extern) e raport separat, cu salariul lui (SAL)
+    ("CUMUL", "Plata pentru cumularea funcțiilor / suplinire", "Доплата за совмещение / замещение", "Pay for combining posts / substitution",
+     "accrual", "auto", "combination", "0", [], [], T, T, T, "0", "0", T, "SAL", 30),
+    # orele pe tipuri (instruire, examinare, zbor…): ore plătite × tariful raportului, ore plătite = max(efective, garantate)
+    ("ORE", "Ore pe tipuri (tariful pe oră)", "Часы по видам (часовой тариф)", "Hours by type (hourly rate)", "accrual", "auto",
+     "hour_types", "0", [], [], T, T, T, "0", "0", T, "SAL", 35),
     # sporul pentru condiții de muncă grele, vătămătoare și / sau periculoase (Codul muncii, art. 139; mărimea — în contractul
     # colectiv / individual)
     ("NOCIV", "Spor pentru condiții nocive / vătămătoare", "Надбавка за вредные условия", "Hazardous conditions allowance", "accrual",
@@ -94,8 +100,8 @@ TYPES = [
     ("ALTE", "Alte plăți", "Прочие выплаты", "Other payments", "accrual", "fixed", "none", "0", [], [], T, T, T, "0", "0", F, "SAL", 170),
     ("IMPOZIT", "Impozitul pe venit", "Подоходный налог", "Income tax", "deduction", "auto", "income_tax", "0", [], [], F, F, F, "0", "0", F, "", 200),
     ("CNAM", "Prima de asigurare medicală (9 %)", "Взнос ОМС (9 %)", "Health insurance (9 %)", "deduction", "auto", "cnam", "0", [], [], F, F, F, "0", "0", F, "", 210),
-    ("SINDICAT", "Cotizația sindicală", "Профсоюзный взнос", "Union fee", "deduction", "pct_base", "none", "1", ["SAL", "MINIM", "SPOR", "CUMUL", "NOCIV", "NOAPTE", "SARB", "SUPL", "CO", "PREMIU"], [], F, F, F, "0", "0", F, "", 220),
-    ("PENSIE", "Pensie alimentară", "Алименты", "Alimony", "deduction", "pct_base", "none", "0", ["SAL", "MINIM", "SPOR", "CUMUL", "NOCIV", "NOAPTE", "SARB", "SUPL", "CO", "PREMIU"], [], F, F, F, "0", "0", F, "", 230),
+    ("SINDICAT", "Cotizația sindicală", "Профсоюзный взнос", "Union fee", "deduction", "pct_base", "none", "1", ["SAL", "MINIM", "SPOR", "CUMUL", "ORE", "NOCIV", "NOAPTE", "SARB", "SUPL", "CO", "PREMIU"], [], F, F, F, "0", "0", F, "", 220),
+    ("PENSIE", "Pensie alimentară", "Алименты", "Alimony", "deduction", "pct_base", "none", "0", ["SAL", "MINIM", "SPOR", "CUMUL", "ORE", "NOCIV", "NOAPTE", "SARB", "SUPL", "CO", "PREMIU"], [], F, F, F, "0", "0", F, "", 230),
     ("AVANS", "Avans plătit", "Выплаченный аванс", "Advance paid", "deduction", "auto", "advance", "0", [], [], F, F, F, "0", "0", F, "", 240),
     ("IMPRUMUT", "Împrumut / prejudiciu / alte rețineri", "Займ / ущерб / прочие удержания", "Loan / damage / other deductions", "deduction", "fixed", "none", "0", [], [], F, F, F, "0", "0", F, "", 250),
     ("CAS", "Contribuția de asigurări sociale (angajator, 24 %)", "Взнос соцстрахования (работодатель, 24 %)", "Social insurance (employer, 24 %)", "employer", "auto", "cas", "0", [], [], F, F, F, "0", "0", F, "", 300),
@@ -104,7 +110,9 @@ TYPES = [
 ]
 
 
-OLD_BASE = ["SAL", "SPOR", "CUMUL", "NOCIV", "NOAPTE", "SARB", "SUPL", "CO", "PREMIU"]  # baza sindicatului / pensiei alimentare livrată până la 1.7 (fără MINIM)
+# baza sindicatului / pensiei alimentare livrată înainte: până la 1.7 (fără MINIM) și până la S4b (fără ORE)
+OLD_BASES = (["SAL", "SPOR", "CUMUL", "NOCIV", "NOAPTE", "SARB", "SUPL", "CO", "PREMIU"],
+             ["SAL", "MINIM", "SPOR", "CUMUL", "NOCIV", "NOAPTE", "SARB", "SUPL", "CO", "PREMIU"])
 
 
 def run():
@@ -121,9 +129,10 @@ def run():
             "percent": Decimal(pct), "base_codes": base, "scale": scale, "taxable": taxable, "cas": cas, "cnam": cnam,
             "exempt_month": Decimal(ex_month), "exempt_avg_pct": Decimal(ex_avg), "in_average": in_avg, "ipc_code": ipc,
             "sort": sort, "is_system": True, "on_payslip": True})
-    # completarea până la salariul minim intră în baza sindicatului / pensiei alimentare — doar unde baza e încă cea livrată
+    # completarea până la salariul minim și orele pe tipuri intră în baza sindicatului / pensiei alimentare — doar unde baza e
+    # încă cea livrată
     for t in PayType.objects.filter(code__in=("SINDICAT", "PENSIE"), is_system=True):
-        if t.base_codes == OLD_BASE:
+        if t.base_codes in OLD_BASES:
             t.base_codes = [c for c in TYPES_BY_CODE[t.code][8]]
             t.save(update_fields=["base_codes"])
 

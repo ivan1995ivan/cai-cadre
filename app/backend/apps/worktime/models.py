@@ -149,15 +149,103 @@ class Timesheet(models.Model):
 
 
 class TimesheetLine(models.Model):
-    """Un raport de muncă în tabelă. `days`: {zi: {"c": cod, "h": ore, "n": ore de noapte, "m": scris de mână}}."""
+    """Un raport de muncă în tabelă. `days`: {zi: {"c": cod, "h": ore, "n": ore de noapte, "m": scris de mână}};
+    `typed_hours` — orele pe tipuri de ore (`HourType`)."""
 
     timesheet = models.ForeignKey(Timesheet, on_delete=models.CASCADE, related_name="lines")
     employment = models.ForeignKey(Employment, on_delete=models.CASCADE, related_name="timesheet_lines")
     days = models.JSONField(default=dict, blank=True)
     totals = models.JSONField(default=dict, blank=True)
+    # orele pe tipuri (instruire, examinare, zbor…), scrise de mână sau din Excel — rămân la recompletarea tabelei:
+    # {cod: {"days": {zi: ore}, "month": ore | null}}; „month” (totalul pe lună) înlocuiește zilele
+    typed_hours = models.JSONField("Orele pe tipuri", default=dict, blank=True)
     note = models.CharField("Mențiuni", max_length=300, blank=True)
     sort = models.IntegerField(default=0)
 
     class Meta:
         ordering = ["sort", "id"]
         constraints = [models.UniqueConstraint(fields=["timesheet", "employment"], name="uniq_timesheet_line")]
+
+
+# --- tipurile de ore și tarifele pe ele (S4b, cererea clientului §2.6 din PLAN-SRL.md) -----------------------------------
+HOUR_GROUPS = [
+    ("worked", "Ore lucrate"), ("training", "Instruire"), ("exam", "Examinare"), ("flight", "Zbor"), ("reserve", "Rezervă"),
+    ("standby", "Staționare"), ("driving", "Conducere"), ("availability", "Disponibilitate"), ("other", "Alta"),
+]
+# cum se leagă orele tipului de timpul de muncă al liniei din pontaj (orele standard din grafic):
+# - within: o parte din orele lucrate (zborul, instruirea, examinarea făcute în program) — nu se adaugă a doua oară;
+# - added: timp de muncă peste orele standard — se adaugă la orele lucrate și la partea lucrată din normă;
+# - none: nu e timp de muncă (rezerva acasă, disponibilitatea) — doar se plătește tariful, dacă există.
+WORK_TIME = [("within", "În cadrul orelor lucrate (o parte din program)"), ("added", "Se adaugă la orele lucrate"),
+             ("none", "Nu e timp de muncă")]
+HOUR_ENTRY = [("day", "Pe zile sau total pe lună"), ("month", "Doar total pe lună")]
+HOUR_PROFILES = [("general", "General"), ("factory", "Fabrică"), ("aviation", "Aviație"), ("transport", "Transport")]
+
+
+class HourType(models.Model):
+    """Tipul de ore al pontajului (instruire, examinare, zbor…): coloana din pontaj, variabila `Ore.COD` din formule și
+    tariful pe oră din raportul de muncă (`JobHourRate`)."""
+
+    code = models.CharField("Codul", max_length=16, unique=True)
+    name_ro = models.CharField("Denumire (RO)", max_length=120)
+    name_ru = models.CharField("Denumire (RU)", max_length=120, blank=True)
+    name_en = models.CharField("Denumire (EN)", max_length=120, blank=True)
+    group = models.CharField("Grupa", max_length=14, choices=HOUR_GROUPS, default="other")
+    work_time = models.CharField("Legătura cu orele lucrate", max_length=8, choices=WORK_TIME, default="within")
+    entry = models.CharField("Se introduc", max_length=6, choices=HOUR_ENTRY, default="day")
+    profile = models.CharField("Profilul", max_length=10, choices=HOUR_PROFILES, default="general")
+    in_all_timesheets = models.BooleanField("Coloană pentru toți angajații în pontaj", default=False)
+    pay_type = models.ForeignKey("payroll.PayType", on_delete=models.SET_NULL, null=True, blank=True, related_name="hour_types",
+                                 verbose_name="Se plătește cu tipul de calcul (gol — „Ore pe tipuri”)",
+                                 limit_choices_to={"auto": "hour_types"})
+    sort = models.IntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    is_system = models.BooleanField("Livrat cu sistemul", default=False)
+    deletion_mark = models.BooleanField("Marcat pentru ștergere", default=False)
+
+    class Meta:
+        ordering = ["sort", "code"]
+        verbose_name = "Tip de ore"
+
+    def __str__(self):
+        return f"{self.code} — {self.name_ro}"
+
+
+class JobHourRate(models.Model):
+    """Tariful pe oră al unui tip de ore pe raportul de muncă (pe funcție), cu orele garantate pe lună și perioada lui.
+    Se pune din ordin (tabelul „Tarife pe tipuri de ore”) sau de mână în fila „Raporturi de muncă”."""
+
+    employment = models.ForeignKey(Employment, on_delete=models.CASCADE, related_name="hour_rates")
+    hour_type = models.ForeignKey(HourType, on_delete=models.PROTECT, related_name="job_rates", verbose_name="Tipul de ore")
+    rate = models.DecimalField("Tariful (lei pe oră)", max_digits=10, decimal_places=2)
+    guaranteed_hours = models.DecimalField("Ore garantate pe lună", max_digits=6, decimal_places=2, null=True, blank=True)
+    date_from = models.DateField("De la")
+    date_to = models.DateField("Până la", null=True, blank=True)
+    document = models.CharField("Temeiul (ordinul, contractul)", max_length=200, blank=True)
+    order_item = models.ForeignKey("orders.OrderItem", on_delete=models.PROTECT, null=True, blank=True, related_name="hour_rates",
+                                   verbose_name="Din punctul ordinului")
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ["employment", "hour_type__sort", "date_from", "id"]
+        verbose_name = "Tariful pe tipul de ore"
+
+    def __str__(self):
+        return f"{self.hour_type.code} {self.rate} lei/oră din {self.date_from:%d.%m.%Y}"
+
+    def in_force(self, start, end) -> bool:
+        return self.date_from <= end and (self.date_to is None or self.date_to >= start)
+
+
+class OccupationHourRate(models.Model):
+    """Tariful-tip pe oră al funcției: la angajare completează tabelul „Tarife pe tipuri de ore” din ordin."""
+
+    occupation = models.ForeignKey("org.Occupation", on_delete=models.CASCADE, related_name="hour_rates")
+    hour_type = models.ForeignKey(HourType, on_delete=models.PROTECT, related_name="occupation_rates", verbose_name="Tipul de ore")
+    rate = models.DecimalField("Tariful (lei pe oră)", max_digits=10, decimal_places=2)
+    guaranteed_hours = models.DecimalField("Ore garantate pe lună", max_digits=6, decimal_places=2, null=True, blank=True)
+    sort = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ["sort", "id"]
+        verbose_name = "Tariful-tip al funcției pe tipul de ore"

@@ -149,12 +149,11 @@ def _save_employee(values, ctx):
             rate = rate / 100
         job = emp.employments.filter(subdivision=sub, occupation=occ, kind=kind).exclude(status="ended").first()
         fields = {"rate": rate, "base_salary": values.get("base_salary") or Decimal("0"),
-                  "allowance_pct": values.get("allowance_pct") or Decimal("0"),
-                  "combination_pct": values.get("combination_pct") or Decimal("0"), "date_from": values["date_from"]}
+                  "allowance_pct": values.get("allowance_pct") or Decimal("0"), "date_from": values["date_from"]}
         extra = {k: values[k] for k in ("date_to", "probation_until", "contract_number", "contract_date") if values.get(k)}
         if job is None:
-            services.hire(emp, kind=kind, subdivision=sub, occupation=occ, user=ctx.get("user"), event="import",
-                          order=values.get("hire_order", ""), **fields, **extra)
+            job = services.hire(emp, kind=kind, subdivision=sub, occupation=occ, user=ctx.get("user"), event="import",
+                                order=values.get("hire_order", ""), **fields, **extra)
         else:  # rândul repetat: se corectează datele raportului existent (fără istoric nou)
             for k, v in {**fields, **extra}.items():
                 setattr(job, k, v)
@@ -165,7 +164,32 @@ def _save_employee(values, ctx):
                     setattr(first, f, getattr(job, f))
                 first.date = job.date_from
                 first.save()
+        _import_combination(job, values.get("combination_pct"))
     return emp, status
+
+
+IMPORT_NOTE = "Din importul Excel („Cumularea funcțiilor, %”)"
+
+
+def _import_combination(job, pct):
+    """Coloana „Cumularea funcțiilor (% din salariul propriu)”: înregistrarea de cumulare a raportului (CM art. 156) din data
+    angajării; rândul repetat o corectează, 0 / gol o scoate pe cea din import."""
+    from .models import FunctionCombination
+
+    rec = job.combinations.filter(note=IMPORT_NOTE).first()
+    if not pct:
+        if rec is not None and pct is not None:
+            rec.delete()
+        return
+    if pct < 0 or pct > 200:
+        raise RowError("Cumularea funcțiilor: procentul este între 0 și 200.")
+    if rec is None:
+        FunctionCombination.objects.create(employment=job, kind="combination", occupation=job.occupation, pay_mode="pct_own",
+                                           value=pct, date_from=job.date_from, date_to=job.end_date or job.date_to,
+                                           order=job.hire_order, note=IMPORT_NOTE)
+    else:
+        rec.value, rec.date_from = pct, job.date_from
+        rec.save(update_fields=["value", "date_from"])
 
 
 EMPLOYEES = Spec(
@@ -199,7 +223,8 @@ EMPLOYEES = Spec(
         Column("date_from", "Data angajării", kind="date", example="01.09.2015", aliases=("data angajarii", "дата приёма")),
         Column("base_salary", "Salariul de funcție", kind="decimal", example=14660),
         Column("allowance_pct", "Sporuri fixe (%)", kind="decimal", example=10),
-        Column("combination_pct", "Plata pentru cumul (%)", kind="decimal", example=0, aliases=("cumul %", "совмещение %")),
+        Column("combination_pct", "Cumularea funcțiilor (% din salariul propriu)", kind="decimal", example=0,
+               aliases=("plata pentru cumul (%)", "cumul %", "совмещение %")),
         Column("contract_number", "Nr. CIM"),
         Column("contract_date", "Data CIM", kind="date"),
         Column("date_to", "CIM pe durată determinată până la", kind="date"),

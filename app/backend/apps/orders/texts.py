@@ -3,7 +3,7 @@
 Textul se poate schimba în Administrare → Setări → Tipuri de ordine (câmpul „Textul punctului”) sau direct în ordin. Câmpurile
 din acolade: {angajat}, {tab}, {functia}, {sectia}, {norma}, {salariul}, {sporuri}, {din}, {pana}, {zile}, {an_de},
 {an_pana}, {motivul}, {destinatia}, {scopul}, {suma}, {suma_text}, {procent}, {sanctiunea}, {abaterea},
-{fel}, {proba}, {termen}, {data}, {ore}, {suplinit}, {ordin_anulat}, {text}, {acumulari}. Tabelul „Acumulări și rețineri”
+{fel}, {proba}, {termen}, {data}, {ore}, {suplinit}, {cum}, {plata}, {ordin_anulat}, {text}, {acumulari}, {tarife}. Tabelul „Acumulări și rețineri”
 ({acumulari}) se adaugă la sfârșitul punctului dacă textul-model nu îl are.
 """
 from collections import defaultdict
@@ -22,11 +22,11 @@ DEFAULT_POINTS = {
     "extend_contract": "Se prelungește contractul individual de muncă al {angajat} (nr. de tabel {tab}), {functia}, {sectia}, "
                        "până la {pana}.",
     "substitution": "Se pune în sarcina {angajat}, {functia}, suplinirea temporară a funcției de {functia_noua} ({sectia}){suplinit} "
-                    "pe perioada {din} – {pana}, cu plata de {procent}% din salariul de funcție.",
-    "combination": "Se permite {angajat} cumularea funcției de {functia_noua}, {sectia}, {norma} normă, pe perioada {din} – "
-                   "{pana}, cu plata de {procent}% din salariul de funcție.",
-    "acting": "Se pune în sarcina {angajat} exercitarea interimatului funcției de {functia_noua} ({sectia}) pe perioada "
-              "{din} – {pana}, cu plata diferenței de salariu.",
+                    "{cum}pe perioada {din} – {pana}, cu {plata}.",
+    "combination": "Se permite {angajat}, {functia}, cumularea funcției de {functia_noua}, {sectia}, {cum}pe perioada {din} – "
+                   "{pana}, cu {plata}.",
+    "acting": "Se pune în sarcina {angajat}, {functia}, exercitarea interimatului funcției de {functia_noua} ({sectia}) {cum}pe "
+              "perioada {din} – {pana}, cu {plata}.",
     "travel": "Se deleghează {angajat}, {functia}, {sectia}, la {destinatia} pe perioada {din} – {pana} ({zile} zile), "
               "în scopul {scopul}, cu menținerea salariului mediu.",
     "suspend": "Se suspendă contractul individual de muncă al {angajat} (nr. de tabel {tab}), {functia}, {sectia}, începând "
@@ -120,6 +120,18 @@ def _d(value):
     return value.strftime("%d.%m.%Y")
 
 
+def _substituted(p: dict) -> str:
+    """Pe cine suplinește: numele scris sau angajatul raportului ales."""
+    if p.get("substituted_name"):
+        return p["substituted_name"]
+    if p.get("substitutes"):
+        from apps.staff.models import Employment
+
+        job = Employment.objects.filter(pk=p["substitutes"]).select_related("employee").first()
+        return job.employee.full_name() if job else ""
+    return ""
+
+
 def context(item) -> dict:
     """Valorile pentru textul punctului: din parametri, apoi din raportul de muncă al angajatului."""
     from apps.org.models import DictItem, Occupation, Specialty, Subdivision
@@ -165,14 +177,45 @@ def context(item) -> dict:
         "functia_noua": (occ.name_ro if occ else functia), "ore": p.get("hours") or "",
         "termen": f", pe durată determinată până la {_d(p['date_to'])}" if p.get("date_to") and order_code in ("hire", "hire_transfer") else "",
         "proba": f", cu perioadă de probă până la {_d(p['probation_until'])}" if p.get("probation_until") else "",
-        "suplinit": f", pe durata absenței {p['substituted_name']}" if p.get("substituted_name") else "",
+        "suplinit": f", pe durata absenței {_substituted(p)}" if _substituted(p) else "",
         "compensare": f" și compensația pentru {p['compensation_days']} zile de concediu nefolosit" if p.get("compensation_days") else "",
         "amanare": (f", planificat de la {_d(p['planned_from'])}, pentru perioada {_d(p.get('date_from'))} – {_d(p.get('date_to'))}"
                     if p.get("planned_from") and p.get("date_to") else
                     f", cu începere de la {_d(p.get('date_from'))}" if p.get("date_from") else ""),
         "ordin_anulat": p.get("cancelled_label") or "", "text": p.get("text") or "", "data": _d(item.order.date),
+        **combination_text(p, order_code),
     })
+    if order_code in ("substitution", "combination", "acting") and job is not None and (p.get("mode") or "on_base") != "separate":
+        ctx["functia"] = job.occupation.name_ro  # funcția de bază (cumularea e pe raportul de bază)
     return ctx
+
+
+def combination_text(p: dict, order_code: str) -> dict:
+    """{cum} și {plata} la cumularea funcțiilor / suplinire / interimat: pe același contract (CM art. 156) — plata după
+    modalitate; ca raport separat — norma și salariul lui."""
+    if order_code not in ("substitution", "combination", "acting"):
+        return {"cum": "", "plata": ""}
+    if (p.get("mode") or "on_base") == "separate":
+        rate = p.get("rate") or "0.5"
+        salary = p.get("base_salary")
+        return {"cum": f"prin raport de muncă separat, {_fmt_rate(rate)} normă, ",
+                "plata": f"salariul de funcție de {_fmt_money(salary)} lei" if salary not in (None, "") else "salariul funcției"}
+    from apps.worktime.models import HourType
+
+    value = p.get("value") if p.get("value") not in (None, "") else p.get("percent")
+    v = _fmt_rate(value) if value not in (None, "") else "…"
+    mode = p.get("pay_mode") or "pct_own"
+    if mode == "pct_other":
+        other = p.get("other_salary")
+        plata = f"plata de {v}% din salariul funcției {'(' + _fmt_money(other) + ' lei)' if other not in (None, '') else 'cumulate'}"
+    elif mode == "fixed":
+        plata = f"plata suplimentară de {_fmt_money(value) if value not in (None, '') else '…'} lei pe lună"
+    elif mode == "hourly":
+        ht = HourType.objects.filter(pk=p.get("hour_type")).first() if p.get("hour_type") else None
+        plata = f"plata de {_fmt_money(value) if value not in (None, '') else '…'} lei pe oră" + (f" ({ht.name_ro.lower()})" if ht else "")
+    else:
+        plata = f"plata de {v}% din salariul de funcție"
+    return {"cum": "fără eliberare de la munca de bază, ", "plata": plata}
 
 
 ACTIONS_TEXT = {"add": "se stabilește", "modify": "se modifică", "stop": "se oprește"}
@@ -210,15 +253,57 @@ def pay_items_text(item) -> str:
     return ("Acumulări și rețineri: " + "; ".join(parts) + ".") if parts else ""
 
 
+def hour_rates_text(item) -> str:
+    """„Tarife pe tipuri de ore: se stabilește ore de zbor 350 lei pe oră, garantat 50 ore pe lună; …”."""
+    from apps.worktime.models import HourType
+
+    rows = (item.params or {}).get("hour_rates") or []
+    if not isinstance(rows, list):
+        return ""
+    types = {t.pk: t for t in HourType.objects.filter(pk__in=[r.get("hour_type") for r in rows if isinstance(r, dict)])}
+    parts = []
+    for r in rows:
+        if not isinstance(r, dict) or r.get("hour_type") not in types:
+            continue
+        ht = types[r["hour_type"]]
+        action = r.get("action") or "add"
+        words = [ACTIONS_TEXT.get(action, ""), "tariful pentru", ht.name_ro.lower()]
+        if action != "stop":
+            if r.get("rate") not in (None, ""):
+                words.append(f"— {_fmt_money(r['rate'])} lei pe oră")
+            if r.get("guaranteed_hours") not in (None, ""):
+                words.append(f", garantat {_fmt_rate(r['guaranteed_hours'])} ore pe lună")
+        if r.get("date_from"):
+            words.append(f"de la {_d(r['date_from'])}")
+        if r.get("date_to"):
+            words.append(f"până la {_d(r['date_to'])}")
+        parts.append(" ".join(w for w in words if w).replace(" ,", ","))
+    return ("Tarife pe tipuri de ore: " + "; ".join(parts) + ".") if parts else ""
+
+
+PAY_MODE_TEXT = {"hourly": "tarif orar", "hour_types": "pe tipuri de ore", "mixed": "salariu lunar și tarife pe tipuri de ore"}
+
+
 def point_text(item) -> str:
     ot = item.order.order_type
     template = ot.point_template_ro or DEFAULT_POINTS.get(ot.code) or "{text}"
+    p = item.params or {}
+    mode = p.get("pay_mode")
+    if mode in PAY_MODE_TEXT and ot.effect in ("hire", "change", "salary") and "{remunerare}" not in template:
+        template = template + " {remunerare}"
     pay = pay_items_text(item)
     if pay and "{acumulari}" not in template:
         template = template + " {acumulari}"
+    rates_text = hour_rates_text(item)
+    if rates_text and "{tarife}" not in template:
+        template = template + " {tarife}"
     try:
         ctx = context(item)
         ctx["acumulari"] = pay
+        ctx["tarife"] = rates_text
+        ctx["remunerare"] = (f"Modalitatea de remunerare: {PAY_MODE_TEXT[mode]}"
+                             + (f", tariful orar {_fmt_money(p['hourly_rate'])} lei" if mode == "hourly" and p.get("hourly_rate") else "")
+                             + ".") if mode in PAY_MODE_TEXT else ""
         text = template.format_map(ctx)
     except (KeyError, ValueError, IndexError) as exc:
         return f"[Textul-model are o greșeală: {exc}] " + (item.params or {}).get("text", "")

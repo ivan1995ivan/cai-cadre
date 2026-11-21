@@ -11,6 +11,7 @@ from apps.core.deletion import DeletionMarkMixin, ensure_not_marked
 from apps.core.models import NumberSeries
 from apps.staff import services as staff
 from apps.staff.models import Employee
+from apps.worktime.models import HourType
 
 from . import dependencies, engine, formula, printing
 from .models import (EmployeePayItem, ExemptionRequest, OccupationPayItem, PayConstant, PayItemChange, Payroll, PayrollItem,
@@ -74,6 +75,9 @@ class PayTypeViewSet(DeletionMarkMixin, viewsets.ModelViewSet):
             "variables": [{"name": k, "ro": v[0], "ru": v[1], "en": v[2]} for k, v in formula.VARIABLES.items()],
             "functions": [{"name": k, "ro": v[0], "ru": v[1], "en": v[2]} for k, v in formula.FUNCTIONS.items()],
             "constants": [{"code": k, "name": v} for k, v in names.items()],
+            "hour_variables": [{"name": k, "ro": v[0], "ru": v[1], "en": v[2]} for k, v in formula.HOUR_VARIABLES.items()],
+            "hour_types": [{"code": t.code, "name_ro": t.name_ro, "name_ru": t.name_ru, "name_en": t.name_en}
+                           for t in HourType.objects.filter(deletion_mark=False)],
         })
 
     @action(detail=False, methods=["post"], url_path="check")
@@ -82,10 +86,11 @@ class PayTypeViewSet(DeletionMarkMixin, viewsets.ModelViewSet):
         try:
             parsed = formula.check(request.data.get("expression") or "",
                                    type_codes=set(PayType.objects.values_list("code", flat=True)) | {request.data.get("code") or ""},
-                                   constant_codes=set(PayConstant.objects.values_list("code", flat=True)))
+                                   constant_codes=set(PayConstant.objects.values_list("code", flat=True)),
+                                   hour_codes=set(HourType.objects.values_list("code", flat=True)))
         except formula.FormulaError as exc:
             return Response({"ok": False, "error": exc.message, "position": exc.position})
-        return Response({"ok": True, "variables": parsed.variables, "constants": parsed.constants, "refs": parsed.refs})
+        return Response({"ok": True, "variables": parsed.variables + parsed.hours, "constants": parsed.constants, "refs": parsed.refs})
 
     def _try(self, request, pay_type, replaces=None):
         data = request.data
@@ -163,6 +168,10 @@ def variable_descriptions(request) -> dict:
         out.setdefault(f"C.{c.code}", c.name)
     for t in PayType.objects.all():
         out[f"[{t.code}]"] = [t.name_ro, t.name_ru or t.name_ro, t.name_en or t.name_ro][lang]
+    for h in HourType.objects.all():
+        name = [h.name_ro, h.name_ru or h.name_ro, h.name_en or h.name_ro][lang]
+        for prefix, texts in formula.HOUR_VARIABLES.items():
+            out[f"{prefix}.{h.code}"] = f"{name}: {texts[lang].split(' (')[0].split(' — ')[0]}"
     return out
 
 

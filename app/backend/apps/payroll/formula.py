@@ -5,7 +5,10 @@ Sintaxa (pentru utilizatorii din Moldova):
 - operatorii `+ - * / ( )`, comparațiile `< <= > >= = <>`, `și` / `sau` (și `and` / `or`);
 - funcțiile `min`, `max`, `round(x; n)` (rotunjire comercială), `abs`, `daca(condiție; da; nu)` (și `if`);
 - variabilele din `VARIABLES` (fără diacritice, nu contează literele mari / mici), `C.<cod>` — constanta salariului după cod,
-  `[COD]` — suma deja calculată a altui tip de calcul în același rând.
+  `[COD]` — suma deja calculată a altui tip de calcul în același rând;
+- orele pe tipuri (apps.worktime.hour_types), după codul tipului de ore: `Ore.COD` (orele efective din pontaj),
+  `OrePlatite.COD` (max între efective și garantate), `Garantat.COD` (orele garantate ale lunii, reduse după zilele
+  disponibile), `Tarif.COD` (tariful pe oră al raportului) — de ex. `OrePlatite.ZBOR * Tarif.ZBOR`.
 
 Cum: textul se împarte în atomi (cu poziția fiecăruia în textul utilizatorului), se traduce în sintaxa Python, se citește
 cu `ast` și se verifică după o listă albă de noduri; apoi arborele se evaluează de mână, în `Decimal`. Nu se folosește
@@ -67,6 +70,24 @@ VARIABLES = {
                                 "Length of service in the company, whole years (at month end)"),
 }
 
+# orele pe tipuri: prefixul din formulă → (numele intern, felul pentru motor) și descrierea (RO, RU, EN)
+HOUR_VARIABLES = {
+    "Ore": ("Orele efective ale tipului de ore din pontaj (Ore.ZBOR, Ore.INSTR…)",
+            "Фактические часы вида из табеля (Ore.ZBOR, Ore.INSTR…)", "Actual hours of the hour type from the timesheet (Ore.ZBOR…)"),
+    "OrePlatite": ("Orele plătite: max(efective; garantate reduse) — OrePlatite.ZBOR",
+                   "Оплачиваемые часы: max(фактические; гарантированные с уменьшением) — OrePlatite.ZBOR",
+                   "Paid hours: max(actual; reduced guaranteed) — OrePlatite.ZBOR"),
+    "Garantat": ("Orele garantate ale lunii, reduse după zilele disponibile (0 — fără garanție) — Garantat.ZBOR",
+                 "Гарантированные часы месяца, уменьшенные по доступным дням (0 — без гарантии) — Garantat.ZBOR",
+                 "Guaranteed hours of the month, reduced by available days (0 — none) — Garantat.ZBOR"),
+    "Tarif": ("Tariful pe oră al tipului pe raportul de muncă (lei) — Tarif.ZBOR",
+              "Часовой тариф вида в трудовом отношении (лей) — Tarif.ZBOR", "Hourly rate of the type on the employment (lei) — Tarif.ZBOR"),
+}
+HOUR_PREFIX = {"ore": ("_ore", "ore", "Ore"), "oreplatite": ("_oreplatite", "ore_platite", "OrePlatite"),
+               "garantat": ("_garantat", "garantat", "Garantat"), "tarif": ("_tarif", "tarif", "Tarif")}
+HOUR_NAMES = {internal: (kind, label) for internal, kind, label in HOUR_PREFIX.values()}
+HOUR_KINDS = {kind for _i, kind, _l in HOUR_PREFIX.values()}
+
 FUNCTIONS = {
     "min": ("min(a; b; …) — cel mai mic", "min(a; b; …) — наименьшее", "min(a; b; …) — the smallest"),
     "max": ("max(a; b; …) — cel mai mare", "max(a; b; …) — наибольшее", "max(a; b; …) — the largest"),
@@ -86,6 +107,7 @@ _TOKEN = re.compile(r"""
     (?P<space>\s+)
   | (?P<number>\d+(?:[.,]\d+)?)
   | (?P<const>C\.(?P<ccode>[A-Za-z0-9_]+))
+  | (?P<hour>(?P<hprefix>(?i:OrePlatite|Garantat|Tarif|Ore))\.(?P<hcode>[A-Za-z0-9_]+))
   | (?P<ref>\[(?P<rcode>[^\[\]]*)\])
   | (?P<name>[A-Za-zĂÂÎȘȚŞŢăâîșțşţ][A-Za-z0-9_ĂÂÎȘȚŞŢăâîșțşţ]*)
   | (?P<op><=|>=|<>|==|!=|[-+*/()<>=;])
@@ -118,12 +140,17 @@ class Parsed:
 
     def __init__(self, source: str, tree, translated: str, positions: list):
         self.source, self.tree, self.translated, self.positions = source, tree, translated, positions
-        self.variables, self.constants, self.refs = [], [], []
+        self.variables, self.constants, self.refs, self.hours = [], [], [], []
         for node in ast.walk(tree):
             if isinstance(node, ast.Name) and node.id in VARIABLES and node.id not in self.variables:
                 self.variables.append(node.id)
             if isinstance(node, ast.Subscript):
                 code = node.slice.value
+                if node.value.id in HOUR_NAMES:
+                    label = f"{HOUR_NAMES[node.value.id][1]}.{code}"
+                    if label not in self.hours:
+                        self.hours.append(label)
+                    continue
                 target = self.refs if node.value.id == REF else self.constants
                 if code not in target:
                     target.append(code)
@@ -156,7 +183,7 @@ def _translate(text: str):
             if ch == "_":
                 raise FormulaError("Numele cu „_” nu sunt permise", i + 1)
             raise FormulaError(f"Caracterul „{ch}” nu este permis", i + 1)
-        kind = next(k for k in ("space", "number", "const", "ref", "name", "op") if m.group(k) is not None)
+        kind = next(k for k in ("space", "number", "const", "hour", "ref", "name", "op") if m.group(k) is not None)
         raw = m.group(0)
         piece = None
         if kind == "space":
@@ -173,6 +200,11 @@ def _translate(text: str):
             if text[m.end():m.end() + 1] == ".":
                 raise FormulaError("Atributele nu sunt permise (doar C.<cod> pentru constante)", m.end() + 1)
             piece = f'{CONST}["{m.group("ccode")}"]'
+        elif kind == "hour":
+            if text[m.end():m.end() + 1] == ".":
+                raise FormulaError("Atributele nu sunt permise (doar Ore.<cod>, OrePlatite.<cod>, Garantat.<cod>, Tarif.<cod>)",
+                                   m.end() + 1)
+            piece = f'{HOUR_PREFIX[m.group("hprefix").lower()][0]}["{m.group("hcode").upper()}"]'
         elif kind == "ref":
             code = m.group("rcode").strip()
             if not code:
@@ -256,17 +288,17 @@ def parse(text: str) -> Parsed:
                 need = f"{lo}" if lo == hi else f"{lo}–{hi}"
                 raise FormulaError(f"Funcția {node.func.id} primește {need} argumente (despărțite cu „;”)", where)
         if isinstance(node, ast.Subscript):
-            if not (isinstance(node.value, ast.Name) and node.value.id in (REF, CONST) and isinstance(node.slice, ast.Constant)
-                    and isinstance(node.slice.value, str)):
+            if not (isinstance(node.value, ast.Name) and node.value.id in (REF, CONST, *HOUR_NAMES)
+                    and isinstance(node.slice, ast.Constant) and isinstance(node.slice.value, str)):
                 raise FormulaError("Construcția nu este permisă în formulă", where)
-        if isinstance(node, ast.Name) and node.id not in VARIABLES and node.id not in FUNCTIONS and node.id not in (REF, CONST):
+        if isinstance(node, ast.Name) and node.id not in VARIABLES and node.id not in FUNCTIONS and node.id not in (REF, CONST, *HOUR_NAMES):
             raise FormulaError(f"Variabila „{node.id}” nu există", where)
     for node in nodes:  # numele de funcție doar ca apel, numele interne doar ca indice
         if isinstance(node, ast.Name) and node.id in FUNCTIONS:
             parent_ok = any(isinstance(c, ast.Call) and c.func is node for c in nodes)
             if not parent_ok:
                 raise FormulaError(f"„{node.id}” este o funcție: {node.id}(…)", original_position(positions, node.col_offset))
-        if isinstance(node, ast.Name) and node.id in (REF, CONST):
+        if isinstance(node, ast.Name) and node.id in (REF, CONST, *HOUR_NAMES):
             if not any(isinstance(c, ast.Subscript) and c.value is node for c in nodes):
                 raise FormulaError("Construcția nu este permisă în formulă", original_position(positions, node.col_offset))
         if isinstance(node, ast.Constant) and isinstance(node.value, str):
@@ -275,12 +307,18 @@ def parse(text: str) -> Parsed:
     return Parsed(text, tree, translated, positions)
 
 
-def check(text: str, type_codes=None, constant_codes=None) -> Parsed:
-    """Verificarea la salvare: sintaxa + codurile tipurilor ([COD]) și ale constantelor (C.cod) există."""
+def check(text: str, type_codes=None, constant_codes=None, hour_codes=None) -> Parsed:
+    """Verificarea la salvare: sintaxa + codurile tipurilor ([COD]), ale constantelor (C.cod) și ale tipurilor de ore
+    (Ore.COD …) există."""
     parsed = parse(text)
     for node in ast.walk(parsed.tree):
         if isinstance(node, ast.Subscript):
             code = node.slice.value
+            if node.value.id in HOUR_NAMES:
+                if hour_codes is not None and code not in hour_codes:
+                    raise FormulaError(f"Tipul de ore „{code}” nu există ({HOUR_NAMES[node.value.id][1]}.{code}); "
+                                       f"tipurile de ore — în Setări → Tipuri de ore", parsed.pos(node))
+                continue
             if node.value.id == REF and type_codes is not None and code not in type_codes:
                 raise FormulaError(f"Tipul de calcul [{code}] nu există", parsed.pos(node))
             if node.value.id == CONST and constant_codes is not None and code not in constant_codes:
@@ -325,6 +363,9 @@ class Evaluator:
             code = node.slice.value
             if node.value.id == REF:
                 return self._leaf(node, f"[{code}]", "ref", code)
+            if node.value.id in HOUR_NAMES:
+                kind, label = HOUR_NAMES[node.value.id]
+                return self._leaf(node, f"{label}.{code}", kind, code)
             return self._leaf(node, f"C.{code}", "const", code)
         if isinstance(node, ast.UnaryOp):
             v = self._eval(node.operand)
@@ -403,7 +444,8 @@ class Evaluator:
         if isinstance(node, ast.Name):
             return f"{node.id} {fmt(v)}" if v is not None else node.id
         if isinstance(node, ast.Subscript):
-            label = f"[{node.slice.value}]" if node.value.id == REF else f"C.{node.slice.value}"
+            label = (f"[{node.slice.value}]" if node.value.id == REF else
+                     f"{HOUR_NAMES[node.value.id][1]}.{node.slice.value}" if node.value.id in HOUR_NAMES else f"C.{node.slice.value}")
             return f"{label} {fmt(v)}" if v is not None else label
         if isinstance(node, ast.UnaryOp):
             sign = "−" if isinstance(node.op, ast.USub) else "+"

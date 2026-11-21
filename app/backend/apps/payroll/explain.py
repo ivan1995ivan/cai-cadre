@@ -5,15 +5,28 @@ from decimal import Decimal
 # regula motorului (apps.payroll.engine) pentru fiecare cheie „auto”
 AUTO_HOW = {
     "salary": ("salariul de funcție × norma raportului × orele lucrate / norma lunii (orele obișnuite + cele de sărbătoare în "
-               "limita normei)",
-               "оклад × ставка × отработанные часы / норма месяца (обычные + праздничные в пределах нормы)",
-               "base salary × rate × hours worked / monthly norm (regular hours + holiday hours within the norm)"),
+               "limita normei); la modalitatea „tarif orar” — tariful orar × orele lucrate; la „pe tipuri de ore” — nu se calculează",
+               "оклад × ставка × отработанные часы / норма месяца (обычные + праздничные в пределах нормы); при способе «почасовой "
+               "тариф» — тариф × отработанные часы; при «по видам часов» — не начисляется",
+               "base salary × rate × hours worked / monthly norm (regular hours + holiday hours within the norm); for the “hourly "
+               "rate” mode — hourly rate × hours worked; for “by hour types” — not calculated"),
     "allowance": ("SalariuFunctie × partea lucrată × sporul fix (%) din raportul de muncă",
                   "SalariuFunctie × отработанная доля × постоянная надбавка (%) из трудового отношения",
                   "SalariuFunctie × worked share × fixed allowance (%) of the employment"),
-    "combination": ("SalariuFunctie × partea lucrată × plata pentru cumul (%) din raportul de muncă",
-                    "SalariuFunctie × отработанная доля × доплата за совмещение (%) из трудового отношения",
-                    "SalariuFunctie × worked share × combination pay (%) of the employment"),
+    "combination": ("cumularea funcțiilor / suplinirea de pe raportul de muncă (CM art. 156): % din salariul propriu sau al "
+                    "funcției cumulate × partea lucrată × zilele în vigoare; suma fixă × zilele în vigoare; pe ore — orele tipului × "
+                    "tariful",
+                    "совмещение / замещение в трудовом отношении (ТК ст. 156): % от своего оклада или оклада совмещаемой "
+                    "должности × отработанная доля × дни действия; фиксированная сумма × дни действия; почасово — часы вида × "
+                    "тариф",
+                    "combining posts / substitution on the employment (LC art. 156): % of own salary or of the combined post × "
+                    "worked share × days in force; fixed amount × days in force; hourly — hours of the type × rate"),
+    "hour_types": ("pe fiecare tip de ore cu tarif pe raport: ore plătite × tariful, ore plătite = max(efective; garantate × "
+                   "zilele disponibile / zilele lucrătoare ale lunii) — la modalitățile „pe tipuri de ore” și „mixt”",
+                   "по каждому виду часов с тарифом: оплачиваемые часы × тариф, оплачиваемые = max(фактические; гарантированные × "
+                   "доступные дни / рабочие дни месяца) — при способах «по видам часов» и «смешанный»",
+                   "for each hour type with a rate: paid hours × rate, paid = max(actual; guaranteed × available days / working "
+                   "days of the month) — for the “by hour types” and “mixed” pay modes"),
     "night": ("tariful orar × orele de noapte × C.night_pct % (CM art. 159)",
               "часовой тариф × ночные часы × C.night_pct % (КТ ст. 159)",
               "hourly rate × night hours × C.night_pct % (LC art. 159)"),

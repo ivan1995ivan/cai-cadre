@@ -2,8 +2,11 @@
 
 Pentru fiecare raport de muncă din lună:
 1. pontajul (tabela secției, sau norma întreagă dacă tabela lipsește): ore, noapte, sărbători, suplimentare, absențe;
-2. acumulările automate: salariul de funcție pro-rata la ore, sporurile fixe, plata pentru cumul, noaptea, sărbătorile,
-   suplimentarele, concediul (media × zile), compensarea, boala (zilele angajatorului), premiile și ajutorul din ordine;
+2. acumulările automate: baza după modalitatea de remunerare a raportului (salariul de funcție pro-rata la ore; tariful orar ×
+   orele; fără bază la „pe tipuri de ore”), orele pe tipuri (ore plătite × tarif, cu orele garantate — apps.worktime.hour_types;
+   la „pe tipuri de ore” și „mixt”), sporurile fixe, plata pentru cumularea funcțiilor / suplinire (înregistrările de pe raport,
+   CM art. 156), noaptea, sărbătorile, suplimentarele, concediul (media × zile), compensarea, boala (zilele angajatorului),
+   premiile și ajutorul din ordine;
 3. rândurile scrise de mână (le înlocuiesc pe cele calculate de același tip) și completarea până la salariul minim;
 4. celelalte tipuri, în ordinea dependențelor (apps.payroll.dependencies): rândurile personale ale angajatului (sumă fixă,
    % din salariu, tarif orar), treptele de vechime, „% din bază” și formulele (apps.payroll.formula) — fiecare după tipurile
@@ -30,9 +33,10 @@ from apps.leave.models import Absence, LeaveAdjustment, SickLeave
 from apps.org import calendar as holidays
 from apps.orders.models import Incentive
 from apps.staff import services as staff
-from apps.staff.models import MAIN_KINDS, Employment
+from apps.staff.models import MAIN_KINDS, RATE_MODES, Employment, FunctionCombination
+from apps.worktime import hour_types
 from apps.worktime import services as worktime
-from apps.worktime.models import TimesheetLine
+from apps.worktime.models import HourType, JobHourRate, TimesheetLine
 
 from . import dependencies, formula, it_park
 from .models import EmployeePayItem, PayConstant, Payroll, PayrollItem, PayrollLine, PayType
@@ -233,6 +237,17 @@ class Month:
         self._index()
         self.timesheets = {ln.employment_id: ln.totals or {} for ln in TimesheetLine.objects.filter(
             timesheet__year=self.year, timesheet__month=self.month, timesheet__deletion_mark=False)}
+        # orele pe tipuri, tarifele și cumulările (S4b) — pe raport
+        self.hour_types = {t.code: t for t in HourType.objects.all()}
+        self.guarantee_conf = hour_types.settings()
+        self._typed = None
+        self.rates = defaultdict(list)
+        for r in JobHourRate.objects.filter(date_from__lte=self.last).exclude(date_to__lt=self.first).select_related("hour_type"):
+            self.rates[r.employment_id].append(r)
+        self.combinations = defaultdict(list)
+        for c in (FunctionCombination.objects.filter(date_from__lte=self.last).exclude(date_to__lt=self.first)
+                  .select_related("occupation", "hour_type").order_by("date_from", "id")):
+            self.combinations[c.employment_id].append(c)
         self.avg_salary = self.const("avg_salary")
         self.it_park = it_park.is_it_park(self.year, self.month)  # regimul lunii calculului (CF art. 375)
         self.sick_covered = it_park.sick_covered(self.const)
@@ -272,6 +287,12 @@ class Month:
         out.sort(key=lambda jd: (jd.job.employee.last_name, jd.job.employee.first_name, jd.job.kind != "main", jd.job.pk))
         return out
 
+    def typed(self, employment_id) -> dict:
+        if self._typed is None:
+            self._typed = worktime.typed_by_job(self.year, self.month, TimesheetLine.objects.filter(
+                timesheet__year=self.year, timesheet__month=self.month).values_list("employment_id", flat=True))
+        return self._typed.get(employment_id, {})
+
     def timesheet(self, jd) -> dict:
         t = self.timesheets.get(jd.job.pk)
         if t:
@@ -300,18 +321,33 @@ class LineCalc:
         self.hours = Decimal(str(self.ts.get("hours") or 0))
         sub_id, occ_id, rate = jd.values_on(max(jd.days))
         self.rate = Decimal(rate)
-        self.salary_full = q(self.job.base_salary * self.rate)  # salariul pentru norma raportului
-        self.hourly = q(self.salary_full / self.norm) if self.norm else ZERO
+        rec = next((h for h in reversed(jd.history) if h.date <= max(jd.days)), None)
+        # modalitatea de remunerare și tariful orar ale lunii (din istoric, la ultima zi a raportului în lună)
+        self.pay_mode = rec.pay_mode if rec else self.job.pay_mode
+        self.hourly_rate = Decimal(rec.hourly_rate if rec else self.job.hourly_rate or 0)
+        if self.pay_mode == "hourly":  # salariul lunar echivalent: tariful × norma lunii (pentru % din salariu, media)
+            self.salary_full = q(self.hourly_rate * self.norm)
+            self.hourly = self.hourly_rate
+        else:
+            self.salary_full = q(self.job.base_salary * self.rate)  # salariul pentru norma raportului
+            self.hourly = q(self.salary_full / self.norm) if self.norm and self.pay_mode != "hour_types" else ZERO
+        # orele pe tipuri (instruire, examinare, zbor…) cu orele garantate și plata lor (apps.worktime.hour_types)
+        self.hour_summary = hour_types.summarize(month.ctx, jd, month.typed(self.job.pk), month.rates.get(self.job.pk, []),
+                                                 month.hour_types, month.guarantee_conf)
+        added = hour_types.added_hours(self.hour_summary)  # tipurile „se adaugă la orele lucrate”
+        self.hours += added
         # orele plătite din salariul lunar: cele obișnuite + cele de sărbătoare / repaus în limita normei; suplimentarele și
         # orele de sărbătoare peste normă se plătesc separat (SUPL, SARB), întregi
         ts = self.ts
-        self.salary_hours = (self._d("regular") + self._d("holiday_in_norm")) if "regular" in ts else self.hours
+        self.salary_hours = ((self._d("regular") + self._d("holiday_in_norm")) if "regular" in ts else self.hours - added) + added
         self.worked_share = (min(self.salary_hours, self.norm) / self.norm) if self.norm else (ZERO if self.job.kind == "contractor" else Decimal("1"))
         occ, sub = month.ctx.occupations.get(occ_id), month.ctx.subdivisions.get(sub_id)
         self.info = {"occupation": occ.name_ro if occ else "", "subdivision": sub.name_ro if sub else "", "kind": self.job.kind,
                      "kind_label": self.job.get_kind_display(), "rate": float(self.rate), "base_salary": float(self.job.base_salary),
                      "salary_full": float(self.salary_full), "hourly": float(self.hourly), "timesheet": self.ts,
-                     "tab_number": self.job.employee.tab_number, "name": self.job.employee.full_name(), "is_main": is_main}
+                     "tab_number": self.job.employee.tab_number, "name": self.job.employee.full_name(), "is_main": is_main,
+                     "pay_mode": self.pay_mode, "hourly_rate": float(self.hourly_rate),
+                     "hour_types": self.hour_summary}
         self.traces: list = []  # formulele calculate: variabilele, rezultatul (pentru „Încearcă”)
         self.try_mode = False  # la „Încearcă” erorile formulei se arată, nu opresc calculul
         self.forced_rows: dict = {}  # {codul tipului: [rânduri]} — la „Încearcă”, în locul rândurilor angajatului
@@ -341,32 +377,95 @@ class LineCalc:
     def auto(self):
         m, c = self.m, self.m.const
         share = self.worked_share
+        hourly_paid = self.pay_mode == "hourly"
         for t in m.by_auto["salary"]:
-            if self.job.kind != "contractor":
+            if self.job.kind == "contractor" or self.pay_mode == "hour_types":
+                continue
+            if hourly_paid:  # tariful orar × toate orele lucrate; sporurile pentru suplimentare / sărbători — peste ora simplă
+                self.add(t.code, self.hourly_rate * self.hours, quantity=self.hours, base=self.hourly_rate,
+                         note=f"tariful orar {num(self.hourly_rate)} lei × {float(self.hours):g} ore")
+            else:
                 self.add(t.code, self.salary_full * share, quantity=self.salary_hours, base=self.salary_full,
                          note=f"{float(self.salary_hours):g} ore din norma {float(self.norm):g}" if self.norm else "")
+        self._hour_types()
         for t in m.by_auto["allowance"]:
             if self.job.allowance_pct:
                 self.add(t.code, self.salary_full * share * self.job.allowance_pct / 100, base=self.salary_full * share,
                          percent=self.job.allowance_pct)
-        for t in m.by_auto["combination"]:
-            if self.job.combination_pct:
-                self.add(t.code, self.salary_full * share * self.job.combination_pct / 100, base=self.salary_full * share,
-                         percent=self.job.combination_pct)
+        self._combinations()
         night = Decimal(str(self.ts.get("night") or 0))
         for t in m.by_auto["night"]:
             if night and self.hourly:
                 self.add(t.code, night * self.hourly * c("night_pct") / 100, quantity=night, base=self.hourly, percent=c("night_pct"))
         for t in m.by_auto["holiday"]:
             if self.hourly:
-                self._holiday(t.code, self.hourly)
+                self._holiday(t.code, self.hourly, hourly_paid=hourly_paid)
         for t in m.by_auto["overtime"]:
             if self.hourly:
-                self._overtime(t.code, self.hourly, full=True)
+                self._overtime(t.code, self.hourly, full=not hourly_paid)
         self._leave()
         if self.is_main:
             self._sick()
             self._incentives()
+
+    def _hour_types(self):
+        """Orele pe tipuri cu tarif (la modalitățile „pe tipuri de ore” și „mixt”): ore plătite × tariful, unde ore plătite =
+        max(efective, garantate reduse după zilele disponibile); un rând pe tip de ore (cu tariful schimbat în lună — suma
+        rândurilor de tarif, explicate în observații), cu tipul de calcul legat în clasificatorul tipurilor de ore sau „Ore pe
+        tipuri”. Orele acestea nu intră în tariful orar pentru noapte / sărbători / suplimentare (acelea se socotesc din orele
+        standard ale pontajului)."""
+        if self.pay_mode not in RATE_MODES or self.job.kind == "contractor":
+            return
+        default = self.m.by_auto["hour_types"]
+        by_pk = {t.pk: t for t in self.m.types.values()}
+        for code, s in self.hour_summary.items():
+            linked = by_pk.get(s["pay_type"]) if s["pay_type"] else None
+            pay = linked if linked is not None and linked.auto == "hour_types" else (default[0] if default else None)
+            if pay is None:
+                continue
+            if not s["amount"]:
+                continue
+            paid = sum((Decimal(str(row["paid"])) for row in s["rows"]), ZERO)
+            single = len(s["rows"]) == 1
+            self.add(pay.code, Decimal(str(s["amount"])), quantity=paid, base=Decimal(str(s["rate"])) if single else None,
+                     note=f"{code}: {s['note']}")
+
+    def _combinations(self):
+        """Cumularea funcțiilor, suplinirea, interimatul pe același contract (CM art. 156) — înregistrările de pe raport:
+        % din salariul propriu × partea lucrată × zilele în vigoare; % din salariul funcției cumulate / suplinite (la fel);
+        suma fixă × zilele în vigoare; pe ore — orele tipului ales × tariful. Zilele în vigoare: zilele lucrătoare ale
+        cumulării din zilele lucrătoare ale raportului în lună."""
+        m = self.m
+        types = m.by_auto["combination"]
+        recs = m.combinations.get(self.job.pk, [])
+        if not types or not recs:
+            return
+        cal = m.ctx.cal
+        job_days = [d for d in m.ctx.days if cal.is_working(d) and self.jd.active(d)]
+        for rec in recs:
+            mine = [d for d in job_days if rec.date_from <= d and (rec.date_to is None or d <= rec.date_to)]
+            label = f"{rec.get_kind_display()}: {rec.occupation.name_ro}"
+            period = (Decimal(len(mine)) / len(job_days)) if job_days else ZERO
+            days_text = f"zilele {len(mine)} / {len(job_days)}"
+            if rec.pay_mode == "hourly":
+                code = rec.hour_type.code if rec.hour_type_id else ""
+                hours = Decimal(str((self.hour_summary.get(code) or {}).get("hours") or 0))
+                if hours:
+                    self.add(types[0].code, hours * rec.value, quantity=hours, base=rec.value,
+                             note=f"{label} — {code} {num(hours)} ore × {num(rec.value)} lei")
+                continue
+            if not mine:
+                continue
+            if rec.pay_mode == "fixed":
+                self.add(types[0].code, rec.value * period, base=rec.value,
+                         note=f"{label} — {hour_types.fmt(rec.value)} lei × {days_text}")
+                continue
+            own = rec.pay_mode == "pct_own"
+            salary = self.salary_full if own else Decimal(rec.other_salary or 0)
+            base = salary * self.worked_share * period
+            self.add(types[0].code, base * rec.value / 100, base=base, percent=rec.value,
+                     note=f"{label} — {num(rec.value)} % din salariul {'propriu' if own else 'funcției'} {hour_types.fmt(salary)} × "
+                          f"partea lucrată {float(self.worked_share) * 100:.4g} % × {days_text}")
 
     def _holiday(self, code, hourly, hourly_paid=False):
         """Munca în zilele de sărbătoare și de repaus (CM art. 158). Salariul lunar: peste salariu, +100 % pe oră în limita
@@ -420,7 +519,7 @@ class LineCalc:
                 comp_days += -adj.days
         if not leave_days and not comp_days:
             return
-        monthly = self.salary_full * (Decimal(1) + (self.job.allowance_pct or ZERO) / 100)
+        monthly = self.fallback_monthly()
         avg, how = average_daily(self.job, m.year, m.month, int(m.const("leave_avg_months", "3")), monthly)
         note = f"media {avg} lei/zi ({how['months']} luni, {how['sum']} lei / {how['days']} zile)"
         for t in m.by_auto["leave"]:
@@ -442,10 +541,20 @@ class LineCalc:
             accident = kind == "work_accident"
             auto = "sick_accident" if accident and m.by_auto["sick_accident"] else "sick"
             pct = c("sick_accident_pct", "100") if accident else c("sick_employer_pct", "75")
-            avg, how = sick_average_daily(self.job, m.year, m.month, c, self.salary_full * (Decimal(1) + (self.job.allowance_pct or ZERO) / 100))
+            avg, how = sick_average_daily(self.job, m.year, m.month, c, self.fallback_monthly())
             for t in m.by_auto[auto]:
                 self.add(t.code, avg * days_left * pct / 100, quantity=days_left, base=avg, percent=pct,
                          note=f"{num(pct)}% din media {avg} lei/zi ({how['note']}); {codes}")
+
+    def fallback_monthly(self) -> Decimal:
+        """Câștigul lunar fără istoric (pentru media concediului / bolii): salariul cu sporurile fixe; la „pe tipuri de ore” și
+        „mixt” — plus garanția lunii × tariful fiecărui tip."""
+        monthly = self.salary_full * (Decimal(1) + (self.job.allowance_pct or ZERO) / 100)
+        if self.pay_mode in RATE_MODES:
+            for r in self.m.rates.get(self.job.pk, []):
+                if r.guaranteed_hours and r.in_force(self.m.last, self.m.last):
+                    monthly += r.guaranteed_hours * r.rate
+        return monthly
 
     def _incentives(self):
         m = self.m
@@ -571,6 +680,17 @@ class LineCalc:
             raise formula.FormulaError(f"Variabila „{name}” nu există")
         return Decimal(simple[name]())
 
+    def hour_value(self, kind: str, code: str) -> Decimal:
+        """`Ore.COD` (efective), `OrePlatite.COD`, `Garantat.COD` (garanția redusă a lunii), `Tarif.COD` (tariful în vigoare la
+        sfârșitul lunii) — 0 dacă raportul n-are ore / tarif de acest tip."""
+        if code not in self.m.hour_types:
+            raise formula.FormulaError(f"Tipul de ore „{code}” nu există")
+        s = self.hour_summary.get(code)
+        if s is None:
+            return ZERO
+        value = {"ore": s["hours"], "ore_platite": s["paid"], "garantat": s["guaranteed"] or 0, "tarif": s["rate"] or 0}[kind]
+        return Decimal(str(value))
+
     def _expr(self, t: PayType, r, pct):
         """Formula tipului: rezultatul pe rând, cu explicația (formula și valorile variabilelor folosite). Un rezultat negativ
         se oprește la 0, cu avertisment (o acumulare / reținere nu poate fi negativă)."""
@@ -579,6 +699,8 @@ class LineCalc:
         def resolve(kind, name):
             if kind == "var":
                 return self.variable(name, t, r, pct)
+            if kind in formula.HOUR_KINDS:
+                return self.hour_value(kind, name)
             if kind == "const":
                 if name not in m.const.values:
                     raise formula.FormulaError(f"Constanta C.{name} nu are valoare la {m.last:%d.%m.%Y}")
@@ -663,7 +785,8 @@ class LineCalc:
             return
         minimum = m.const("min_salary")
         target = q(minimum * self.rate * self.worked_share)
-        paid = sum((i["amount"] for i in self.items if i["type"].auto == "salary"), ZERO)
+        # salariul tarifar al timpului lucrat: salariul de funcție / tariful orar și plata orelor pe tipuri (nu sporurile)
+        paid = sum((i["amount"] for i in self.items if i["type"].auto in ("salary", "hour_types")), ZERO)
         if target > paid:
             self.add(types[0].code, target - paid, base=target,
                      note=f"salariul minim {num(minimum)} × norma {num(self.rate)} × {float(self.worked_share) * 100:.4g} % lucrat = {target}; "

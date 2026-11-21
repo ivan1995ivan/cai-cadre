@@ -5,13 +5,13 @@ from apps.org.serializers import user_lang
 
 from . import services
 from .models import (AccessLog, Education, Employee, EmployeeDocument, Employment, EmploymentHistory, FamilyMember,
-                     MilitaryRecord, PriorExperience)
+                     FunctionCombination, MilitaryRecord, PriorExperience)
 
 # câmpurile sensibile (users.registry.SENSITIVE_FIELDS) → ce se ascunde din fișă
 SENSITIVE = {
     "idnp": {"idnp", "cnam_code", "cpas", "birth_place"},
     "contacts": {"phone", "phone2", "email", "address", "address_actual", "emergency_contact"},
-    "salary": {"base_salary", "allowance_pct", "combination_pct", "iban", "bank_name"},
+    "salary": {"base_salary", "allowance_pct", "hourly_rate", "iban", "bank_name", "hour_rates", "combinations"},
     "health": {"disability"},
 }
 
@@ -133,7 +133,7 @@ class EmploymentHistorySerializer(MaskMixin, serializers.ModelSerializer):
     class Meta:
         model = EmploymentHistory
         fields = ["id", "event", "event_label", "date", "subdivision", "subdivision_name", "occupation", "occupation_name",
-                  "rate", "base_salary", "allowance_pct", "combination_pct", "order", "note", "created_at"]
+                  "rate", "base_salary", "allowance_pct", "pay_mode", "hourly_rate", "order", "note", "created_at"]
 
     def get_subdivision_name(self, obj):
         return _name(obj.subdivision, user_lang(self))
@@ -155,11 +155,15 @@ class EmploymentSerializer(MaskMixin, serializers.ModelSerializer):
     employee_tab = serializers.CharField(source="employee.tab_number", read_only=True)
     history = EmploymentHistorySerializer(many=True, read_only=True)
     warnings = serializers.SerializerMethodField()
+    pay_mode_label = serializers.CharField(source="get_pay_mode_display", read_only=True)
+    hour_rates = serializers.SerializerMethodField()
+    combinations = serializers.SerializerMethodField()
 
     class Meta:
         model = Employment
         fields = ["id", "employee", "employee_name", "employee_tab", "kind", "kind_label", "subdivision", "subdivision_name", "occupation", "occupation_name",
-                  "occupation_code", "category", "category_name", "rate", "base_salary", "allowance_pct", "combination_pct", "date_from", "date_to",
+                  "occupation_code", "category", "category_name", "rate", "base_salary", "allowance_pct", "pay_mode", "pay_mode_label",
+                  "hourly_rate", "hour_rates", "combinations", "date_from", "date_to",
                   "probation_until", "contract_number", "contract_date", "substitutes", "status", "status_label",
                   "suspended_from", "suspension_reason", "end_date", "termination_reason", "termination_reason_name",
                   "hire_order", "end_order", "note", "history", "warnings"]
@@ -168,14 +172,30 @@ class EmploymentSerializer(MaskMixin, serializers.ModelSerializer):
     def get_subdivision_name(self, obj):
         return _name(obj.subdivision, user_lang(self))
 
+    def get_hour_rates(self, obj):
+        from apps.worktime.serializers import JobHourRateSerializer
+
+        return JobHourRateSerializer(obj.hour_rates.select_related("hour_type", "order_item__order").order_by("hour_type__sort", "date_from"),
+                                     many=True, context=self.context).data
+
+    def get_combinations(self, obj):
+        return FunctionCombinationSerializer(obj.combinations.select_related("occupation", "subdivision", "hour_type",
+                                                                            "order_item__order"),
+                                             many=True, context=self.context).data
+
     def get_warnings(self, obj):
-        """Salariul de funcție sub salariul minim pe țară (apps.payroll.alerts)."""
+        """Salariul de funcție sub salariul minim pe țară (apps.payroll.alerts); tarife pe ore la o modalitate care nu le
+        plătește."""
         from apps.payroll.alerts import min_wage_warning
 
         if obj.status == "ended":
             return []
-        text = min_wage_warning(obj.base_salary, obj.kind)
-        return [text] if text else []
+        out = []
+        if obj.pay_mode in ("salary", "mixed"):
+            text = min_wage_warning(obj.base_salary, obj.kind)
+            if text:
+                out.append(text)
+        return out
 
     def get_occupation_name(self, obj):
         return _name(obj.occupation, user_lang(self))
@@ -319,7 +339,71 @@ class AccessLogSerializer(serializers.ModelSerializer):
 
 
 class ContractRowSerializer(EmploymentSerializer):
-    """Rândul din registrul contractelor (fără istoric — lista e mare)."""
+    """Rândul din registrul contractelor (fără istoric, tarife și cumulări — lista e mare)."""
 
     class Meta(EmploymentSerializer.Meta):
-        fields = [f for f in EmploymentSerializer.Meta.fields if f != "history"]
+        fields = [f for f in EmploymentSerializer.Meta.fields if f not in ("history", "hour_rates", "combinations")]
+
+
+class FunctionCombinationSerializer(MaskMixin, serializers.ModelSerializer):
+    """Cumularea funcțiilor / suplinirea / interimatul pe același contract (CM art. 156). Cea venită din ordin nu se schimbă de
+    mână: se încheie printr-un ordin nou („încheie cumularea”) sau prin anularea ordinului."""
+
+    kind_label = serializers.CharField(source="get_kind_display", read_only=True)
+    pay_mode_label = serializers.CharField(source="get_pay_mode_display", read_only=True)
+    occupation_name = serializers.SerializerMethodField()
+    subdivision_name = serializers.SerializerMethodField()
+    hour_type_code = serializers.CharField(source="hour_type.code", read_only=True, default="")
+    value_text = serializers.CharField(read_only=True)
+    source = serializers.SerializerMethodField()
+
+    class Meta:
+        model = FunctionCombination
+        fields = ["id", "employment", "kind", "kind_label", "occupation", "occupation_name", "subdivision", "subdivision_name",
+                  "substitutes", "substituted_name", "pay_mode", "pay_mode_label", "value", "value_text", "other_salary",
+                  "hour_type", "hour_type_code", "date_from", "date_to", "order", "note", "source"]
+
+    def get_occupation_name(self, obj):
+        return _name(obj.occupation, user_lang(self))
+
+    def get_subdivision_name(self, obj):
+        return _name(obj.subdivision, user_lang(self)) if obj.subdivision_id else ""
+
+    def get_source(self, obj):
+        if obj.order_item_id:
+            order = obj.order_item.order
+            return {"kind": "order", "id": order.pk, "label": f"Ordinul nr. {order.reference()}", "status": order.status}
+        return {"kind": "manual", "id": None, "label": "", "status": ""}
+
+    def validate(self, attrs):
+        if self.instance is not None and self.instance.order_item_id:
+            changed = [k for k, v in attrs.items() if k != "note" and v != getattr(self.instance, k)]
+            if changed:
+                raise serializers.ValidationError({"detail": "Cumularea vine dintr-un ordin; se încheie printr-un ordin nou sau prin "
+                                                             "anularea ordinului."})
+            return attrs
+        get = lambda k: attrs.get(k, getattr(self.instance, k, None))  # noqa: E731
+        job, mode, value = get("employment"), get("pay_mode") or "pct_own", get("value")
+        start, end = get("date_from"), get("date_to")
+        if job is not None and job.kind in ("contractor",):
+            raise serializers.ValidationError({"employment": "Contractul de prestări servicii nu are cumulare de funcții."})
+        if value is None or value <= 0:
+            raise serializers.ValidationError({"value": "Dați valoarea plății (procentul, suma sau tariful pe oră)."})
+        if mode in ("pct_own", "pct_other") and value > 200:
+            raise serializers.ValidationError({"value": "Procentul este cel mult 200 %."})
+        if start and end and end < start:
+            raise serializers.ValidationError({"date_to": "„Până la” este înaintea lui „de la”."})
+        if job is not None and start and (start < job.date_from or (job.end_date and start > job.end_date)):
+            raise serializers.ValidationError({"date_from": "Cumularea începe în afara raportului de muncă."})
+        if mode == "pct_other" and not get("other_salary"):
+            sub = get("substitutes")
+            if sub is None or not sub.base_salary:
+                raise serializers.ValidationError({"other_salary": "Dați salariul funcției cumulate / suplinite."})
+            attrs["other_salary"] = sub.base_salary
+        if mode == "hourly" and get("hour_type") is None:
+            raise serializers.ValidationError({"hour_type": "La plata pe ore alegeți tipul de ore (coloana din pontaj)."})
+        if mode != "hourly":
+            attrs["hour_type"] = None
+        if mode != "pct_other":
+            attrs["other_salary"] = None
+        return attrs
