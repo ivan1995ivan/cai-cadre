@@ -45,6 +45,20 @@ pornească de unde s-a rămas, nu de la zero.
   `/__platform/…` și `POST /api/setup/install/` → 404, `..` → 400,
   `http://` → 301, CSP și HSTS prezente.
 
+- **Direcția nouă — întreprinderi private (SRL)** (2026-11-21, hotărât de Anatol): produsul nu mai e
+  pentru spital; tot ce ține de stat se scoate, salarizarea se face după legislația RM pentru sectorul
+  privat, cu profilurile **IT Park / fabrică / aviație / transport** ca constante. Studiul (legislația
+  2026–2027, cu surse), deciziile și etapele S0–S7: **`app/PLAN-SRL.md`** — de acolo se lucrează.
+- **S1 „fără stat” — gata** (2026-11-21): antetul întreprinderii (logo, IDNO, CAEM, adresa,
+  semnatarii din Constante) în locul Stemei / fondatorului pe toate formele; categoriile de personal —
+  clasificator după grupele CORM; 42 de funcții cu coduri CORM 006-2021; temeiurile din Codul muncii
+  (redacția 2026); tipurile de ordin fără atestare / gărzi; pontajul după Convenția colectivă nr.
+  17/2020; graficul de ture (CM art. 101); scoase EMC, atestarea, vaccinurile, rezidenții, categoria
+  de calificare medicală, MS nr. 17, VECH / CATEG / GARDA; examenele medicale cu periodicitatea pe
+  funcție; **evidența militară — modul opțional, oprit implicit** (Legea 112/2023); demo „Demo
+  Producție” SRL (70 de persoane). Verificat: 155 de teste, typecheck. De verificat de om: codurile
+  CORM față de Ordinul MMPS 212/2025 (în vigoare din 04.07.2026); HG 1025/2016 → HG 146/2026?
+
 ## Următorii pași (de aici pornește sesiunea următoare)
 
 0. **Deschiderea**: (a) ~~Public Hostname~~ — făcut. (b) asistentul de

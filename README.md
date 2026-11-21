@@ -1,14 +1,16 @@
 # CAI CADRE
 
 Instalarea produsului **CAI CADRE** (evidența cadrelor și salarizarea pentru
-instituții medicale, Django + React, de Anatol — codul în `app/`, descrierea în
+întreprinderi private din Republica Moldova — SRL, cu profilurile IT Park, fabrică, aviație,
+transport; Django + React, de Anatol — codul în `app/`, descrierea în
 `app/README.md`) pe serverul `integratii.md`: `https://cai-cadre.integratii.md`.
 Proiect de sine stătător, desprins la 2026-11-17 din instalarea SCTO
 (`/srv/projects/scto`, CAI CADRE 1.6.0); de aici codul merge pe drumul lui. Starea și pașii
 următori: `CLAUDE.md`, secțiunea **Status**; instalarea și administrarea pe
-server: `docs/instalare.md`.
+server: `docs/instalare.md`. Planul trecerii de la varianta de spital (IMSP) la cea pentru
+întreprinderi private: `app/PLAN-SRL.md`.
 
-Instalarea e **curată**: fără date demo, instituția și administratorul se dau
+Instalarea e **curată**: fără date demo, întreprinderea și administratorul se dau
 în asistentul de instalare (doar local, prin tunel SSH).
 
 ## Rulare pe server
