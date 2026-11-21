@@ -29,8 +29,10 @@ const LEAVE_KIND: Record<string, string> = {
 }
 
 /** Parametrii unui punct al ordinului, după efectul tipului (angajare, modificare, concediu, sancțiune...). */
-export default function ItemParams({ form, effect, code, employee, disabled }: {
+export default function ItemParams({ form, effect, code, employee, disabled, onChange }: {
   form: FormInstance
+  /** valorile puse de program (nu de om): `setFieldValue` nu declanșează `onValuesChange` — ordinul trebuie să știe că s-a schimbat */
+  onChange?: () => void
   effect: string
   code: string
   employee: number | null
@@ -64,7 +66,10 @@ export default function ItemParams({ form, effect, code, employee, disabled }: {
     api.get<OccupationPayItem[]>('/payroll/occupation-items/', { params: { occupation: occ } }).then((r) => {
       const rows: PlannedRow[] = r.data.map((x) => ({ pay_type: x.pay_type, action: 'add', amount: x.amount, percent: x.percent,
         quantity: x.quantity, date_from: null, date_to: null, document: '' }))
-      if (force || rows.length) form.setFieldValue('pay_items', rows)
+      if (force || rows.length) {
+        form.setFieldValue('pay_items', rows)
+        onChange?.()
+      }
     }).catch(() => {})
   }
   useEffect(() => {

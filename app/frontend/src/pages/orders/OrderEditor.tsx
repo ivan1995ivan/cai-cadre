@@ -283,7 +283,7 @@ function PointCard({ no, item, order, disabled, register, onChange, onRemove, on
       {(item.warnings ?? []).map((w) => <Alert key={w} type="warning" showIcon message={w} style={{ marginBottom: 8 }} />)}
       <Form form={form} {...DOC_HEAD} disabled={disabled} onValuesChange={onChange}>
         <ItemParams form={form} effect={order.effect === 'cancel' || order.type_code === 'cancel_order' ? 'cancel' : order.effect}
-          code={order.type_code} employee={item.employee} disabled={disabled} />
+          code={order.type_code} employee={item.employee} disabled={disabled} onChange={onChange} />
         <Form.Item name="__text" label={<Space>{t('ord.pointText')}<a onClick={() => setPreview((x) => !x)}>{preview ? t('ord.hide') : t('ord.edit')}</a></Space>}
           extra={!preview && t('ord.textHint')} style={{ marginBottom: 0 }}>
           {preview ? <Input.TextArea rows={4} /> : <TextView />}

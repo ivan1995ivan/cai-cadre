@@ -157,7 +157,7 @@ function TryPanel({ form, editingId }: { form: ReturnType<typeof Form.useForm>[0
       {result?.errors.map((e) => <Alert key={e} type="error" showIcon title={e} />)}
       {result?.lines.map((ln) => (
         <div key={ln.employment} style={{ border: '1px solid var(--ant-color-border-secondary)', borderRadius: 6, padding: 8 }}>
-          <Space wrap><b>{ln.employment_label}</b><Tag color="green">{t('pay.fx.result')}: {money(ln.result)}</Tag></Space>
+          <Space wrap><b>{ln.employment_label}</b><Tag color="green">{t('pay.fx.result')}: {Number(ln.result ?? 0).toLocaleString('ro-MD', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Tag></Space>
           {ln.traces.map((tr, i) => (
             <div key={i} style={{ marginTop: 6 }}>
               {tr.error ? <Alert type="error" showIcon title={tr.error} /> : <Typography.Text code>{tr.note}</Typography.Text>}
