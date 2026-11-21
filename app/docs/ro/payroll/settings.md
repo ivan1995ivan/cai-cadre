@@ -46,3 +46,11 @@ Cererile de scutire „pe an” devin cereri cu valabilitate de la / până la, 
   forma lui de tipar — în *Forme de tipar*.
 - Ordinea de calcul s-a schimbat la cauza ei: completarea până la salariul minim și corectările de mână se fac **înaintea**
   tipurilor care depind de ele (sindicatul și pensia alimentară se iau acum și din MINIM și din salariul corectat de mână).
+
+
+**Regimul fiscal (S4)** — sus pe pagina *Constantele salarizării*: regimul general / **rezident IT Park** cu „în vigoare
+din” (luna următoare datei statutului, CF art. 375) și istoria lui. Constantele noi: `it_park_tax_pct` 7 %, `it_park_min_pct`
+30 %, `it_park_insured_pct` 68 %, `it_park_sick_covered` (zilele de boală ale angajatorului acoperite de impozitul unic — de
+verificat), `it_park_count_maternity` (concediul de maternitate la minimul pe angajați — de verificat),
+`it_park_sales_alert_day` 20. Formele noi de tipar: „Impozitul unic IT Park — calculul lunii (IU17)”, „ISAPTI17”, „Nota
+anuală pentru angajat (IT Park)”. Vezi [Regimul IT Park](help:payroll/it-park).

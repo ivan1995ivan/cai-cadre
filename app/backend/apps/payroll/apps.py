@@ -34,3 +34,11 @@ class PayrollConfig(AppConfig):
         register(PayrollItem, parent="line")
         printing_views.SAMPLE_BUILDERS["payslip"] = printing.sample_payslip
         printing_views.SAMPLE_BUILDERS["payroll_sheet"] = printing.sample_sheet
+        from . import it_park_views
+        from .models import FiscalRegime, ItParkMonth
+
+        printing_views.SAMPLE_BUILDERS["it_park_tax"] = it_park_views.sample_month
+        printing_views.SAMPLE_BUILDERS["isapti17"] = it_park_views.sample_annual
+        printing_views.SAMPLE_BUILDERS["it_park_note"] = it_park_views.sample_notes
+        register(FiscalRegime)
+        register(ItParkMonth)

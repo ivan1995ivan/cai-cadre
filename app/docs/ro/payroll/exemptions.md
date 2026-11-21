@@ -37,3 +37,8 @@ venitul lunii; scutirea se ia la plata salariului (vezi *Îndreptarea spre plat�
 
 **Tipar**: butonul de pe rând tipărește cererea (Partea I — angajatul, Partea II — angajatorul, cu sumele anuale pe categorii,
 și confirmarea primirii). Forma se poate schimba în *Forme de tipar* („Cererea privind acordarea scutirilor”).
+
+
+**Regimul IT Park**: în lunile din regim scutirile **nu se acordă** (CF art. 377 alin. (2)) — nici în luna cu venit în ambele
+regimuri; cererea rămâne în vigoare pentru lunile din regimul general (pro rata, câte 1/12 pe lună). Cererea arată
+avertismentul cu lunile din regim. Vezi [Regimul IT Park](help:payroll/it-park).

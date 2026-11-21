@@ -1,0 +1,32 @@
+{% company_header %}
+
+<div class="annex">{{ texts.annex|linebreaksbr }}</div>
+<div class="doc-title" style="font-size:11pt">{{ texts.title }}</div>
+<div class="doc-subtitle">pentru anul {{ doc.year }} (A/{{ doc.year }}) · se prezintă până la 25 ianuarie {{ doc.year|add:1 }} · în lei</div>
+
+<table class="grid" style="max-width:150mm; margin:6px 0; font-size:9pt">
+  <tr><td style="width:62mm">Denumirea rezidentului parcului</td><td><b>{{ company.full_name }}</b></td></tr>
+  <tr><td>Codul fiscal</td><td>{{ company.idno }}</td></tr>
+</table>
+
+<table class="grid" style="font-size:9pt">
+  <thead>
+    <tr><th style="width:10mm">Nr.</th><th style="width:32mm">Codul fiscal al angajatului</th><th>Numele și prenumele</th>
+      <th style="width:44mm">Suma totală a venitului salarial îndreptat spre achitare în perioada fiscală</th>
+      <th style="width:30mm">Numărul de luni în care angajatul a activat în parc</th></tr>
+    <tr class="muted"><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr>
+  </thead>
+  <tbody>
+  {% for r in doc.rows %}
+    <tr><td class="num">{{ r.no }}</td><td>{{ r.idnp }}</td><td>{{ r.name }}</td><td class="num">{{ r.income }}</td><td class="num">{{ r.months }}</td></tr>
+  {% empty %}<tr><td colspan="5" class="muted">—</td></tr>{% endfor %}
+    <tr class="total"><td></td><td></td><td>Total ({{ doc.persons }})</td><td class="num">{{ doc.total }}</td><td></td></tr>
+  </tbody>
+</table>
+<p class="muted" style="margin-top:4px">{{ texts.note|linebreaksbr }}</p>
+
+<div class="signatures">
+  <div>{{ company.director_position }}<div class="line"></div><div class="who">{{ company.director }}</div></div>
+  <div>{{ texts.accountant_label }}<div class="line"></div><div class="who">{{ company.chief_accountant }}</div></div>
+</div>
+{% if texts.footer %}<div class="doc-footer">{{ texts.footer|linebreaksbr }}</div>{% endif %}

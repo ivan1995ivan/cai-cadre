@@ -89,6 +89,19 @@ pornească de unde s-a rămas, nu de la zero.
   `theme/themes.ts`, `styles.css` (`html[data-look='desktop']`); temele vechi rămân de ales.
   Verificat: 210 teste, typecheck, build, capturi Playwright (RO / RU / telefon).
 
+- **S4 „IT Park” — gata** (2026-11-21): regimul fiscal pe luni cu istoric (`FiscalRegime`, din luna
+  următoare statutului — CF art. 375) în Constantele salarizării; constantele `it_park_*` (7 %, 30 %, 68 %,
+  boala acoperită / maternitatea numărată — de verificat, alerta din ziua 20); calculul: salariul din CIM
+  impozitat final (`PayrollLine.it_park`: fără bazele impozitului / CNAM, fără CAS / CASMIN; MINIM rămâne),
+  prestările de servicii în regimul general; plata fără CNAM, impozit, scutiri (`PaymentLine.final_gross`),
+  regimul lunii calculului; media pentru boală din venitul asigurat 11 832; „Impozitul unic IT Park”
+  (`ItParkMonth`: venitul din vânzări, IU17 010 / 020 / 030, angajații cu ≥ 1 zi lucrată); IPC21 cu bifa
+  (`table1/it/flag1`) și 162 / 160 / 15311 / 159; IALS21 și anexa 8 doar regimul general; ISAPTI17 și nota
+  anuală (anexa 5); formele noi `it_park_tax`, `isapti17`, `it_park_note`; `app/docs/ro|ru/payroll/it-park.md`.
+  Verificat: 223 de teste, typecheck, build, capturi. **De verificat de om:** structura oficială IU17 /
+  ISAPTI17 (fără scheme XML), tag-ul XML al bifei, tariful / CAS 0 la 162, zilele de boală acoperite,
+  maternitatea la minim; ucenicia nu e un fel de raport în program.
+
 ## Următorii pași (de aici pornește sesiunea următoare)
 
 0. **Deschiderea**: (a) ~~Public Hostname~~ — făcut. (b) asistentul de

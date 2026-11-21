@@ -58,3 +58,9 @@ Fără îndreptări achitate în an fișa nu are rânduri.
 
 **IPC21, tabelul 1** și **IALS21** (venitul achitat, scutirile, impozitul și CNAM reținute) se fac din îndreptările
 **achitate**, după data achitării (vezi *Raportări*).
+
+
+**Luna în regimul IT Park**: pentru salariul din CIM nu se rețin CNAM și impozitul și nu se dă scutirea — de plată e brutul
+minus celelalte rețineri; avansul se plătește întreg. Regimul e al **lunii calculului**, nu al datei plății (salariul lui
+iunie plătit în iulie — după regimul lui iunie). Contractele de prestări servicii — cu reținerile obișnuite. Partea
+impozitată final a fiecărei plăți se ține separat (pentru IPC21, IALS21, ISAPTI17). Vezi [Regimul IT Park](help:payroll/it-park).

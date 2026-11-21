@@ -67,7 +67,7 @@ def test_every_print_form_renders_with_company_header(admin_client, firm):
     from apps.printing.models import PrintTemplate
     from apps.printing.seed import SYSTEM_TEMPLATES
 
-    assert len(SYSTEM_TEMPLATES) == 20  # cu „Modificarea acumulărilor planificate” (S3)
+    assert len(SYSTEM_TEMPLATES) == 23  # cu „Modificarea acumulărilor planificate” (S3) și formele IT Park (S4)
     for doc_type, code, *_ in SYSTEM_TEMPLATES:
         tpl = PrintTemplate.objects.get(doc_type=doc_type, code=code)
         assert "gov_header" not in tpl.body and "company_header" in tpl.body or doc_type == "payslip"

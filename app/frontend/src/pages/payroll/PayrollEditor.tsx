@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
-  Button, Card, Col, DatePicker, Descriptions, Form, Input, InputNumber, Modal, Popconfirm, Row, Select, Space, Spin, Table, Tag, Tooltip,
+  Alert, Button, Card, Col, DatePicker, Descriptions, Form, Input, InputNumber, Modal, Popconfirm, Row, Select, Space, Spin, Table, Tag, Tooltip,
   Typography, message,
 } from 'antd'
 import {
@@ -116,6 +116,8 @@ export default function PayrollEditor() {
     setEditing(null)
   }
   const monthName = `${dayjs().month(data.month - 1).format('MMMM')} ${data.year}`
+  // IT Park: toate rândurile impozitate final — restul e chiar suma de plată (fără impozit și CNAM la plată)
+  const allFinal = data.lines.length > 0 && data.lines.every((l) => l.it_park)
 
   const itemsTable = (line: PayrollLine) => (
     <Table<PayrollItem> size="small" rowKey="id" pagination={false} dataSource={line.items} style={{ margin: '4px 0 8px 32px', maxWidth: 1150 }}
@@ -145,6 +147,7 @@ export default function PayrollEditor() {
   return (
     <Card className="doc-form" title={<Space wrap>
       {title}<Tag color={PAYROLL_STATUS_COLOR[data.status]}>{data.status_label}</Tag>
+      {data.it_park && <Tooltip title={t('itp.payrollHint')}><Tag color="purple">{t('itp.finalTag')}</Tag></Tooltip>}
       {data.payments.map((x) => <Tag key={x.id} color={PAYMENT_STATUS_COLOR[x.status]} style={{ cursor: 'pointer' }}
         onClick={() => navigate(`/payroll/payments/${x.id}`)}>{t('pay.paymentRef', { number: x.number, date: dayjs(x.date).format('DD.MM.YYYY') })} · {x.status_label}</Tag>)}
     </Space>} extra={<Space wrap>
@@ -164,6 +167,7 @@ export default function PayrollEditor() {
       <CloseForm to="/payroll" />
     </Space>}>
       <MarkedBanner endpoint="/payroll/payrolls/" row={data} onDone={reload} canUnmark={hasPerm('payroll.delete')} />
+      {data.it_park && <Alert type="info" showIcon style={{ marginBottom: 12 }} title={t('itp.payrollHint')} />}
       <Form form={header} layout="vertical" disabled={!editable} onValuesChange={() => setDirty(true)}>
         <Row gutter={12}>
           <Col xs={12} md={4}><Form.Item name="date" label={t('ord.date')} rules={[{ required: true }]}>
@@ -177,7 +181,7 @@ export default function PayrollEditor() {
         styles={{ label: { whiteSpace: 'nowrap' }, content: { whiteSpace: 'nowrap' } }} items={[
         { key: 'g', label: t('pay.gross'), children: money(data.totals.gross) },
         { key: 'd', label: t('pay.deductions'), children: money(data.totals.deductions) },
-        { key: 'n', label: t('pay.net'), children: <b>{money(data.totals.net)}</b> },
+        { key: 'n', label: allFinal ? t('itp.netFinal') : t('pay.net'), children: <b>{money(data.totals.net)}</b> },
         { key: 'cas', label: t('pay.cas'), children: money(data.totals.cas) },
         { key: 'when', label: t('pay.calculatedAt'), children: data.calculated_at ? dayjs(data.calculated_at).format('DD.MM.YYYY HH:mm') : '' },
       ]} />
@@ -194,8 +198,9 @@ export default function PayrollEditor() {
           { title: t('wt.ro.hours'), key: 'h', width: 70, align: 'right', render: (_: unknown, r) => `${r.info.timesheet?.hours ?? ''}${r.info.timesheet?.norm ? ` / ${r.info.timesheet.norm}` : ''}` },
           { title: t('pay.gross'), dataIndex: 'gross', width: 110, align: 'right', render: money },
           { title: t('pay.deductions'), dataIndex: 'deductions', width: 100, align: 'right', render: money },
-          { title: t('pay.net'), dataIndex: 'net', width: 120, align: 'right', render: (v: string) => <b>{money(v)}</b> },
-          { title: t('pay.cas'), dataIndex: 'cas', width: 100, align: 'right', render: money },
+          { title: allFinal ? t('itp.netFinal') : t('pay.net'), dataIndex: 'net', width: 120, align: 'right', render: (v: string) => <b>{money(v)}</b> },
+          { title: t('pay.cas'), dataIndex: 'cas', width: 100, align: 'right', render: (v: string, r) =>
+            r.it_park ? <Tooltip title={t('itp.finalLine')}><Tag color="purple" style={{ marginInlineEnd: 0 }}>{t('itp.finalShort')}</Tag></Tooltip> : money(v) },
           { title: '', key: 'act', width: 90, render: (_: unknown, r) => <Space size={0}>
             {editable && <Tooltip title={t('pay.addItem')}><Button size="small" type="text" icon={<PlusOutlined />} onClick={() => openEdit(r)} /></Tooltip>}
           </Space> },

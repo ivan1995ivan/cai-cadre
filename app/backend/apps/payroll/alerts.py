@@ -1,5 +1,6 @@
 """Avertismentele și alertele salarizării: salariul de funcție sub salariul minim (la angajare, la ordinul de salariu și
-în lista „Termene și alerte”), venitul anual care se apropie de plafonul scutirii P / M (Codul fiscal, art. 33 alin. (1))."""
+în lista „Termene și alerte”), venitul anual care se apropie de plafonul scutirii P / M (Codul fiscal, art. 33 alin. (1)),
+venitul din vânzări nescris pentru o lună în regimul IT Park (declarația IU17 — până la 25 a lunii următoare)."""
 from collections import defaultdict
 from datetime import date
 from decimal import Decimal, InvalidOperation
@@ -75,5 +76,37 @@ def _exemption_limit(today, days, cfg):
     return out
 
 
+def _it_park_sales(today, days, cfg):
+    """Lunile în regim IT Park (din ultimele 12) fără venitul din vânzări scris, după ziua alertei din luna următoare
+    (constanta `it_park_sales_alert_day`, implicit 20; termenul IU17 — 25)."""
+    from datetime import timedelta
+
+    from . import it_park
+    from .engine import Constants, add_months, month_bounds
+    from .models import ItParkMonth
+
+    start = add_months(today.replace(day=1), -12)
+    end = today.replace(day=1) - timedelta(days=1)
+    months = it_park.it_park_months(start, end)
+    if not months:
+        return []
+    entered = {(y, m) for y, m in ItParkMonth.objects.filter(sales_income__isnull=False).values_list("year", "month")}
+    out = []
+    for y, m in sorted(months):
+        if (y, m) in entered:
+            continue
+        last = month_bounds(y, m)[1]
+        alert_day = int(Constants(last)("it_park_sales_alert_day", "20"))
+        due = last + timedelta(days=25)
+        if today < last + timedelta(days=alert_day):
+            continue
+        out.append(alerts.Alert("it_park_sales", f"itsales:{y}-{m:02d}", "IT Park: lipsește venitul din vânzări",
+                                f"Luna {m:02d}.{y}: venitul din vânzări nu e scris — impozitul unic (IU17) se depune până la "
+                                f"{due:%d.%m.%Y}", due, "warning", None, "", set(),
+                                f"/payroll/it-park/{y}/{m}"))
+    return out
+
+
 alerts.register("min_wage", True, 0, ("hr", "accounting"), _min_wage)
+alerts.register("it_park_sales", True, 0, ("accounting",), _it_park_sales)
 alerts.register("exemption_limit", True, 0, ("accounting",), _exemption_limit)

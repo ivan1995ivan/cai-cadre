@@ -59,9 +59,15 @@ def annual_card(employee, year: int) -> dict:
     from .engine import Constants
 
     pct = Constants(date(year, 12, 31))("income_tax_pct", "12") / 100
+    final_total = ZERO
     for ln in payments:
-        taxable = max(ln.gross - ln.cnam - ln.exemption, ZERO)
-        items = {"gross": ln.gross, "exemption": ln.exemption, "cnam": ln.cnam, "taxable": taxable, "tax": ln.income_tax}
+        # salariul impozitat final (IT Park) nu se trece în fișa personală (CF art. 377 alin. (3)) — doar regimul general
+        final_total += ln.final_gross
+        gross = ln.gross - ln.final_gross
+        if gross <= 0 and not ln.cnam and not ln.income_tax:
+            continue
+        taxable = max(gross - ln.cnam - ln.exemption, ZERO)
+        items = {"gross": gross, "exemption": ln.exemption, "cnam": ln.cnam, "taxable": taxable, "tax": ln.income_tax}
         for k in cum:
             cum[k] += items[k]
         rows.append({"date": ln.payment.paid_on.strftime("%d.%m.%Y"), "month": ln.payment.month,
@@ -84,7 +90,7 @@ def annual_card(employee, year: int) -> dict:
             "employer": company.name_ro, "employer_idno": company.idno,
             "year": year, "exemption_code": " / ".join(dict.fromkeys(r.code() for r in reqs)) if reqs else "—",
             "exemption_date": req.date.strftime("%d.%m.%Y") if req else "",
-            "rows": rows, "total": total}
+            "rows": rows, "total": total, "final_income": _f(final_total)}
 
 
 # --- IPC21 (lunar) ---------------------------------------------------------------------------------------------------
@@ -95,9 +101,11 @@ def ipc21(year: int, month: int) -> dict:
     data = ipc21_rows(year, month)
     rows = [{"no": r["c1"], "idnp": r["c3"], "name": r["c2"], "cpas": r["c4"], "date_from": r["c5"], "date_to": r["c6"],
              "category": r["c7"], "tariff": _f(r["c71"]), "occupation_code": r["c8"], "base": _f(r["c9"]), "sick": _f(r["c10"]),
-             "cas": _f(r["c11"]), "missing_idnp": r["c3"] in ("", "0"), "missing_code": not r["c8"]} for r in data["rows"]]
+             "cas": _f(r["c11"]), "missing_idnp": r["c3"] in ("", "0"), "missing_code": not r["c8"], "it_park": r["it_park"]}
+            for r in data["rows"]]
     persons = len({r["no"] for r in rows})
     return {"year": year, "month": month, "rows": rows, "header_missing": header_problems(),
+            "it_park": data["it_park"], "final_income": _f(data["final"]), "insured": _f(data["insured"]),
             "table1": {"income": _f(data["gross"]), "tax": _f(data["tax"]), "cnam": _f(data["cnam"])},
             "total": {"persons": persons, "base": _f(data["t9"]), "sick": _f(data["t10"]), "cas": _f(data["t11"])},
             "missing_idnp": len({r["no"] for r in rows if r["missing_idnp"]})}
@@ -189,6 +197,9 @@ def ipc21_xlsx(data: dict) -> HttpResponse:
              "Prime CNAM reținute"]
     rows1 = [[11, "Plăți salariale, art.88 din Codul fiscal", "SAL", t1["income"], t1["tax"], t1["cnam"]],
              [61, "TOTAL", "", t1["income"], t1["tax"], t1["cnam"]]]
+    if data.get("it_park"):
+        rows1.append(["", "Rezidentul parcurilor IT: DA — salariul impozitat final (impozit unic) nu intră în tabel",
+                      "", data.get("final_income", 0), "", ""])
     head2 = ["Nr. crt.", "Numele, prenumele", "IDNP", "CPAS", "De la data", "Până la data", "Categoria persoanei asigurate",
              "Tariful (%)", "Codul funcției", "Baza de calcul CAS", "Indemnizația de incapacitate", "CAS calculată"]
     rows2 = [[r["no"], r["name"], r["idnp"], r["cpas"], _iso(r["date_from"]), _iso(r["date_to"]), r["category"], r["tariff"],

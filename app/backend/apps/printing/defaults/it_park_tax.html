@@ -1,0 +1,42 @@
+{% company_header %}
+
+<div class="annex">{{ texts.annex|linebreaksbr }}</div>
+<div class="doc-title">{{ texts.title }}</div>
+<div class="doc-subtitle">luna {{ doc.month }} {{ doc.year }} (L/{{ doc.month_no }}/{{ doc.year }}) · se depune până la {{ doc.deadline }}</div>
+{% if not doc.it_park %}<p class="muted"><b>Luna nu este în regimul IT Park</b> (Setări → Constantele salarizării → Regimul fiscal).</p>{% endif %}
+
+<table class="grid" style="font-size:9.5pt; margin-top:6px">
+  <thead>
+    <tr><th>Indicatorii</th><th style="width:14mm">Codul</th><th style="width:34mm">Baza impozabilă / numărul</th>
+      <th style="width:44mm">Cota impozitului unic</th><th style="width:30mm">Suma impozitului unic, lei</th></tr>
+    <tr class="muted"><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr>
+  </thead>
+  <tbody>
+  {% for r in doc.rows %}
+    <tr{% if r.code == "030" %} class="total"{% endif %}><td>{{ r.label }}<br><span class="muted">{{ r.basis }}</span></td>
+      <td style="text-align:center">{{ r.code }}</td><td class="num">{% if r.code == "010" and not doc.sales_entered %}<i>nescris</i>{% else %}{{ r.base }}{% endif %}</td>
+      <td>{{ r.rate }}</td><td class="num">{{ r.amount }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+<p style="margin:4px 0 8px">Impozitul unic datorat: <b>{{ doc.due }} lei</b> ({{ doc.rule }}).
+{% if not doc.sales_entered %}<b>Venitul din vânzări al lunii nu este scris</b> — impozitul arătat e doar minimul pe angajați.{% endif %}</p>
+
+<b style="font-size:9pt">Angajații cu contract individual de muncă (rd. 020: cel puțin o zi lucrată în lună) — {{ doc.employees }}</b>
+<table class="grid" style="font-size:8.5pt">
+  <thead><tr><th style="width:8mm">Nr.</th><th style="width:16mm">Nr. tabel</th><th>Numele, prenumele</th><th style="width:28mm">IDNP</th>
+    <th>Raporturile de muncă</th><th style="width:16mm">Zile lucrate</th><th style="width:36mm">Se numără</th></tr></thead>
+  <tbody>
+  {% for p in doc.people %}
+    <tr><td class="num">{{ p.no }}</td><td>{{ p.tab_number }}</td><td>{{ p.name }}</td><td>{{ p.idnp }}</td><td>{{ p.jobs|join:"; " }}</td>
+      <td class="num">{{ p.worked_days }}</td><td>{% if p.counted %}da{% else %}<b>nu</b>{% endif %} — {{ p.reason }}</td></tr>
+  {% empty %}<tr><td colspan="7" class="muted">—</td></tr>{% endfor %}
+  </tbody>
+</table>
+<p class="muted" style="margin-top:4px">{{ texts.note|linebreaksbr }}</p>
+
+<div class="signatures">
+  <div>{{ company.director_position }}<div class="line"></div><div class="who">{{ company.director }}</div></div>
+  <div>{{ texts.accountant_label }}<div class="line"></div><div class="who">{{ company.chief_accountant }}</div></div>
+</div>
+{% if texts.footer %}<div class="doc-footer">{{ texts.footer|linebreaksbr }}</div>{% endif %}

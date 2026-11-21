@@ -5,7 +5,7 @@
     <div style="text-align:right"><b>{{ s.name }}</b> · nr. tabel {{ s.tab_number }}</div>
   </div>
   {% for j in s.jobs %}
-  <div class="muted" style="margin-top:6px">{{ j.occupation }}{% if j.kind %} ({{ j.kind }}){% endif %}, {{ j.subdivision }} · norma {{ j.rate }} · salariul de funcție {{ j.salary }} · zile / ore {{ j.days }} / {{ j.hours }}</div>
+  <div class="muted" style="margin-top:6px">{{ j.occupation }}{% if j.kind %} ({{ j.kind }}){% endif %}, {{ j.subdivision }} · norma {{ j.rate }} · salariul de funcție {{ j.salary }} · zile / ore {{ j.days }} / {{ j.hours }}{% if j.it_park %} · <b>impozitat final (IT Park)</b>{% endif %}</div>
   <div style="display:flex; gap:12px; margin-top:2px">
     <table class="grid" style="flex:1">
       <thead><tr><th>Acumulări</th><th style="width:14mm">Cant.</th><th style="width:12mm">%</th><th style="width:22mm">Suma</th></tr></thead>
@@ -27,8 +27,9 @@
     <thead><tr><th>Decontarea lunii{% if not s.settle.final %} (impozitele pe tot venitul lunii, cât se rețin la plată){% endif %}</th><th style="width:26mm">Suma</th></tr></thead>
     <tbody>
       <tr><td>Total calculat</td><td class="num">{{ s.settle.gross }}</td></tr>
-      <tr><td>Prima de asigurare medicală (CNAM)</td><td class="num">{{ s.settle.cnam }}</td></tr>
-      <tr><td>Impozitul pe venit{% if s.settle.exemption %} <span class="muted">(scutirea {{ s.settle.exemption }})</span>{% endif %}</td><td class="num">{{ s.settle.income_tax }}</td></tr>
+      {% if s.settle.it_park_only %}<tr><td colspan="2"><b>{{ s.settle.final_note }}</b>: impozitul pe venit și prima CNAM nu se rețin</td></tr>
+      {% else %}<tr><td>Prima de asigurare medicală (CNAM){% if s.settle.it_park %} <span class="muted">(doar pe plățile din regimul general)</span>{% endif %}</td><td class="num">{{ s.settle.cnam }}</td></tr>
+      <tr><td>Impozitul pe venit{% if s.settle.exemption %} <span class="muted">(scutirea {{ s.settle.exemption }})</span>{% endif %}{% if s.settle.it_park %} <span class="muted">(salariul din CIM — impozitat final, IT Park)</span>{% endif %}</td><td class="num">{{ s.settle.income_tax }}</td></tr>{% endif %}
       <tr><td>Alte rețineri</td><td class="num">{{ s.settle.deductions }}</td></tr>
       <tr class="total"><td>Salariul lunii, net</td><td class="num">{{ s.settle.net }}</td></tr>
       <tr><td>Achitat: avans</td><td class="num">{{ s.settle.paid_advance }}</td></tr>

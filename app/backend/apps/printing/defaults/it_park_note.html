@@ -1,0 +1,34 @@
+{% for n in doc.notes %}
+<div style="{% if not forloop.last %}page-break-after:always;{% endif %}">
+{% company_header %}
+
+<div class="annex">{{ texts.annex|linebreaksbr }}</div>
+<div class="doc-title" style="font-size:11pt">{{ texts.title }}</div>
+<div class="doc-subtitle">pentru anul {{ doc.year }} · se înmânează angajatului până la 1 martie {{ doc.year|add:1 }}</div>
+
+<table class="grid" style="margin:8px 0; font-size:9.5pt">
+  <tr><td style="width:70mm">Denumirea rezidentului parcului</td><td><b>{{ company.full_name }}</b></td></tr>
+  <tr><td>Codul fiscal al rezidentului</td><td>{{ company.idno }}</td></tr>
+  <tr><td>Numele și prenumele angajatului</td><td><b>{{ n.name }}</b> (nr. tabel {{ n.tab_number }})</td></tr>
+  <tr><td>Codul fiscal al angajatului (IDNP)</td><td>{{ n.idnp }}</td></tr>
+</table>
+
+<table class="grid" style="font-size:9.5pt">
+  <thead><tr><th>I. Suma totală a venitului din salariu îndreptat spre achitare în perioada fiscală, lei</th>
+    <th style="width:60mm">II. Numărul de luni în care angajatul a activat în parcul IT</th></tr></thead>
+  <tbody><tr><td class="num" style="font-size:11pt"><b>{{ n.income }}</b></td><td class="num" style="font-size:11pt"><b>{{ n.months }}</b></td></tr></tbody>
+</table>
+{% if n.months_text %}<p class="muted" style="margin-top:4px">Lunile în regim: {{ n.months_text }}.</p>{% endif %}
+<p style="margin-top:6px">{{ texts.note|linebreaksbr }}</p>
+
+<div class="signatures">
+  <div>{{ company.director_position }}<div class="line"></div><div class="who">{{ company.director }}</div></div>
+  <div>{{ texts.accountant_label }}<div class="line"></div><div class="who">{{ company.chief_accountant }}</div></div>
+  <div>Data<div class="line"></div><div class="who">{{ today }}</div></div>
+</div>
+{% if texts.footer %}<div class="doc-footer">{{ texts.footer|linebreaksbr }}</div>{% endif %}
+</div>
+{% empty %}{% company_header %}
+<div class="doc-title" style="font-size:11pt">{{ texts.title }}</div>
+<p class="muted">Nu sunt salarii plătite în regimul IT Park în anul {{ doc.year }}.</p>
+{% endfor %}

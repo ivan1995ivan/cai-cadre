@@ -1,25 +1,30 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Alert, Button, Card, Col, DatePicker, Descriptions, Form, Input, Row, Select, Space, Table, Tabs, Tooltip, Typography, message } from 'antd'
-import { CodeOutlined, DownloadOutlined } from '@ant-design/icons'
+import { Alert, Button, Card, Col, DatePicker, Descriptions, Form, Input, Row, Select, Space, Table, Tabs, Tag, Tooltip, Typography, message } from 'antd'
+import { CodeOutlined, DownloadOutlined, EditOutlined, PrinterOutlined } from '@ant-design/icons'
 import dayjs, { type Dayjs } from 'dayjs'
 
 import { api, errorText } from '../../api/client'
 import { useFetch } from '../../api/hooks'
-import { downloadFile, money } from '../../api/payroll'
+import { downloadFile, money, type ItParkMonthData } from '../../api/payroll'
+import PrintDialog from '../../components/PrintDialog'
 import { defaultMonth } from '../../api/worktime'
 import { useApp } from '../../auth/AppContext'
 import { MonthPicker } from '../worktime/MonthDocs'
 import { useEditGuard } from '../../components/UnsavedGuard'
 
 interface Row { no: number; idnp: string; name: string; missing_idnp: boolean; [k: string]: unknown }
-interface Report { rows: Row[]; total?: Record<string, number>; table1?: Record<string, number>; header_missing?: string[] }
+interface Report {
+  rows: Row[]; total?: Record<string, number>; table1?: Record<string, number>; header_missing?: string[]
+  /** IT Park: bifa „Rezidentul parcurilor IT”, salariul impozitat final plătit în lună (nu intră în tabelul 1), venitul asigurat */
+  it_park?: boolean; final_income?: number; insured?: number
+}
 
 const d = (v: unknown) => (v ? dayjs(String(v)).format('DD.MM.YYYY') : '')
 
-/** Exportul: Excel (pentru verificare) și declarația electronică XML după schema SFS. */
-function Exports({ url, params, name }: { url: string; params: Record<string, unknown>; name: string }) {
+/** Exportul: Excel (pentru verificare) și declarația electronică XML după schema SFS (fără XML — unde nu avem schema). */
+function Exports({ url, params, name, xml = true }: { url: string; params: Record<string, unknown>; name: string; xml?: boolean }) {
   const { t } = useTranslation()
   const { hasPerm } = useApp()
   if (!hasPerm('tax_reports.export')) return null
@@ -27,7 +32,7 @@ function Exports({ url, params, name }: { url: string; params: Record<string, un
   return (
     <Space>
       <Button icon={<DownloadOutlined />} onClick={() => get('xlsx')}>{t('tax.export')}</Button>
-      <Tooltip title={t('tax.xmlHint')}><Button type="primary" icon={<CodeOutlined />} onClick={() => get('xml')}>{t('tax.exportXml')}</Button></Tooltip>
+      {xml && <Tooltip title={t('tax.xmlHint')}><Button type="primary" icon={<CodeOutlined />} onClick={() => get('xml')}>{t('tax.exportXml')}</Button></Tooltip>}
     </Space>
   )
 }
@@ -61,6 +66,8 @@ export default function TaxReportsPage() {
         { key: 'ipc21', label: 'IPC21', children: <Ipc21 /> },
         { key: 'ials21', label: 'IALS21', children: <Ials21 /> },
         { key: 'irm19', label: 'IRM19', children: <Irm19 /> },
+        { key: 'iu17', label: 'IU17', children: <Iu17 /> },
+        { key: 'isapti17', label: 'ISAPTI17', children: <Isapti17 /> },
       ]} />
     </Card>
   )
@@ -81,6 +88,8 @@ function Ipc21() {
       </Space>
       <Typography.Paragraph type="secondary">{t('tax.ipcHint')}</Typography.Paragraph>
       <Warnings data={data} />
+      {data?.it_park && <Alert type="info" showIcon style={{ marginBottom: 8 }} title={<Space wrap><Tag color="purple">{t('itp.residentFlag')}</Tag>
+        {t('itp.ipcHint', { final: money(data.final_income) || '0,00', insured: money(data.insured) })}</Space>} />}
       <Descriptions size="small" bordered column={{ xs: 1, md: 3 }} style={{ marginBottom: 12 }} title={t('tax.table1')} items={[
         { key: 'i', label: t('tax.cols.income'), children: money(t1.income) },
         { key: 't', label: t('tax.cols.tax'), children: money(t1.tax) },
@@ -97,7 +106,8 @@ function Ipc21() {
           { title: 'Nr.', dataIndex: 'no', width: 50 }, nameCol(t, navigate), { title: 'IDNP', dataIndex: 'idnp', width: 130 },
           { title: 'CPAS', dataIndex: 'cpas', width: 90 },
           { title: t('tax.period'), key: 'p', width: 180, render: (_: unknown, r) => `${d(r.date_from)} – ${d(r.date_to)}` },
-          { title: t('tax.category'), dataIndex: 'category', width: 90 },
+          { title: t('tax.category'), dataIndex: 'category', width: 90, render: (v: string, r) =>
+            r.it_park ? <Tooltip title={t('itp.categoryHint')}><Tag color="purple">{v}</Tag></Tooltip> : v },
           { title: '%', dataIndex: 'tariff', width: 50 },
           { title: t('tax.occupationCode'), dataIndex: 'occupation_code', width: 100,
             render: (v: string) => v || <Typography.Text type="danger">—</Typography.Text> },
@@ -137,6 +147,79 @@ function Ials21() {
             width: ['P', 'M', 'Sm', 'N', 'H'].includes(k) ? 90 : 120, align: 'right' as const, render: money })),
         ]} />
       <Typography.Paragraph type="secondary" style={{ marginTop: 8 }}>{t('tax.dependents', { count: (data as { dependents?: unknown[] } | null)?.dependents?.length ?? 0 })}</Typography.Paragraph>
+    </>
+  )
+}
+
+/** IU17: calculul impozitului unic al lunii (venitul din vânzări îl scrie contabilul în „Impozitul unic IT Park”). */
+function Iu17() {
+  const { t } = useTranslation()
+  const navigate = useNavigate()
+  const [ym, setYm] = useState(defaultMonth())
+  const [print, setPrint] = useState(false)
+  const { data, loading } = useFetch<ItParkMonthData>('/payroll/tax-reports/iu17/', ym)
+  return (
+    <>
+      <Space wrap style={{ marginBottom: 12 }}>
+        <MonthPicker year={ym.year} month={ym.month} onChange={(y, m) => setYm({ year: y, month: m })} />
+        <Exports url="/payroll/tax-reports/iu17/" params={ym} name={`IU17-${ym.year}-${String(ym.month).padStart(2, '0')}`} xml={false} />
+        <Button icon={<PrinterOutlined />} onClick={() => setPrint(true)}>{t('lv.print')}</Button>
+        <Button icon={<EditOutlined />} onClick={() => navigate(`/payroll/it-park/${ym.year}/${ym.month}`)}>{t('itp.openMonth')}</Button>
+      </Space>
+      <Typography.Paragraph type="secondary">{t('itp.iu17TabHint')}</Typography.Paragraph>
+      {data && !data.it_park && <Alert type="warning" showIcon style={{ marginBottom: 8 }} title={t('itp.notInRegime')} />}
+      {data?.it_park && !data.sales_entered && <Alert type="warning" showIcon style={{ marginBottom: 8 }}
+        title={t('itp.salesMissing', { date: dayjs(data.deadline).format('DD.MM.YYYY') })} />}
+      <Table rowKey="code" size="small" loading={loading} dataSource={data?.rows ?? []} pagination={false} style={{ maxWidth: 1100 }}
+        columns={[
+          { title: t('itp.indicator'), dataIndex: 'label', render: (v: string, r) => t(`itp.rows.c${r.code}`, { defaultValue: v }) },
+          { title: t('itp.code'), dataIndex: 'code', width: 70, align: 'center' },
+          { title: t('itp.base'), dataIndex: 'base', width: 150, align: 'right', render: (v: number | null, r) => (r.code === '020' ? v : money(v)) },
+          { title: t('itp.rate'), dataIndex: 'rate', width: 220 },
+          { title: t('itp.amount'), dataIndex: 'amount', width: 140, align: 'right', render: (v: number, r) =>
+            r.code === '030' ? <b>{money(v) || '0,00'}</b> : money(v) || '0,00' },
+        ]} />
+      {print && <PrintDialog open onClose={() => setPrint(false)} docType="it_park_tax" url="/payroll/tax-reports/iu17/"
+        params={{ ...ym, print: 1 }} optionKeys={[]} title={`IU17 ${String(ym.month).padStart(2, '0')}.${ym.year}`} />}
+    </>
+  )
+}
+
+/** ISAPTI17 (anual) și nota anuală pentru fiecare angajat (anexa 5): salariile din regimul IT Park. */
+function Isapti17() {
+  const { t } = useTranslation()
+  const navigate = useNavigate()
+  const [year, setYear] = useState(dayjs().month() === 0 ? dayjs().year() - 1 : dayjs().year())
+  const [print, setPrint] = useState<null | { kind: 'form' | 'notes'; employee?: number }>(null)
+  const { data, loading } = useFetch<Report>('/payroll/tax-reports/isapti17/', { year })
+  const tot = data?.total ?? {}
+  return (
+    <>
+      <Space wrap style={{ marginBottom: 12 }}>
+        <Select style={{ width: 100 }} value={year} onChange={setYear} options={Array.from({ length: 5 }, (_, i) => dayjs().year() - i).map((y) => ({ value: y, label: y }))} />
+        <Exports url="/payroll/tax-reports/isapti17/" params={{ year }} name={`ISAPTI17-${year}`} xml={false} />
+        <Button icon={<PrinterOutlined />} onClick={() => setPrint({ kind: 'form' })}>{t('itp.printIsapti')}</Button>
+        <Button icon={<PrinterOutlined />} disabled={!data?.rows.length} onClick={() => setPrint({ kind: 'notes' })}>{t('itp.printNotes')}</Button>
+      </Space>
+      <Typography.Paragraph type="secondary">{t('itp.isaptiHint')}</Typography.Paragraph>
+      <Warnings data={data} />
+      <Table<Row> rowKey="no" size="small" loading={loading} dataSource={data?.rows ?? []} pagination={false} scroll={{ x: 900 }}
+        summary={() => (data?.rows.length ? <Table.Summary.Row>
+          <Table.Summary.Cell index={0} colSpan={3}><b>{t('pp.total')} ({tot.persons})</b></Table.Summary.Cell>
+          <Table.Summary.Cell index={1} align="right"><b>{money(tot.income)}</b></Table.Summary.Cell>
+          <Table.Summary.Cell index={2} colSpan={2} />
+        </Table.Summary.Row> : null)}
+        columns={[
+          { title: 'Nr.', dataIndex: 'no', width: 50 }, { title: 'IDNP', dataIndex: 'idnp', width: 130 }, nameCol(t, navigate),
+          { title: t('itp.finalIncome'), dataIndex: 'income', width: 180, align: 'right', render: money },
+          { title: t('itp.monthsInRegime'), dataIndex: 'months', width: 120, align: 'right' },
+          { title: '', key: 'p', width: 140, render: (_: unknown, r) =>
+            <Button size="small" icon={<PrinterOutlined />} onClick={() => setPrint({ kind: 'notes', employee: Number(r.employee) })}>{t('itp.note')}</Button> },
+        ]} />
+      {print && <PrintDialog open onClose={() => setPrint(null)} docType={print.kind === 'form' ? 'isapti17' : 'it_park_note'}
+        url="/payroll/tax-reports/isapti17/"
+        params={{ year, print: print.kind === 'form' ? 1 : 'notes', ...(print.employee ? { employee: print.employee } : {}) }} optionKeys={[]}
+        title={print.kind === 'form' ? `ISAPTI17 ${year}` : t('itp.notesTitle', { year })} />}
     </>
   )
 }

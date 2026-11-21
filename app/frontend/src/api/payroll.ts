@@ -198,6 +198,8 @@ export interface PayrollLine {
   cas: string
   deductions: string
   net: string
+  /** IT Park: salariul din CIM e impozitat final (fără impozit, CNAM, CAS) */
+  it_park?: boolean
   note: string
   items: PayrollItem[]
 }
@@ -218,6 +220,8 @@ export interface Payroll {
   lines_count: number
   calculated_at: string | null
   approved_at: string | null
+  /** luna calculului e în regimul IT Park */
+  it_park?: boolean
 }
 
 /** O îndreptare spre plată făcută în baza calculului (legătura Calcul → Îndreptare). */
@@ -262,6 +266,8 @@ export interface Payment {
   reference: string
   note: string
   totals: { card: number; cash: number; total: number; gross: number; exemption: number; cnam: number; income_tax: number; deductions: number; count: number }
+  /** luna pentru care se plătește e în regimul IT Park */
+  it_park?: boolean
 }
 
 export interface PaymentLine {
@@ -279,6 +285,8 @@ export interface PaymentLine {
   income_tax: string
   deductions: string
   amount: string
+  /** partea impozitată final (IT Park) din venitul achitat */
+  final_gross?: string
   manual: boolean
   note: string
 }
@@ -308,3 +316,29 @@ export async function downloadFile(url: string, params: Record<string, unknown>,
   a.click()
   URL.revokeObjectURL(a.href)
 }
+
+/** Regimul fiscal al întreprinderii pe luni (Setări → Constantele salarizării). */
+export interface FiscalRegime {
+  id: number
+  regime: 'general' | 'it_park'
+  regime_label: string
+  date_from: string
+  status_date: string | null
+  document: string
+  note: string
+}
+
+/** Un angajat la numărul din IU17 (rd. 020): cel puțin o zi lucrată sub CIM. */
+export interface ItParkPerson {
+  employee: number; name: string; tab_number: string; idnp: string; worked_days: number; maternity: boolean; jobs: string[]
+  job_list: { kind: string; occupation: string; rate: number }[]
+  source: 'timesheet' | 'calendar'; counted: boolean; reason: string; reason_code: 'worked' | 'maternity' | 'none'
+}
+export interface ItParkRow { code: string; label: string; base: number | null; rate: string; amount: number; basis: string }
+/** Calculul impozitului unic al lunii (IU17). */
+export interface ItParkMonthData {
+  year: number; month: number; it_park: boolean; sales_income: number | null; sales_entered: boolean; submitted_on: string | null
+  note: string; employees: number; persons: number; per_employee: number; tax_pct: number; min_pct: number; avg_salary: number
+  by_sales: number; minimum: number; due: number; rule: 'sales' | 'minimum'; deadline: string; rows: ItParkRow[]; people?: ItParkPerson[]
+}
+export interface ItParkYear { year: number; regime: 'general' | 'it_park'; regimes: FiscalRegime[]; months: ItParkMonthData[] }

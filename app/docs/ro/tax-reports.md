@@ -35,3 +35,13 @@ reducere, **115** încetarea CIM, **116** alte temeiuri; se poate schimba pe mot
 **157** / **158** îngrijirea copilului, **165** concediu paternal, cu perioada. Termenul depășit apare cu roșu.
 
 Drepturile: „Raportări fiscale” — vizualizare și export (contabilitatea are tot; inspectorul de cadre nu are).
+
+
+**Regimul IT Park** (vezi [Regimul IT Park](help:payroll/it-park)): **IPC21** are bifa „Rezidentul parcurilor IT”
+(`table1/it/flag1`), tabelul 1 fără salariile impozitate final, iar în tabelul 2 angajații cu CIM au venitul asigurat de
+11 832 lei (categoria **162**, cu **160** / **15311** după zile, **159** doar pe toată luna neplătită; tariful și CAS 0).
+**IU17** (lunar, până la 25) — fila IU17: rândurile 010 (venitul × 7 %), 020 (angajații × 30 % din salariul mediu), 030
+(cel mai mare), Excel și tipar; venitul din vânzări îl scrie contabilul în *Salarizare → Impozitul unic IT Park*.
+**ISAPTI17** (anual, până la 25 ianuarie) — fila ISAPTI17: salariul din regim achitat în an și lunile în regim, Excel și
+tipar; tot acolo **nota anuală pentru angajat** (anexa 5, până la 1 martie). **IALS21** și **anexa 8** cuprind doar plățile
+din regimul general. Pentru IU17 și ISAPTI17 nu avem schema XML oficială — se depun după Excel / tipar.

@@ -2,7 +2,9 @@
 pe angajat — nr. de tabel, numele, funcția, salariul, anul angajării, datoria la începutul perioadei, apoi câte o coloană
 pentru fiecare acumulare și fiecare reținere folosită în perioadă, totalurile și suma de plată. Pe mai multe luni —
 rândul fiecărei luni sub angajat. Acumulările, reținerile și CAS — din calculele aprobate; CNAM și impozitul pe venit — din
-îndreptările spre plată ale lunii (aprobate sau achitate), unde se rețin. Semnează contabilul-șef și conducătorul."""
+îndreptările spre plată ale lunii (aprobate sau achitate), unde se rețin. Semnează contabilul-șef și conducătorul.
+Lunile în regimul IT Park: salariul din CIM e impozitat final — coloanele de impozit apar doar dacă s-a reținut ceva (de ex.
+la contractele de prestări servicii), iar rezumatul arată lunile din regim."""
 from collections import defaultdict
 from decimal import Decimal
 
@@ -123,12 +125,24 @@ def salary_book(p):
             total[k] += v
         total["opening"] += head["opening"]
     company = Company.get()
+    from datetime import date
+
+    from . import it_park
+
+    it_months = sorted(it_park.it_park_months(date(*months[0], 1), date(*months[-1], 1)))
+    summary = [{"label": p.t(("Angajați", "Сотрудников", "Employees")), "value": len(people)}]
+    if it_months:
+        summary.append({"label": p.t(("Regimul IT Park", "Режим IT-парка", "IT Park regime")),
+                        "value": ", ".join(f"{m:02d}.{y}" for y, m in it_months) + p.t((
+                            " — impozitat final, impozit unic IT Park (CF art. 377): CNAM și impozitul pe venit nu se rețin din salariul CIM",
+                            " — окончательно обложено единым налогом IT-парка (НК, ст. 377): CNAM и подоходный налог с зарплаты по ИТД не удерживаются",
+                            " — final taxation, IT Park single tax (Tax Code art. 377): no income tax or health insurance withheld from employment salary"))})
     return {
         "title": p.t(("FIȘA DE EVIDENȚĂ A RETRIBUȚIEI (cartea privind salariul)", "КНИГА ПО ЗАРПЛАТЕ", "PAYROLL BOOK")),
         "subtitle": subtitle_parts(p, f"{company.name_ro}, cod fiscal {company.idno}" if company.idno else company.name_ro,
                                    p.t(("pe perioada ", "за период ", "period ")) + p.period_text()),
         "columns": columns, "rows": rows, "totals": dict(total) if rows else None,
-        "summary": [{"label": p.t(("Angajați", "Сотрудников", "Employees")), "value": len(people)}],
+        "summary": summary,
         "signatures": [{"label": p.t(("Contabil-șef", "Главный бухгалтер", "Chief accountant")), "name": company.chief_accountant},
                        {"label": p.t(("Conducătorul", "Руководитель", "Head")), "name": company.director}],
     }
