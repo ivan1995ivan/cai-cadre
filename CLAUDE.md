@@ -59,6 +59,20 @@ pornească de unde s-a rămas, nu de la zero.
   Producție” SRL (70 de persoane). Verificat: 155 de teste, typecheck. De verificat de om: codurile
   CORM față de Ordinul MMPS 212/2025 (în vigoare din 04.07.2026); HG 1025/2016 → HG 146/2026?
 
+- **S2 „cifrele și regulile 2026” — gata** (2026-11-21): constantele 2026 corectate (salariul minim 6 300 —
+  HG 771/2025, mediu 17 400 — HG 773/2025) și cele 2027 adoptate (P 40 020, M 46 680, N 11 040 — Legea
+  247/2026), seed pe (cod, dată); suplimentarele pe zi: primele 2 ore 150 %, restul 200 % (`split_overtime`,
+  baza pentru evidența globală din S5); sărbătorile +100 % în limita normei / +200 % peste; completarea până
+  la salariul minim (tipul MINIM, CM art. 131); **baza minimă CAS** (CASMIN, Legea 489 art. 22, 25 % la timp
+  parțial); boala: 5 zile × certificat, **cel mult 15 pe an**, accidentul de muncă 20 de zile (BOALAACC,
+  15321), plafonul 5 salarii medii; **scutirile**: Sm în locul „S” abrogat, întreținuții ca rânduri
+  (`ExemptionDependent`: rudenia, de la / până la, legătura cu familia, H), cererea cu valabilitate și
+  renunțarea la P / M, pragul de 360 000 (venitul trebuie să fie mai mic), alerta la 90 %; IALS21 pe coduri;
+  tiparul cererii (`exemption_request`). Verificat: 171 de teste, typecheck. **De verificat de om /
+  contabilitate:** 75 % la boală vs. stagiul; 20 de zile / 100 % la accident; excepțiile de la baza minimă
+  CAS; rubrica IPC21 pentru diferența de bază CAS; forma anexei 6 (HG 697/2014) în vigoare. **Rămas:** locul
+  aplicării scutirii (bază / cumul) — de făcut împreună cu S3.
+
 ## Următorii pași (de aici pornește sesiunea următoare)
 
 0. **Deschiderea**: (a) ~~Public Hostname~~ — făcut. (b) asistentul de
