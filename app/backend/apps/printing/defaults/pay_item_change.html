@@ -1,0 +1,37 @@
+{% company_header %}
+
+<div class="doc-title">{{ texts.title }}</div>
+<div class="doc-subtitle">nr. {{ doc.number }} din {{ doc.date }}{% if not doc.approved %} · <span class="muted">{{ doc.status }}</span>{% endif %}</div>
+{% if texts.intro %}<p style="margin:6px 0">{{ texts.intro|linebreaksbr }}</p>{% endif %}
+
+<table class="grid" style="font-size:8.5pt">
+  <thead>
+    <tr>
+      <th style="width:7mm">Nr.</th>
+      <th style="width:14mm">Nr. tabel</th>
+      <th>Numele, prenumele</th>
+      <th>Tipul de calcul</th>
+      <th style="width:16mm">Acțiunea</th>
+      <th style="width:18mm">Suma (lei)</th>
+      <th style="width:12mm">%</th>
+      <th style="width:14mm">Cantit.</th>
+      <th style="width:19mm">De la</th>
+      <th style="width:19mm">Până la</th>
+      <th>Temeiul</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for r in rows %}
+    <tr><td class="num">{{ r.no }}</td><td>{{ r.tab_number }}</td><td>{{ r.name }}{% if r.employment %}<br><span class="muted">{{ r.employment }}</span>{% endif %}</td>
+      <td>{{ r.type }}</td><td>{{ r.action }}</td><td class="num">{{ r.amount }}</td><td class="num">{{ r.percent }}</td>
+      <td class="num">{{ r.quantity }}</td><td>{{ r.date_from }}</td><td>{{ r.date_to }}</td><td>{{ r.document }}</td></tr>
+  {% empty %}<tr><td colspan="11" class="muted">—</td></tr>{% endfor %}
+  </tbody>
+</table>
+{% if doc.note %}<p class="muted" style="margin-top:6px">{{ doc.note|linebreaksbr }}</p>{% endif %}
+
+<div class="signatures">
+  <div>{{ texts.accountant_label }}<div class="line"></div><div class="who">{{ company.chief_accountant }}</div></div>
+  <div>{{ texts.made_by }}<div class="line"></div><div class="who"></div></div>
+</div>
+{% if texts.footer %}<div class="doc-footer">{{ texts.footer|linebreaksbr }}</div>{% endif %}

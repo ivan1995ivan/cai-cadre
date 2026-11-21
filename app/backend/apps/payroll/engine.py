@@ -4,12 +4,17 @@ Pentru fiecare raport de muncă din lună:
 1. pontajul (tabela secției, sau norma întreagă dacă tabela lipsește): ore, noapte, sărbători, suplimentare, absențe;
 2. acumulările automate: salariul de funcție pro-rata la ore, sporurile fixe, plata pentru cumul, noaptea, sărbătorile,
    suplimentarele, concediul (media × zile), compensarea, boala (zilele angajatorului), premiile și ajutorul din ordine;
-3. sporurile pe trepte de vechime și rândurile personale ale angajatului (sporuri, contract, rețineri);
-4. plafoanele neimpozabile, bazele impozitului pe venit și CNAM, celelalte rețineri, CAS al angajatorului.
+3. rândurile scrise de mână (le înlocuiesc pe cele calculate de același tip) și completarea până la salariul minim;
+4. celelalte tipuri, în ordinea dependențelor (apps.payroll.dependencies): rândurile personale ale angajatului (sumă fixă,
+   % din salariu, tarif orar), treptele de vechime, „% din bază” și formulele (apps.payroll.formula) — fiecare după tipurile
+   din baza / formula lui; tipurile „pentru toți angajații” se calculează și fără rândul angajatului;
+5. plafoanele neimpozabile, bazele impozitului pe venit și CNAM, celelalte rețineri, CAS al angajatorului și CAS pe
+   diferența până la baza minimă.
 Impozitul pe venit, scutirea și CNAM nu se calculează aici: se rețin la plată, în îndreptarea spre plată
 (apps.payroll.payments), din bazele puse pe rând. Rândurile scrise de mână (manual) rămân la recalculare; restul se refac.
 Un rând de mână pe un tip care se calculează singur (salariul, un spor, CAS) îl înlocuiește pe cel calculat; pe un tip fără
-calcul automat (premiu unic, reținere) se adaugă. Bazele și CAS se refac din sumele corectate, afară de CAS scris de mână.
+calcul automat (premiu unic, reținere) se adaugă. Tipurile care depind de el (baza sindicatului, o formulă) se calculează
+din suma corectată; bazele și CAS — la fel, afară de CAS scris de mână.
 """
 from collections import defaultdict
 from datetime import date, timedelta
@@ -27,6 +32,7 @@ from apps.staff.models import MAIN_KINDS, Employment
 from apps.worktime import services as worktime
 from apps.worktime.models import TimesheetLine
 
+from . import dependencies, formula
 from .models import EmployeePayItem, PayConstant, Payroll, PayrollItem, PayrollLine, PayType
 
 ZERO, CENT = Decimal("0"), Decimal("0.01")
@@ -213,13 +219,30 @@ class Month:
         self.const = Constants(self.last)
         self.ctx = worktime.Context(self.year, self.month)
         self.types = {t.code: t for t in PayType.objects.filter(is_active=True).exclude(auto__in=AT_PAYMENT)}
+        self._index()
+        self.timesheets = {ln.employment_id: ln.totals or {} for ln in TimesheetLine.objects.filter(
+            timesheet__year=self.year, timesheet__month=self.month, timesheet__deletion_mark=False)}
+        self.avg_salary = self.const("avg_salary")
+
+    def _index(self):
         self.by_auto = defaultdict(list)
         for t in self.types.values():
             if t.formula == "auto" and t.auto != "none":
                 self.by_auto[t.auto].append(t)
-        self.timesheets = {ln.employment_id: ln.totals or {} for ln in TimesheetLine.objects.filter(
-            timesheet__year=self.year, timesheet__month=self.month, timesheet__deletion_mark=False)}
-        self.avg_salary = self.const("avg_salary")
+        self.order = dependencies.calc_order(self.types.values())  # dependența circulară oprește calculul
+        self._parsed = {}
+
+    def use_type(self, t: PayType, replaces: str | None = None):
+        """Tipul dat (nesalvat, la „Încearcă”) în locul celui din bază — și în ordinea de calcul."""
+        if replaces:
+            self.types.pop(replaces, None)
+        self.types[t.code] = t
+        self._index()
+
+    def parsed(self, t: PayType):
+        if t.code not in self._parsed:
+            self._parsed[t.code] = formula.parse(t.expression)
+        return self._parsed[t.code]
 
     def jobs(self):
         """Raporturile de muncă din lună (toată întreprinderea sau subdiviziunea), cu zilele lor din worktime."""
@@ -276,13 +299,17 @@ class LineCalc:
                      "kind_label": self.job.get_kind_display(), "rate": float(self.rate), "base_salary": float(self.job.base_salary),
                      "salary_full": float(self.salary_full), "hourly": float(self.hourly), "timesheet": self.ts,
                      "tab_number": self.job.employee.tab_number, "name": self.job.employee.full_name(), "is_main": is_main}
+        self.traces: list = []  # formulele calculate: variabilele, rezultatul (pentru „Încearcă”)
+        self.try_mode = False  # la „Încearcă” erorile formulei se arată, nu opresc calculul
+        self.forced_rows: dict = {}  # {codul tipului: [rânduri]} — la „Încearcă”, în locul rândurilor angajatului
+        self._seniority = None
 
     def _d(self, key) -> Decimal:
         return Decimal(str(self.ts.get(key) or 0))
 
-    def add(self, code: str, amount, quantity=None, base=None, percent=None, note="", manual=False):
+    def add(self, code: str, amount, quantity=None, base=None, percent=None, note="", manual=False, keep_zero=False):
         t = self.m.types.get(code)
-        if t is None or q(amount) == ZERO:
+        if t is None or (q(amount) == ZERO and not keep_zero):
             return None
         item = {"type": t, "amount": q(amount), "quantity": q(quantity) if quantity is not None else None,
                 "base": q(base) if base is not None else None, "percent": percent, "note": note[:300], "manual": manual}
@@ -411,64 +438,161 @@ class LineCalc:
             for t in m.by_auto["aid" if kind == "aid" else "bonus"]:
                 self.add(t.code, amount, base=self.salary_full if inc.amount is None else None, percent=inc.percent, note=note)
 
-    # -- treptele pe vechime --
-    def scales(self):
-        """Tipurile cu formula „scale”: procentul treptei atinse de vechimea totală în muncă la sfârșitul lunii
-        (trepte {"from": ani, "pct": %}, din contractul colectiv / regulamentul de salarizare al întreprinderii)."""
-        m = self.m
-        years = None
-        for t in m.types.values():
-            if t.formula != "scale" or t.category != "accrual" or not t.scale:
-                continue
-            if years is None:
-                years = staff.seniority(self.job.employee, m.last)["total"]["years"]
-            pct = None
-            for threshold, p in sorted((Decimal(str(s["from"])), Decimal(str(s["pct"]))) for s in t.scale if "from" in s):
-                if years >= threshold:
-                    pct = p
-            if pct:
-                base = self.sum_codes(t.base_codes or ["SAL"])
-                self.add(t.code, base * pct / 100, base=base, percent=pct)
+    # -- rândurile de mână, apoi tipurile dependente --
+    def run(self, manual_items):
+        self.auto()
+        overridden = self.apply_manual(manual_items)
+        self.minimum_completion(overridden)
+        self.dependents(overridden)
+        self.bases(manual_items)
 
-    # -- rândurile personale --
-    def personal(self):
-        m = self.m
-        rows = EmployeePayItem.objects.filter(employee=self.job.employee, date_from__lte=m.last).filter(
-            Q(date_to__isnull=True) | Q(date_to__gte=m.first)).select_related("pay_type")
-        for r in rows:
+    def apply_manual(self, manual_items) -> set:
+        """Rândul de mână înlocuiește rândul calculat de același tip; intră în calcul înaintea tipurilor care depind de el."""
+        overridden = {it["type"].pk for it in manual_items}
+        self.items = [i for i in self.items if i["type"].pk not in overridden] + list(manual_items)
+        return overridden
+
+    def rows(self) -> dict:
+        """Rândurile personale valabile în lună pe acest raport (cele fără raport — pe cel de bază), pe codul tipului."""
+        m, out = self.m, defaultdict(list)
+        qs = (EmployeePayItem.objects.filter(employee=self.job.employee, date_from__lte=m.last)
+              .filter(Q(date_to__isnull=True) | Q(date_to__gte=m.first)).select_related("pay_type").order_by("date_from", "id"))
+        for r in qs:
             if r.employment_id and r.employment_id != self.job.pk:
                 continue
             if not r.employment_id and not self.is_main:
                 continue
-            t = r.pay_type
-            if not t.is_active:
+            out[r.pay_type.code].append(r)
+        return out
+
+    def dependents(self, overridden):
+        """Tipurile care nu sunt automate, în ordinea dependențelor: pe fiecare rând al angajatului; tipurile „pentru toți
+        angajații” (formula, treptele, procentele tipului) — și fără rând, o dată pe raport (nu la contractul de prestări
+        servicii)."""
+        rows = self.rows()
+        for code, forced in self.forced_rows.items():
+            rows[code] = forced
+        for t in self.m.order:
+            if t.pk is not None and t.pk in overridden:
                 continue
-            pct = r.percent if r.percent is not None else t.percent
-            if t.formula == "pct_salary":
-                self.add(t.code, self.salary_full * self.worked_share * pct / 100, base=self.salary_full * self.worked_share, percent=pct, note=r.document)
-            elif t.formula == "pct_base":
-                base = self.sum_codes(t.base_codes)
-                self.add(t.code, base * pct / 100, base=base, percent=pct, note=r.document)
-            elif t.formula == "hourly":
-                rate = r.amount or ZERO
-                self.add(t.code, rate * self.hours, quantity=self.hours, base=r.amount, note=r.document)
-                if rate:  # tariful pe oră: sporul pentru suplimentare și dublul în zilele de sărbătoare / repaus
-                    for x in m.by_auto["overtime"]:
-                        self._overtime(x.code, rate, full=False)
-                    for x in m.by_auto["holiday"]:
-                        self._holiday(x.code, rate, hourly_paid=True)
-            else:
-                self.add(t.code, r.amount or ZERO, note=r.document)
+            own = rows.get(t.code) or []
+            if not own and t.applies_to == "all" and t.formula in PayType.GENERAL_FORMULAS and self.job.kind != "contractor":
+                own = [None]
+            for r in own:
+                self.compute(t, r)
+
+    def seniority_years(self, which: str) -> Decimal:
+        if self._seniority is None:
+            self._seniority = staff.seniority(self.job.employee, self.m.last)
+        return Decimal(self._seniority[which]["years"])
+
+    def compute(self, t: PayType, r):
+        m = self.m
+        pct = r.percent if r is not None and r.percent is not None else t.percent
+        doc = r.document if r is not None else ""
+        if t.formula == "pct_salary":
+            base = self.salary_full * self.worked_share
+            self.add(t.code, base * pct / 100, base=base, percent=pct, note=doc)
+        elif t.formula == "pct_base":
+            base = self.sum_codes(t.base_codes)
+            self.add(t.code, base * pct / 100, base=base, percent=pct, note=doc)
+        elif t.formula == "hourly":
+            if r is None:
+                return
+            rate = r.amount or ZERO
+            self.add(t.code, rate * self.hours, quantity=self.hours, base=r.amount, note=doc)
+            if rate:  # tariful pe oră: sporul pentru suplimentare și dublul în zilele de sărbătoare / repaus
+                for x in m.by_auto["overtime"]:
+                    self._overtime(x.code, rate, full=False)
+                for x in m.by_auto["holiday"]:
+                    self._holiday(x.code, rate, hourly_paid=True)
+        elif t.formula == "scale":
+            self._scale(t, doc)
+        elif t.formula == "expr":
+            self._expr(t, r, pct)
+        elif r is not None:  # suma fixă
+            self.add(t.code, r.amount or ZERO, note=doc)
+
+    def _scale(self, t: PayType, doc=""):
+        """Treptele de vechime: procentul treptei atinse de vechimea totală în muncă la sfârșitul lunii
+        (trepte {"from": ani, "pct": %}, din contractul colectiv / regulamentul de salarizare al întreprinderii)."""
+        if t.category != "accrual" or not t.scale:
+            return
+        years = self.seniority_years("total")
+        pct = None
+        for threshold, p in sorted((Decimal(str(s["from"])), Decimal(str(s["pct"]))) for s in t.scale if "from" in s):
+            if years >= threshold:
+                pct = p
+        if pct:
+            base = self.sum_codes(t.base_codes or ["SAL"])
+            self.add(t.code, base * pct / 100, base=base, percent=pct, note=doc)
+
+    def variable(self, name: str, t: PayType, r, pct) -> Decimal:
+        """Valoarea unei variabile a formulei (apps.payroll.formula.VARIABLES) pentru acest raport de muncă."""
+        d, ts = self._d, self.ts
+        simple = {
+            "SalariuFunctie": lambda: self.salary_full, "Norma": lambda: self.norm, "OreLucrate": lambda: self.hours,
+            "ZileLucrate": lambda: d("days"), "TarifOrar": lambda: self.hourly, "ParteLucrata": lambda: self.worked_share,
+            "ZileNorma": lambda: Decimal(sum(1 for day in self.jd.days if self.m.ctx.cal.is_working(day))),
+            "OreNoapte": lambda: d("night"), "OreSarbatoare": lambda: d("holiday") + d("rest_work"),
+            "OreOdihna": lambda: d("rest_work"),
+            "OreSarbatoareInNorma": lambda: d("holiday_in_norm") if "holiday_in_norm" in ts else d("holiday") + d("rest_work"),
+            "OreSarbatoarePesteNorma": lambda: d("holiday_over_norm"),
+            "OreSuplim2": lambda: d("overtime_2") if "overtime_2" in ts else d("overtime"),
+            "OreSuplimPeste": lambda: d("overtime_over"),
+            "Suma": lambda: (r.amount if r is not None and r.amount is not None else ZERO),
+            "Procent": lambda: Decimal(pct or 0),
+            "Cantitate": lambda: (r.quantity if r is not None and r.quantity is not None else ZERO),
+            "Baza": lambda: self.sum_codes(t.base_codes or []),
+            "SalariuMinim": lambda: self.m.const("min_salary"), "SalariuMediu": lambda: self.m.const("avg_salary"),
+            "NormaRaport": lambda: self.rate,
+            "VechimeAni": lambda: self.seniority_years("total"),
+            "VechimeIntreprindereAni": lambda: self.seniority_years("institution"),
+        }
+        if name not in simple:
+            raise formula.FormulaError(f"Variabila „{name}” nu există")
+        return Decimal(simple[name]())
+
+    def _expr(self, t: PayType, r, pct):
+        """Formula tipului: rezultatul pe rând, cu explicația (formula și valorile variabilelor folosite). Un rezultat negativ
+        se oprește la 0, cu avertisment (o acumulare / reținere nu poate fi negativă)."""
+        m = self.m
+
+        def resolve(kind, name):
+            if kind == "var":
+                return self.variable(name, t, r, pct)
+            if kind == "const":
+                if name not in m.const.values:
+                    raise formula.FormulaError(f"Constanta C.{name} nu are valoare la {m.last:%d.%m.%Y}")
+                return m.const.values[name]
+            return self.sum_codes([name])
+
+        trace = {"code": t.code, "name": t.name_ro, "row": getattr(r, "pk", None), "expression": t.expression}
+        try:
+            res = formula.evaluate(m.parsed(t), resolve)
+        except formula.FormulaError as exc:
+            if self.try_mode:
+                self.traces.append({**trace, "error": exc.text(), "variables": {}, "result": None, "note": ""})
+                return
+            from rest_framework.exceptions import ValidationError
+
+            raise ValidationError({"detail": f"Tipul {t.code} ({t.name_ro}), {self.job.employee.full_name()}: {exc.text()}"}) from None
+        value = q(res.value)
+        note = res.explanation
+        negative = value < 0
+        if negative:
+            note = f"formula a dat {formula.fmt(value)} — se ia 0; {note}"
+            value = ZERO
+        if r is not None and r.document:
+            note = f"{note}; {r.document}"
+        used = res.used
+        self.add(t.code, value, quantity=used.get("Cantitate"), base=used.get("Baza"), percent=used.get("Procent"), note=note,
+                 keep_zero=negative)
+        self.traces.append({**trace, "error": "", "variables": used, "result": value, "note": note[:300], "negative": negative})
 
     # -- bazele, reținerile, CAS --
     def bases(self, manual_items):
         m, c = self.m, self.m.const
-        overridden = {it["type"].pk for it in manual_items}
-        # rândul de mână înlocuiește rândul calculat de același tip
-        self.items = [i for i in self.items if i["type"].pk not in overridden]
-        for it in manual_items:  # cele scrise de mână intră în baze
-            self.items.append(it)
-        self.minimum_completion(overridden)
         cas_fixed = [it["amount"] for it in manual_items if it["type"].auto == "cas"]  # CAS scris de mână: suma lui
         self.cas_manual = bool(cas_fixed)
         gross = tax_base = cnam_base = cas_base = ZERO
@@ -525,6 +649,17 @@ class LineCalc:
 TOTALS = ("gross", "taxable", "cnam_base", "cas", "deductions", "net")
 
 
+def main_jobs(jobs) -> dict:
+    """Raportul „principal” al fiecărei persoane în lună (boala, premiile, rândurile fără raport merg acolo): cel de bază,
+    altfel primul (de ex. singurul raport e un cumul extern)."""
+    main_of = {}
+    for jd in jobs:
+        emp_id = jd.job.employee_id
+        if emp_id not in main_of or (jd.job.kind in MAIN_KINDS and main_of[emp_id].kind not in MAIN_KINDS):
+            main_of[emp_id] = jd.job
+    return main_of
+
+
 @transaction.atomic
 def calculate(payroll: Payroll, employee_id: int | None = None) -> dict:
     """Calculul lunii; cu `employee_id` — doar rândurile unui angajat (după o corectare de mână), restul rămân."""
@@ -536,15 +671,11 @@ def calculate(payroll: Payroll, employee_id: int | None = None) -> dict:
     lines_qs = payroll.lines.all() if employee_id is None else payroll.lines.filter(employee_id=employee_id)
     existing = {ln.employment_id: ln for ln in lines_qs}
     seen = set()
-    main_of = {}
     jobs = m.jobs()
     if employee_id is not None:
         jobs = [jd for jd in jobs if jd.job.employee_id == employee_id]
     order = {jd.job.pk: n for n, jd in enumerate(m.jobs(), start=1)} if employee_id is not None else None
-    for jd in jobs:  # raportul de bază al fiecărei persoane: scutirea, boala, premiile merg acolo
-        emp_id = jd.job.employee_id
-        if emp_id not in main_of or (jd.job.kind in MAIN_KINDS and main_of[emp_id].kind not in MAIN_KINDS):
-            main_of[emp_id] = jd.job
+    main_of = main_jobs(jobs)
     calcs = []
     for n, jd in enumerate(jobs, start=1):
         line = existing.pop(jd.job.pk, None) or PayrollLine(payroll=payroll, employee=jd.job.employee, employment=jd.job)
@@ -554,10 +685,7 @@ def calculate(payroll: Payroll, employee_id: int | None = None) -> dict:
         manual = [{"type": i.pay_type, "amount": i.amount, "quantity": i.quantity, "base": i.base, "percent": i.percent,
                    "note": i.note, "manual": True} for i in line.items.filter(manual=True).exclude(pay_type__auto__in=AT_PAYMENT).select_related("pay_type")]
         calc = LineCalc(m, jd, line, is_main=main_of[jd.job.employee_id].pk == jd.job.pk)
-        calc.auto()
-        calc.scales()
-        calc.personal()
-        calc.bases(manual)
+        calc.run(manual)
         calcs.append(calc)
     by_employee = defaultdict(list)
     for calc in calcs:
@@ -587,3 +715,56 @@ def calculate(payroll: Payroll, employee_id: int | None = None) -> dict:
         payroll.status = "draft"
     payroll.save(update_fields=["totals", "calculated_at", "status"])
     return payroll.totals
+
+
+def try_type(pay_type: PayType, *, employee, year: int, month: int, employment=None, row_values=None, replaces=None) -> dict:
+    """„Încearcă pe un angajat”: calculul lunii pentru angajat cu tipul dat (salvat sau doar scris în editor), în memorie —
+    nimic nu se salvează (și, pentru siguranță, tranzacția se anulează la sfârșit). Întoarce, pe fiecare raport de muncă,
+    variabilele formulei cu valorile lor, rezultatul, explicația și erorile. `row_values` = {amount, percent, quantity} —
+    rândul angajatului închipuit (fără el: rândurile lui; dacă n-are, un rând gol, ca formula să se poată încerca)."""
+    from rest_framework.exceptions import ValidationError
+
+    with transaction.atomic():
+        payroll = Payroll(year=year, month=month)
+        m = Month(payroll)
+        m.use_type(pay_type, replaces=replaces)
+        all_jobs = [jd for jd in m.jobs() if jd.job.employee_id == employee.pk]
+        jobs = [jd for jd in all_jobs if employment is None or jd.job.pk == employment.pk]
+        if not jobs:
+            raise ValidationError({"employee": f"{employee.full_name()} nu are raport de muncă în luna {month:02d}.{year}."})
+        main_of = main_jobs(all_jobs)
+        out = []
+        for jd in jobs:
+            line = PayrollLine(payroll=payroll, employee=employee, employment=jd.job)
+            calc = LineCalc(m, jd, line, is_main=main_of[employee.pk].pk == jd.job.pk)
+            calc.try_mode = True
+
+            def synth(values):
+                return EmployeePayItem(employee=employee, employment=jd.job, pay_type=pay_type, date_from=m.first,
+                                       amount=values.get("amount"), percent=values.get("percent"), quantity=values.get("quantity"))
+
+            if row_values is not None:
+                calc.forced_rows = {pay_type.code: [synth(row_values)]}
+            else:
+                own = calc.rows().get(replaces or pay_type.code, [])
+                if own or pay_type.applies_to != "all" or pay_type.formula not in PayType.GENERAL_FORMULAS:
+                    calc.forced_rows = {pay_type.code: own or [synth({})]}
+                else:
+                    calc.forced_rows = {pay_type.code: []}
+            error = ""
+            try:
+                calc.run([])
+            except ValidationError as exc:
+                error = str(exc.detail.get("detail", exc.detail) if isinstance(exc.detail, dict) else exc.detail)
+            mine = [i for i in calc.items if i["type"].code == pay_type.code]
+            traces = [tr for tr in calc.traces if tr["code"] == pay_type.code]
+            out.append({
+                "employment": jd.job.pk, "employment_label": f"{jd.job.get_kind_display()}: {jd.job.occupation.name_ro}",
+                "result": sum((i["amount"] for i in mine), ZERO), "notes": [i["note"] for i in mine if i["note"]],
+                "traces": traces, "error": error or "; ".join(tr["error"] for tr in traces if tr.get("error")),
+                "items": [{"code": i["type"].code, "name": i["type"].name_ro, "category": i["type"].category, "amount": i["amount"],
+                           "note": i["note"]} for i in calc.items],
+                "gross": calc.line.gross, "deductions": calc.line.deductions,
+            })
+        transaction.set_rollback(True)
+    return {"employee": employee.pk, "employee_name": employee.full_name(), "year": year, "month": month, "lines": out}

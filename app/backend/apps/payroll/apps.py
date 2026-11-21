@@ -10,8 +10,9 @@ class PayrollConfig(AppConfig):
         from apps.core.audit import register
         from apps.printing import views as printing_views
 
-        from . import payment_printing, printing, salary_book  # noqa: F401 — cartea de salarii intră în catalogul de rapoarte
-        from .models import EmployeePayItem, ExemptionDependent, ExemptionRequest, PayConstant, Payment, PaymentLine, Payroll, PayrollItem, PayType
+        from . import change_printing, payment_printing, printing, salary_book  # noqa: F401 — cartea de salarii intră în catalogul de rapoarte
+        from .models import (EmployeePayItem, ExemptionDependent, ExemptionRequest, OccupationPayItem, PayConstant, PayItemChange,
+                             PayItemChangeLine, Payment, PaymentLine, Payroll, PayrollItem, PayType)
 
         register(Payment)
         register(PaymentLine, parent="payment")
@@ -19,6 +20,10 @@ class PayrollConfig(AppConfig):
         printing_views.SAMPLE_BUILDERS["bank_list"] = payment_printing.sample_bank
         printing_views.SAMPLE_BUILDERS["annual_card"] = payment_printing.sample_annual
         printing_views.SAMPLE_BUILDERS["exemption_request"] = payment_printing.sample_exemption
+        printing_views.SAMPLE_BUILDERS["pay_item_change"] = change_printing.sample_change
+        register(PayItemChange)
+        register(PayItemChangeLine, parent="change")
+        register(OccupationPayItem, parent="occupation")
         register(PayConstant)
         register(PayType)
         register(EmployeePayItem, parent="employee")

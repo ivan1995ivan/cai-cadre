@@ -9,6 +9,8 @@
   <tr><td style="width:60mm">Numele, prenumele</td><td><b>{{ req.employee.name }}</b></td></tr>
   <tr><td>Codul fiscal (IDNP)</td><td>{{ req.employee.idnp }}</td></tr>
   <tr><td>Domiciliul</td><td>{{ req.employee.address }}</td></tr>
+  <tr><td>Cererea se depune la acest angajator ca</td><td>{% if req.place_main %}<b>locul de muncă de bază</b> / <s>prin cumul</s>{% else %}<s>locul de muncă de bază</s> / <b>locul de muncă prin cumul</b>{% endif %}
+    <span class="muted">(HG 697/2014, Regulamentul, pct. 9)</span></td></tr>
 </table>
 
 <p style="margin:8px 0 4px"><b>SOLICIT URMĂTOARELE SCUTIRI</b> <span class="muted">(se pune semnul „V”)</span></p>

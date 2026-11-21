@@ -67,7 +67,7 @@ def test_monthly_calculation_tax_exemption_scales_and_approval(admin_client, org
     ion, _job = person(org, "Popescu", "Ion")
     # sporul pentru vechime din contractul colectiv al firmei: trepte pe vechimea totală (stagiul anterior + aici)
     PayType.objects.create(code="SPVECH", name_ro="Spor pentru vechime (contractul colectiv)", category="accrual", formula="scale",
-                           base_codes=["SAL"], scale=[{"from": 3, "pct": 5}, {"from": 10, "pct": 10}, {"from": 20, "pct": 15}], sort=40)
+                           applies_to="all", base_codes=["SAL"], scale=[{"from": 3, "pct": 5}, {"from": 10, "pct": 10}, {"from": 20, "pct": 15}], sort=40)
     PriorExperience.objects.create(employee=ion, organization="„Alfa” SRL", date_from=date(2014, 1, 1), date_to=date(2019, 12, 31),
                                    in_specialty=False)  # 6 ani înainte + 6 ani aici = 12 ani → 10 %
     req = ExemptionRequest.objects.create(employee=ion, date=date(2025, 12, 20), kind="personal")  # se aplică din ianuarie
