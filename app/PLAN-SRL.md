@@ -202,18 +202,52 @@
 - Boala: plafonul de 15 zile pe an pentru zilele angajatorului; accidentul de muncă — 20 de zile (15321).
 - IPC21 după OMF 56/2026, IALS21 după OMF 59/2026, IRM19 cu concediul paternal (165), anexa 8 fără 12 % scris în șablon.
 
+### 2.6 Cartela angajatului → pontajul → salariul (cererea clientului, 2026-11-21)
+
+Scrisoarea „Adaptarea programului de evidență contabilă și a tabelului de pontaj”, adusă de Anatol (clientul cu ore de
+zbor). Ce cere:
+- **În cartela angajatului**, separat, pentru **fiecare funcție**: programul standard de lucru și **salariul de bază**;
+  **orele de zbor efectiv**, **orele de instruire**, **orele de examinare** (și alte categorii de ore variabile);
+  funcția de bază și funcțiile exercitate suplimentar — **funcția de înlocuire (suplinire) sau cumulul**
+  („по совместительству”); **modalitatea de remunerare și salariul pentru fiecare funcție**, independent de clasificarea ei
+  ca raport de muncă.
+- **Pontajul se completează din cartelă:** programul standard și **orele garantate** — automat; orele de instruire, de
+  examinare și celelalte ore variabile — introduse / actualizate la nevoie; restul datelor contractuale — disponibile
+  pentru calcul și rapoarte.
+- **Deosebirea clară între cumul și cumularea funcțiilor** — și la remunerare, și la regulile de calcul: nu aceeași formulă
+  pentru ambele. În cod: **cumulul** (intern / extern) = raport de muncă separat, cu CIM, norma și salariul lui (CM art.
+  268–?, de verificat); **cumularea funcțiilor / profesiilor** și **suplinirea** = în cadrul aceluiași CIM, cu plată
+  suplimentară stabilită prin acord (CM art. 156) — acum `combination_pct` pe raport și tipul CUMUL, care trebuie să devină
+  „cumularea / suplinirea” cu modalitatea ei proprie (% / sumă / pe ore), separată de cumul.
+- **Scopul:** datele puse o dată în cartelă umplu singure pontajul și calculul — fără introducere repetată și fără
+  neconcordanțe; analiza întregului drum cartelă → pontaj → salariu → rapoarte.
+
+Răspunsul în produs (etapa **S4b**, comună pentru fabrică, aviație, transport):
+- **Clasificatorul tipurilor de ore** (cod, denumire RO / RU / EN, grupa: lucrate / zbor / instruire / examinare / rezervă /
+  staționare / conducere / disponibilitate …, intră în norma lunii sau nu, se plătește cu ce tip de calcul) — profilurile
+  (fabrică, aviație, transport) aduc tipurile lor; utilizatorul adaugă altele.
+- **Pe raportul de muncă (pe funcție):** programul standard (graficul), **modalitatea de remunerare** (salariu lunar /
+  tarif orar / tarif pe tipul de ore / acord / mixt), salariul sau tarifele pe tipuri de ore, **orele garantate** pe lună
+  (plătite chiar dacă nu s-au lucrat, după contract), cu istoric „din data”.
+- **Cumularea funcțiilor / suplinirea** pe raport (funcția cumulată, % / sumă / ore, de la / până la — din ordin), separat de
+  **cumul** (raport propriu).
+- **Pontajul:** o linie pe raport cu coloane pe tipuri de ore; orele standard și garantate — completate automat din
+  cartelă; orele variabile (zbor, instruire, examinare …) — pe zile sau pe lună, de mână sau import Excel; la salariu —
+  variabilele `Ore[COD]` în formule (S3) și tipurile de calcul legate de tipurile de ore.
+
 ---
 
 ## 3. Etapele
 
 | Etapa | Ce | Verificare |
 |---|---|---|
-| **Stare** | S0 · S1 · S2 · S3 — **gata** (2026-11-21), plus interfața „Clasic de birou”; următoarea: **S4** (IT Park) | |
+| **Stare** | S0 · S1 · S2 · S3 — **gata** (2026-11-21), plus interfața „Clasic de birou”; în lucru: **S4** (IT Park); apoi **S4b** (tipurile de ore, cererea clientului §2.6) | |
 | **S0** | Planul (acest document), deciziile lui Anatol, accesul la depozit (grupul `proj-cai-cadre`, `safe.directory`) | — |
 | **S1 — fără stat** | antetul firmei (logo, IDNO, adresa, CAEM, IBAN) în locul Stemei / fondatorului pe toate formele; scoase EMC / atestarea, vaccinurile, gărzile, MS nr. 17, vechimea „în sănătate”, „rezident”; evidența militară — modul opțional, oprit; categoriile de personal → clasificator (după grupele CORM); clasificatoarele noi: funcțiile CORM 006-21 uzuale în firme, temeiurile din CM cu articolele (Legea 193/2025, 112/2023), tipurile de ordin după lista ISM, codurile pontajului după Convenția nr. 17/2020; graficul concediilor și regulamentul intern — opționale; Legea 195/2024; datele demo — SRL fictiv; resturile CRM; RO / RU / EN; `docs/` | teste, typecheck, build, toate formele de tipar fără Stemă |
 | **S2 — cifrele și regulile 2026** | constantele §1.1 (2026 + 2027 adoptate); salariul minim (verificare + completare până la minim), baza minimă CAS, suplimentarele 150 / 200, sărbătorile +1× / +2×, boala 15 zile / an și 20 de zile la accident; scutirile P / M / Sm / N / H, locul aplicării; cererea de scutire cu întreținuții (§2.4) + tipar | teste pe exemple calculate de mână |
 | **S3 — formula și acumulările la angajare** | §2.2 și §2.3: formula, baza vizibilă, ordinea după dependențe, „Încearcă”; tabelul în ordinele de personal; documentul „Modificarea acumulărilor planificate”; acumulările-tip pe funcție | teste: formule, dependențe circulare, semnarea / anularea ordinului |
 | **S4 — IT Park** | regimul în constante; calculul fără reținere; minimul 5 220 lei / angajat; venitul asigurat 11 832; IPC21 cu bifa și categoria 162; IU17, ISAPTI17, nota anuală (anexa 5); fără anexa 8 și scutiri | teste; XML după schema SFS |
+| **S4b — tipurile de ore și remunerarea pe funcție** | §2.6: clasificatorul tipurilor de ore; modalitatea de remunerare și tarifele pe raport (pe funcție), orele garantate; cumularea funcțiilor / suplinirea separat de cumul (plata, regulile, ordinul); pontajul cu coloane pe tipuri de ore, completat automat din cartelă, orele variabile de mână / Excel; variabilele `Ore[COD]` în formule | teste: cartela → pontaj → calcul, cumul vs cumulare |
 | **S5 — fabrica** | salarizarea în acord (direct, progresiv pe trepte, în brigadă cu coeficienți), volumele de producție (import Excel), norme, rebutul, staționarea pe vinovați, șomajul tehnic, evidența globală cu perioada de calcul, grila tarifară, tichetele de masă (÷ 8, ÷ 7, partea impozabilă peste 70 lei), sporul pentru condiții vătămătoare | teste pe exemple |
 | **S6 — aviația** | funcțiile din anexa 2 → CAS 32 % / cod 148; tipurile de timp (block, FDP, serviciu, rezervă aeroport / acasă, poziționare, noapte / WOCL, simulator) în pontaj, import din programul de planificare a echipajelor; plata pe oră de zbor / sector / rezervă; limitele FTL cu alerte; diurnele echipajului; registrul certificatelor cu termene | teste; exemplu de lună cu zboruri |
 | **S6b — transportul** | marfă + pasageri, în țară + Europa. **Cursele** (foaia de parcurs): șoferul, vehiculul, ruta, țările cu intrare / ieșire, km, timpii de conducere / altă muncă / disponibilitate / odihnă — **de mână, import Excel, import GPS** (CSV / API al furnizorului) și **fișierele tahografului .ddd** (cardul șoferului: generația 1 — anexa 1B la Reg. 3821/85, generația 2 — anexa 1C la Reg. 2016/799: activitățile pe minute, țările, vehiculele); **plata**: salariul + tariful pe km (pe tip de cursă / vehicul) + **KPI** (indicatori cu pondere și prag: consumul față de normă, daunele, amenzile, documentele la timp, … — fără indicatori de viteză / distanță care pun în pericol siguranța, CTR art. 142), cu garanția „cel puțin salariul minim și sporurile CM”; **diurnele** pe țări (norma din anexa 2 la HG 10/2012, 20 / 40 / 100 %, destinația, masa asigurată, cel puțin 70 %, în țară 250 lei) — partea neimpozabilă și cea impozabilă; ordinul de deplasare pe țări; **baza minimă CAS**; alertele: limitele de conducere, odihna redusă / compensarea, CPC, medical, ADR, cardul de tahograf; regimul taxi până la 06.2026 doar pentru perioadele vechi | teste; exemplu de cursă internațională cu 3 țări; un fișier .ddd real |
