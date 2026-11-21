@@ -2,6 +2,7 @@
 
 <div class="doc-title">{{ texts.title }}</div>
 <div class="doc-subtitle">nr. {{ doc.number }} din {{ doc.date }} · luna {{ doc.month }} {{ doc.year }} · {{ doc.subdivision }}</div>
+{% if doc.it_park %}<p style="margin:2px 0 6px"><b>{{ doc.final_note }}</b>: pe salariul din contractele individuale de muncă nu se calculează impozitul pe venit, CNAM și CAS{% if not doc.all_final %}; contractele de prestări servicii — în regimul general{% endif %}.</p>{% endif %}
 
 <table class="grid" style="font-size:8pt">
   <thead>
@@ -12,11 +13,11 @@
       <th style="width:12mm">Zile</th>
       <th style="width:12mm">Ore</th>
       <th style="width:20mm">Calculat (brut)</th>
-      <th style="width:20mm">Baza impozitului</th>
-      <th style="width:20mm">Baza CNAM</th>
+      {% if not doc.all_final %}<th style="width:20mm">Baza impozitului</th>
+      <th style="width:20mm">Baza CNAM</th>{% endif %}
       <th style="width:18mm">Rețineri</th>
-      <th style="width:22mm">Rest înainte de impozit</th>
-      <th style="width:18mm">CAS angajator</th>
+      <th style="width:22mm">{% if doc.all_final %}De plată{% else %}Rest înainte de impozit{% endif %}</th>
+      {% if not doc.all_final %}<th style="width:18mm">CAS angajator</th>{% endif %}
     </tr>
   </thead>
   <tbody>
@@ -25,18 +26,21 @@
       <td class="num">{{ r.no }}</td>
       <td>{{ r.name }} · {{ r.tab_number }}<br><span class="muted">{{ r.occupation }}{% if r.kind %} ({{ r.kind }}){% endif %}, {{ r.subdivision }}</span></td>
       <td class="num">{{ r.rate }}</td><td class="num">{{ r.days }}</td><td class="num">{{ r.hours }}</td>
-      <td class="num">{{ r.gross }}</td><td class="num">{{ r.taxable }}</td><td class="num">{{ r.cnam_base }}</td>
-      <td class="num">{{ r.deductions }}</td><td class="num"><b>{{ r.net }}</b></td><td class="num">{{ r.cas }}</td>
+      <td class="num">{{ r.gross }}</td>
+      {% if not doc.all_final %}{% if r.it_park %}<td colspan="2" class="muted" style="text-align:center">impozitat final (IT Park)</td>{% else %}<td class="num">{{ r.taxable }}</td><td class="num">{{ r.cnam_base }}</td>{% endif %}{% endif %}
+      <td class="num">{{ r.deductions }}</td><td class="num"><b>{{ r.net }}</b></td>
+      {% if not doc.all_final %}<td class="num">{% if r.it_park %}<span class="muted">—</span>{% else %}{{ r.cas }}{% endif %}</td>{% endif %}
     </tr>
   {% empty %}<tr><td colspan="11" class="muted">—</td></tr>{% endfor %}
     <tr class="total">
       <td></td><td>Total</td><td></td><td></td><td></td>
-      <td class="num">{{ doc.totals.gross }}</td><td class="num">{{ doc.totals.taxable }}</td><td class="num">{{ doc.totals.cnam_base }}</td>
-      <td class="num">{{ doc.totals.deductions }}</td><td class="num"><b>{{ doc.totals.net }}</b></td><td class="num">{{ doc.totals.cas }}</td>
+      <td class="num">{{ doc.totals.gross }}</td>{% if not doc.all_final %}<td class="num">{{ doc.totals.taxable }}</td><td class="num">{{ doc.totals.cnam_base }}</td>{% endif %}
+      <td class="num">{{ doc.totals.deductions }}</td><td class="num"><b>{{ doc.totals.net }}</b></td>{% if not doc.all_final %}<td class="num">{{ doc.totals.cas }}</td>{% endif %}
     </tr>
   </tbody>
 </table>
-<p class="muted" style="margin-top:4px">Impozitul pe venit și prima CNAM se rețin la plată — în îndreptarea spre plată făcută în baza acestui calcul.</p>
+{% if doc.all_final %}<p class="muted" style="margin-top:4px">Suma de plată = calculat minus rețineri (sindicat, pensie alimentară, avans…): angajatului nu i se reține impozitul pe venit și CNAM (Codul fiscal, art. 377 alin. (1)).</p>
+{% else %}<p class="muted" style="margin-top:4px">Impozitul pe venit și prima CNAM se rețin la plată — în îndreptarea spre plată făcută în baza acestui calcul.</p>{% endif %}
 
 <div class="signatures">
   <div>{{ texts.accountant_label }}<div class="line"></div><div class="who">{{ company.chief_accountant }}</div></div>

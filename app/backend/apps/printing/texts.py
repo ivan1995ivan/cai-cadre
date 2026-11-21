@@ -108,6 +108,44 @@ FIELDS: dict = {
         ("made_by", "Semnătura: a întocmit", "A întocmit", "Составил", False),
         ("footer", "Text la sfârșit", "", "", True),
     ],
+    "it_park_tax": [
+        ("title", "Titlul", "CALCULUL IMPOZITULUI UNIC AL REZIDENTULUI PARCULUI IT", "РАСЧЁТ ЕДИНОГО НАЛОГА РЕЗИДЕНТА IT-ПАРКА", False),
+        ("annex", "Mențiunea (dreapta sus)", "pentru declarația IU17\n(OMF nr. 135/2017, anexa nr. 1)", "для декларации IU17\n(ПМФ № 135/2017, приложение № 1)", True),
+        ("note", "Nota de sub tabel",
+         "Impozitul unic se calculează lunar, necumulativ (Codul fiscal, art. 371): 7 % din venitul din vânzări, dar cel puțin "
+         "30 % din salariul mediu lunar prognozat pentru fiecare angajat cu contract individual de muncă care a activat cel puțin "
+         "o zi în lună. Rândurile formularului în vigoare se verifică pe sfs.md înainte de depunere.",
+         "Единый налог рассчитывается ежемесячно, без нарастающего итога (НК, ст. 371): 7 % от дохода от продаж, но не менее 30 % "
+         "прогнозируемой средней зарплаты на каждого работника по индивидуальному трудовому договору, проработавшего хотя бы "
+         "один день в месяце. Строки действующей формы проверяются на sfs.md перед подачей.", True),
+        ("accountant_label", "Semnătura: contabil-șef", "{funcția_contabilului}", "{funcția_contabilului}", False),
+        ("footer", "Text la sfârșit", "", "", True),
+    ],
+    "isapti17": [
+        ("title", "Titlul", "NOTA DE INFORMARE PRIVIND SALARIILE ACHITATE DE REZIDENTUL PARCULUI IT (ISAPTI17)",
+         "ИНФОРМАЦИОННАЯ СПРАВКА О ЗАРПЛАТАХ, ВЫПЛАЧЕННЫХ РЕЗИДЕНТОМ IT-ПАРКА (ISAPTI17)", False),
+        ("annex", "Mențiunea (dreapta sus)", "Forma ISAPTI17\n(OMF nr. 135/2017, anexa nr. 3)", "Форма ISAPTI17\n(ПМФ № 135/2017, приложение № 3)", True),
+        ("note", "Nota de sub tabel",
+         "Se cuprind salariile din regimul impozitului unic, îndreptate spre achitare în anul fiscal; plățile din regimul general "
+         "(lunile fără statut, contractele de prestări servicii) se declară în IALS21. Structura rubricilor — de verificat cu "
+         "formularul în vigoare.",
+         "Включаются зарплаты в режиме единого налога, направленные к выплате в налоговом году; выплаты в общем режиме "
+         "(месяцы без статуса, договоры оказания услуг) декларируются в IALS21. Структуру граф — проверить по действующей форме.", True),
+        ("accountant_label", "Semnătura: contabil-șef", "{funcția_contabilului}", "{funcția_contabilului}", False),
+        ("footer", "Text la sfârșit", "", "", True),
+    ],
+    "it_park_note": [
+        ("title", "Titlul", "INFORMAȚIA PRIVIND SALARIUL ACHITAT ANGAJATULUI REZIDENTULUI PARCULUI IT",
+         "ИНФОРМАЦИЯ О ЗАРПЛАТЕ, ВЫПЛАЧЕННОЙ РАБОТНИКУ РЕЗИДЕНТА IT-ПАРКА", False),
+        ("annex", "Mențiunea (dreapta sus)", "OMF nr. 135/2017, anexa nr. 5", "ПМФ № 135/2017, приложение № 5", True),
+        ("note", "Textul de sub tabel",
+         "Salariul a fost impozitat final cu impozitul unic al rezidentului parcului IT (Codul fiscal, art. 377 alin. (1)): "
+         "nu se declară în declarația persoanei fizice și nu se impozitează suplimentar.",
+         "Зарплата окончательно обложена единым налогом резидента IT-парка (НК, ст. 377 ч. (1)): не декларируется в "
+         "декларации физического лица и дополнительно не облагается.", True),
+        ("accountant_label", "Semnătura: contabil-șef", "{funcția_contabilului}", "{funcția_contabilului}", False),
+        ("footer", "Text la sfârșit", "", "", True),
+    ],
     "payslip": [
         ("title", "Titlul", "Fișa de calcul a salariului", "Расчётный листок", False),
         ("footer", "Text la sfârșit", "Fișa este confidențială; se înmânează doar angajatului.", "Листок конфиденциален; выдаётся только работнику.", True),

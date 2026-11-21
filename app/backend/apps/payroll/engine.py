@@ -10,6 +10,8 @@ Pentru fiecare raport de muncă din lună:
    din baza / formula lui; tipurile „pentru toți angajații” se calculează și fără rândul angajatului;
 5. plafoanele neimpozabile, bazele impozitului pe venit și CNAM, celelalte rețineri, CAS al angajatorului și CAS pe
    diferența până la baza minimă.
+În lunile în regim IT Park (apps.payroll.it_park) salariul din CIM e impozitat final: bazele impozitului și CNAM sunt 0, fără
+CAS și fără baza minimă CAS; completarea până la salariul minim rămâne. Contractele de prestări servicii — regimul general.
 Impozitul pe venit, scutirea și CNAM nu se calculează aici: se rețin la plată, în îndreptarea spre plată
 (apps.payroll.payments), din bazele puse pe rând. Rândurile scrise de mână (manual) rămân la recalculare; restul se refac.
 Un rând de mână pe un tip care se calculează singur (salariul, un spor, CAS) îl înlocuiește pe cel calculat; pe un tip fără
@@ -32,7 +34,7 @@ from apps.staff.models import MAIN_KINDS, Employment
 from apps.worktime import services as worktime
 from apps.worktime.models import TimesheetLine
 
-from . import dependencies, formula
+from . import dependencies, formula, it_park
 from .models import EmployeePayItem, PayConstant, Payroll, PayrollItem, PayrollLine, PayType
 
 ZERO, CENT = Decimal("0"), Decimal("0.01")
@@ -162,7 +164,14 @@ def sick_average_daily(employment: Employment, year: int, month: int, c, fallbac
         p = it.line.payroll
         if first <= date(p.year, p.month, 1) <= end:
             per_month[(p.year, p.month)] += it.amount
+    # lunile în regim IT Park: venitul asigurat e 68 % din salariul mediu al lunii, nu salariul (Legea 77/2016, art. 16)
+    it_months = it_park.it_park_months(first, end) if employment.kind != "contractor" else set()
+    for (y, m) in list(per_month):
+        if (y, m) in it_months:
+            per_month[(y, m)] = it_park.insured_income(Constants(month_bounds(y, m)[1]))
     n = len(per_month)
+    if not n and employment.kind != "contractor" and it_park.is_it_park(year, month):
+        fallback_monthly = it_park.insured_income(c)
     monthly = (sum(per_month.values(), ZERO) / n) if n else fallback_monthly
     cap = c("sick_avg_cap_salaries", "5") * c("avg_salary")
     capped = bool(cap) and monthly > cap
@@ -170,8 +179,10 @@ def sick_average_daily(employment: Employment, year: int, month: int, c, fallbac
         monthly = cap
     f, l = month_bounds(year, month)
     days = (l - f).days + 1
-    note = (f"{n} luni" if n else "fără istoric: salariul lunii") + f", {q(monthly)} lei / {days} zile" + (
-        f", plafonul {num(cap)} lei" if capped else "")
+    note = (f"{n} luni" if n else ("fără istoric: venitul asigurat IT Park" if it_park.is_it_park(year, month)
+                                    and employment.kind != "contractor" else "fără istoric: salariul lunii")) \
+        + f", {q(monthly)} lei / {days} zile" + (f", plafonul {num(cap)} lei" if capped else "") \
+        + ("; lunile IT Park — venitul asigurat" if it_months & set(per_month) else "")
     return q(monthly / days), {"months": n, "monthly": q(monthly), "days": days, "note": note}
 
 
@@ -183,7 +194,7 @@ def cas_minimum(calcs: list, c) -> None:
     copilului, boală plătită de CNAS toată luna) — fără bază minimă. Diferența: rândul „CAS pe diferența până la baza
     minimă” pe raportul de bază, cu baza reală și baza minimă în explicație."""
     jobs = [x for x in calcs if x.job.kind != "contractor"]
-    if not jobs:
+    if not jobs or any(x.it_park for x in jobs):  # IT Park: CAS e cuprinsă în impozitul unic (CF art. 372 alin. (1))
         return
     main = next((x for x in jobs if x.is_main), jobs[0])
     types = main.m.by_auto["cas_min"]
@@ -223,6 +234,8 @@ class Month:
         self.timesheets = {ln.employment_id: ln.totals or {} for ln in TimesheetLine.objects.filter(
             timesheet__year=self.year, timesheet__month=self.month, timesheet__deletion_mark=False)}
         self.avg_salary = self.const("avg_salary")
+        self.it_park = it_park.is_it_park(self.year, self.month)  # regimul lunii calculului (CF art. 375)
+        self.sick_covered = it_park.sick_covered(self.const)
 
     def _index(self):
         self.by_auto = defaultdict(list)
@@ -303,6 +316,11 @@ class LineCalc:
         self.try_mode = False  # la „Încearcă” erorile formulei se arată, nu opresc calculul
         self.forced_rows: dict = {}  # {codul tipului: [rânduri]} — la „Încearcă”, în locul rândurilor angajatului
         self._seniority = None
+        # IT Park: salariul din CIM e impozitat final; contractul de prestări servicii rămâne în regimul general
+        self.it_park = month.it_park and self.job.kind != "contractor"
+        if self.it_park:
+            self.info["it_park"] = True
+            self.info["regime_note"] = it_park.FINAL_NOTE
 
     def _d(self, key) -> Decimal:
         return Decimal(str(self.ts.get(key) or 0))
@@ -601,6 +619,9 @@ class LineCalc:
             if t.category != "accrual":
                 continue
             gross += amount
+            if self.it_park and not (t.auto in ("sick", "sick_accident") and not m.sick_covered):
+                i["taxable_part"] = ZERO  # impozitat final: fără impozit, CNAM și CAS (CF art. 372 alin. (1), art. 377)
+                continue
             limit = ZERO
             if t.exempt_month:
                 limit = t.exempt_month
@@ -617,12 +638,15 @@ class LineCalc:
             if t.cas:
                 cas_base += taxable_part
         deductions = sum((i["amount"] for i in self.items if i["type"].category == "deduction"), ZERO)
+        if self.it_park:
+            cas_base = ZERO  # CAS e cuprinsă în impozitul unic; venitul asigurat e cel din Legea 77/2016 (IPC21)
         cas = sum(cas_fixed, ZERO) if cas_fixed else q(cas_base * c("cas_employer_pct") / 100)
         for t in m.by_auto["cas"]:
             if not cas_fixed:
                 self.add(t.code, cas, base=cas_base, percent=c("cas_employer_pct"))
         ln = self.line
         ln.gross, ln.taxable, ln.cnam_base, ln.cas, ln.deductions = q(gross), q(tax_base), q(cnam_base), cas, q(deductions)
+        ln.it_park = self.it_park
         ln.net = q(gross - deductions)
         self.cas_base = q(cas_base)
         ln.info = self.info

@@ -51,6 +51,18 @@ CONSTANTS = [
     ("sick_avg_cap_salaries", "Plafonul venitului mediu lunar pentru boală (salarii medii prognozate)", "5", "", "Legea 289/2004, art. 7 alin. (3)", Y26),
     ("leave_avg_months", "Perioada de calcul a salariului mediu (concedii)", "3", "luni", "HG nr. 426/2004", Y26),
     ("advance_pct", "Avansul (% din salariul de funcție al raportului de bază)", "40", "%", "Contractul colectiv / regulamentul intern", Y26),
+    # regimul IT Park (se folosesc doar în lunile în regim — Setări → Constantele salarizării → Regimul fiscal)
+    ("it_park_tax_pct", "IT Park: impozitul unic (% din venitul lunar din vânzări)", "7", "%", "Codul fiscal, art. 370 alin. (1)", Y26),
+    ("it_park_min_pct", "IT Park: impozitul unic minim pe angajat (% din salariul mediu lunar prognozat)", "30", "%",
+     "Codul fiscal, art. 370 alin. (2)", Y26),
+    ("it_park_insured_pct", "IT Park: venitul asigurat al angajatului (% din salariul mediu lunar prognozat)", "68", "%",
+     "Legea 77/2016, art. 16 alin. (1); HG 108/2005, pct. 70¹", Y26),
+    ("it_park_sick_covered", "IT Park: zilele de boală plătite de angajator sunt acoperite de impozitul unic (1 — da, 0 — nu)", "1", "",
+     "Codul fiscal, art. 372 alin. (1), art. 377" + CHECK, Y26),
+    ("it_park_count_maternity", "IT Park: angajatul în concediu de maternitate (fără zi lucrată) se numără la impozitul minim (1 — da, 0 — nu)",
+     "1", "", "Codul fiscal, art. 369 alin. (2)" + CHECK, Y26),
+    ("it_park_sales_alert_day", "IT Park: alerta „lipsește venitul din vânzări” din ziua lunii următoare (termenul IU17 — 25)", "20",
+     "zi", "Setarea întreprinderii; OMF 135/2017 (IU17 — până la 25)", Y26),
 ]
 
 # cod, denumire RO, RU, EN, categoria, formula, auto, procent, baza, scara, impozabil, CAS, CNAM, plafon lună, plafon % mediu,

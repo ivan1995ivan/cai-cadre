@@ -14,7 +14,7 @@ from apps.core.models import NumberSeries, SystemSetting
 from apps.staff import services as staff
 from apps.staff.models import Employee
 
-from . import payment_printing, payments, payslip_mail, payslip_pdf, printing, reports, xml_export
+from . import it_park_views, payment_printing, payments, payslip_mail, payslip_pdf, printing, reports, xml_export
 from .models import Payment, PaymentLine
 from .serializers import PaymentLineSerializer, PaymentSerializer
 
@@ -211,7 +211,7 @@ class AnnualCardView(APIView):
 
 
 class TaxReportView(APIView):
-    """IPC21 (lunar), IALS21 (anual), IRM19 (pe perioadă): previzualizare (JSON), Excel (?export=xlsx) sau declarația
+    """IPC21 (lunar), IALS21 (anual), IRM19 (pe perioadă), IU17 și ISAPTI17 (IT Park): previzualizare (JSON), Excel (?export=xlsx) sau declarația
     electronică XML după schema SFS (?export=xml)."""
 
     perm_module = "tax_reports"
@@ -234,6 +234,12 @@ class TaxReportView(APIView):
                 return xml_export.ials21_xml(year)
             data = reports.ials21(year)
             return reports.ials21_xlsx(data) if xlsx else Response(data)
+        if report == "iu17":
+            year, month = _ym(request)
+            return it_park_views.iu17_report(request, year, month)
+        if report == "isapti17":
+            year, _month = _ym(request)
+            return it_park_views.annual_report(request, year)
         if report == "irm19":
             try:
                 start = date.fromisoformat(p.get("date_from") or timezone.localdate().replace(day=1).isoformat())

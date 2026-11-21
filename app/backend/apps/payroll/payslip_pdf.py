@@ -66,7 +66,8 @@ def _job_block(slip: dict, st: dict, width: float) -> list:
     """Un raport de muncă: antetul (funcția, norma), acumulările și reținerile alăturate, totalurile."""
     head = Paragraph(f"<b>{_esc(slip['occupation'])}</b>{' (' + _esc(slip['kind']) + ')' if slip['kind'] else ''}, "
                      f"{_esc(slip['subdivision'])} · norma {_esc(slip['rate'])} · salariul de funcție {_esc(slip['salary'])} · "
-                     f"zile / ore {_esc(slip['days'])} / {_esc(slip['hours'])}", st["base"])
+                     f"zile / ore {_esc(slip['days'])} / {_esc(slip['hours'])}"
+                     + (" · <b>impozitat final (IT Park)</b>" if slip.get("it_park") else ""), st["base"])
     half = (width - 4 * mm) / 2
     acc_rows = [[Paragraph("Acumulări", st["bold"]), Paragraph("Cant.", st["bold"]), Paragraph("%", st["bold"]),
                  Paragraph("Suma", st["right_bold"])]]
@@ -95,10 +96,15 @@ def _settle_block(settle: dict, st: dict, width: float) -> list:
     """Decontarea lunii: impozitele reținute la plată, netul, ce s-a achitat și restul."""
     head = "Decontarea lunii" + ("" if settle["final"] else " (impozitele pe tot venitul lunii, cât se rețin la plată)")
     exemption = f" (scutirea {settle['exemption']})" if settle["exemption"] else ""
+    if settle.get("it_park_only"):  # IT Park: salariul impozitat final — fără rândurile goale de impozit și CNAM
+        taxes = [[Paragraph(f"<b>{_esc(settle['final_note'])}</b>: impozitul pe venit și prima CNAM nu se rețin", st["base"]), ""]]
+    else:
+        note = " (salariul din CIM — impozitat final, IT Park)" if settle.get("it_park") else ""
+        taxes = [[Paragraph("Prima de asigurare medicală (CNAM)", st["base"]), Paragraph(settle["cnam"], st["right"])],
+                 [Paragraph("Impozitul pe venit" + _esc(exemption + note), st["base"]), Paragraph(settle["income_tax"], st["right"])]]
     rows = [[Paragraph(head, st["bold"]), Paragraph("Suma", st["right_bold"])],
             [Paragraph("Total calculat", st["base"]), Paragraph(settle["gross"] or "0,00", st["right"])],
-            [Paragraph("Prima de asigurare medicală (CNAM)", st["base"]), Paragraph(settle["cnam"], st["right"])],
-            [Paragraph("Impozitul pe venit" + _esc(exemption), st["base"]), Paragraph(settle["income_tax"], st["right"])],
+            *taxes,
             [Paragraph("Alte rețineri", st["base"]), Paragraph(settle["deductions"], st["right"])],
             [Paragraph("Salariul lunii, net", st["bold"]), Paragraph(settle["net"] or "0,00", st["right_bold"])],
             [Paragraph("Achitat: avans", st["base"]), Paragraph(settle["paid_advance"], st["right"])],

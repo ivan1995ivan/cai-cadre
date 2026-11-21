@@ -386,6 +386,9 @@ class PayrollLine(models.Model):
     cas = models.DecimalField("CAS (angajator)", max_digits=12, decimal_places=2, default=ZERO)
     deductions = models.DecimalField("Alte rețineri", max_digits=12, decimal_places=2, default=ZERO)
     net = models.DecimalField("Brutul minus reținerile (înainte de impozit și CNAM)", max_digits=12, decimal_places=2, default=ZERO)
+    # regimul IT Park (CF art. 377 alin. (1)): salariul din CIM e impozitat final — fără impozit, CNAM și CAS; rămâne regimul
+    # lunii calculului și când se plătește într-o lună cu alt regim (art. 375)
+    it_park = models.BooleanField("Impozitat final — impozit unic IT Park", default=False)
     note = models.CharField("Observații", max_length=300, blank=True)
     sort = models.IntegerField(default=0)
 
@@ -458,6 +461,7 @@ class PaymentLine(models.Model):
     cnam = models.DecimalField("CNAM reținut", max_digits=12, decimal_places=2, default=ZERO)
     income_tax = models.DecimalField("Impozitul reținut", max_digits=12, decimal_places=2, default=ZERO)
     deductions = models.DecimalField("Alte rețineri", max_digits=12, decimal_places=2, default=ZERO)
+    final_gross = models.DecimalField("Din venit: salariul impozitat final (IT Park)", max_digits=12, decimal_places=2, default=ZERO)
     basis = models.JSONField("Sumele de la completare", default=dict, blank=True)
     manual = models.BooleanField("Corectat de mână", default=False)
     amount = models.DecimalField("Suma de plată (net)", max_digits=12, decimal_places=2, default=ZERO)
@@ -486,3 +490,53 @@ class PayslipDispatch(models.Model):
     class Meta:
         ordering = ["-sent_at", "-id"]
         verbose_name = "Trimiterea fluturașului"
+
+
+class FiscalRegime(models.Model):
+    """Regimul fiscal al întreprinderii, cu istoric: general sau rezident IT Park (Legea 77/2016; Codul fiscal, titlul X,
+    cap. 1, art. 367–379). Regimul nou se aplică din luna următoare obținerii / retragerii statutului (art. 375 alin. (1)) —
+    `date_from` e mereu prima zi a lunii; lunile vechi se calculează după regimul lor."""
+
+    REGIMES = [("general", "Regimul general"), ("it_park", "Rezident IT Park (impozitul unic)")]
+    regime = models.CharField("Regimul", max_length=10, choices=REGIMES, default="general")
+    date_from = models.DateField("În vigoare din (luna)")
+    status_date = models.DateField("Data obținerii / retragerii statutului", null=True, blank=True)
+    document = models.CharField("Temeiul (certificatul de rezident, decizia)", max_length=200, blank=True)
+    note = models.CharField("Observații", max_length=300, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ["-date_from"]
+        verbose_name = "Regimul fiscal"
+        constraints = [models.UniqueConstraint(fields=["date_from"], name="uniq_fiscal_regime_month")]
+
+    def __str__(self):
+        return f"{self.get_regime_display()} din {self.date_from:%m.%Y}"
+
+    def save(self, *args, **kwargs):
+        if self.date_from is None and self.status_date:
+            self.date_from = next_month(self.status_date)  # din luna următoare obținerii / retragerii statutului
+        if self.date_from:
+            self.date_from = self.date_from.replace(day=1)
+        super().save(*args, **kwargs)
+
+
+class ItParkMonth(models.Model):
+    """Datele lunii pentru impozitul unic (declarația IU17): venitul din vânzări îl scrie contabilul (HR nu-l are); numărul
+    angajaților și impozitul se calculează (apps.payroll.it_park)."""
+
+    year = models.PositiveSmallIntegerField("Anul")
+    month = models.PositiveSmallIntegerField("Luna")
+    sales_income = models.DecimalField("Venitul din vânzări al lunii (lei)", max_digits=14, decimal_places=2, null=True, blank=True)
+    submitted_on = models.DateField("IU17 depusă la", null=True, blank=True)
+    note = models.CharField("Observații", max_length=300, blank=True)
+    updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+    updated_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ["-year", "-month"]
+        verbose_name = "Impozitul unic IT Park — luna"
+        constraints = [models.UniqueConstraint(fields=["year", "month"], name="uniq_it_park_month")]
+
+    def __str__(self):
+        return f"Impozitul unic IT Park {self.month:02d}.{self.year}"

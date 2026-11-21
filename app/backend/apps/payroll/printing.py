@@ -30,9 +30,14 @@ def _lang(request):
 
 
 def _doc(payroll: Payroll) -> dict:
+    from .it_park import FINAL_NOTE, is_it_park
+
+    final = list(payroll.lines.values_list("it_park", flat=True))
     return {"number": payroll.number, "date": _d(payroll.date), "month": MONTHS[payroll.month], "year": payroll.year,
             "subdivision": payroll.subdivision.name_ro if payroll.subdivision_id else "toată întreprinderea",
-            "status": payroll.get_status_display(), "totals": {k: _money(v) for k, v in (payroll.totals or {}).items()}}
+            "status": payroll.get_status_display(), "totals": {k: _money(v) for k, v in (payroll.totals or {}).items()},
+            # IT Park: salariul din CIM e impozitat final — fără coloanele de impozit, dacă nu e nimic în regimul general
+            "it_park": is_it_park(payroll.year, payroll.month), "all_final": bool(final) and all(final), "final_note": FINAL_NOTE}
 
 
 def _line(ln: PayrollLine) -> dict:
@@ -48,13 +53,16 @@ def _line(ln: PayrollLine) -> dict:
             "rate": f"{float(info.get('rate', 1)) * 100:g}%", "salary": _money(info.get("base_salary")), "days": ts.get("days", ""),
             "hours": f"{ts.get('hours', 0):g}" if ts.get("hours") else "", "gross": _money(ln.gross), "taxable": _money(ln.taxable),
             "cnam_base": _money(ln.cnam_base), "cas": _money(ln.cas), "deductions": _money(ln.deductions), "net": _money(ln.net),
-            "accruals": acc, "deductions_list": ded, "iban": ln.employee.iban}
+            "accruals": acc, "deductions_list": ded, "iban": ln.employee.iban, "it_park": ln.it_park}
 
 
 def _settle(s: dict) -> dict:
     """Decontarea lunii a angajatului (payments.settlement), cu sumele scrise pentru tipar."""
+    from .it_park import FINAL_NOTE
+
     return {**{k: _money(s[k]) for k in ("gross", "deductions", "exemption", "cnam", "income_tax", "net", "paid_advance",
-                                          "paid_salary", "rest")}, "final": s["final"]}
+                                          "paid_salary", "rest")}, "final": s["final"],
+            "it_park": s.get("it_park", False), "it_park_only": s.get("it_park_only", False), "final_note": FINAL_NOTE}
 
 
 def month_lines(year: int, month: int, employee_ids) -> list:

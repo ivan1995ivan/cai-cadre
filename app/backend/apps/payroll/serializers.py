@@ -7,14 +7,56 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from . import dependencies, explain, formula
-from .models import (EmployeePayItem, ExemptionDependent, ExemptionRequest, OccupationPayItem, PayConstant, PayItemChange,
-                     PayItemChangeLine, Payment, PaymentLine, Payroll, PayrollItem, PayrollLine, PayType)
+from .models import (EmployeePayItem, ExemptionDependent, ExemptionRequest, FiscalRegime, ItParkMonth, OccupationPayItem, PayConstant,
+                     PayItemChange, PayItemChangeLine, Payment, PaymentLine, Payroll, PayrollItem, PayrollLine, PayType)
 
 
 class PayConstantSerializer(serializers.ModelSerializer):
     class Meta:
         model = PayConstant
         fields = ["id", "code", "name", "value", "date_from", "source", "unit"]
+
+
+class FiscalRegimeSerializer(serializers.ModelSerializer):
+    """Regimul fiscal cu „în vigoare din” (luna): gol — luna următoare datei obținerii / retragerii statutului (CF art. 375)."""
+
+    regime_label = serializers.CharField(source="get_regime_display", read_only=True)
+
+    class Meta:
+        model = FiscalRegime
+        fields = ["id", "regime", "regime_label", "date_from", "status_date", "document", "note"]
+        extra_kwargs = {"date_from": {"required": False, "allow_null": True}}
+
+    def validate(self, attrs):
+        from .models import next_month
+
+        date_from = attrs.get("date_from", getattr(self.instance, "date_from", None))
+        status_date = attrs.get("status_date", getattr(self.instance, "status_date", None))
+        if date_from is None:
+            if status_date is None:
+                raise serializers.ValidationError({"date_from": "Dați luna de la care se aplică regimul sau data obținerii statutului."})
+            date_from = next_month(status_date)
+        date_from = date_from.replace(day=1)
+        if status_date and date_from < next_month(status_date):
+            raise serializers.ValidationError({"date_from": "Regimul nou se aplică din luna următoare obținerii / retragerii "
+                                                            "statutului (Codul fiscal, art. 375)."})
+        clash = FiscalRegime.objects.filter(date_from=date_from).exclude(pk=getattr(self.instance, "pk", None))
+        if clash.exists():
+            raise serializers.ValidationError({"date_from": f"Pentru luna {date_from:%m.%Y} regimul e deja dat."})
+        attrs["date_from"] = date_from
+        return attrs
+
+
+class ItParkMonthSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ItParkMonth
+        fields = ["id", "year", "month", "sales_income", "submitted_on", "note"]
+        read_only_fields = ["year", "month"]
+
+    def validate_sales_income(self, value):
+        if value is not None and value < 0:
+            raise serializers.ValidationError("Venitul nu poate fi negativ.")
+        return value
 
 
 class PayTypeSerializer(serializers.ModelSerializer):
@@ -352,6 +394,7 @@ class ExemptionRequestSerializer(serializers.ModelSerializer):
         for d in obj.dependents.all():
             if not d.income_ok:
                 out.append(f"{d.name}: venitul anual peste {limit:g} lei — scutirea pentru această persoană nu se acordă.")
+        out += it_park_warning(obj)
         return out
 
     def validate(self, attrs):
@@ -438,6 +481,28 @@ class PayrollItemSerializer(serializers.ModelSerializer):
         read_only_fields = ["taxable_part", "manual", "sort"]
 
 
+def it_park_warning(req) -> list:
+    """Lunile în regim IT Park din perioada cererii: pe salariul din regim scutirile nu se acordă (CF art. 377 alin. (2));
+    se acordă doar în lunile din regimul general, iar în luna cu venit în ambele regimuri — deloc."""
+    from datetime import date
+
+    from . import it_park
+    from .models import next_month
+
+    if not it_park.ever_it_park():
+        return []
+    start = (req.date_from or next_month(req.date)).replace(day=1)
+    today = timezone.localdate()
+    end = req.date_to or date(max(today.year, start.year), 12, 31)
+    months = sorted(it_park.it_park_months(start, end))
+    if not months:
+        return []
+    first, last = months[0], months[-1]
+    span = f"{first[1]:02d}.{first[0]}" + (f" – {last[1]:02d}.{last[0]}" if last != first else "")
+    return [f"Regimul IT Park ({span}, {len(months)} luni): în aceste luni scutirile nu se acordă — salariul e impozitat final "
+            "(Codul fiscal, art. 377 alin. (2)). Cererea se aplică doar în lunile din regimul general."]
+
+
 class PayrollLineSerializer(serializers.ModelSerializer):
     items = PayrollItemSerializer(many=True, read_only=True)
     employee_name = serializers.CharField(source="employee.full_name", read_only=True)
@@ -445,7 +510,7 @@ class PayrollLineSerializer(serializers.ModelSerializer):
     class Meta:
         model = PayrollLine
         fields = ["id", "payroll", "employee", "employee_name", "employment", "info", "gross", "taxable", "cnam_base", "cas",
-                  "deductions", "net", "note", "sort", "items"]
+                  "deductions", "net", "it_park", "note", "sort", "items"]
 
 
 class PayrollSerializer(serializers.ModelSerializer):
@@ -453,15 +518,22 @@ class PayrollSerializer(serializers.ModelSerializer):
     subdivision_name = serializers.SerializerMethodField()
     status_label = serializers.CharField(source="get_status_display", read_only=True)
     lines_count = serializers.IntegerField(read_only=True, default=0)
+    it_park = serializers.SerializerMethodField()
 
     class Meta:
         model = Payroll
         fields = ["id", "deletion_mark", "number", "date", "year", "month", "subdivision", "subdivision_name", "status", "status_label", "totals",
-                  "note", "lines_count", "created_at", "calculated_at", "approved_at"]
+                  "note", "lines_count", "created_at", "calculated_at", "approved_at", "it_park"]
         read_only_fields = ["number", "status", "totals", "calculated_at", "approved_at"]
 
     def get_subdivision_name(self, obj):
         return obj.subdivision.name_ro if obj.subdivision_id else ""
+
+    def get_it_park(self, obj):
+        """Luna calculului e în regimul IT Park (salariul din CIM — impozitat final)."""
+        from . import it_park
+
+        return it_park.is_it_park(obj.year, obj.month)
 
     def validate(self, attrs):
         month = attrs.get("month", getattr(self.instance, "month", 1))
@@ -477,8 +549,8 @@ class PaymentLineSerializer(serializers.ModelSerializer):
     class Meta:
         model = PaymentLine
         fields = ["id", "payment", "employee", "employee_name", "tab_number", "method", "iban", "gross", "exemption", "cnam",
-                  "income_tax", "deductions", "amount", "manual", "note", "sort"]
-        read_only_fields = ["payment", "employee", "manual", "sort"]
+                  "income_tax", "deductions", "amount", "final_gross", "manual", "note", "sort"]
+        read_only_fields = ["payment", "employee", "manual", "sort", "final_gross"]
 
     def validate_amount(self, value):
         if value < 0:
@@ -493,12 +565,19 @@ class PaymentSerializer(serializers.ModelSerializer):
     method_label = serializers.CharField(source="get_method_display", read_only=True)
     status_label = serializers.CharField(source="get_status_display", read_only=True)
     totals = serializers.SerializerMethodField()
+    it_park = serializers.SerializerMethodField()
 
     class Meta:
         model = Payment
         extra_kwargs = {"year": {"required": False}, "month": {"required": False}}
         fields = ["id", "deletion_mark", "number", "date", "year", "month", "kind", "kind_label", "payroll", "payroll_number", "method",
-                  "method_label", "status", "status_label", "paid_on", "reference", "note", "totals", "created_at"]
+                  "method_label", "status", "status_label", "paid_on", "reference", "note", "totals", "created_at", "it_park"]
+
+    def get_it_park(self, obj):
+        """Luna pentru care se plătește e în regimul IT Park: salariul din CIM se plătește fără reținerea impozitului și CNAM."""
+        from . import it_park
+
+        return it_park.is_it_park(obj.year, obj.month)
         read_only_fields = ["number", "status", "paid_on"]
 
     def get_totals(self, obj):

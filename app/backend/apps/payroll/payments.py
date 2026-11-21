@@ -4,6 +4,11 @@ pentru bancă, decontarea lunii pe angajat (fluturașul, cabinetul) și soldul s
 Calculul salariului (engine) dă pe fiecare angajat brutul lunii, baza impozitului, baza CNAM și celelalte rețineri.
 Impozitele se socotesc aici, cumulat pe lună: la fiecare plată se ia tot venitul plătit în lună până atunci (inclusiv
 avansul), se socotesc CNAM, scutirea lunii și impozitul pe el și se reține diferența față de ce s-a reținut deja.
+
+Regimul IT Park (apps.payroll.it_park): salariul din CIM calculat într-o lună în regim e impozitat final — bazele lui sunt 0,
+deci nu se reține nici CNAM, nici impozitul, iar scutirea nu se acordă; avansul unei luni în regim se plătește întreg. Partea
+plătită din acest salariu se ține pe rând (`final_gross`): IPC21 (tabelul 1), IALS21 și anexa 8 o lasă deoparte, ISAPTI17 și
+nota anuală o adună. Regimul e al lunii pentru care se plătește, nu al datei plății (CF art. 375).
 """
 import csv
 import io
@@ -16,6 +21,7 @@ from rest_framework.exceptions import ValidationError
 
 from apps.staff.models import Employee, Employment
 
+from . import it_park
 from .engine import MAIN_KINDS, Constants, month_bounds, q
 from .models import Payment, PaymentLine, PayrollLine
 
@@ -28,7 +34,7 @@ def _method(employee: Employee) -> str:
     return "card" if (employee.iban or "").strip() else "cash"
 
 
-FIELDS = ("gross", "exemption", "cnam", "income_tax", "deductions", "amount")
+FIELDS = ("gross", "exemption", "cnam", "income_tax", "deductions", "amount", "final_gross")
 TAXES = ("exemption", "cnam", "income_tax")
 
 
@@ -43,7 +49,7 @@ def _rates(c: Constants) -> tuple:
 def accrued(year: int, month: int, payroll=None, employee_ids=None) -> dict:
     """Ce s-a calculat în lună pe angajat (calculele aprobate; cu `payroll` — doar acela): brutul, baza impozitului,
     baza CNAM și celelalte rețineri."""
-    out = defaultdict(lambda: {"gross": ZERO, "taxable": ZERO, "cnam_base": ZERO, "deductions": ZERO})
+    out = defaultdict(lambda: {"gross": ZERO, "taxable": ZERO, "cnam_base": ZERO, "deductions": ZERO, "final": ZERO})
     qs = PayrollLine.objects.filter(payroll__year=year, payroll__month=month, payroll__status="approved",
                                     payroll__deletion_mark=False)
     if payroll is not None:
@@ -52,8 +58,10 @@ def accrued(year: int, month: int, payroll=None, employee_ids=None) -> dict:
         qs = qs.filter(employee_id__in=employee_ids)
     for ln in qs:
         a = out[ln.employee_id]
-        for f in a:
+        for f in ("gross", "taxable", "cnam_base", "deductions"):
             a[f] += getattr(ln, f)
+        if ln.it_park:
+            a["final"] += ln.gross  # salariul impozitat final (IT Park)
     return out
 
 
@@ -108,19 +116,34 @@ def salary_due(payment: Payment) -> dict:
         deductions = max(min(a["deductions"] - p["deductions"], s["deductions"]), ZERO)
         cum = month_taxes(a, p["gross"] + gross, c, exemptions.get(emp, ZERO))
         row = {"gross": gross, "deductions": deductions, **{f: cum[f] - p[f] for f in TAXES}}
+        row["final_gross"] = final_part(a, p["gross"] + gross, p["final_gross"], gross)
         row["amount"] = row["gross"] - row["cnam"] - row["income_tax"] - row["deductions"]
         if row["amount"] > 0:
             due[emp] = row
     return due
 
 
-def advance_taxes(gross: Decimal, c: Constants) -> dict:
-    """Reținerea din avans: CNAM 9 % din sumă, impozitul 12 % din rest (scutirea lunii se ia la plata salariului)."""
-    cnam_pct, tax_pct = _rates(c)
+def final_part(a: dict, paid_total: Decimal, final_before: Decimal, gross: Decimal) -> Decimal:
+    """Partea impozitată final (IT Park) din plata de față: în proporția salariului din regim în brutul lunii, cumulat pe lună,
+    minus ce s-a plătit deja din el; cel mult plata."""
+    if a["gross"] <= 0 or not a.get("final"):
+        return ZERO
+    cum = q(min(paid_total, a["gross"]) * a["final"] / a["gross"])
+    return min(max(cum - final_before, ZERO), gross)
+
+
+def advance_taxes(gross: Decimal, c: Constants, final: bool = False) -> dict:
+    """Reținerea din avans: CNAM 9 % din sumă, impozitul 12 % din rest (scutirea lunii se ia la plata salariului). În luna
+    în regim IT Park avansul (din salariul CIM) e impozitat final — se plătește întreg."""
     gross = q(gross)
+    if final:
+        return {"gross": gross, "exemption": ZERO, "cnam": ZERO, "income_tax": ZERO, "deductions": ZERO, "amount": gross,
+                "final_gross": gross}
+    cnam_pct, tax_pct = _rates(c)
     cnam = q(gross * cnam_pct)
     tax = q(max(gross - cnam, ZERO) * tax_pct)
-    return {"gross": gross, "exemption": ZERO, "cnam": cnam, "income_tax": tax, "deductions": ZERO, "amount": gross - cnam - tax}
+    return {"gross": gross, "exemption": ZERO, "cnam": cnam, "income_tax": tax, "deductions": ZERO, "amount": gross - cnam - tax,
+            "final_gross": ZERO}
 
 
 def advance_due(payment: Payment) -> dict:
@@ -138,11 +161,12 @@ def advance_due(payment: Payment) -> dict:
     for ln in qs:
         already[ln.employee_id] += ln.gross
     due = {}
+    final = it_park.is_it_park(year, month)
     jobs = Employment.objects.filter(kind__in=MAIN_KINDS, status="active", date_from__lte=first).select_related("employee")
     for job in jobs:
         gross = (job.base_salary * job.rate * pct / 100).quantize(Decimal("1"), rounding=ROUND_HALF_UP) - already[job.employee_id]
         if gross > 0:
-            due[job.employee_id] = advance_taxes(gross, c)
+            due[job.employee_id] = advance_taxes(gross, c, final=final)
     return due
 
 
@@ -201,14 +225,15 @@ def update_line(line: PaymentLine, data: dict) -> PaymentLine:
     proportional = payment.kind == "salary" and basis.get("gross", ZERO) > 0
     c = Constants(payment.date)
     cnam_pct, tax_pct = _rates(c)
+    final_advance = payment.kind == "advance" and it_park.is_it_park(payment.year, payment.month)
 
     def taxes_for(gross: Decimal) -> dict:
         if proportional:
             k = gross / basis["gross"]
             return {"exemption": q(basis.get("exemption", ZERO) * k), "cnam": q(basis.get("cnam", ZERO) * k),
-                    "income_tax": q(basis.get("income_tax", ZERO) * k)}
-        t = advance_taxes(gross, c)
-        return {"exemption": ZERO, "cnam": t["cnam"], "income_tax": t["income_tax"]}
+                    "income_tax": q(basis.get("income_tax", ZERO) * k), "final_gross": min(q(basis.get("final_gross", ZERO) * k), gross)}
+        t = advance_taxes(gross, c, final=final_advance)
+        return {"exemption": ZERO, "cnam": t["cnam"], "income_tax": t["income_tax"], "final_gross": t["final_gross"]}
 
     if "method" in data:
         if data["method"] not in ("card", "cash"):
@@ -229,6 +254,8 @@ def update_line(line: PaymentLine, data: dict) -> PaymentLine:
         if proportional:
             base_net = basis["gross"] - basis.get("cnam", ZERO) - basis.get("income_tax", ZERO)
             gross = basis["gross"] * net / base_net if base_net > 0 else net
+        elif final_advance:
+            gross = net
         else:
             gross = net / ((1 - cnam_pct) * (1 - tax_pct))
         for f, v in taxes_for(q(gross)).items():
@@ -239,6 +266,7 @@ def update_line(line: PaymentLine, data: dict) -> PaymentLine:
         setattr(line, f, _dec(data[f], f))
     if manual_taxes or any(f in data for f in ("gross", "amount", "deductions")):
         line.manual = True
+    line.final_gross = min(line.final_gross, line.gross)
     line.amount = line.gross - line.cnam - line.income_tax - line.deductions
     if line.amount < 0:
         raise ValidationError({"amount": "Reținerile depășesc suma brută."})
@@ -278,7 +306,9 @@ def settlement(year: int, month: int, employee_ids=None) -> dict:
         net = a["gross"] - a["deductions"] - taxes["cnam"] - taxes["income_tax"]
         out[emp] = {"gross": a["gross"], "taxable": a["taxable"], "deductions": a["deductions"], **taxes, "net": net,
                     "paid_advance": by_kind[emp]["advance"], "paid_salary": by_kind[emp]["salary"],
-                    "rest": net - p["amount"], "final": final}
+                    "rest": net - p["amount"], "final": final,
+                    # IT Park: salariul impozitat final (tot sau o parte — cu un contract de prestări servicii alături)
+                    "it_park": a["final"] > 0, "it_park_only": a["final"] > 0 and a["final"] >= a["gross"]}
     return out
 
 

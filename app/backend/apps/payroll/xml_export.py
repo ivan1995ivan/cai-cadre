@@ -10,6 +10,11 @@ Regulile de completare vin din instrucțiunile oficiale:
   muncă (01 angajare pe durată nedeterminată, 02 încetare, 03 suspendare, 04 reluare, 05 angajare pe durată determinată),
   col. 9 motivul eliberării (111–116), col. 10 data.
 Rubricile pe care schema le cere, dar care nu privesc salariile întreprinderii (dividende, royalty, nerezidenți...), se pun 0.
+
+Regimul IT Park (apps.payroll.it_park): bifa „Rezidentul parcurilor IT” — elementul `table1/it/flag1` al structurii folosite
+(numele elementului o arată; schema XSD oficială nu e în depozit — de verificat); tabelul 1 fără salariile impozitate final;
+în tabelul 2 persoanele cu CIM în regim au venitul asigurat din Legea 77/2016 (162 / 160 / 15311), cu tariful și CAS 0.
+IALS21 cuprinde doar plățile din regimul general; salariile din regim merg în ISAPTI17.
 """
 from collections import defaultdict
 from datetime import date, timedelta
@@ -95,19 +100,24 @@ def paid_in_month(year: int, month: int) -> dict:
     from .models import PaymentLine
 
     first, last = month_bounds(year, month)
-    out = {"gross": ZERO, "income_tax": ZERO, "cnam": ZERO}
+    out = {"gross": ZERO, "income_tax": ZERO, "cnam": ZERO, "final": ZERO}
     for ln in PaymentLine.objects.filter(payment__status="paid", payment__deletion_mark=False, payment__paid_on__gte=first,
                                          payment__paid_on__lte=last):
-        for f in out:
-            out[f] += getattr(ln, f)
+        out["gross"] += ln.gross - ln.final_gross  # salariul impozitat final (IT Park) nu intră în tabelul 1
+        out["final"] += ln.final_gross
+        out["income_tax"] += ln.income_tax
+        out["cnam"] += ln.cnam
     return out
 
 
 def ipc21_rows(year: int, month: int) -> dict:
     """Tabelul 2 pe persoane și categorii (baza CAS din calculele aprobate ale lunii) + tabelul 1 (venitul achitat în lună
     și impozitele reținute la achitare, din îndreptările spre plată)."""
+    from . import it_park
+
     first, last = month_bounds(year, month)
-    cas_pct = Constants(last)("cas_employer_pct", "24")
+    c = Constants(last)
+    cas_pct = c("cas_employer_pct", "24")
     lines = (PayrollLine.objects.filter(payroll__status="approved", payroll__year=year, payroll__month=month)
              .select_related("employee", "employment__occupation").prefetch_related("items__pay_type")
              .order_by("employee__last_name", "employee__first_name", "employment_id"))
@@ -124,7 +134,15 @@ def ipc21_rows(year: int, month: int) -> dict:
         leave_base = ZERO
         groups = defaultdict(lambda: {"base": ZERO, "start": None, "end": None, "code": ""})
         sick = accident = ZERO
+        final_lines = [ln for ln in emp_lines if ln.it_park]
+        it_code = ""
+        if final_lines:  # IT Park: venitul asigurat (o dată pe persoană), pe categorii după zile; CAS — în impozitul unic
+            it_rows, it_code = it_park.ipc21_person_rows(e, final_lines, first, last, c, absences)
+            for cat, start, end, base, paid_sick in it_rows:
+                rows.append(_t2(n, e, start, end, cat, ZERO, it_code, base, paid_sick, it_park=True))
         for ln in emp_lines:
+            if ln.it_park:
+                continue
             job = ln.employment
             category = KIND_CATEGORY.get(job.kind, "101")
             g = groups[category]
@@ -147,13 +165,15 @@ def ipc21_rows(year: int, month: int) -> dict:
                     leave_base += it.amount if t.cas else ZERO
                 elif t.cas:
                     g["base"] += it.amount
-        main_code = next((g["code"] for g in groups.values() if g["code"]), "")
+        main_code = next((g["code"] for g in groups.values() if g["code"]), "") or it_code
         for category, g in groups.items():
             rows.append(_t2(n, e, g["start"], g["end"], category, cas_pct, g["code"] or main_code, g["base"], ZERO))
         for a in absences:
             cat = ABSENCE_CATEGORY.get(a.kind)
             if cat is None:
                 continue
+            if final_lines and a.kind in ("annual", "extra", "unpaid"):
+                continue  # în regim: concediul plătit e în venitul asigurat, cel neplătit pe toată luna — 159 de mai sus
             base = leave_base if a.kind == "annual" else ZERO
             leave_base = ZERO if a.kind == "annual" else leave_base
             rows.append(_t2(n, e, max(a.date_from, first), min(a.date_to, last), cat, cas_pct if base else ZERO, main_code,
@@ -169,13 +189,15 @@ def ipc21_rows(year: int, month: int) -> dict:
     t10 = sum((r["c10"] for r in rows), ZERO)
     t11 = sum((r["c11"] for r in rows), ZERO)
     return {"year": year, "month": month, "rows": rows, "gross": gross, "tax": tax, "cnam": cnam, "t9": t9, "t10": t10,
-            "t11": t11, "cas_pct": cas_pct}
+            "t11": t11, "cas_pct": cas_pct, "it_park": it_park.is_it_park(year, month), "final": paid["final"],
+            "insured": it_park.insured_income(c)}
 
 
-def _t2(n, e, start, end, category, pct, code, base, sick) -> dict:
+def _t2(n, e, start, end, category, pct, code, base, sick, it_park=False) -> dict:
     base = Decimal(base).quantize(CENT, rounding=ROUND_HALF_UP)
     return {"c1": n, "c2": e.full_name(), "c3": e.idnp or "0", "c4": e.cpas or "0", "c5": start, "c6": end, "c7": category,
-            "c71": pct, "c8": code, "c9": base, "c10": Decimal(sick).quantize(CENT), "c11": (base * Decimal(pct) / 100).quantize(CENT, rounding=ROUND_HALF_UP)}
+            "c71": pct, "c8": code, "c9": base, "c10": Decimal(sick).quantize(CENT),
+            "c11": (base * Decimal(pct) / 100).quantize(CENT, rounding=ROUND_HALF_UP), "it_park": it_park}
 
 
 def ipc21_xml(year: int, month: int) -> HttpResponse:
@@ -196,7 +218,7 @@ def ipc21_xml(year: int, month: int) -> HttpResponse:
     _sub(ds, "flag", "1")  # primară
     _sub(ds, "flag1", "0")  # de corectare
     _sub(ds, "flag2", "0")
-    _sub(_sub(t1, "it"), "flag1", "0")
+    _sub(_sub(t1, "it"), "flag1", "1" if data["it_park"] else "0")  # „Rezidentul parcurilor IT”
     cf = _sub(t1, "cf")
     _sub(cf, "flag1", "0")
     _sub(cf, "flag2", "0")
@@ -264,9 +286,12 @@ def ials21_rows(year: int) -> dict:
 
     for ln in PaymentLine.objects.filter(payment__status="paid", payment__deletion_mark=False,
                                          payment__paid_on__year=year).select_related("employee", "payment"):
+        general = ln.gross - ln.final_gross  # salariul impozitat final (IT Park) merge în ISAPTI17, nu aici
+        if general <= 0 and not ln.cnam and not ln.income_tax:
+            continue
         p = people[ln.employee_id]
         names[ln.employee_id] = ln.employee
-        p["income"] += ln.gross
+        p["income"] += general
         p["cnam"] += ln.cnam
         p["tax"] += ln.income_tax
         if ln.exemption:

@@ -5,6 +5,9 @@
 - Pe lună: suma anuală a scutirilor valabile în lună / 12 — P sau M (până la luna renunțării inclusiv), Sm, câte N / H
   pentru fiecare întreținut al cărui drept e valabil în lună (din luna următoare apariției lui, art. 35 alin. (4)).
   Scutirea folosită nu trece de venitul lunii (payments.month_taxes).
+- IT Park (CF art. 377 alin. (2); SFS 37.30, 37.42): în luna în care angajatul are salariu calculat în regim (impozitat
+  final) scutirile nu se acordă deloc — nici pe venitul din regimul general al aceleiași luni; se acordă doar în lunile din
+  regimul general.
 - P și M nu se acordă dacă venitul anual impozabil trece de plafon (art. 33 alin. (1), 360 000 lei): angajatul depune
   cererea de renunțare (din luna următoare ei, fără recalcularea lunilor trecute); la angajator, când venitul anului de aici
   trece de plafon, P / M se opresc singure din luna aceea. Alerta „se apropie de plafon” — de la % din constante.
@@ -60,14 +63,25 @@ def income_before(year: int, month: int, employee_ids) -> dict:
     return out
 
 
+def it_park_employees(year: int, month: int, employee_ids) -> set:
+    """Angajații cu salariu calculat în regimul IT Park în lună (calculele aprobate)."""
+    return set(PayrollLine.objects.filter(employee_id__in=list(employee_ids), payroll__year=year, payroll__month=month,
+                                          payroll__status="approved", payroll__deletion_mark=False, it_park=True)
+               .values_list("employee_id", flat=True))
+
+
 def month_parts(year: int, month: int, c, month_taxable: dict) -> dict:
     """Pe angajat: {cod: suma anuală} valabile în lună; P / M cad dacă venitul anului de aici (cu luna) trece de plafon."""
     first = date(year, month, 1)
     requests = requests_in(first, month_taxable)
     before = income_before(year, month, requests)
     limit = c("exemption_income_limit", "360000")
+    final = it_park_employees(year, month, requests)
     out = {}
     for emp, req in requests.items():
+        if emp in final:  # salariu impozitat final în lună: fără scutiri
+            out[emp] = {k: ZERO for k in CODES}
+            continue
         # dreptul la P / M e doar pentru venitul anual impozabil MAI MIC decât plafonul: la exact 360 000 — fără scutire
         over = bool(limit) and before[emp] + month_taxable.get(emp, ZERO) >= limit
         out[emp] = annual_parts(req, first, c, personal_allowed=not over)
