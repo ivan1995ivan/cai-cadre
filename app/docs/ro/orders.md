@@ -30,6 +30,14 @@ clasificatorul funcțiilor, butonul cu portmoneul) când alegeți funcția; rân
 pune din nou. Un tabel lăsat gol de mână nu mai ia nimic din funcție. Rândurile apar și în textul punctului („Acumulări și
 rețineri: se stabilește …”). Ordinul de salariu / sporuri poate avea doar tabelul, fără să schimbe raportul de muncă.
 
+**Remunerarea pe funcție** (angajare, modificarea salariului / condițiilor, cumul cu raport separat): *Modalitatea de
+remunerare* (salariu lunar / tarif orar / pe tipuri de ore / mixt), *Tariful orar* și tabelul **„Tarife pe tipuri de ore”**
+(adaugă / modifică / oprește, tariful pe oră, orele garantate pe lună, de la / până la) — la angajare se completează din
+tarifele-tip ale funcției. **Cumul de funcții / Suplinire temporară / Interimat**: „Cum se exercită” — *pe același contract*
+(CM art. 156; înregistrarea pe raportul de bază cu plata ei: % din salariul propriu / al funcției cumulate, sumă fixă, pe ore;
+„Încheie mai devreme” încheie o cumulare existentă) sau *raport de muncă separat* (cumul intern / suplinire cu norma,
+salariul și pontajul lui). Vezi *Tipuri de ore, tarife pe funcție și orele garantate*.
+
 **Semnarea** dă numărul în registru (de ex. 125-p pentru personal, 38-c pentru concedii, 12-d pentru deplasări; fără sufix
 — ordinele de bază) și aplică ordinul în dosare: angajarea, transferul, modificarea normei sau a salariului, suplinirea,
 suspendarea, încetarea, concediile, deplasările și trimiterea la formare profesională, sancțiunile, aprobarea statelor.
@@ -38,7 +46,7 @@ La semnare rândurile tabelului „Acumulări și rețineri” intră în fila �
 
 **Anularea** se face prin ordin: „Anulează prin ordin” face ciorna ordinului de anulare; la semnarea ei efectele ordinului
 anulat se întorc înapoi (angajarea dispare, transferul revine, concediul se șterge, eliberarea se anulează, rândurile din fila
-„Salariu” puse de ordin dispar, iar cele închise sau oprite de el se redeschid). Dacă un rând pus de ordin a fost schimbat
+„Salariu”, tarifele pe tipuri de ore și cumulările puse de ordin dispar, iar cele închise sau oprite de el se redeschid). Dacă un rând pus de ordin a fost schimbat
 după aceea de alt document, anularea se oprește — anulați întâi documentul de după.
 
 **Tipar:** ordinul cu antetul întreprinderii, vizele și tabelul „Am luat cunoștință”; **extrasul** pentru un angajat

@@ -102,6 +102,23 @@ pornească de unde s-a rămas, nu de la zero.
   ISAPTI17 (fără scheme XML), tag-ul XML al bifei, tariful / CAS 0 la 162, zilele de boală acoperite,
   maternitatea la minim; ucenicia nu e un fel de raport în program.
 
+- **S4b „tipurile de ore și remunerarea pe funcție” — gata** (2026-11-21, cererea clientului §2.6): clasificatorul
+  `worktime.HourType` (INSTR, EXAM livrate; grupa, legătura cu orele lucrate within / added / none, pe zile / pe lună,
+  profilul, tipul de calcul); pe raport — **modalitatea de remunerare** cu istoric (`Employment.pay_mode` salary / hourly /
+  hour_types / mixed, `hourly_rate`, în `EmploymentHistory`), **tarifele pe tipuri de ore** (`JobHourRate`: tarif, ore
+  garantate, de la / până la, din ordin — tabelul „Tarife pe tipuri de ore”, `apps/worktime/rates.py` — sau de mână; tarifele-tip
+  ale funcției `OccupationHourRate`); orele pe tipuri în pontaj (`TimesheetLine.typed_hours`, pe zile / total, import Excel,
+  tipar, export); **garanția = minimul plătit**, redusă proporțional cu zilele lucrătoare fără raport / tarif, suspendarea și
+  absențele din setarea `guarantee_absences` (implicit toate concediile și boala; deplasarea și formarea nu) —
+  `apps/worktime/hour_types.py`; salariul: tipul ORE („Ore pe tipuri”), variabilele `Ore.COD` / `OrePlatite.COD` /
+  `Garantat.COD` / `Tarif.COD`; **cumularea funcțiilor / suplinirea / interimatul pe același CIM (CM art. 156)** =
+  `staff.FunctionCombination` pe raportul de bază (% propriu / % al funcției / sumă fixă / pe ore), separat de cumul (raport
+  propriu); ordinele de cumul / suplinire / interimat: „pe același contract” (implicit) sau „raport separat”; `combination_pct`
+  mutat în înregistrări (migrația staff 0007) și scos; CUMUL redenumit; `app/docs/ro|ru/worktime/hour-types.md`. Verificat:
+  236 de teste, typecheck, build, capturi `s4b-*` (RO / RU). **De verificat de om:** numerotarea articolelor despre cumul în CM
+  (capitolul „Munca prin cumul”, art. 267 și urm.?); lista absențelor care reduc garanția (am pus și maternitatea, studiile,
+  zilele libere — după principiul „tot ce nu e muncă”); sporurile de noapte / sărbătoare pe orele de zbor — S6.
+
 ## Următorii pași (de aici pornește sesiunea următoare)
 
 0. **Deschiderea**: (a) ~~Public Hostname~~ — făcut. (b) asistentul de

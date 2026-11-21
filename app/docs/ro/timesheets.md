@@ -24,12 +24,20 @@ lunare” și „peste normă” (art. 158). Dacă graficul pe ture e planificat
 suplimentare. Treceți cu mouse-ul peste coloana „±” — se vede împărțirea. Evidența globală pe o perioadă mai lungă decât luna
 (CM art. 99) — într-o etapă următoare.
 
+**Orele pe tipuri** (instruire, examinare, zbor…): coloanele de după zile — tipurile cu tarif pe raporturile din tabelă,
+cele scrise și cele „pentru toți”. Se scriu de mână (clic pe celulă: pe zile sau total pe lună) sau din Excel („Ore pe tipuri
+din Excel”, cu încercare înainte); rămân la recalculare. Celula arată orele efective și garanția (*garantat / disponibil /
+efectiv / de plată* — la mouse). Sub numele angajatului — remunerarea raportului: „salariu + tarife: ZBOR”, „cumulare:
+Instructor — 30 %”. Vezi *Tipuri de ore, tarife pe funcție și orele garantate*.
+
 **Fluxul**: ciornă (subdiviziunea) → transmis la resurse umane → **închis** (nu se mai schimbă; pleacă la salarizare).
 Închiderea și redeschiderea le face cine are dreptul „Timp de muncă → aprobare”.
 
 **Exportul în Excel** (butonul din lista lunii): un fișier cu toate tabelele lunii — foaia „Pontaj” cu totalurile pe
 fiecare raport de muncă (nr. de tabel, IDNP, subdiviziunea, funcția, tipul, norma, zile, ore, noapte, sărbători, norma,
-suplimentare, nelucrate, zilele pe notații) și foaia „Zile” cu celulele pe zile.
+suplimentare, nelucrate, zilele pe notații, orele pe tipuri: efective, garantate, de plată), foaia „Zile” cu celulele pe zile
+și foaia „Ore pe tipuri” (orele pe tipuri pe zile sau totalul lunii).
 
-**Tipar**: formularul tabelei (două rânduri pe angajat: orele / notația și orele de noapte), cu legenda notațiilor și
+**Tipar**: formularul tabelei (două rânduri pe angajat: orele / notația și orele de noapte; coloanele tipurilor de ore —
+efective → de plată), cu legenda notațiilor și
 semnăturile șefului subdiviziunii și ale celui care a întocmit-o.

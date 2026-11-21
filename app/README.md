@@ -4,6 +4,9 @@ Evidența cadrelor și salarizarea pentru **întreprinderile private** din Repub
 dosarul angajatului (fișa MR-2), toate tipurile de ordine, concedii, timp de muncă, salariu (calcul, plată, achitare,
 IPC21 / IALS21 / IRM19), rapoarte și notificări, forme de tipar cu antetul întreprinderii (logo, denumirea cu forma juridică,
 IDNO, CAEM, adresa, contactele, contul bancar) și semnăturile din Constante. Interfață RO / RU / EN.
+Remunerarea se pune pe fiecare funcție (raport de muncă): salariu lunar, tarif orar, tarife pe tipuri de ore (zbor,
+instruire, examinare…) cu orele garantate sau mixt; cumularea funcțiilor / suplinirea pe același contract (CM art. 156) e
+separată de cumul — [docs/ro/worktime/hour-types.md](docs/ro/worktime/hour-types.md).
 
 Produsul a fost făcut la început pentru un spital de stat (vezi istoricul de mai jos și [PLAN.md](PLAN.md)); trecerea la
 sectorul privat — [PLAN-SRL.md](PLAN-SRL.md) (etapa S1: fără Stemă, fondator și actele de stat).

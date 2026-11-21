@@ -225,9 +225,9 @@ zbor). Ce cere:
 Precizat de Anatol (2026-11-21): **fiecare tip de ore are tariful lui pe oră** (zbor, instruire, examinare …);
 **orele garantate sunt un minim plătit**, nu o sumă fixă: plătite = max(orele efective, orele garantate) — garantat 50,
 efectiv 34 → se plătesc 50; efectiv 54 → se plătesc 54. Garanția se pune pe raport (pe funcție), pe tipul de ore, pe lună
-(proporțional cu zilele lucrate în luna angajării / eliberării și cu absențele care o suspendă — de stabilit la S4b cu
-clientul; implicit: proporțional cu zilele raportului în lună, fără reducere pentru concediul de odihnă plătit din medie
-— de confirmat).
+(hotărât la S4b: proporțional cu zilele lucrătoare în care raportul există și cu zilele de absență — concediul de odihnă, care
+se plătește din medie, boala, concediul neplătit, suspendarea, îngrijirea copilului…, lista e o setare; deplasarea și formarea
+profesională nu reduc).
 
 Răspunsul în produs (etapa **S4b**, comună pentru fabrică, aviație, transport):
 - **Clasificatorul tipurilor de ore** (cod, denumire RO / RU / EN, grupa: lucrate / zbor / instruire / examinare / rezervă /
@@ -248,7 +248,7 @@ Răspunsul în produs (etapa **S4b**, comună pentru fabrică, aviație, transpo
 
 | Etapa | Ce | Verificare |
 |---|---|---|
-| **Stare** | S0 · S1 · S2 · S3 · S4 — **gata** (2026-11-21), plus interfața „Clasic de birou”; următoarea: **S4b** (tipurile de ore și remunerarea pe funcție, cererea clientului §2.6), apoi S5 (fabrica) | |
+| **Stare** | S0 · S1 · S2 · S3 · S4 · S4b — **gata** (2026-11-21), plus interfața „Clasic de birou”; următoarea: **S5** (fabrica) | |
 | **S0** | Planul (acest document), deciziile lui Anatol, accesul la depozit (grupul `proj-cai-cadre`, `safe.directory`) | — |
 | **S1 — fără stat** | antetul firmei (logo, IDNO, adresa, CAEM, IBAN) în locul Stemei / fondatorului pe toate formele; scoase EMC / atestarea, vaccinurile, gărzile, MS nr. 17, vechimea „în sănătate”, „rezident”; evidența militară — modul opțional, oprit; categoriile de personal → clasificator (după grupele CORM); clasificatoarele noi: funcțiile CORM 006-21 uzuale în firme, temeiurile din CM cu articolele (Legea 193/2025, 112/2023), tipurile de ordin după lista ISM, codurile pontajului după Convenția nr. 17/2020; graficul concediilor și regulamentul intern — opționale; Legea 195/2024; datele demo — SRL fictiv; resturile CRM; RO / RU / EN; `docs/` | teste, typecheck, build, toate formele de tipar fără Stemă |
 | **S2 — cifrele și regulile 2026** | constantele §1.1 (2026 + 2027 adoptate); salariul minim (verificare + completare până la minim), baza minimă CAS, suplimentarele 150 / 200, sărbătorile +1× / +2×, boala 15 zile / an și 20 de zile la accident; scutirile P / M / Sm / N / H, locul aplicării; cererea de scutire cu întreținuții (§2.4) + tipar | teste pe exemple calculate de mână |

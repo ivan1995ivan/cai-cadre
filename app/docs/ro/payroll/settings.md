@@ -36,6 +36,15 @@ salariul mediu 17 200 → 17 400, temeiurile vechi; sporul unic pentru orele sup
 Cererile de scutire „pe an” devin cereri cu valabilitate de la / până la, persoanele întreținute — rânduri; cererile cu „S”
 (abrogată) apar „De verificat”.
 
+**Tipurile de ore și remunerarea pe funcție (S4b)** — pentru cine configurează:
+- tipul de calcul nou **ORE** („Ore pe tipuri”, automat: ore plătite × tariful, cu orele garantate) — intră în media pentru
+  concediu / boală și în baza sindicatului / pensiei alimentare livrate; un tip de ore poate avea tipul lui de calcul (automat,
+  „Ore pe tipuri”), legat în *Setări → Tipuri de ore*;
+- **CUMUL** se numește „Plata pentru cumularea funcțiilor / suplinire” și se calculează din înregistrările de cumulare de pe
+  raport (CM art. 156), nu din cumul; „Plata pentru cumul (%)” de pe raport s-a mutat singur în înregistrări, cu aceleași sume;
+- în formule: `Ore.COD`, `OrePlatite.COD`, `Garantat.COD`, `Tarif.COD` (vezi *Tipuri de ore, tarife pe funcție și orele
+  garantate*).
+
 **Formula și acumulările planificate (S3)** — pentru cine configurează:
 - *Tipuri de calcul*: felul nou **„Formulă”** (expresia, variabilele, „Încearcă pe un angajat”) și coloana „Din ce se
   calculează” la toate tipurile — vezi *Tipurile de calcul: formula și baza*. La actualizare, tipurile existente pe **trepte

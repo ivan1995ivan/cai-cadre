@@ -1,5 +1,20 @@
 # Ce e nou
 
+## Etapa S4b: tipurile de ore și remunerarea pe funcție
+
+- **Tipuri de ore** (Setări): instruire, examinare (livrate) și ale dvs. (de ex. zbor) — grupa, legătura cu orele lucrate, pe
+  zile sau pe lună, profilul, tipul de calcul.
+- **Remunerarea pe fiecare raport de muncă**, cu istoric: salariu lunar / tarif orar / pe tipuri de ore / mixt; **tarifele pe
+  tipuri de ore** cu **orele garantate** (minimul plătit: max(efective, garantate), redus după zilele fără raport, absențe și
+  suspendare); din ordin (tabelul „Tarife pe tipuri de ore”, completat din tarifele-tip ale funcției) sau de mână.
+- **Pontajul** cu coloanele tipurilor de ore: pe zile sau total pe lună, de mână sau din Excel; garantat / disponibil / efectiv
+  / de plată; în tipar și în export.
+- **Salariul**: tipul „Ore pe tipuri” cu explicația garanției; variabilele `Ore.COD`, `OrePlatite.COD`, `Garantat.COD`,
+  `Tarif.COD` în formule.
+- **Cumulul ≠ cumularea**: cumularea funcțiilor, suplinirea și interimatul pe același contract (CM art. 156) sunt înregistrări pe
+  raportul de bază, cu plata lor (% din salariul propriu / al funcției cumulate, sumă fixă, pe ore); cumulul rămâne raport
+  separat. „Plata pentru cumul (%)” veche s-a mutat singură în înregistrări.
+
 ## Etapa S3: formula în tipurile de calcul și acumulările planificate
 
 - **Tipul de calcul „Formulă”**: o expresie scrisă de dvs. (`TarifOrar * OreNoapte * C.night_pct / 100`), cu variabilele din

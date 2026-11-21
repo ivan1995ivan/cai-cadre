@@ -9,6 +9,10 @@ Raporturi de muncă → „Graficul de lucru”), cu data de la care e valabil �
 grafic, raportul se socotește 5 zile pe săptămână cu orele funcției (40 / 35 / 30 h pe săptămână) înmulțite cu norma: la
 0,5 normă — 4 ore pe zi. Graficul pe ture nu se micșorează după normă; la cumul se pun mai puține ture.
 
+**Tipurile de ore** (setarea *Tipuri de ore*): instruire, examinare, zbor… — coloanele orelor pe tipuri din pontaj, cu
+tariful și orele garantate pe raportul de muncă. Absențele care reduc orele garantate și suspendarea — în setarea *Odihna
+între ture și turele de noapte pe lună*. Vezi *Tipuri de ore, tarife pe funcție și orele garantate*.
+
 **Turele** (setarea *Ture*): codul, orele, orele de noapte (22:00–06:00, CM art. 103), ora de început și culoarea.
 Codurile livrate: 8 / 7 / 6 (zi), Z12 / N12 (ture de zi și de noapte de 12 ore, pentru munca în schimburi).
 

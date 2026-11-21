@@ -4,7 +4,14 @@
 un rând pe fiecare **raport de muncă** (de bază, cumul, suplinire, contract de prestări servicii), din:
 - **tabela de pontaj** a secției (orele lucrate, de noapte, de sărbători și de repaus, suplimentare pe zile); fără tabelă —
   norma întreagă a lunii (zilele apar cu portocaliu);
-- **raportul de muncă**: salariul de funcție × norma, sporurile fixe (%), plata pentru cumul (%);
+- **raportul de muncă**, după modalitatea de remunerare: salariul de funcție × norma (salariu lunar, mixt) sau tariful orar ×
+  orele lucrate (tarif orar); sporurile fixe (%);
+- **orele pe tipuri** (instruire, examinare, zbor…) la modalitățile „pe tipuri de ore” și „mixt”: ore plătite × tariful, cu
+  **orele garantate** ca minim plătit, redus după zilele disponibile — tipul „Ore pe tipuri” (ORE); vezi *Tipuri de ore, tarife
+  pe funcție și orele garantate*;
+- **cumularea funcțiilor / suplinirea / interimatul** pe același contract (CM art. 156) — tipul „Plata pentru cumularea
+  funcțiilor / suplinire” (CUMUL): % din salariul propriu sau al funcției cumulate × partea lucrată × zilele cumulării, suma
+  fixă × zilele, sau orele × tariful; cumulul (intern / extern) e linie proprie, cu salariul lui;
 - **concediile** din ordine (media zilnică × zilele, HG 426/2004) și compensarea concediului nefolosit;
 - **foile de boală**: zilele angajatorului (vezi mai jos);
 - **premiile și ajutorul material** din ordine;
