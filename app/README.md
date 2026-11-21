@@ -21,9 +21,11 @@ cu mai multe baze, installer Windows) — și din configurația 1C `Personal.cf`
 ordinele, concediile și timpul de muncă, salarizarea (cu IPC21 / IALS21 / IRM19 în XML), termenele și rapoartele, formarea,
 sănătatea în muncă, evidența militară, cabinetul angajatului. Notificările: în sistem și pe e-mail.
 
-**Date demo** (un spital fictiv cu ~50 de angajați): bifa din asistentul de instalare sau
-`backend> ..\.venv\Scripts\python manage.py crm_demo`. Utilizatori: `cadre`, `inspector`, `director`, `sef.trauma`,
-`contabil`, `angajat`, parola `Demo-Cadre-2026`.
+**Date demo** (întreprinderea privată fictivă „Demo Producție” SRL: 8 subdiviziuni, 67 de angajați de bază, 70 de persoane cu
+cumulurile și prestările de servicii): bifa din asistentul de instalare sau `backend> ..\.venv\Scripts\python manage.py crm_demo`,
+apoi, pentru un an întreg de evidență, `crm_demo_year`. Utilizatori: `cadre`, `inspector`, `director`, `sef.productie`,
+`contabil`, `angajat` (și `admin`, dacă baza nu are administrator), parola `Demo-Cadre-2026`. Descrierea: `docs/instalare.md`
+din rădăcina depozitului.
 
 ## Cerințe
 

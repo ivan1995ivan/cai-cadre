@@ -4,7 +4,7 @@ from apps.core import demo, demo_year
 
 
 class Command(BaseCommand):
-    help = "Completează baza demo cu evidența unui an întreg: pontaj, gărzi, salarii (avans, calcul, plată), ordine, concedii, foi de boală."
+    help = "Completează baza demo cu evidența unui an întreg: graficele de ture, pontaj, salarii (avans, calcul, plată), ordine, concedii, foi de boală."
 
     def add_arguments(self, parser):
         parser.add_argument("--year", type=int, default=None, help="Anul (implicit: cel curent)")

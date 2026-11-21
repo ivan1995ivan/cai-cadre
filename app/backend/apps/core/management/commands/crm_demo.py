@@ -4,10 +4,10 @@ from apps.core import demo
 
 
 class Command(BaseCommand):
-    help = "Umple o bază nouă cu date demo (un spital fictiv) pentru prezentări."
+    help = "Umple o bază nouă cu date demo (o întreprindere privată fictivă, „Demo Producție” SRL) pentru prezentări."
 
     def add_arguments(self, parser):
-        parser.add_argument("--force", action="store_true", help="Chiar dacă baza are deja clienți sau comenzi")
+        parser.add_argument("--force", action="store_true", help="Chiar dacă baza are deja angajați")
 
     def handle(self, *args, **options):
         try:
@@ -15,5 +15,6 @@ class Command(BaseCommand):
         except demo.DemoError as exc:
             raise CommandError(str(exc)) from exc
         self.stdout.write(self.style.SUCCESS(
-            f"Datele demo sunt gata: {result.get('employees', 0)} angajați. Utilizatori: {', '.join(result['users'])} "
+            f"Datele demo sunt gata: {result['subdivisions']} subdiviziuni, {result['employees']} angajați de bază "
+            f"({result['persons']} persoane cu cumulurile externe și prestările de servicii). Utilizatori: {', '.join(result['users'])} "
             f"(parola {result['password']})."))

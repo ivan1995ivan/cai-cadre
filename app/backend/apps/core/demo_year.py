@@ -1,8 +1,9 @@
-"""Datele demo pe un an întreg, peste baza făcută de `crm_demo`: evidența lunară completă din noiembrie anul trecut până în
-luna curentă — graficele de gărzi, tabelele de pontaj (închise), avansul și salariul (calculate, aprobate, achitate),
-ordinele anului (concedii din graficul anual, delegări, perfecționare, premii trimestriale, ajutor material, sporuri,
-majorări de salariu, categorii, angajări, o eliberare), foile de boală, cererile de scutire, cotizațiile și reținerile
-personale, graficul concediilor, planul de formare și atestările. Totul trece prin serviciile modulelor, ca în lucru.
+"""Datele demo pe un an întreg, peste întreprinderea făcută de `crm_demo` („Demo Producție” SRL): evidența lunară completă
+din noiembrie anul trecut până în luna curentă — graficele de ture ale atelierului, tabelele de pontaj (închise), avansul și
+salariul (calculate, aprobate, achitate), ordinele anului (concedii din graficul anual, delegări la clienți și furnizori,
+formare profesională, premii trimestriale, ajutor material, sporul pentru condiții vătămătoare, majorări de salariu, angajări,
+o eliberare), foile de boală, cererile de scutire, cotizațiile și reținerile personale, graficul concediilor și planul de
+formare. Totul trece prin serviciile modulelor, ca în lucru.
 
 Se rulează o singură dată, după `crm_demo`:  manage.py crm_demo_year
 """
@@ -14,22 +15,19 @@ from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
-from .demo import MEN, SURNAMES, WOMEN, DemoError, _idnp, kind_of
+from .demo import COURSES, DEMO_DOMAIN, MEN, SHIFT_OCCUPATION, SHIFT_SECTOR, SURNAMES, WOMEN, DemoError, _idnp, group_of, \
+    is_production
 
 ONE = Decimal("1")
-SHIFT_SUBDIVISIONS = ("TR1", "TR2", "ATI", "BLO")  # secțiile cu ture de 12 ore și gărzi (graficul lunar)
+SHIFT_SUBDIVISIONS = ("ATL",)  # graficul lunar de ture: atelierul de producție (cu sectoarele lui)
 LEAVE_WEIGHTS = [3, 3, 4, 5, 6, 9, 10, 9, 6, 4, 3, 3]  # în ce luni pleacă oamenii în concediu (vara cel mai mult)
 BANKS = ["BC „Moldova-Agroindbank” S.A.", "BC „Victoriabank” S.A.", "BC „Moldindconbank” S.A."]
-TRAVEL = [("Chișinău, Ministerul Sănătății", "participării la ședința de lucru"),
-          ("Bălți, Spitalul Clinic Municipal", "consultării pacienților"),
-          ("Iași, România — Spitalul „Sf. Spiridon”", "schimbului de experiență"),
-          ("Cahul, Spitalul Raional", "acordării asistenței metodice")]
-COURSES = [("Actualități în traumatologie și ortopedie", "USMF „Nicolae Testemițanu”", 72),
-           ("Urgențe medico-chirurgicale", "USMF „Nicolae Testemițanu”", 36),
-           ("Controlul infecțiilor asociate asistenței medicale", "Agenția Națională pentru Sănătate Publică", 16),
-           ("Anestezia regională — curs practic", "Societatea de Anesteziologie", 36),
-           ("Nursing în ortopedie", "Centrul de Educație Medicală Continuă", 72),
-           ("Îngrijirea pacientului imobilizat", "Centrul de Educație Medicală Continuă", 36)]
+TRAVEL = [("mun. Bălți, clientul „Demo Nord” SRL", "negocierii contractului de livrare"),
+          ("or. Cahul, clientul „Demo Sud” SRL", "montării și punerii în funcțiune a construcțiilor livrate"),
+          ("Iași, România — târgul de utilaje industriale", "participării la târg"),
+          ("or. Orhei, furnizorul „Demo Metal” SRL", "recepției materiei prime")]
+TRAVELLERS = ("VNZ", "ATL")  # cine pleacă în delegare: vânzările și inginerii atelierului
+SICK_ISSUERS = ["Centrul de sănătate „Demo” SRL", "Clinica „Demo Familia” SRL", "Centrul medical „Demo Plus” SRL"]
 BONUS_NOTES = {3: "pentru rezultatele activității în trimestrul I", 6: "pentru rezultatele activității în trimestrul II",
                9: "pentru rezultatele activității în trimestrul III", 12: "pentru rezultatele activității în anul curent"}
 
@@ -60,7 +58,7 @@ class Year:
         self.today = timezone.localdate()
         self.log = log
         self.rnd = random.Random(year)
-        self.users = {u.username: u for u in User.objects.filter(username__in=("cadre", "director", "contabil", "sef.trauma"))}
+        self.users = {u.username: u for u in User.objects.filter(username__in=("cadre", "director", "contabil", "sef.productie"))}
         self.director = self.users.get("director")
         self.cadre = self.users.get("cadre")
         self.contabil = self.users.get("contabil")
@@ -142,25 +140,21 @@ class Year:
                                            source=f"{c.source} (valoarea {self.year - 1})".strip())
 
     def schedules(self):
-        """Graficele de lucru: asistentele și infirmierele din secții — ture de 12 ore; medicii ATI — gărzi de 24 de ore."""
+        """Graficele de lucru: operatorii din sectorul de prelucrare mecanică — ture de 12 ore (zi / noapte); `crm_demo` le pune
+        celor angajați de el, aici — și celor angajați după."""
         from apps.worktime import seed as worktime_seed
         from apps.worktime.models import JobSchedule, WorkSchedule
 
         worktime_seed.run()
-        zn = WorkSchedule.objects.filter(code="ZN").first()
-        g24 = WorkSchedule.objects.filter(code="G24", deletion_mark=False).first()  # gărzile nu se mai livrează (S1)
+        zn = WorkSchedule.objects.filter(code="ZN", deletion_mark=False).first()
         if zn is None:
             return
         for i, job in enumerate(self.main_jobs(self.today)):
-            if job.subdivision.code not in SHIFT_SUBDIVISIONS or JobSchedule.objects.filter(employment=job).exists():
+            if (job.subdivision.code != SHIFT_SECTOR or job.occupation.name_ro != SHIFT_OCCUPATION
+                    or JobSchedule.objects.filter(employment=job).exists()):
                 continue
-            cat = kind_of(job.occupation)
-            if cat in ("nurses", "junior") and i % 3:  # o parte rămân pe program de zi
-                JobSchedule.objects.create(employment=job, schedule=zn, date_from=job.date_from, cycle_offset=i % 4)
-                self.count("grafice ZN")
-            elif g24 and cat == "physicians" and job.subdivision.code == "ATI" and "Șef" not in job.occupation.name_ro:
-                JobSchedule.objects.create(employment=job, schedule=g24, date_from=job.date_from, cycle_offset=i % 4)
-                self.count("grafice G24")
+            JobSchedule.objects.create(employment=job, schedule=zn, date_from=job.date_from, cycle_offset=i % 4)
+            self.count("grafice ZN")
 
     # --- concediile anului ----------------------------------------------------------------------------------------
     def leave_plan(self):
@@ -287,7 +281,7 @@ class Year:
             if leave_services.overlapping(job.employee, start, end).exists():
                 continue
             sick = SickLeave(employee=job.employee, series="CM", number=f"{y}{m:02d}{rnd.randint(1000, 9999)}",
-                             issued_on=start, issued_by=rnd.choice(["IMSP AMT Centru", "IMSP AMT Botanica", "IMSP SCM „Sfânta Treime”"]),
+                             issued_on=start, issued_by=rnd.choice(SICK_ISSUERS),
                              kind=rnd.choice(["illness", "illness", "illness", "household_injury", "child_care"]),
                              date_from=start, date_to=end, return_date=_weekday(end + timedelta(days=1)), created_by=self.cadre)
             try:
@@ -298,14 +292,14 @@ class Year:
 
     def travel_orders(self, y: int, m: int):
         rnd = self.rnd
-        doctors = [j for j in self.main_jobs(date(y, m, 1)) if kind_of(j.occupation) == "physicians"]
-        if not doctors:
+        who = [j for j in self.main_jobs(date(y, m, 1)) if j.subdivision.code in TRAVELLERS and group_of(j.occupation) in ("1", "2", "3")]
+        if not who:
             return
         day = _weekday(date(y, m, rnd.randint(3, 18)))
-        order = self._order("travel", day - timedelta(days=2) if day.day > 2 else day, basis="Demersul șefului de secție")
+        order = self._order("travel", day - timedelta(days=2) if day.day > 2 else day, basis="Demersul șefului subdiviziunii")
         if order is None:
             return
-        for n, job in enumerate(rnd.sample(doctors, min(len(doctors), rnd.randint(1, 2))), start=1):
+        for n, job in enumerate(rnd.sample(who, min(len(who), rnd.randint(1, 2))), start=1):
             where, purpose = rnd.choice(TRAVEL)
             self._item(order, job.employee, {"date_from": day.isoformat(), "date_to": (day + timedelta(days=rnd.randint(1, 2))).isoformat(),
                                              "destination": where, "purpose": purpose}, n)
@@ -317,7 +311,7 @@ class Year:
         from apps.training.models import TrainingRecord
 
         rnd = self.rnd
-        staff = [j for j in self.main_jobs(date(y, m, 1)) if kind_of(j.occupation) in ("physicians", "nurses")]
+        staff = self.main_jobs(date(y, m, 1))
         if not staff:
             return
         start = _weekday(date(y, m, rnd.randint(2, 14)))
@@ -331,14 +325,14 @@ class Year:
             if leave_services.overlapping(job.employee, start, end).exists():
                 continue
             n += 1
-            title, provider, hours = rnd.choice(COURSES[:4] if kind_of(job.occupation) == "physicians" else COURSES[4:])
+            title, provider, hours = rnd.choice(COURSES["production" if is_production(job.subdivision) else "office"])
             self._item(order, job.employee, {"date_from": start.isoformat(), "date_to": end.isoformat(), "destination": provider,
                                              "purpose": f"participării la cursul „{title}”"}, n)
             chosen.append((job, title, provider, hours))
         if not n:
             order.delete()
             return
-        if self._sign(order, f"perfecționare {m:02d}.{y}"):
+        if self._sign(order, f"formare {m:02d}.{y}"):
             for item in order.items.select_related("employee"):
                 job, title, provider, hours = next(c for c in chosen if c[0].employee_id == item.employee_id)
                 TrainingRecord.objects.create(employee=item.employee, kind="course", title=title, provider=provider,
@@ -357,7 +351,7 @@ class Year:
             order = self._order("bonus", day, basis="Demersurile șefilor de subdiviziuni, decizia comisiei de premiere")
             if order is not None:
                 for n, job in enumerate(rnd.sample(jobs, min(len(jobs), rnd.randint(8, 14))), start=1):
-                    amount = rnd.choice([1000, 1500, 2000, 2500, 3000]) if kind_of(job.occupation) != "physicians" else rnd.choice([2500, 3000, 4000, 5000])
+                    amount = rnd.choice([2500, 3000, 4000, 5000]) if group_of(job.occupation) in ("1", "2") else rnd.choice([1000, 1500, 2000, 2500, 3000])
                     self._item(order, job.employee, {"amount": str(amount), "note": BONUS_NOTES[m]}, n)
                 if self._sign(order, f"premiere {m:02d}.{y}"):
                     self.count("premii")
@@ -373,7 +367,7 @@ class Year:
                     self.count("ajutor material")
 
     def allowance_order(self, y: int, m: int):
-        """Sporurile pentru condiții nocive (ATI 20 %, radiologie 15 %) — din 1 ianuarie."""
+        """Sporul pentru condiții vătămătoare (sectorul de sudură și vopsire, 10 %) — din 1 ianuarie."""
         if (y, m) != (self.year, 1):
             return
         jobs = [j for j in self.main_jobs(date(y, 1, 1)) if j.subdivision.harmful and not j.allowance_pct]
@@ -383,8 +377,7 @@ class Year:
         if order is None:
             return
         for n, job in enumerate(jobs, start=1):
-            pct = "20" if job.subdivision.code == "ATI" else "15"
-            self._item(order, job.employee, {"allowance_pct": pct, "date_from": date(y, 1, 1).isoformat()}, n)
+            self._item(order, job.employee, {"allowance_pct": "10", "date_from": date(y, 1, 1).isoformat()}, n)
         if self._sign(order, "sporuri"):
             self.count("sporuri", len(jobs))
 
@@ -393,8 +386,8 @@ class Year:
         if (y, m) != (self.year, 4):
             return
         rnd = self.rnd
-        jobs = [j for j in self.main_jobs(date(y, m, 1)) if kind_of(j.occupation) in ("physicians", "nurses")]
-        order = self._order("salary_set", _weekday(date(y, m, 1)), basis="Demersul șefului de secție, decizia consiliului de administrație")
+        jobs = [j for j in self.main_jobs(date(y, m, 1)) if group_of(j.occupation) in ("7", "8")]
+        order = self._order("salary_set", _weekday(date(y, m, 1)), basis="Demersul șefului atelierului de producție, decizia directorului")
         if order is None:
             return
         for n, job in enumerate(rnd.sample(jobs, min(len(jobs), 3)), start=1):
@@ -404,7 +397,7 @@ class Year:
             self.count("majorări", 3)
 
     def hire_orders(self, y: int, m: int):
-        """Două angajări în anul curent: o asistentă la traumatologie (martie) și un îngrijitor (iulie)."""
+        """Două angajări în anul curent: un operator în sectorul de prelucrare mecanică (martie) și un magaziner (iulie)."""
         if y != self.year or m not in (3, 7):
             return
         from apps.org.models import Occupation, Subdivision
@@ -414,9 +407,9 @@ class Year:
 
         rnd = self.rnd
         if m == 3:
-            sub, occ_name, salary, sex = "TR1", "Asistent medical de secție", 10500, "F"
+            sub, occ_name, salary, sex = SHIFT_SECTOR, SHIFT_OCCUPATION, 11500, "M"
         else:
-            sub, occ_name, salary, sex = "GOS", "Îngrijitor încăperi", 6800, rnd.choice("MF")
+            sub, occ_name, salary, sex = "DEP", "Magaziner", 10000, rnd.choice("MF")
         subdivision = Subdivision.objects.filter(code=sub).first()
         occ = Occupation.objects.filter(name_ro=occ_name).first()
         if subdivision is None or occ is None:
@@ -425,10 +418,11 @@ class Year:
         start = _weekday(date(y, m, 1))
         emp = Employee.objects.create(tab_number=staff.next_tab_number(), last_name=last, first_name=first, sex=sex,
                                       birth_date=date(y - rnd.randint(23, 45), rnd.randint(1, 12), rnd.randint(1, 28)), idnp=_idnp(rnd),
-                                      phone=f"069{rnd.randint(100000, 999999)}", address=f"mun. Chișinău, str. {rnd.choice(SURNAMES)} {rnd.randint(1, 90)}",
+                                      phone=f"069{rnd.randint(100000, 999999)}", email=f"angajat.{y}.{m:02d}@{DEMO_DOMAIN}", address=f"mun. Chișinău, str. {rnd.choice(SURNAMES)} {rnd.randint(1, 90)}",
                                       iban=f"MD{rnd.randint(10, 99)}AG{rnd.randint(10**17, 10**18 - 1)}", bank_name=BANKS[0])
-        level = DictItem.objects.filter(kind="education", code="vocational" if m == 3 else "secondary").first()
-        Education.objects.create(employee=emp, level=level, institution="Colegiul de Medicină din Chișinău" if m == 3 else "Liceul teoretic",
+        level = DictItem.objects.filter(kind="education", code="secondary" if m == 3 else "vocational").first()
+        Education.objects.create(employee=emp, level=level, institution="Școala profesională nr. 3 din Chișinău" if m == 3
+                                 else "Colegiul Politehnic din Chișinău",
                                  year_to=start.year - rnd.randint(2, 15))
         order = self._order("hire", start, basis=f"Cererea de angajare din {(start - timedelta(days=3)):%d.%m.%Y}, CIM nr. {emp.tab_number}/{y}")
         if order is None:
@@ -446,8 +440,8 @@ class Year:
         from apps.org.models import DictItem
 
         reason = DictItem.objects.filter(kind="termination", code="resignation").first()
-        jobs = [j for j in self.main_jobs(date(y, m, 1)) if j.subdivision.code == "GOS" and j.employee_id not in self.plan]
-        jobs = jobs or [j for j in self.main_jobs(date(y, m, 1)) if j.subdivision.code == "GOS"]
+        jobs = [j for j in self.main_jobs(date(y, m, 1)) if j.subdivision.code == "DEP" and j.employee_id not in self.plan]
+        jobs = jobs or [j for j in self.main_jobs(date(y, m, 1)) if j.subdivision.code == "DEP"]
         if not jobs or reason is None:
             return
         job = jobs[-1]
@@ -489,7 +483,7 @@ class Year:
         from apps.worktime.models import Roster
 
         for sub in Subdivision.objects.filter(code__in=SHIFT_SUBDIVISIONS):
-            roster, _ = Roster.objects.get_or_create(subdivision=sub, year=y, month=m, defaults={"created_by": self.users.get("sef.trauma") or self.cadre})
+            roster, _ = Roster.objects.get_or_create(subdivision=sub, year=y, month=m, defaults={"created_by": self.users.get("sef.productie") or self.cadre})
             worktime.fill_roster(roster, overwrite=True)
             if approved and roster.status != "approved":
                 roster.status, roster.approved_by = "approved", self.cadre
@@ -561,7 +555,7 @@ class Year:
         self.salary_orders(y, m)
         self.terminate_order(y, m)
         self.bonus_orders(y, m)
-        # 2. graficele de gărzi și tabelele de pontaj
+        # 2. graficele de ture și tabelele de pontaj
         self.rosters(y, m, approved=not current)
         self.timesheets(y, m, closed=not current)
         # 3. avansul (15 ale lunii), calculul, plata salariului (în luna următoare)
@@ -582,9 +576,9 @@ class Year:
             "number": "1", "date": date(self.year - 1, 12, 20), "status": "approved", "created_by": self.cadre})
         if not created:
             return
-        staff = [j for j in self.main_jobs(date(self.year, 1, 1)) if kind_of(j.occupation) in ("physicians", "nurses", "pharmacists")]
+        staff = self.main_jobs(date(self.year, 1, 1))
         for n, job in enumerate(rnd.sample(staff, min(len(staff), 24)), start=1):
-            title, provider, hours = rnd.choice(COURSES[:4] if kind_of(job.occupation) == "physicians" else COURSES[4:])
+            title, provider, hours = rnd.choice(COURSES["production" if is_production(job.subdivision) else "office"])
             month = rnd.randint(2, 11)
             record = TrainingRecord.objects.filter(employee=job.employee, date_from__year=self.year, title=title).first()
             TrainingPlanLine.objects.create(plan=plan, employee=job.employee, kind="course", title=title, provider=provider, month=month,
@@ -614,7 +608,7 @@ class Year:
         self.leave_schedules()
         for y, m in _months(self.year, self.today.month):
             self.month(y, m)
-        # luna următoare: graficele de gărzi, pregătite (ciornă)
+        # luna următoare: graficul de ture, pregătit (ciornă)
         ny, nm = (self.year + 1, 1) if self.today.month == 12 else (self.year, self.today.month + 1)
         self.rosters(ny, nm, approved=False)
         self.training_plan()

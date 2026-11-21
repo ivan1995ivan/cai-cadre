@@ -8,7 +8,8 @@ export default {
   setup: {
     title: 'Instalarea CAI CADRE', steps: { company: 'Întreprinderea' }, companyTitle: 'Datele întreprinderii',
     companyHint: 'Apar în antetul formelor de tipar și în declarațiile IPC21 / IALS21. Se pot schimba oricând în Constante.',
-    demoHint: 'O întreprindere fictivă cu subdiviziuni, state de personal și angajați, pentru prezentare. Pentru lucru real instalați o bază curată.',
+    demo: 'Încarcă date demo (pentru prezentare și probă)',
+    demoHint: 'O întreprindere fictivă de producție (câmpurile firmei lăsate goale mai sus se completează cu „Demo Producție” SRL): administrația, contabilitatea, vânzările, atelierul de producție cu două sectoare (unul cu condiții vătămătoare și ture de zi / noapte), depozitul, transportul; ~70 de angajați cu dosare, statele de personal, ordine, concedii, pontajul și salariul lunii trecute; câte un utilizator pentru fiecare rol (cadre, inspector, director, sef.productie, contabil, angajat — parola Demo-Cadre-2026). Doar pentru prezentare; pentru lucru real instalați o bază curată.',
   },
   about: { tagline: 'Evidența cadrelor, ordine, concedii, timp de muncă și salarizare pentru întreprinderi private' },
   constants: {

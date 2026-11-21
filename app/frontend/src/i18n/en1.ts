@@ -9,7 +9,8 @@ export default {
   setup: {
     title: 'Installing CAI CADRE', steps: { company: 'Company' }, companyTitle: 'Company details',
     companyHint: 'Printed in the header of the forms and used in the IPC21 / IALS21 returns. They can be changed any time in Constants.',
-    demoHint: 'A fictitious company with departments, a staff list and employees, for presentations. For real work install a clean database.',
+    demo: 'Load demo data (for presentations and trials)',
+    demoHint: 'A fictitious manufacturing company (company fields left empty above are filled in as “Demo Producție” SRL): administration, accounting, sales, a production workshop with two sections (one with hazardous conditions and day / night shifts), a warehouse, transport; ~70 employees with personal files, the staff list, orders, leave, last month’s timesheets and payroll; one user per role (cadre, inspector, director, sef.productie, contabil, angajat — password Demo-Cadre-2026). For presentations only; for real work install a clean database.',
   },
   about: { tagline: 'HR records, orders, leave, working time and payroll for private companies' },
   constants: {

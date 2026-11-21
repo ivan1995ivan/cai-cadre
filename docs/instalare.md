@@ -37,14 +37,46 @@ server nou: `git clone git@github.com:ivan1995ivan/cai-cadre.git /srv/projects/c
    Instalarea rulează migrările, încarcă clasificatoarele și repornește serverul.
 
 Această instalare e **curată** (fără date demo): întreprinderea și administratorul
-se dau în asistent. Cu bifa demo apar și utilizatorii `cadre`, `inspector`,
-`director`, `sef.trauma`, `contabil`, `angajat` cu parola `Demo-Cadre-2026` —
-doar pentru prezentări, niciodată pe o bază cu date reale.
+se dau în asistent. Datele demo sunt doar pentru prezentări, niciodată pe o bază
+cu date reale.
+
+## Datele demo (doar pentru prezentări)
+
+Bifa **date demo** din asistent (sau, pe o bază nouă, `docker compose exec app
+python manage.py crm_demo`; codul: `app/backend/apps/core/demo.py`) pune o
+**întreprindere privată fictivă de producție**. Câmpurile firmei lăsate goale în
+asistent se completează cu „Demo Producție” SRL — IDNO fictiv `1000000000000`,
+CAEM 2511 (fabricarea de construcții metalice), adresa „mun. Chișinău, str.
+Exemplului 1”, directorul Gheorghe Ciobanu, contabilul-șef Valentina Cojocaru,
+șeful resurse umane Silvia Moraru, un cont bancar fictiv; ce s-a scris în asistent
+rămâne. Apoi:
+
+- **subdiviziunile** (8): Administrația, Contabilitatea, Vânzări, Atelierul de
+  producție cu două sectoare — prelucrare mecanică (operatorii pe ture de 12 ore,
+  zi / noapte) și sudură și vopsire (condiții vătămătoare: concediu suplimentar
+  de 4 zile, săptămâna de 35 de ore) —, Depozitul, Transportul (șoferii);
+- **statele de personal** (75 de unități, funcțiile din clasificatorul livrat, cu
+  codurile CORM), aprobate prin ordinul directorului, semnat;
+- **67 de angajați de bază** (unele posturi rămân vacante), plus 2 cumuluri
+  interne, 2 cumuluri externe și un contract de prestări servicii — 70 de persoane;
+  dosarele au buletinul (șoferii și permisul de conducere), studiile, familia
+  (copii, unii cu un părinte întreținut), stagiul anterior; câțiva bărbați au și
+  date de evidență militară, dar modulul rămâne **oprit** (se pornește din
+  Constante);
+- examenele medicale periodice (atelierul, depozitul, transportul), instructajele
+  SSM, formarea profesională, concedii, cereri de concediu, foi de boală, un ordin
+  de premiere semnat; graficul de ture al atelierului, pontajul și salariul lunii
+  trecute (calculul aprobat, îndreptarea spre plată achitată);
+- **utilizatorii**, câte unul pe rol, toți cu parola `Demo-Cadre-2026`: `cadre`
+  (șef resurse umane), `inspector` (inspector resurse umane), `director`,
+  `sef.productie` (șeful atelierului: vede atelierul și sectoarele lui),
+  `contabil`, `angajat` (un operator din atelier, cu cabinetul lui).
+  Administratorul e cel dat în asistent; dacă baza nu are niciun administrator
+  (`crm_demo` rulat fără asistent), se face și `admin` cu aceeași parolă.
 
 ## Datele demo pe un an (doar pentru prezentări)
 
-`crm_demo` (bifa din asistent) pune structura, ~70 de angajați și o singură
-lună de pontaj și salariu. Peste ea, **o singură dată**:
+`crm_demo` pune o singură lună de pontaj și salariu. Peste ea, **o singură dată**:
 
 ```bash
 docker compose exec app python manage.py crm_demo_year
@@ -53,27 +85,26 @@ docker compose exec app python manage.py crm_demo_year
 Comanda (codul: `app/backend/apps/core/demo_year.py`) completează evidența din **noiembrie anul trecut până în luna
 curentă**, totul prin serviciile modulelor, în ordine cronologică:
 
-- graficele de lucru: asistentele și infirmierele din secții pe ture de 12 ore
-  (zi / noapte), medicii ATI pe gărzi de 24 de ore; graficele lunare (gărzi)
-  aprobate, cel pe luna următoare — ciornă;
+- graficul de ture al atelierului de producție (operatorii pe ture de 12 ore, zi /
+  noapte) pe fiecare lună, aprobat; cel pe luna următoare — ciornă;
 - tabelele de pontaj ale tuturor subdiviziunilor, închise (luna curentă —
   ciornă), cu noapte, sărbători, ore suplimentare și codurile absențelor;
 - salariul: avansul pe 15 ale lunii (achitat), calculul lunar aprobat (luna
   curentă — ciornă), îndreptarea spre plată în baza calculului, în luna
   următoare (achitată; aici se rețin CNAM și impozitul), cu
-  sporuri de vechime și categorie, condiții nocive, noapte, sărbători,
+  sporul pentru condiții vătămătoare, noapte, sărbători,
   suplimentare, indemnizații de concediu și de boală, premii, ajutor
   material, cotizația sindicală, o pensie alimentară, un împrumut, plata la
   contractul de prestări servicii; cererile de scutire pentru ~80 % din
   angajați; datele de bancă (IBAN) pentru plata pe card;
 - ordinele anului, semnate și numerotate pe registre: concediile din graficul
-  anual (ordine colective lunare), delegări, perfecționare (cu înregistrările
-  EMC), premii trimestriale, ajutor material, sporuri pentru condiții nocive,
-  majorări de salariu, conferirea categoriei (cu atestările), două angajări, o
-  eliberare cu compensarea concediului, un concediu neplătit, zile libere
-  plătite;
+  anual (ordine colective lunare), delegări la clienți și furnizori, formare
+  profesională (cu înregistrările în registrul formării), premii trimestriale,
+  ajutor material, sporul pentru condiții vătămătoare, majorări de salariu,
+  două angajări, o eliberare cu compensarea concediului, un concediu neplătit,
+  zile libere plătite;
 - foile de boală (2–4 pe lună), graficul concediilor pe subdiviziuni aprobat
-  prin ordin, planul de formare pe an, atestările planificate.
+  prin ordin, planul de formare pe an.
 
 Dacă baza are deja calcule lunare, comanda refuză; `--force` șterge calculele,
 plățile, tabelele și graficele existente și le reface (ordinele și absențele
