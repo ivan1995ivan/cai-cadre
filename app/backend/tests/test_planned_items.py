@@ -154,6 +154,14 @@ def test_change_document_approve_unapprove_and_order_of_undo(admin_client, org):
     assert admin_client.post(f"/api/payroll/item-changes/{doc2.id}/unapprove/").status_code == 200
     pensie.refresh_from_db()
     assert pensie.date_to is None
+    # rândul Anei e pe raportul ei de bază; un rând „oprește” fără raport ales îl găsește
+    r = admin_client.post("/api/payroll/item-changes/", {"date": "2026-04-01", "lines": [
+        {"employee": ana.id, "pay_type": ptype("SINDICAT").id, "action": "stop"}]}, format="json")
+    doc3 = PayItemChange.objects.get(pk=r.data["id"])
+    assert admin_client.post(f"/api/payroll/item-changes/{doc3.id}/approve/").status_code == 200
+    assert EmployeePayItem.objects.get(employee=ana).date_to == date(2026, 3, 31)
+    assert admin_client.post(f"/api/payroll/item-changes/{doc.id}/unapprove/").status_code == 400  # întâi doc3
+    assert admin_client.post(f"/api/payroll/item-changes/{doc3.id}/unapprove/").status_code == 200
     assert admin_client.post(f"/api/payroll/item-changes/{doc.id}/unapprove/").status_code == 200
     assert not EmployeePayItem.objects.exists()
     # ciorna se poate marca pentru ștergere; tiparul

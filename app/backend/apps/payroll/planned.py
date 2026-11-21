@@ -14,6 +14,7 @@ Fiecare pas întoarce ce a făcut (`result`), iar anularea (ordinul de anulare, 
 from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation
 
+from django.db.models import Q
 from rest_framework.exceptions import ValidationError
 
 from .models import EmployeePayItem, OccupationPayItem, PayType
@@ -89,11 +90,14 @@ def _target(row: dict, employee, employment, start: date, who: str) -> EmployeeP
             raise ValidationError({"detail": f"{who}: rândul ales ({t.code}) nu este al angajatului."})
         return found
     qs = qs.filter(date_from__lte=start).exclude(date_to__lt=start)
-    qs = qs.filter(employment=employment) if employment is not None else qs.filter(employment__isnull=True)
+    # rândurile fără raport sunt ale raportului de bază: la raportul de bază (sau fără raport ales) se caută în amândouă
+    main = employee.main_employment()
+    is_main = employment is None or (main is not None and employment.pk == main.pk)
+    if is_main:
+        qs = qs.filter(Q(employment__isnull=True) | Q(employment=main)) if main is not None else qs.filter(employment__isnull=True)
+    else:
+        qs = qs.filter(employment=employment)
     found = list(qs.order_by("date_from", "id"))
-    if not found and employment is not None and employment.kind in ("main", "main_student"):
-        found = list(EmployeePayItem.objects.filter(employee=employee, pay_type=t, employment__isnull=True, date_from__lte=start)
-                     .exclude(date_to__lt=start).order_by("date_from", "id"))
     if not found:
         raise ValidationError({"detail": f"{who}: nu are {t.code} ({t.name_ro}) în vigoare la {start:%d.%m.%Y}."})
     if len(found) > 1:
@@ -147,8 +151,7 @@ def undo(results, who: str):
                     raise ValidationError({"detail": f"{who}: rândul {res.get('pay_type')} din fila „Salariu” a fost schimbat după "
                                                      f"aceea (oprit / modificat la {new.date_to:%d.%m.%Y}); anulați întâi documentul "
                                                      f"care l-a schimbat."})
-                if EmployeePayItem.objects.filter(pk=new.pk).exists():
-                    new.delete()
+                new.delete()
         if res.get("closed"):
             old = EmployeePayItem.objects.filter(pk=res["closed"]).first()
             if old is not None:
