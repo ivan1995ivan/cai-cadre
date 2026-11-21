@@ -145,6 +145,7 @@ export default function PaymentEditor() {
   return (
     <Card className="doc-form" title={<Space wrap>
       {title}<Tag>{t(`pp.kinds.${doc.kind}`)}</Tag><Tag color={PAYMENT_STATUS_COLOR[doc.status]}>{doc.status_label}</Tag>
+      {doc.it_park && <Tooltip title={t('itp.paymentHint')}><Tag color="purple">{t('itp.finalTag')}</Tag></Tooltip>}
       {doc.payroll && <Tag color={PAYROLL_STATUS_COLOR.approved} style={{ cursor: 'pointer' }} onClick={() => navigate(`/payroll/${doc.payroll}`)}>
         {t('pp.baseRef', { label: doc.payroll_number })}</Tag>}
     </Space>} extra={<Space wrap>

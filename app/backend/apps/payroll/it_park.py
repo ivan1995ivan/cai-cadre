@@ -133,20 +133,21 @@ def headcount(year: int, month: int) -> list:
             or job.employee_id in pregnancy
         p = people.setdefault(job.employee_id, {
             "employee": job.employee_id, "name": job.employee.full_name(), "tab_number": job.employee.tab_number,
-            "idnp": job.employee.idnp, "worked_days": 0, "maternity": False, "jobs": [], "source": source})
+            "idnp": job.employee.idnp, "worked_days": 0, "maternity": False, "jobs": [], "job_list": [], "source": source})
         p["worked_days"] += worked
         p["maternity"] = p["maternity"] or maternity
         p["jobs"].append(f"{job.get_kind_display()}: {job.occupation.name_ro}" + (f" ({float(job.rate):g})" if job.rate != 1 else ""))
+        p["job_list"].append({"kind": job.kind, "occupation": job.occupation.name_ro, "rate": float(job.rate)})
         if source == "timesheet":
             p["source"] = source
     out = []
     for p in sorted(people.values(), key=lambda x: x["name"]):
         if p["worked_days"] > 0:
-            p["counted"], p["reason"] = True, f"{p['worked_days']} zile lucrate"
+            p["counted"], p["reason"], p["reason_code"] = True, f"{p['worked_days']} zile lucrate", "worked"
         elif p["maternity"] and count_maternity:
-            p["counted"], p["reason"] = True, "concediu de maternitate (se numără — de verificat)"
+            p["counted"], p["reason"], p["reason_code"] = True, "concediu de maternitate (se numără — de verificat)", "maternity"
         else:
-            p["counted"], p["reason"] = False, "nicio zi lucrată în lună"
+            p["counted"], p["reason"], p["reason_code"] = False, "nicio zi lucrată în lună", "none"
         out.append(p)
     return out
 
@@ -173,7 +174,7 @@ def month_tax(year: int, month: int, with_people=True) -> dict:
         {"code": "010", "label": "Venitul din vânzări", "base": sales, "rate": f"{_n(pct)} %", "amount": by_sales,
          "basis": "Codul fiscal, art. 369 alin. (1), art. 370 alin. (1)"},
         {"code": "020", "label": "Numărul de salariați (cel puțin o zi lucrată în lună)", "base": Decimal(n),
-         "rate": f"{_n(min_pct)} % × {_n(avg)} = {_n(per_employee)} lei", "amount": minimum,
+         "rate": f"{_n(min_pct)} % × {_lei(avg)} = {_lei(per_employee)} lei", "amount": minimum,
          "basis": "Codul fiscal, art. 369 alin. (2), art. 370 alin. (2)"},
         {"code": "030", "label": "Impozitul unic de plată (cel mai mare dintre rd. 010 și rd. 020)", "base": None, "rate": "",
          "amount": due, "basis": "Codul fiscal, art. 370, 371"},
@@ -193,11 +194,23 @@ def _n(value) -> str:
     return format(Decimal(value or 0).normalize(), "f")
 
 
+def _lei(value) -> str:
+    """Suma cu spațiu între mii, fără zecimalele zero („17 400”, „5 220”, „5 220,50”)."""
+    v = Decimal(value or 0)
+    text = f"{v:,.2f}".replace(",", " ").replace(".", ",")
+    return text[:-3] if text.endswith(",00") else text
+
+
 def year_overview(year: int) -> list:
-    """Lunile anului în regim IT Park (și cele cu venitul scris), cu impozitul calculat — pentru lista de pe ecran."""
+    """Lunile anului în regim IT Park până la luna curentă (și cele cu venitul scris), cu impozitul calculat — pentru lista
+    de pe ecran; lunile viitoare nu apar (nu au încă angajați lucrați)."""
+    from django.utils import timezone
+
     from .models import ItParkMonth
 
-    months = {m for (y, m) in it_park_months(date(year, 1, 1), date(year, 12, 31)) if y == year}
+    today = timezone.localdate()
+    until = min(date(year, 12, 31), month_bounds(today.year, today.month)[1])
+    months = {m for (y, m) in it_park_months(date(year, 1, 1), until) if y == year} if until.year >= year else set()
     months |= set(ItParkMonth.objects.filter(year=year).values_list("month", flat=True))
     return [month_tax(year, m, with_people=False) for m in sorted(months)]
 

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { Button, Card, Select, Space, Tag, Typography } from 'antd'
+import { Button, Card, DatePicker, Select, Space, Tag, Typography } from 'antd'
 import { WalletOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 
@@ -41,6 +41,8 @@ export default function PayrollSettingsPage({ part, title }: { part: 'types' | '
         <PayTypesPage />
       ) : (
         <>
+          <FiscalRegimes canEdit={canEdit} />
+          <Typography.Title level={5} style={{ marginTop: 16 }}>{t('itp.constantsTitle')}</Typography.Title>
           <Space style={{ marginBottom: 12 }} wrap>
             <Typography.Text type="secondary">{t('pay.const.hint')}</Typography.Text>
             <Select allowClear style={{ width: 420 }} placeholder={t('pay.const.filter')} value={code} onChange={setCode}
@@ -52,4 +54,33 @@ export default function PayrollSettingsPage({ part, title }: { part: 'types' | '
       )}
     </Card>
   )
+}
+
+/** Regimul fiscal pe luni (general / IT Park), cu istoric: lunile vechi se calculează după regimul lor (CF art. 375). */
+function FiscalRegimes({ canEdit }: { canEdit: boolean }) {
+  const { t } = useTranslation()
+  const month = (v: unknown) => (v ? dayjs(String(v)).format('MM.YYYY') : '')
+  const fields: CrudField[] = [
+    { key: 'regime', label: t('itp.regime'), type: 'select', required: true, width: 230,
+      options: ['general', 'it_park'].map((v) => ({ value: v, label: t(`itp.regimes.${v}`) })),
+      render: (v) => <Tag color={v === 'it_park' ? 'purple' : 'default'}>{t(`itp.regimes.${String(v)}`)}</Tag> },
+    { key: 'status_date', label: t('itp.statusDate'), type: 'date', width: 130, extra: t('itp.statusDateHint') },
+    { key: 'date_from', label: t('itp.dateFrom'), width: 120, render: month, extra: t('itp.dateFromHint'),
+      input: () => <MonthField /> },
+    { key: 'document', label: t('itp.document'), width: 260 },
+    { key: 'note', label: t('org.notes'), inTable: false },
+  ]
+  return (
+    <>
+      <Typography.Title level={5} style={{ marginTop: 0 }}>{t('itp.regimeTitle')}</Typography.Title>
+      <Typography.Paragraph type="secondary">{t('itp.regimeHint')}</Typography.Paragraph>
+      <CrudTable endpoint="/payroll/fiscal-regimes/" fields={fields} canEdit={canEdit} defaults={{ regime: 'it_park' }} />
+    </>
+  )
+}
+
+/** „În vigoare din” — luna (se trimite prima zi a lunii); goală — luna următoare datei statutului. */
+function MonthField({ value, onChange }: { value?: string | null; onChange?: (v: string | null) => void }) {
+  return <DatePicker picker="month" format="MM.YYYY" allowClear style={{ width: '100%' }} value={value ? dayjs(String(value)) : null}
+    onChange={(d) => onChange?.(d ? d.startOf('month').format('YYYY-MM-DD') : null)} />
 }

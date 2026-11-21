@@ -63,6 +63,7 @@ import PaymentsPage from './pages/payroll/PaymentsPage'
 import PaymentEditor from './pages/payroll/PaymentEditor'
 import PayItemChangesPage, { PayItemChangeEditor } from './pages/payroll/PayItemChangesPage'
 import TaxReportsPage, { TaxSettingsPage } from './pages/payroll/TaxReportsPage'
+import ItParkPage, { ItParkMonthEditor } from './pages/payroll/ItParkPage'
 import ReportsPage from './pages/reports/ReportsPage'
 import ReportView from './pages/reports/ReportView'
 import TrainingPage from './pages/training/TrainingPage'
@@ -131,6 +132,8 @@ const MODULE_ROUTES: { path: string; perm?: string; element: React.ReactNode }[]
   { path: 'payroll/item-changes', perm: 'payroll.view', element: <PayItemChangesPage /> },
   { path: 'payroll/item-changes/:id', perm: 'payroll.view', element: <PayItemChangeEditor /> },
   { path: 'tax-reports', perm: 'tax_reports.view', element: <TaxReportsPage /> },
+  { path: 'payroll/it-park', perm: 'tax_reports.view', element: <ItParkPage /> },
+  { path: 'payroll/it-park/:year/:month', perm: 'tax_reports.view', element: <ItParkMonthEditor /> },
   { path: 'reports', perm: 'reports.view', element: <ReportsPage /> },
   // fără drept pe rută: fiecare raport are dreptul lui (evidența militară — military.view), verificat de server
   { path: 'reports/:key', element: <ReportView /> },

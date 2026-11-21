@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import {
-  ApartmentOutlined, AuditOutlined, BankOutlined, BarChartOutlined, BellOutlined, BookOutlined, CalendarOutlined, CheckSquareOutlined,
-  ClearOutlined, ClockCircleOutlined, CloudServerOutlined, CloudUploadOutlined, DashboardOutlined, DollarOutlined, EnvironmentOutlined,
+  ApartmentOutlined, AuditOutlined, BankOutlined, BarChartOutlined, BellOutlined, BookOutlined, CalculatorOutlined, CalendarOutlined,
+  CheckSquareOutlined, ClearOutlined, ClockCircleOutlined, CloudServerOutlined, CloudUploadOutlined, DashboardOutlined, DollarOutlined, EnvironmentOutlined,
   FieldNumberOutlined, FileDoneOutlined, FileProtectOutlined, FileTextOutlined, HomeOutlined, IdcardOutlined, KeyOutlined, MailOutlined,
   MedicineBoxOutlined, MenuOutlined, OrderedListOutlined, PrinterOutlined, ProfileOutlined, ReadOutlined,
   SafetyCertificateOutlined, SafetyOutlined, ScheduleOutlined, SettingOutlined, SolutionOutlined, TableOutlined, TagsOutlined,
@@ -47,6 +47,7 @@ export const NAV: NavItem[] = [
   { path: '/payroll/payments', key: 'payrollPayments', icon: <DollarOutlined />, perm: 'payroll.view' },
   { path: '/payroll/item-changes', key: 'payItemChanges', icon: <ProfileOutlined />, perm: 'payroll.view' },
   { path: '/tax-reports', key: 'taxReports', icon: <FileDoneOutlined />, perm: 'tax_reports.view' },
+  { path: '/payroll/it-park', key: 'itPark', icon: <CalculatorOutlined />, perm: 'tax_reports.view' },
   // Etapa 6: formare, sănătate, evidență militară
   { path: '/training', key: 'training', icon: <ReadOutlined />, perm: 'training.view' },
   { path: '/health', key: 'health', icon: <SafetyOutlined />, perm: 'health.view' },
@@ -116,7 +117,7 @@ export const PANEL_KIND: Record<string, 'start' | 'doc'> = {
   dashboard: 'start', alerts: 'start', portal: 'start',
   staffList: 'doc', contracts: 'doc', employeeRequests: 'doc', orders: 'doc',
   leaveSchedule: 'doc', leave: 'doc', sickLeave: 'doc', rosters: 'doc', timesheets: 'doc',
-  payroll: 'doc', payrollPayments: 'doc', payItemChanges: 'doc',
+  payroll: 'doc', payrollPayments: 'doc', payItemChanges: 'doc', itPark: 'doc',
 }
 
 /** Legăturile dintre documente în schema de lucru (din primul se face al doilea): săgeata între iconițe, iar documentul de

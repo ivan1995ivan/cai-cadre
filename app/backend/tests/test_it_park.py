@@ -197,7 +197,12 @@ def test_single_tax_minimum_and_seven_percent(admin_client, org, regime):  # noq
     assert admin_client.put("/api/payroll/it-park/2026/7/", {"sales_income": "-1"}, format="json").status_code == 400
     # lista anului, Excel, tiparul
     y = admin_client.get("/api/payroll/it-park/", {"year": 2026}).data
-    assert [m["month"] for m in y["months"]] == list(range(7, 13)) and y["months"][0]["due"] == 70000.0
+    # lunile în regim până la luna curentă (cele viitoare nu apar)
+    from django.utils import timezone
+
+    today = timezone.localdate()
+    last = 12 if today.year > 2026 else today.month
+    assert [m["month"] for m in y["months"]] == list(range(7, last + 1)) and y["months"][0]["due"] == 70000.0
     wb = load_workbook(BytesIO(admin_client.get("/api/payroll/it-park/2026/7/", {"export": "xlsx"}).content))
     assert wb["IU17 (calculul)"]["E4"].value == 70000.0 and wb["Angajații (rd. 020)"].max_row == 3
     html = admin_client.get("/api/payroll/it-park/2026/7/", {"print": 1}).content.decode()
