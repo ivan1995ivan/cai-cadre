@@ -154,6 +154,7 @@ class EmploymentSerializer(MaskMixin, serializers.ModelSerializer):
     employee_name = serializers.CharField(source="employee.full_name", read_only=True)
     employee_tab = serializers.CharField(source="employee.tab_number", read_only=True)
     history = EmploymentHistorySerializer(many=True, read_only=True)
+    warnings = serializers.SerializerMethodField()
 
     class Meta:
         model = Employment
@@ -161,11 +162,20 @@ class EmploymentSerializer(MaskMixin, serializers.ModelSerializer):
                   "occupation_code", "category", "category_name", "rate", "base_salary", "allowance_pct", "combination_pct", "date_from", "date_to",
                   "probation_until", "contract_number", "contract_date", "substitutes", "status", "status_label",
                   "suspended_from", "suspension_reason", "end_date", "termination_reason", "termination_reason_name",
-                  "hire_order", "end_order", "note", "history"]
+                  "hire_order", "end_order", "note", "history", "warnings"]
         read_only_fields = ["status", "suspended_from", "suspension_reason", "end_date", "termination_reason", "end_order"]
 
     def get_subdivision_name(self, obj):
         return _name(obj.subdivision, user_lang(self))
+
+    def get_warnings(self, obj):
+        """Salariul de funcție sub salariul minim pe țară (apps.payroll.alerts)."""
+        from apps.payroll.alerts import min_wage_warning
+
+        if obj.status == "ended":
+            return []
+        text = min_wage_warning(obj.base_salary, obj.kind)
+        return [text] if text else []
 
     def get_occupation_name(self, obj):
         return _name(obj.occupation, user_lang(self))

@@ -3,13 +3,13 @@
 Regulile de completare vin din instrucțiunile oficiale:
 - IPC21 — anexa nr. 2 la OMF 94/2020 (modificată prin OMF 109/2025): tabelul 1 rândul 11 „SAL” și 61 „TOTAL”, anexa pe
   subdiviziuni (CUATM), tabelul 2 pe persoane și categorii (clasificatorul CNAS al categoriilor persoanelor asigurate),
-  rândul 1.1 a) 29 % sau b) 24 % (instituțiile medico-sanitare — 24 %);
-- IALS21 — anexa nr. 2 la OMF 95/2020: scutirile pe coduri P / M / Sm / N / H, suma de control = totalul impozitului (col. 16),
+  rândul 1.1 a) 29 % sau b) 24 % (angajatorii din sectorul privat — 24 %);
+- IALS21 — anexa nr. 2 la OMF 95/2020 (modificat prin OMF 59/2026): col. 4 codul fiscal al soțului (doar cu Sm), col. 8–12 scutirile pe coduri P / M / Sm / N / H, suma de control = totalul impozitului (col. 16),
   anexa cu persoanele întreținute;
 - IRM19 — anexa nr. 4 la OMF 126/2017: col. 5–7 categoria riscului (157, 158, 165) cu perioada, col. 8 codul raportului de
   muncă (01 angajare pe durată nedeterminată, 02 încetare, 03 suspendare, 04 reluare, 05 angajare pe durată determinată),
   col. 9 motivul eliberării (111–116), col. 10 data.
-Rubricile pe care schema le cere, dar care nu privesc o instituție medicală (dividende, royalty, nerezidenți...), se pun 0.
+Rubricile pe care schema le cere, dar care nu privesc salariile întreprinderii (dividende, royalty, nerezidenți...), se pun 0.
 """
 from collections import defaultdict
 from datetime import date, timedelta
@@ -37,6 +37,7 @@ KIND_CATEGORY = {"main": "101", "main_student": "101", "substitute": "101", "int
 ABSENCE_CATEGORY = {"annual": "160", "extra": "16012", "study": "16011", "unpaid": "159", "childcare": "157",
                     "childcare_unpaid": "158", "paternity": "165"}
 SICK_EMPLOYER_CATEGORY = "15311"  # indemnizația pentru incapacitate temporară plătită din mijloacele angajatorului
+SICK_ACCIDENT_CATEGORY = "15321"  # accidentul de muncă / boala profesională, din mijloacele angajatorului (Particularitățile 2026)
 # IRM19: categoria riscului asigurat (col. 5) după tipul ordinului de concediu
 IRM_CATEGORY = {"leave_childcare": "157", "leave_childcare_unpaid": "158", "leave_paternity": "165"}
 # IRM19: motivul eliberării (col. 9) după codul din clasificatorul nostru (DictItem.extra["irm19"] are prioritate)
@@ -122,7 +123,7 @@ def ipc21_rows(year: int, month: int) -> dict:
         absences = list(Absence.objects.filter(employee=e, date_from__lte=last, date_to__gte=first))
         leave_base = ZERO
         groups = defaultdict(lambda: {"base": ZERO, "start": None, "end": None, "code": ""})
-        sick = ZERO
+        sick = accident = ZERO
         for ln in emp_lines:
             job = ln.employment
             category = KIND_CATEGORY.get(job.kind, "101")
@@ -133,10 +134,15 @@ def ipc21_rows(year: int, month: int) -> dict:
             g["code"] = g["code"] or (job.occupation.code if job.occupation_id else "")
             for it in ln.items.all():
                 t = it.pay_type
+                if t.auto == "cas_min":  # baza minimă (salariul minim proporțional): diferența intră în baza CAS — de verificat rubrica
+                    g["base"] += it.base or ZERO
+                    continue
                 if t.category != "accrual":
                     continue
                 if t.auto == "sick":
                     sick += it.amount
+                elif t.auto == "sick_accident":
+                    accident += it.amount
                 elif t.auto == "leave":
                     leave_base += it.amount if t.cas else ZERO
                 elif t.cas:
@@ -154,10 +160,11 @@ def ipc21_rows(year: int, month: int) -> dict:
                             base, ZERO))
         if leave_base:  # concediul plătit fără absență în lună (de ex. calculat înainte) — cu salariul
             rows.append(_t2(n, e, first, last, "160", cas_pct, main_code, leave_base, ZERO))
-        if sick:
-            s = next((a for a in absences if a.kind == "sick"), None)
-            rows.append(_t2(n, e, max(s.date_from, first) if s else first, min(s.date_to, last) if s else last,
-                            SICK_EMPLOYER_CATEGORY, ZERO, main_code, ZERO, sick))
+        s = next((a for a in absences if a.kind == "sick"), None)
+        for amount, cat in ((sick, SICK_EMPLOYER_CATEGORY), (accident, SICK_ACCIDENT_CATEGORY)):
+            if amount:
+                rows.append(_t2(n, e, max(s.date_from, first) if s else first, min(s.date_to, last) if s else last,
+                                cat, ZERO, main_code, ZERO, amount))
     t9 = sum((r["c9"] for r in rows), ZERO)
     t10 = sum((r["c10"] for r in rows), ZERO)
     t11 = sum((r["c11"] for r in rows), ZERO)
@@ -230,7 +237,7 @@ def ipc21_xml(year: int, month: int) -> HttpResponse:
     _sub(tot, "tot2c10", money(data["t10"]))
     _sub(tot, "tot2c11", money(data["t11"]))
     t2s = _sub(_sub(root, "table2"), "row")
-    big = data["cas_pct"] >= 29  # autoritățile bugetare 29 %; instituțiile medico-sanitare 24 %
+    big = data["cas_pct"] >= 29  # autoritățile bugetare 29 %; angajatorii privați 24 %
     summary = {("r11ac9" if big else "r11bc9"): data["t9"], ("r11ac11" if big else "r11bc11"): data["t11"]}
     for tag in IPC_T2_ROWS:
         _sub(t2s, tag, money(summary.get(tag, ZERO)))
@@ -240,12 +247,21 @@ def ipc21_xml(year: int, month: int) -> HttpResponse:
 # --- IALS21 --------------------------------------------------------------------------------------------------------
 def ials21_rows(year: int) -> dict:
     """Pe persoane: venitul achitat în an, scutirile pe coduri (P, M, Sm, N, H), CNAM și impozitul reținute — din îndreptările
-    spre plată achitate în an; anexa cu întreținuții."""
+    spre plată achitate în an. Scutirea fiecărei plăți se împarte pe coduri după scutirile valabile în luna pentru care s-a
+    plătit (cererea, întreținuții cu perioada lor). Anexa: codurile fiscale ale întreținuților (N / H) din cererile anului."""
+    from .exemptions import CODES, month_parts
     from .models import PaymentLine
+    from .payments import accrued
 
-    people = defaultdict(lambda: {"income": ZERO, "P": ZERO, "M": ZERO, "Sm": ZERO, "N": ZERO, "H": ZERO, "cnam": ZERO, "tax": ZERO})
-    names = {}
-    requests = {r.employee_id: r for r in ExemptionRequest.objects.filter(year=year)}
+    people = defaultdict(lambda: {"income": ZERO, **{k: ZERO for k in CODES}, "cnam": ZERO, "tax": ZERO})
+    names, parts_cache = {}, {}
+
+    def parts_of(emp, y, m, on_date):
+        if (y, m) not in parts_cache:
+            taxable = {e: a["taxable"] for e, a in accrued(y, m).items()}
+            parts_cache[(y, m)] = month_parts(y, m, Constants(on_date), taxable)
+        return parts_cache[(y, m)].get(emp)
+
     for ln in PaymentLine.objects.filter(payment__status="paid", payment__deletion_mark=False,
                                          payment__paid_on__year=year).select_related("employee", "payment"):
         p = people[ln.employee_id]
@@ -254,28 +270,38 @@ def ials21_rows(year: int) -> dict:
         p["cnam"] += ln.cnam
         p["tax"] += ln.income_tax
         if ln.exemption:
-            for code, share in _split(requests.get(ln.employee_id), Constants(ln.payment.paid_on)).items():
+            for code, share in _split(parts_of(ln.employee_id, ln.payment.year, ln.payment.month, ln.payment.paid_on)).items():
                 p[code] += (ln.exemption * share).quantize(CENT, rounding=ROUND_HALF_UP)
+    requests = defaultdict(list)
+    for r in (ExemptionRequest.objects.filter(employee_id__in=list(people), is_active=True, date_from__lte=date(year, 12, 31))
+              .exclude(date_to__lt=date(year, 1, 1)).prefetch_related("dependents").order_by("date_from", "id")):
+        requests[r.employee_id].append(r)
+    months = [date(year, m, 1) for m in range(1, 13)]
     rows, deps = [], []
     for n, (pk, p) in enumerate(sorted(people.items(), key=lambda kv: names[kv[0]].full_name()), start=1):
-        e, req = names[pk], requests.get(pk)
-        total = p["P"] + p["M"] + p["Sm"] + p["N"] + p["H"]
-        rows.append({"number": n, "idnp": e.idnp, "name": e.full_name(), "spouse": (req.spouse_idnp if req and p["Sm"] else ""),
+        e = names[pk]
+        total = sum((p[k] for k in CODES), ZERO)
+        spouse = next((r.spouse_idnp for r in reversed(requests[pk]) if r.spouse_major and r.spouse_idnp), "") if p["Sm"] else ""
+        rows.append({"number": n, "idnp": e.idnp, "name": e.full_name(), "spouse": spouse,
                      "source": get_settings()["income_source"] or "SAL", **p, "total": total})
-        for d in (req.dependents if req else []):
-            deps.append({"employee": e.idnp, "N": "" if d.get("disabled") else d.get("idnp", ""), "H": d.get("idnp", "") if d.get("disabled") else ""})
+        seen = set()
+        for r in requests[pk]:
+            for d in r.dependents.all():
+                key = d.idnp or d.name
+                if key in seen or not any(r.valid_in(m) and d.valid_in(m) for m in months):
+                    continue
+                if not p[d.code]:
+                    continue  # scutirea pe acest cod nu s-a acordat efectiv (de ex. venitul lunii a fost mai mic)
+                seen.add(key)
+                deps.append({"employee": e.idnp, "N": d.idnp if d.code == "N" else "", "H": d.idnp if d.code == "H" else "",
+                             "name": d.name})
     return {"year": year, "rows": rows, "dependents": deps}
 
 
-def _split(req, const) -> dict:
-    """Ponderea fiecărui cod de scutire în scutirea lunară (după sumele anuale din constante)."""
-    if req is None:
+def _split(parts) -> dict:
+    """Ponderea fiecărui cod în scutirea lunii (după sumele anuale valabile în lună)."""
+    if not parts:
         return {"P": Decimal(1)}
-    parts = {"P": const("exemption_personal") if req.kind == "personal" else ZERO,
-             "M": const("exemption_major") if req.kind == "major" else ZERO,
-             "Sm": const("exemption_spouse") if req.spouse else ZERO,
-             "N": const("exemption_dependent") * sum(1 for d in req.dependents if not d.get("disabled")),
-             "H": const("exemption_dependent_disabled") * sum(1 for d in req.dependents if d.get("disabled"))}
     total = sum(parts.values(), ZERO)
     return {k: v / total for k, v in parts.items() if v} if total else {"P": Decimal(1)}
 

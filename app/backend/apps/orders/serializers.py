@@ -10,11 +10,12 @@ class OrderItemSerializer(serializers.ModelSerializer):
     employee_tab = serializers.SerializerMethodField()
     order_label = serializers.SerializerMethodField()
     order_status = serializers.CharField(source="order.status", read_only=True)
+    warnings = serializers.SerializerMethodField()
 
     class Meta:
         model = OrderItem
         fields = ["id", "order", "order_label", "order_status", "employee", "employee_name", "employee_tab", "employment",
-                  "params", "text", "text_edited", "sort", "acknowledged_on", "result"]
+                  "params", "text", "text_edited", "sort", "acknowledged_on", "result", "warnings"]
         read_only_fields = ["result"]
 
     def get_employee_name(self, obj):
@@ -25,6 +26,22 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
     def get_order_label(self, obj):
         return obj.order.reference()
+
+    def get_warnings(self, obj):
+        """Ordinul de angajare / transfer / salariu cu salariul de funcție sub salariul minim pe țară."""
+        from datetime import date
+
+        from apps.payroll.alerts import min_wage_warning
+
+        p = obj.params or {}
+        if p.get("base_salary") in (None, ""):
+            return []
+        try:
+            day = date.fromisoformat(str(p.get("date_from"))[:10]) if p.get("date_from") else obj.order.date
+        except ValueError:
+            day = obj.order.date
+        text = min_wage_warning(p.get("base_salary"), p.get("kind") or "main", day)
+        return [text] if text else []
 
     def validate(self, attrs):
         employee = attrs.get("employee", getattr(self.instance, "employee", None))

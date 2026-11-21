@@ -56,7 +56,9 @@ def annual_card(employee, year: int) -> dict:
                                                payment__deletion_mark=False)
                     .select_related("payment").order_by("payment__paid_on", "payment_id"))
     rows, cum = [], {"gross": ZERO, "cnam": ZERO, "taxable": ZERO, "tax": ZERO}
-    pct = Decimal("0.12")
+    from .engine import Constants
+
+    pct = Constants(date(year, 12, 31))("income_tax_pct", "12") / 100
     for ln in payments:
         taxable = max(ln.gross - ln.cnam - ln.exemption, ZERO)
         items = {"gross": ln.gross, "exemption": ln.exemption, "cnam": ln.cnam, "taxable": taxable, "tax": ln.income_tax}
@@ -67,19 +69,21 @@ def annual_card(employee, year: int) -> dict:
                      **{k: _f(v) for k, v in items.items()}, "tax_calc": _f(taxable * pct),
                      "cum_gross": _f(cum["gross"]), "cum_cnam": _f(cum["cnam"]), "cum_taxable": _f(cum["taxable"]),
                      "cum_tax": _f(cum["tax"])})
-    req = ExemptionRequest.objects.filter(employee=employee, year=year).first()
+    reqs = list(ExemptionRequest.objects.filter(employee=employee, is_active=True, date_from__lte=date(year, 12, 31))
+                .exclude(date_to__lt=date(year, 1, 1)).prefetch_related("dependents").order_by("date_from", "id"))
+    req = reqs[-1] if reqs else None  # cererea în vigoare la sfârșitul anului (sau ultima din an)
     total = {k: _f(sum((Decimal(str(r[k])) for r in rows), ZERO)) for k in ("gross", "exemption", "cnam", "taxable", "tax", "tax_calc")}
     jobs = list(employee.employments.order_by("date_from"))
     hired = jobs[0].date_from if jobs else None
     ended = [j.end_date for j in jobs if j.end_date]
     company = Company.get()
     return {"employee": employee.pk, "name": employee.full_name(), "idnp": employee.idnp, "tab_number": employee.tab_number,
-            "address": getattr(employee, "address", "") or "", "spouse_idnp": (getattr(req, "spouse_idnp", "") or "") if req else "",
+            "address": getattr(employee, "address", "") or "", "spouse_idnp": next((r.spouse_idnp for r in reversed(reqs) if r.spouse_major), ""),
             "hired": hired.strftime("%d.%m.%Y") if hired else "",
             "dismissed": max(ended).strftime("%d.%m.%Y") if ended and len(ended) == len(jobs) else "",
             "employer": company.name_ro, "employer_idno": company.idno,
-            "year": year, "exemption_code": req.code() if req else "—", "exemption_date": (
-                req.date_from.strftime("%d.%m.%Y") if req and req.date_from else ""),
+            "year": year, "exemption_code": " / ".join(dict.fromkeys(r.code() for r in reqs)) if reqs else "—",
+            "exemption_date": req.date.strftime("%d.%m.%Y") if req else "",
             "rows": rows, "total": total}
 
 

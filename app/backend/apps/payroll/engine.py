@@ -37,6 +37,11 @@ def q(value) -> Decimal:
     return Decimal(value or 0).quantize(CENT, rounding=ROUND_HALF_UP)
 
 
+def num(value) -> str:
+    """Numărul fără zerourile de la coadă, pentru explicații (150.0000 → „150”, 0.50 → „0.5”)."""
+    return format(Decimal(value or 0).normalize(), "f")
+
+
 # --- constantele --------------------------------------------------------------------------------------------------
 class Constants:
     def __init__(self, on_date: date):
@@ -88,6 +93,117 @@ def average_daily(employment: Employment, year: int, month: int, months: int, fa
     return q(total / days), {"months": len(used), "sum": q(total), "days": days}
 
 
+# --- incapacitatea temporară de muncă (Legea 289/2004) --------------------------------------------------------------
+def _episode_end(sick: SickLeave) -> date:
+    """Sfârșitul incapacității: ultimul certificat din lanțul continuărilor (fără cele marcate pentru ștergere)."""
+    end, seen, todo = sick.date_to, {sick.pk}, [sick]
+    while todo:
+        cur = todo.pop()
+        for nxt in cur.continuations.filter(deletion_mark=False):
+            if nxt.pk not in seen:
+                seen.add(nxt.pk)
+                end = max(end, nxt.date_to)
+                todo.append(nxt)
+    return end
+
+
+def employer_sick_days(employee, first: date, last: date, c) -> list:
+    """Zilele plătite de angajator care cad în lună, pe feluri: [(„illness” | „work_accident”, zile, explicația)].
+    Boala obișnuită (și celelalte cauze, afară de sarcină): primele `sick_employer_days` zile ale fiecărui certificat
+    inițial (cu continuările), cel mult `sick_employer_year_days` pe an calendaristic, în ordinea certificatelor anului;
+    accidentul de muncă / boala profesională: primele `sick_accident_days` zile, în afara plafonului anual."""
+    per, cap = int(c("sick_employer_days", "5")), int(c("sick_employer_year_days", "15"))
+    accident_days = int(c("sick_accident_days", "20"))
+    used = defaultdict(int)
+    out = {"illness": [0, []], "work_accident": [0, []]}
+    certs = (SickLeave.objects.filter(employee=employee, continuation_of__isnull=True, deletion_mark=False,
+                                      date_from__year__gte=first.year - 1, date_from__lte=last)
+             .exclude(kind="pregnancy").order_by("date_from", "id"))
+    for s in certs:
+        accident = s.kind == "work_accident"
+        length = (_episode_end(s) - s.date_from).days + 1
+        if accident:
+            allowed = min(accident_days, length)
+        else:
+            allowed = max(min(per, length, cap - used[s.date_from.year]), 0)
+            used[s.date_from.year] += allowed
+        if not allowed:
+            if s.date_from >= first:
+                out["illness"][1].append(f"{s}: plafonul de {cap} zile pe an atins")
+            continue
+        start, end = max(s.date_from, first), min(s.date_from + timedelta(days=allowed - 1), last)
+        if end < start:
+            continue
+        group = out["work_accident" if accident else "illness"]
+        group[0] += (end - start).days + 1
+        group[1].append(f"{s} ({start:%d.%m}–{end:%d.%m})" + ("" if accident or allowed == min(per, length)
+                                                                  else f", plafonul de {cap} zile pe an"))
+    return [(kind, days, "; ".join(notes)) for kind, (days, notes) in out.items() if days]
+
+
+def sick_average_daily(employment: Employment, year: int, month: int, c, fallback_monthly: Decimal) -> tuple:
+    """Venitul mediu zilnic pentru indemnizația de boală (Legea 289/2004, art. 7): venitul asigurat (acumulările din baza
+    CAS) din ultimele `sick_avg_months` luni calendaristice aprobate / numărul lunilor (12; mai puține — lunile cu venit),
+    cel mult `sick_avg_cap_salaries` salarii medii lunare prognozate pe lună; venitul pe o zi = media lunară / zilele
+    calendaristice ale lunii pentru care se plătește (art. 7 alin. (16)). Fără istoric — salariul lunii."""
+    months = int(c("sick_avg_months", "12"))
+    first = add_months(date(year, month, 1), -months)
+    end = date(year, month, 1) - timedelta(days=1)
+    per_month = defaultdict(lambda: ZERO)
+    for it in (PayrollItem.objects.filter(line__employment=employment, line__payroll__status="approved", pay_type__cas=True,
+                                          pay_type__category="accrual", line__payroll__year__gte=first.year)
+               .select_related("line__payroll")):
+        p = it.line.payroll
+        if first <= date(p.year, p.month, 1) <= end:
+            per_month[(p.year, p.month)] += it.amount
+    n = len(per_month)
+    monthly = (sum(per_month.values(), ZERO) / n) if n else fallback_monthly
+    cap = c("sick_avg_cap_salaries", "5") * c("avg_salary")
+    capped = bool(cap) and monthly > cap
+    if capped:
+        monthly = cap
+    f, l = month_bounds(year, month)
+    days = (l - f).days + 1
+    note = (f"{n} luni" if n else "fără istoric: salariul lunii") + f", {q(monthly)} lei / {days} zile" + (
+        f", plafonul {num(cap)} lei" if capped else "")
+    return q(monthly / days), {"months": n, "monthly": q(monthly), "days": days, "note": note}
+
+
+# --- baza minimă CAS (Legea 489/1999, art. 22 alin. (1)) ---------------------------------------------------------------
+def cas_minimum(calcs: list, c) -> None:
+    """Baza CAS a salariatului (toate raporturile lui de muncă din calcul, fără contractele de prestări servicii) nu poate fi
+    mai mică decât salariul minim proporțional timpului lucrat; la timp parțial (norma totală sub 1) CAS nu poate fi mai mică
+    de `cas_min_part_pct` % din CAS-ul pe salariul minim. Fără timp lucrat în lună (concediu neplătit, de îngrijire a
+    copilului, boală plătită de CNAS toată luna) — fără bază minimă. Diferența: rândul „CAS pe diferența până la baza
+    minimă” pe raportul de bază, cu baza reală și baza minimă în explicație."""
+    jobs = [x for x in calcs if x.job.kind != "contractor"]
+    if not jobs:
+        return
+    main = next((x for x in jobs if x.is_main), jobs[0])
+    types = main.m.by_auto["cas_min"]
+    if not types or any(x.cas_manual for x in jobs):
+        return
+    minimum, pct = c("min_salary"), c("cas_employer_pct")
+    time_share = sum((x.rate * x.worked_share for x in jobs), ZERO)
+    if not minimum or not time_share:
+        return
+    real = sum((x.cas_base for x in jobs), ZERO)
+    floor = q(minimum * time_share)
+    how = f"salariul minim {num(minimum)} × timpul lucrat {float(time_share) * 100:.4g} %"
+    rate = sum((x.rate for x in jobs), ZERO)
+    if rate < 1:
+        part = q(minimum * c("cas_min_part_pct", "25") / 100)
+        if part > floor:
+            floor, how = part, f"timp parțial: {num(c('cas_min_part_pct', '25'))} % din salariul minim {num(minimum)}"
+    diff = q(floor - real)
+    if diff <= 0:
+        return
+    amount = q(diff * pct / 100)
+    main.add(types[0].code, amount, base=diff, percent=pct, note=f"baza reală {q(real)}, baza minimă {floor} ({how})")
+    main.line.cas = q(main.line.cas + amount)
+    main.info["cas_min"] = {"real": float(q(real)), "minimum": float(floor), "diff": float(diff), "cas": float(amount)}
+
+
 # --- contextul lunii ------------------------------------------------------------------------------------------------
 class Month:
     def __init__(self, payroll: Payroll):
@@ -126,8 +242,9 @@ class Month:
             return t
         norm = self.ctx.norm(jd)
         working = sum(1 for d in jd.days if self.ctx.cal.is_working(d))
-        return {"days": working, "hours": float(norm), "night": 0, "holiday": 0, "norm": float(norm), "overtime": 0,
-                "missing": 0, "codes": {}, "assumed": True}
+        return {"days": working, "hours": float(norm), "night": 0, "holiday": 0, "rest_work": 0, "regular": float(norm),
+                "norm": float(norm), "overtime": 0, "overtime_2": 0, "overtime_over": 0, "holiday_in_norm": 0,
+                "holiday_over_norm": 0, "missing": 0, "codes": {}, "assumed": True}
 
     def prior_year_amount(self, employee_id: int, code: str) -> Decimal:
         """Suma tipului pe anul curent din calculele aprobate de dinainte (pentru plafoanele anuale)."""
@@ -149,12 +266,19 @@ class LineCalc:
         self.rate = Decimal(rate)
         self.salary_full = q(self.job.base_salary * self.rate)  # salariul pentru norma raportului
         self.hourly = q(self.salary_full / self.norm) if self.norm else ZERO
-        self.worked_share = (min(self.hours, self.norm) / self.norm) if self.norm else (ZERO if self.job.kind == "contractor" else Decimal("1"))
+        # orele plătite din salariul lunar: cele obișnuite + cele de sărbătoare / repaus în limita normei; suplimentarele și
+        # orele de sărbătoare peste normă se plătesc separat (SUPL, SARB), întregi
+        ts = self.ts
+        self.salary_hours = (self._d("regular") + self._d("holiday_in_norm")) if "regular" in ts else self.hours
+        self.worked_share = (min(self.salary_hours, self.norm) / self.norm) if self.norm else (ZERO if self.job.kind == "contractor" else Decimal("1"))
         occ, sub = month.ctx.occupations.get(occ_id), month.ctx.subdivisions.get(sub_id)
         self.info = {"occupation": occ.name_ro if occ else "", "subdivision": sub.name_ro if sub else "", "kind": self.job.kind,
                      "kind_label": self.job.get_kind_display(), "rate": float(self.rate), "base_salary": float(self.job.base_salary),
                      "salary_full": float(self.salary_full), "hourly": float(self.hourly), "timesheet": self.ts,
                      "tab_number": self.job.employee.tab_number, "name": self.job.employee.full_name(), "is_main": is_main}
+
+    def _d(self, key) -> Decimal:
+        return Decimal(str(self.ts.get(key) or 0))
 
     def add(self, code: str, amount, quantity=None, base=None, percent=None, note="", manual=False):
         t = self.m.types.get(code)
@@ -174,8 +298,8 @@ class LineCalc:
         share = self.worked_share
         for t in m.by_auto["salary"]:
             if self.job.kind != "contractor":
-                self.add(t.code, self.salary_full * share, quantity=self.hours, base=self.salary_full,
-                         note=f"{float(self.hours):g} ore din norma {float(self.norm):g}" if self.norm else "")
+                self.add(t.code, self.salary_full * share, quantity=self.salary_hours, base=self.salary_full,
+                         note=f"{float(self.salary_hours):g} ore din norma {float(self.norm):g}" if self.norm else "")
         for t in m.by_auto["allowance"]:
             if self.job.allowance_pct:
                 self.add(t.code, self.salary_full * share * self.job.allowance_pct / 100, base=self.salary_full * share,
@@ -188,19 +312,52 @@ class LineCalc:
         for t in m.by_auto["night"]:
             if night and self.hourly:
                 self.add(t.code, night * self.hourly * c("night_pct") / 100, quantity=night, base=self.hourly, percent=c("night_pct"))
-        hol = Decimal(str(self.ts.get("holiday") or 0))
         for t in m.by_auto["holiday"]:
-            if hol and self.hourly:
-                self.add(t.code, hol * self.hourly * c("holiday_pct") / 100, quantity=hol, base=self.hourly, percent=c("holiday_pct"))
-        over = Decimal(str(self.ts.get("overtime") or 0))
+            if self.hourly:
+                self._holiday(t.code, self.hourly)
         for t in m.by_auto["overtime"]:
-            if over and self.hourly:
-                self.add(t.code, over * self.hourly * (100 + c("overtime_pct")) / 100, quantity=over, base=self.hourly,
-                         percent=100 + c("overtime_pct"))
+            if self.hourly:
+                self._overtime(t.code, self.hourly, full=True)
         self._leave()
         if self.is_main:
             self._sick()
             self._incentives()
+
+    def _holiday(self, code, hourly, hourly_paid=False):
+        """Munca în zilele de sărbătoare și de repaus (CM art. 158). Salariul lunar: peste salariu, +100 % pe oră în limita
+        normei lunare și +200 % peste normă. Tariful pe oră (rândul „tarif orar × ore”, care plătește deja ora simplă):
+        cel puțin dublu — se adaugă diferența până la dublu."""
+        c = self.m.const
+        if hourly_paid:
+            hours = self._d("holiday") + self._d("rest_work")
+            pct = c("holiday_hourly_pct", "200") - 100
+            if hours and pct > 0:
+                self.add(code, hourly * hours * pct / 100, quantity=hours, base=hourly, percent=pct,
+                         note=f"{float(hours):g} ore × tarif dublu (CM art. 158)")
+            return
+        in_norm, over = self._d("holiday_in_norm"), self._d("holiday_over_norm")
+        if "holiday_in_norm" not in self.ts:  # pontajele vechi: toate orele de sărbătoare, în limita normei
+            in_norm, over = self._d("holiday"), ZERO
+        p1, p2 = c("holiday_pct", "100"), c("holiday_over_norm_pct", "200")
+        if in_norm or over:
+            self.add(code, hourly * (in_norm * p1 + over * p2) / 100, quantity=in_norm + over, base=hourly,
+                     percent=p1 if not over else (p2 if not in_norm else None),
+                     note=f"{float(in_norm):g} ore în limita normei × {num(p1)} % + {float(over):g} ore peste normă × {num(p2)} %")
+
+    def _overtime(self, code, hourly, full: bool):
+        """Orele suplimentare (CM art. 157): primele 2 ore pe zi — cel puțin 150 %, următoarele — 200 % (din pontaj, pe zile).
+        `full` — ora întreagă (salariul lunar nu le plătește); altfel doar sporul peste ora simplă (tariful pe oră)."""
+        c = self.m.const
+        first, nxt = self._d("overtime_2"), self._d("overtime_over")
+        if "overtime_2" not in self.ts:  # pontajele vechi: toate cu tariful întâi
+            first, nxt = self._d("overtime"), ZERO
+        p1, p2 = c("overtime_first_pct", "150"), c("overtime_next_pct", "200")
+        if not full:
+            p1, p2 = p1 - 100, p2 - 100
+        if first or nxt:
+            self.add(code, hourly * (first * p1 + nxt * p2) / 100, quantity=first + nxt, base=hourly,
+                     percent=p1 if not nxt else (p2 if not first else None),
+                     note=f"{float(first):g} ore × {num(p1)} % + {float(nxt):g} ore × {num(p2)} %")
 
     def _leave(self):
         m = self.m
@@ -229,23 +386,21 @@ class LineCalc:
                 self.add(t.code, avg * comp_days, quantity=comp_days, base=avg, note=note)
 
     def _sick(self):
+        """Indemnizația pentru incapacitate temporară de muncă din mijloacele angajatorului (Legea 289/2004, art. 4):
+        primele 5 zile calendaristice ale fiecărui certificat (cu continuările lui), dar cel mult 15 zile pe an calendaristic,
+        numărate din toate certificatele anului, în ordinea lor; accidentul de muncă / boala profesională — primele 20 de zile,
+        în afara plafonului de 15. Suma: % × venitul mediu zilnic (art. 7)."""
         m, c = self.m, self.m.const
-        paid_days = int(c("sick_employer_days", "5"))
-        total_days = ZERO
-        for s in SickLeave.objects.filter(employee=self.job.employee, continuation_of__isnull=True, deletion_mark=False, date_from__lte=m.last,
-                                          date_to__gte=m.first - timedelta(days=paid_days)).exclude(kind="pregnancy"):
-            window_end = s.date_from + timedelta(days=paid_days - 1)
-            start, end = max(s.date_from, m.first), min(window_end, m.last, s.date_to)
-            if end >= start:
-                total_days += (end - start).days + 1
-        if not total_days:
-            return
-        monthly = self.salary_full * (Decimal(1) + (self.job.allowance_pct or ZERO) / 100)
-        avg, how = average_daily(self.job, m.year, m.month, int(c("sick_avg_months", "12")), monthly)
-        pct = c("sick_employer_pct", "75")
-        for t in m.by_auto["sick"]:
-            self.add(t.code, avg * total_days * pct / 100, quantity=total_days, base=avg, percent=pct,
-                     note=f"{pct}% din media {avg} lei/zi ({how['months']} luni)")
+        for kind, days_left, codes in employer_sick_days(self.job.employee, m.first, m.last, c):
+            if not days_left:
+                continue
+            accident = kind == "work_accident"
+            auto = "sick_accident" if accident and m.by_auto["sick_accident"] else "sick"
+            pct = c("sick_accident_pct", "100") if accident else c("sick_employer_pct", "75")
+            avg, how = sick_average_daily(self.job, m.year, m.month, c, self.salary_full * (Decimal(1) + (self.job.allowance_pct or ZERO) / 100))
+            for t in m.by_auto[auto]:
+                self.add(t.code, avg * days_left * pct / 100, quantity=days_left, base=avg, percent=pct,
+                         note=f"{num(pct)}% din media {avg} lei/zi ({how['note']}); {codes}")
 
     def _incentives(self):
         m = self.m
@@ -295,7 +450,13 @@ class LineCalc:
                 base = self.sum_codes(t.base_codes)
                 self.add(t.code, base * pct / 100, base=base, percent=pct, note=r.document)
             elif t.formula == "hourly":
-                self.add(t.code, (r.amount or ZERO) * self.hours, quantity=self.hours, base=r.amount, note=r.document)
+                rate = r.amount or ZERO
+                self.add(t.code, rate * self.hours, quantity=self.hours, base=r.amount, note=r.document)
+                if rate:  # tariful pe oră: sporul pentru suplimentare și dublul în zilele de sărbătoare / repaus
+                    for x in m.by_auto["overtime"]:
+                        self._overtime(x.code, rate, full=False)
+                    for x in m.by_auto["holiday"]:
+                        self._holiday(x.code, rate, hourly_paid=True)
             else:
                 self.add(t.code, r.amount or ZERO, note=r.document)
 
@@ -307,7 +468,9 @@ class LineCalc:
         self.items = [i for i in self.items if i["type"].pk not in overridden]
         for it in manual_items:  # cele scrise de mână intră în baze
             self.items.append(it)
+        self.minimum_completion(overridden)
         cas_fixed = [it["amount"] for it in manual_items if it["type"].auto == "cas"]  # CAS scris de mână: suma lui
+        self.cas_manual = bool(cas_fixed)
         gross = tax_base = cnam_base = cas_base = ZERO
         for i in self.items:
             t, amount = i["type"], i["amount"]
@@ -337,7 +500,26 @@ class LineCalc:
         ln = self.line
         ln.gross, ln.taxable, ln.cnam_base, ln.cas, ln.deductions = q(gross), q(tax_base), q(cnam_base), cas, q(deductions)
         ln.net = q(gross - deductions)
+        self.cas_base = q(cas_base)
         ln.info = self.info
+
+    def minimum_completion(self, overridden):
+        """Completarea până la salariul minim (CM art. 131 alin. (3): în salariul minim nu intră adaosurile, sporurile,
+        plățile de stimulare și compensare): salariul de funcție plătit în lună se compară cu salariul minim × norma
+        raportului × partea lucrată din normă; diferența — rândul „Completare până la salariul minim”."""
+        m = self.m
+        if self.job.kind == "contractor" or not self.worked_share:
+            return
+        types = [t for t in m.by_auto["min_wage"] if t.pk not in overridden]
+        if not types:
+            return
+        minimum = m.const("min_salary")
+        target = q(minimum * self.rate * self.worked_share)
+        paid = sum((i["amount"] for i in self.items if i["type"].auto == "salary"), ZERO)
+        if target > paid:
+            self.add(types[0].code, target - paid, base=target,
+                     note=f"salariul minim {num(minimum)} × norma {num(self.rate)} × {float(self.worked_share) * 100:.4g} % lucrat = {target}; "
+                          f"salariul de funcție {q(paid)}")
 
 
 TOTALS = ("gross", "taxable", "cnam_base", "cas", "deductions", "net")
@@ -363,6 +545,7 @@ def calculate(payroll: Payroll, employee_id: int | None = None) -> dict:
         emp_id = jd.job.employee_id
         if emp_id not in main_of or (jd.job.kind in MAIN_KINDS and main_of[emp_id].kind not in MAIN_KINDS):
             main_of[emp_id] = jd.job
+    calcs = []
     for n, jd in enumerate(jobs, start=1):
         line = existing.pop(jd.job.pk, None) or PayrollLine(payroll=payroll, employee=jd.job.employee, employment=jd.job)
         line.sort = (order[jd.job.pk] if order else n) * 10
@@ -375,13 +558,21 @@ def calculate(payroll: Payroll, employee_id: int | None = None) -> dict:
         calc.scales()
         calc.personal()
         calc.bases(manual)
+        calcs.append(calc)
+    by_employee = defaultdict(list)
+    for calc in calcs:
+        by_employee[calc.job.employee_id].append(calc)
+    for group in by_employee.values():
+        cas_minimum(group, m.const)
+    for calc in calcs:
+        line = calc.line
         line.items.all().delete()
         line.save()
         for k, i in enumerate(sorted(calc.items, key=lambda x: (x["type"].sort, x["type"].code)), start=1):
             PayrollItem.objects.create(line=line, pay_type=i["type"], quantity=i["quantity"], base=i["base"], percent=i["percent"],
                                        amount=i["amount"], taxable_part=i.get("taxable_part", i["amount"] if i["type"].taxable else ZERO),
                                        manual=i["manual"], note=i["note"], sort=k * 10)
-        seen.add(jd.job.pk)
+        seen.add(calc.job.pk)
     for line in existing.values():  # raporturi care nu mai sunt în lună
         line.delete()
     totals = defaultdict(Decimal)

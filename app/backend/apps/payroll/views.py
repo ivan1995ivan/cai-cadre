@@ -96,10 +96,14 @@ class ExemptionRequestViewSet(EmployeeScopedMixin, viewsets.ModelViewSet):
     serializer_class = ExemptionRequestSerializer
 
     def get_queryset(self):
-        qs = super().get_queryset()
-        if self.action == "list" and self.request.query_params.get("year"):
-            qs = qs.filter(year=self.request.query_params["year"])
-        return qs
+        return super().get_queryset().prefetch_related("dependents__family_member")
+
+    @action(detail=True, methods=["get"])
+    def print(self, request, pk=None):
+        """Tiparul cererii (anexa 6 la Regulamentul aprobat prin HG 697/2014)."""
+        from .payment_printing import print_exemption_request
+
+        return print_exemption_request(request, self.get_object())
 
 
 # --- calculul lunar --------------------------------------------------------------------------------------------------

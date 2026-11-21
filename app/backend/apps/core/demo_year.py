@@ -93,17 +93,17 @@ class Year:
                 emp.save(update_fields=["iban", "bank_name"])
             if i % 5 == 4:
                 continue  # fără cerere de scutire (impozitul se reține întreg)
-            dependents = [{"name": f.full_name, "idnp": f.idnp, "disabled": f.disabled}
-                          for f in FamilyMember.objects.filter(employee=emp, dependent=True)]
-            married = emp.marital_status is not None and getattr(emp.marital_status, "code", "") == "married"
-            for y in (self.year - 1, self.year):
-                if not ExemptionRequest.objects.filter(employee=emp, year=y).exists():
-                    ExemptionRequest.objects.create(
-                        employee=emp, year=y, date=date(y, 1, rnd.randint(8, 25)), kind="personal",
-                        spouse=bool(married and i % 3 == 0), spouse_name=f"{emp.last_name} {rnd.choice(MEN + WOMEN)}" if married and i % 3 == 0 else "",
-                        dependents=dependents, documents="copia buletinului" + (", certificatele de naștere" if dependents else ""),
-                        date_from=date(y, 1, 1))
-                    self.count("scutiri")
+            family = list(FamilyMember.objects.filter(employee=emp, dependent=True))
+            if not ExemptionRequest.objects.filter(employee=emp).exists():
+                y = self.year - 1  # cererea nu se reînnoiește anual: una, de la începutul anului trecut
+                req = ExemptionRequest.objects.create(
+                    employee=emp, date=date(y - 1, 12, rnd.randint(8, 28)), date_from=date(y, 1, 1), kind="personal",
+                    documents="copia buletinului" + (", certificatele de naștere" if family else ""))
+                for n, f in enumerate(family, start=1):
+                    req.dependents.create(family_member=f, name=f.full_name, idnp=f.idnp, birth_date=f.birth_date,
+                                          relation="child", disability="severe" if f.disabled else "", sort=n * 10,
+                                          document="certificatul de naștere")
+                self.count("scutiri")
         start = date(self.year - 1, 1, 1)
         jobs = self.main_jobs(date(self.year - 1, 11, 1))
         if "SINDICAT" in types:

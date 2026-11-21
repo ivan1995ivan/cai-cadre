@@ -1,8 +1,12 @@
+import re
 from decimal import Decimal, InvalidOperation
+
+from django.db import transaction
+from django.utils import timezone
 
 from rest_framework import serializers
 
-from .models import (EmployeePayItem, ExemptionRequest, PayConstant, Payment, PaymentLine, Payroll, PayrollItem, PayrollLine,
+from .models import (EmployeePayItem, ExemptionDependent, ExemptionRequest, PayConstant, Payment, PaymentLine, Payroll, PayrollItem, PayrollLine,
                      PayType)
 
 
@@ -69,20 +73,126 @@ class EmployeePayItemSerializer(serializers.ModelSerializer):
         return attrs
 
 
-class ExemptionRequestSerializer(serializers.ModelSerializer):
+FAMILY_RELATION = {"son": "child", "daughter": "child", "mother": "parent", "father": "parent"}  # rudenia din „Familia”
+
+
+def _idnp(value, field):
+    if value and not re.fullmatch(r"\d{13}", value):
+        raise serializers.ValidationError({field: "Codul fiscal (IDNP) are 13 cifre."})
+
+
+class ExemptionDependentSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
     code = serializers.CharField(read_only=True)
+    relation_label = serializers.CharField(source="get_relation_display", read_only=True)
+    disability_label = serializers.CharField(source="get_disability_display", read_only=True)
+
+    class Meta:
+        model = ExemptionDependent
+        fields = ["id", "family_member", "name", "idnp", "birth_date", "relation", "relation_label", "disability", "disability_label",
+                  "date_from", "date_to", "document", "income_ok", "note", "code"]
+        extra_kwargs = {"name": {"required": False, "allow_blank": True}}
+
+
+class ExemptionRequestSerializer(serializers.ModelSerializer):
+    """Cererea de scutire cu persoanele întreținute (rândurile se trimit cu cererea și o înlocuiesc întreagă)."""
+
+    code = serializers.SerializerMethodField()
+    code_now = serializers.SerializerMethodField()
     employee_name = serializers.CharField(source="employee.full_name", read_only=True)
+    dependents = ExemptionDependentSerializer(many=True, required=False)
+    warnings = serializers.SerializerMethodField()
 
     class Meta:
         model = ExemptionRequest
-        fields = ["id", "employee", "employee_name", "year", "date", "kind", "spouse", "spouse_name", "spouse_idnp", "dependents", "documents",
-                  "date_from", "is_active", "code"]
+        fields = ["id", "employee", "employee_name", "number", "date", "date_from", "date_to", "kind", "major_category",
+                  "major_document", "spouse_major", "spouse_name", "spouse_idnp", "spouse_category", "spouse_document",
+                  "waiver_date", "documents", "needs_review", "review_note", "is_active", "dependents", "code", "code_now",
+                  "warnings"]
 
-    def validate_dependents(self, value):
-        if not isinstance(value, list):
-            raise serializers.ValidationError("O listă de persoane.")
-        return [{"name": str(d.get("name", ""))[:160], "idnp": str(d.get("idnp", ""))[:13], "disabled": bool(d.get("disabled"))}
-                for d in value if isinstance(d, dict)]
+    def get_code(self, obj):
+        return obj.code()
+
+    def get_code_now(self, obj):
+        return obj.code(timezone.localdate().replace(day=1)) if obj.valid_in(timezone.localdate().replace(day=1)) else ""
+
+    def get_warnings(self, obj):
+        from .engine import Constants
+
+        out = []
+        if obj.needs_review:
+            out.append(obj.review_note or "Cererea este de verificat.")
+        limit = Constants(timezone.localdate())("exemption_dependent_income", "12400")
+        for d in obj.dependents.all():
+            if not d.income_ok:
+                out.append(f"{d.name}: venitul anual peste {limit:g} lei — scutirea pentru această persoană nu se acordă.")
+        return out
+
+    def validate(self, attrs):
+        get = lambda k: attrs.get(k, getattr(self.instance, k, None))  # noqa: E731
+        if get("kind") == "major" and not get("major_category"):
+            raise serializers.ValidationError({"major_category": "Alegeți categoria scutirii majorate (CF art. 33 alin. (2))."})
+        if get("spouse_major"):
+            if not (get("spouse_name") or "").strip() or not get("spouse_idnp"):
+                raise serializers.ValidationError({"spouse_idnp": "Pentru Sm dați numele și codul fiscal al soțului / soției."})
+            if not get("spouse_category"):
+                raise serializers.ValidationError({"spouse_category": "Sm se acordă pentru soțul / soția din categoriile CF art. 33 alin. (2)."})
+        _idnp(get("spouse_idnp"), "spouse_idnp")
+        if get("date_to") and get("date_from") and get("date_to") < get("date_from"):
+            raise serializers.ValidationError({"date_to": "Sfârșitul este înaintea începutului."})
+        if get("waiver_date") and get("kind") == "none":
+            raise serializers.ValidationError({"waiver_date": "Renunțarea privește doar scutirea P / M."})
+        employee = get("employee")
+        for n, d in enumerate(attrs.get("dependents") or [], start=1):
+            fm = d.get("family_member")
+            if fm is not None:
+                if employee is not None and fm.employee_id != employee.pk:
+                    raise serializers.ValidationError({"dependents": f"Rândul {n}: membrul familiei este din alt dosar."})
+                # alegerea din „Familia” completează rândul (ce s-a scris de mână rămâne)
+                d["name"] = d.get("name") or fm.full_name
+                d["idnp"] = d.get("idnp") or fm.idnp
+                d["birth_date"] = d.get("birth_date") or fm.birth_date
+                if "relation" not in d and fm.relation_id:
+                    d["relation"] = FAMILY_RELATION.get(fm.relation.code, "other")
+            if not (d.get("name") or "").strip():
+                raise serializers.ValidationError({"dependents": f"Rândul {n}: numele persoanei întreținute."})
+            _idnp(d.get("idnp"), "dependents")
+            if d.get("relation") == "sibling" and not d.get("disability"):
+                raise serializers.ValidationError({"dependents": f"Rândul {n}: fratele / sora se ia în întreținere doar cu dizabilitate."})
+            if d.get("date_to") and d.get("date_from") and d["date_to"] < d["date_from"]:
+                raise serializers.ValidationError({"dependents": f"Rândul {n}: sfârșitul dreptului e înaintea începutului."})
+        return attrs
+
+    def _save_dependents(self, req, rows):
+        if rows is None:
+            return
+        keep = []
+        for n, d in enumerate(rows, start=1):
+            pk = d.pop("id", None)
+            obj = req.dependents.filter(pk=pk).first() if pk else None
+            if obj is None:
+                obj = ExemptionDependent(request=req)
+            for k, v in d.items():
+                setattr(obj, k, v)
+            obj.sort = n * 10
+            obj.save()
+            keep.append(obj.pk)
+        req.dependents.exclude(pk__in=keep).delete()
+
+    @transaction.atomic
+    def create(self, validated_data):
+        rows = validated_data.pop("dependents", [])
+        req = super().create(validated_data)
+        self._save_dependents(req, rows)
+        req.replace_previous()
+        return req
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        rows = validated_data.pop("dependents", None)
+        req = super().update(instance, validated_data)
+        self._save_dependents(req, rows)
+        return req
 
 
 class PayrollItemSerializer(serializers.ModelSerializer):

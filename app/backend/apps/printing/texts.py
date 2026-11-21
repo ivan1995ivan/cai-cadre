@@ -85,6 +85,21 @@ FIELDS: dict = {
         ("accountant_label", "Semnătura: contabil-șef", "{funcția_contabilului}", "{funcția_contabilului}", False),
         ("footer", "Text la sfârșit", "", "", True),
     ],
+    "exemption_request": [
+        ("title", "Titlul", "CEREREA ANGAJATULUI PRIVIND ACORDAREA SCUTIRILOR LA IMPOZITUL PE VENIT REȚINUT DIN SALARIU",
+         "ЗАЯВЛЕНИЕ РАБОТНИКА О ПРЕДОСТАВЛЕНИИ ОСВОБОЖДЕНИЙ ОТ ПОДОХОДНОГО НАЛОГА, УДЕРЖИВАЕМОГО ИЗ ЗАРАБОТНОЙ ПЛАТЫ", False),
+        ("annex", "Mențiunea „Anexa” (dreapta sus)", "Anexa nr. 6\nla Regulamentul aprobat prin HG nr. 697/2014",
+         "Приложение № 6\nк Положению, утверждённому ПП № 697/2014", True),
+        ("declaration", "Declarația angajatului",
+         "Declar că datele sunt adevărate, că persoanele întreținute nu au venituri anuale peste plafonul din Codul fiscal "
+         "(art. 35) și că scutirile cerute nu se aplică la alt loc de muncă. La orice schimbare depun o cerere nouă în 10 zile.",
+         "Заявляю, что данные верны, что иждивенцы не имеют годового дохода выше предела Налогового кодекса (ст. 35) и что "
+         "запрошенные освобождения не применяются на другом месте работы. При любом изменении подаю новое заявление в течение 10 дней.", True),
+        ("employer_note", "Mențiunea angajatorului", "Numele, codul fiscal și dreptul angajatului la scutiri pe categorii sunt verificate.",
+         "Фамилия, фискальный код и право работника на освобождения по категориям проверены.", True),
+        ("accountant_label", "Semnătura: contabil-șef", "{funcția_contabilului}", "{funcția_contabilului}", False),
+        ("footer", "Text la sfârșit", "", "", True),
+    ],
     "payslip": [
         ("title", "Titlul", "Fișa de calcul a salariului", "Расчётный листок", False),
         ("footer", "Text la sfârșit", "Fișa este confidențială; se înmânează doar angajatului.", "Листок конфиденциален; выдаётся только работнику.", True),

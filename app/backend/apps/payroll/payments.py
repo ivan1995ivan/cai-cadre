@@ -17,7 +17,7 @@ from rest_framework.exceptions import ValidationError
 from apps.staff.models import Employee, Employment
 
 from .engine import MAIN_KINDS, Constants, month_bounds, q
-from .models import ExemptionRequest, Payment, PaymentLine, PayrollLine
+from .models import Payment, PaymentLine, PayrollLine
 
 ZERO = Decimal("0")
 MONTHS = ["", "ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie", "august", "septembrie", "octombrie",
@@ -72,32 +72,11 @@ def _paid_before(year: int, month: int, exclude_payment=None, employee_ids=None)
     return out
 
 
-def monthly_exemptions(year: int, month: int, c: Constants, month_gross: dict) -> dict:
-    """Scutirea lunii pe angajat din cererea anului (Codul fiscal, art. 33–35): suma anuală / 12; fără ea dacă venitul
-    anului (lunile aprobate de dinainte + luna) trece de plafon."""
-    _first, last = month_bounds(year, month)
-    requests = {r.employee_id: r for r in ExemptionRequest.objects.filter(year=year, is_active=True, employee_id__in=list(month_gross))}
-    before = defaultdict(lambda: ZERO)
-    for ln in PayrollLine.objects.filter(employee_id__in=list(requests), payroll__year=year, payroll__month__lt=month,
-                                         payroll__status="approved", payroll__deletion_mark=False):
-        before[ln.employee_id] += ln.gross
-    out = {}
-    for emp, req in requests.items():
-        if req.date_from and req.date_from > last:
-            continue
-        yearly = ZERO
-        if req.kind == "personal":
-            yearly += c("exemption_personal")
-        elif req.kind == "major":
-            yearly += c("exemption_major")
-        if req.spouse:
-            yearly += c("exemption_spouse")
-        for d in req.dependents or []:
-            yearly += c("exemption_dependent_disabled") if d.get("disabled") else c("exemption_dependent")
-        if before[emp] + month_gross[emp] > c("exemption_income_limit", "360000"):
-            yearly = ZERO  # venitul anual depășește plafonul: fără scutire
-        out[emp] = q(yearly / 12)
-    return out
+def monthly_exemptions(year: int, month: int, c: Constants, month_taxable: dict) -> dict:
+    """Scutirea lunii pe angajat (apps.payroll.exemptions): suma anuală a scutirilor valabile în lună / 12."""
+    from .exemptions import month_parts
+
+    return {emp: q(sum(parts.values(), ZERO) / 12) for emp, parts in month_parts(year, month, c, month_taxable).items()}
 
 
 def month_taxes(acc: dict, paid_gross: Decimal, c: Constants, exemption: Decimal) -> dict:
@@ -119,7 +98,7 @@ def salary_due(payment: Payment) -> dict:
     scope = accrued(year, month, payroll=payment.payroll) if payment.payroll_id else totals
     paid = _paid_before(year, month, exclude_payment=payment)
     c = Constants(payment.date)
-    exemptions = monthly_exemptions(year, month, c, {e: a["gross"] for e, a in totals.items()})
+    exemptions = monthly_exemptions(year, month, c, {e: a["taxable"] for e, a in totals.items()})
     due = {}
     for emp, s in scope.items():
         a, p = totals[emp], paid.get(emp) or _zero()
@@ -290,7 +269,7 @@ def settlement(year: int, month: int, employee_ids=None) -> dict:
                                          payment__deletion_mark=False, employee_id__in=list(acc)).select_related("payment"):
         by_kind[ln.employee_id][ln.payment.kind] += ln.amount
     c = Constants(month_bounds(year, month)[1])
-    exemptions = monthly_exemptions(year, month, c, {e: a["gross"] for e, a in acc.items()})
+    exemptions = monthly_exemptions(year, month, c, {e: a["taxable"] for e, a in acc.items()})
     out = {}
     for emp, a in acc.items():
         p = paid.get(emp) or _zero()
