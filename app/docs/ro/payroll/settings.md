@@ -35,3 +35,14 @@ automat se poate face inactiv (de exemplu MINIM), dar legea cere salariul minim 
 salariul mediu 17 200 → 17 400, temeiurile vechi; sporul unic pentru orele suplimentare devine plata primelor ore (100 + spor).
 Cererile de scutire „pe an” devin cereri cu valabilitate de la / până la, persoanele întreținute — rânduri; cererile cu „S”
 (abrogată) apar „De verificat”.
+
+**Formula și acumulările planificate (S3)** — pentru cine configurează:
+- *Tipuri de calcul*: felul nou **„Formulă”** (expresia, variabilele, „Încearcă pe un angajat”) și coloana „Din ce se
+  calculează” la toate tipurile — vezi *Tipurile de calcul: formula și baza*. La actualizare, tipurile existente pe **trepte
+  de vechime** devin „pentru toți angajații” (așa se calculau); celelalte rămân „doar cu rândul”, ca până acum.
+- *Funcții (CORM)*: **acumulările-tip** ale fiecărei funcții (butonul cu portmoneul) — completează tabelul „Acumulări și
+  rețineri” din ordinul de angajare.
+- Numerotarea documentului „Modificarea acumulărilor planificate” — seria **MA** (*Administrare → Setări → Numerotarea*);
+  forma lui de tipar — în *Forme de tipar*.
+- Ordinea de calcul s-a schimbat la cauza ei: completarea până la salariul minim și corectările de mână se fac **înaintea**
+  tipurilor care depind de ele (sindicatul și pensia alimentară se iau acum și din MINIM și din salariul corectat de mână).
