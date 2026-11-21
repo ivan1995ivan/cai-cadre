@@ -45,6 +45,7 @@ export const NAV: NavItem[] = [
   // Etapa 4b: salarizarea
   { path: '/payroll', key: 'payroll', icon: <WalletOutlined />, perm: 'payroll.view' },
   { path: '/payroll/payments', key: 'payrollPayments', icon: <DollarOutlined />, perm: 'payroll.view' },
+  { path: '/payroll/item-changes', key: 'payItemChanges', icon: <ProfileOutlined />, perm: 'payroll.view' },
   { path: '/tax-reports', key: 'taxReports', icon: <FileDoneOutlined />, perm: 'tax_reports.view' },
   // Etapa 6: formare, sănătate, evidență militară
   { path: '/training', key: 'training', icon: <ReadOutlined />, perm: 'training.view' },
@@ -115,7 +116,7 @@ export const PANEL_KIND: Record<string, 'start' | 'doc'> = {
   dashboard: 'start', alerts: 'start', portal: 'start',
   staffList: 'doc', contracts: 'doc', employeeRequests: 'doc', orders: 'doc',
   leaveSchedule: 'doc', leave: 'doc', sickLeave: 'doc', rosters: 'doc', timesheets: 'doc',
-  payroll: 'doc', payrollPayments: 'doc',
+  payroll: 'doc', payrollPayments: 'doc', payItemChanges: 'doc',
 }
 
 /** Legăturile dintre documente în schema de lucru (din primul se face al doilea): săgeata între iconițe, iar documentul de
@@ -124,6 +125,7 @@ export const PANEL_FLOWS: [string, string][] = [
   ['leaveSchedule', 'leave'], // concediul din graficul concediilor
   ['rosters', 'timesheets'], // pontajul din graficul de ture
   ['payroll', 'payrollPayments'], // îndreptarea spre plată din calcul
+  ['payItemChanges', 'payroll'], // acumulările planificate intră în calculul lunii
 ]
 
 /** Clasificatoarele (setările-cataloage din SETTINGS_NAV) pe care le folosește fiecare funcție: panoul secțiunii le arată
@@ -142,6 +144,7 @@ export const PANEL_CLASSIFIERS: Record<string, string[]> = {
   rosters: ['workSchedules', 'shiftTypes', 'productionCalendar'],
   timesheets: ['workSchedules', 'shiftTypes', 'productionCalendar'],
   payroll: ['payrollTypes'],
+  payItemChanges: ['payrollTypes'],
   payrollPayments: ['banks'],
   military: ['dict:military_group', 'dict:military_rank', 'dict:military_center'],
 }

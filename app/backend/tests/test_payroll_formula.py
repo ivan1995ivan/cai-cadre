@@ -77,7 +77,7 @@ def test_formula_division_by_zero_is_a_clear_error():
 
 
 def test_documented_examples_work():
-    """Exemplele din documentație (docs/ro/salarizare-formule.md) — cu valorile calculate de mână."""
+    """Exemplele din documentație (docs/ro/payroll/settings/types.md) — cu valorile calculate de mână."""
     r = values()
     res = formula.evaluate("TarifOrar * OreNoapte * C.night_pct / 100", r)
     assert res.value == D("298.24") and res.explanation == "TarifOrar 37,28 × OreNoapte 16 × C.night_pct 50 / 100 = 298,24"

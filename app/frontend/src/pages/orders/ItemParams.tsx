@@ -12,8 +12,15 @@ import type { Absence, SanctionRec } from '../../api/orders'
 import { EMPLOYMENT_KINDS, type Employment } from '../../api/staff'
 import RefSelect from '../../components/RefSelect'
 import SubdivisionSelect from '../../components/SubdivisionSelect'
+import type { OccupationPayItem, PlannedRow } from '../../api/payroll'
+import { useApp } from '../../auth/AppContext'
+import PlannedRowsInput from '../payroll/PlannedRows'
 
 export const DATE_KEYS = ['date_from', 'date_to', 'probation_until', 'contract_date', 'work_year_from', 'work_year_to']
+
+/** Ordinele cu tabelul „Acumulări și rețineri” (apps.orders.effects.has_pay_items): angajarea, transferul, condițiile,
+ *  salariul, sporurile, cumulul / suplinirea și reținerea din salariu. */
+export const hasPayItems = (effect: string, code: string) => ['hire', 'change', 'salary', 'substitution'].includes(effect) || code === 'deduction'
 
 const LEAVE_KIND: Record<string, string> = {
   leave_annual: 'annual', leave_extra: 'extra', leave_unpaid: 'unpaid', leave_maternity: 'maternity', leave_paternity: 'paternity',
@@ -45,6 +52,24 @@ export default function ItemParams({ form, effect, code, employee, disabled }: {
   const jobOptions = (jobs ?? []).filter((j) => j.status !== 'ended')
     .map((j) => ({ value: j.id, label: `${j.kind_label}: ${j.occupation_name}, ${j.subdivision_name} (${fmtRate(j.rate)})` }))
   const leaveKind = LEAVE_KIND[code]
+  const { branding } = useApp()
+  const payItems = hasPayItems(effect, code) && branding?.payroll_enabled !== false
+  // la angajare: tabelul se completează din acumulările-tip ale funcției (cât e gol), apoi se corectează de mână
+  const occupation = Form.useWatch('occupation', form)
+  const fromOccupation = (force: boolean) => {
+    const occ = form.getFieldValue('occupation')
+    if (!occ) return
+    const current = form.getFieldValue('pay_items') as PlannedRow[] | undefined
+    if (!force && current && current.length) return
+    api.get<OccupationPayItem[]>('/payroll/occupation-items/', { params: { occupation: occ } }).then((r) => {
+      const rows: PlannedRow[] = r.data.map((x) => ({ pay_type: x.pay_type, action: 'add', amount: x.amount, percent: x.percent,
+        quantity: x.quantity, date_from: null, date_to: null, document: '' }))
+      if (force || rows.length) form.setFieldValue('pay_items', rows)
+    }).catch(() => {})
+  }
+  useEffect(() => {
+    if (effect === 'hire' && payItems && !disabled && occupation) fromOccupation(false)
+  }, [occupation]) // eslint-disable-line react-hooks/exhaustive-deps
   const [calc, setCalc] = useState<{ to: string; days: number; holidays: string[] } | null>(null)
 
   // concediul: zilele ↔ data de sfârșit, fără sărbători (calculat pe server)
@@ -251,6 +276,9 @@ export default function ItemParams({ form, effect, code, employee, disabled }: {
   return (
     <>
       {body}
+      {payItems && <Form.Item name="pay_items" label={t('pay.pl.title')}>
+        <PlannedRowsInput employee={employee} disabled={disabled} onFromOccupation={effect === 'hire' ? () => fromOccupation(true) : undefined} />
+      </Form.Item>}
       {effect !== 'cancel' && (effect === 'none' || effect === 'worktime' || code === 'schedule' || code === 'appoint_responsible'
         || code === 'leave_schedule' || code === 'staff_list') && (
         <Form.Item name="text" label={t('ord.p.text')}><Input.TextArea rows={3} /></Form.Item>

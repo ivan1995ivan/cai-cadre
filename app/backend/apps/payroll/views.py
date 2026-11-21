@@ -195,7 +195,10 @@ class EmployeePayItemViewSet(EmployeeScopedMixin, viewsets.ModelViewSet):
     serializer_class = EmployeePayItemSerializer
 
     def get_queryset(self):
-        return super().get_queryset().select_related("pay_type", "employment__occupation", "order_item__order", "change_line__change")
+        qs = super().get_queryset().select_related("pay_type", "employment__occupation", "order_item__order", "change_line__change")
+        if self.request.query_params.get("current"):  # fără istoric: doar rândurile în vigoare și cele viitoare
+            qs = qs.exclude(date_to__lt=timezone.localdate())
+        return qs
 
     def perform_destroy(self, instance):
         if instance.from_document:

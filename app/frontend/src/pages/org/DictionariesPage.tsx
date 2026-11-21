@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Card, Tag, Tooltip, Typography } from 'antd'
+import { Button, Card, Modal, Tag, Tooltip, Typography } from 'antd'
+import { WalletOutlined } from '@ant-design/icons'
 
 import CrudTable, { type CrudField } from '../../components/CrudTable'
 import ExcelImport from '../../components/ExcelImport'
@@ -8,6 +9,27 @@ import { useFetch, invalidateCache } from '../../api/hooks'
 import type { OrgMeta } from '../../api/org'
 import { useDict } from '../../api/staff'
 import { useApp } from '../../auth/AppContext'
+import { usePersonalTypes } from '../payroll/PlannedRows'
+
+/** Acumulările-tip ale funcției: la angajare completează tabelul „Acumulări și rețineri” din ordin (se corectează acolo). */
+function OccupationPayItems({ occupation, name, onClose, canEdit }: { occupation: number; name: string; onClose: () => void; canEdit: boolean }) {
+  const { t } = useTranslation()
+  const { options } = usePersonalTypes()
+  const fields: CrudField[] = [
+    { key: 'occupation', label: '', hidden: true },
+    { key: 'pay_type', label: t('pay.item'), type: 'select', required: true, options, render: (_v, r) => `${r.pay_type_code} — ${r.pay_type_name}` },
+    { key: 'amount', label: t('pay.amount'), type: 'number', width: 110 },
+    { key: 'percent', label: '%', type: 'number', width: 80 },
+    { key: 'quantity', label: t('pay.fx.quantity'), type: 'number', width: 100 },
+    { key: 'sort', label: t('org.sort'), type: 'number', width: 80 },
+  ]
+  return (
+    <Modal open onCancel={onClose} footer={null} width={900} title={`${t('pay.pl.occupationItems')} — ${name}`}>
+      <CrudTable endpoint="/payroll/occupation-items/" params={{ occupation }} fields={fields} canEdit={canEdit}
+        defaults={{ occupation, sort: 10 }} title={<Typography.Text type="secondary">{t('pay.pl.occupationItemsHint')}</Typography.Text>} />
+    </Modal>
+  )
+}
 
 /** Câmpurile de denumire, comune tuturor clasificatoarelor (RO / RU / EN). */
 export function useNameFields(): CrudField[] {
@@ -38,6 +60,8 @@ export default function DictionaryPage({ dict, title }: { dict: string; title: s
   const staffCategories = useDict('staff_category')
   const names = useNameFields()
   const opts = useEnumOptions()
+  const { branding } = useApp()
+  const [payFor, setPayFor] = useState<{ id: number; name: string } | null>(null)
   const [reload, setReload] = useState(0)
   const refresh = (endpoint: string) => () => { invalidateCache(endpoint); setReload((n) => n + 1) }
 
@@ -114,6 +138,9 @@ export default function DictionaryPage({ dict, title }: { dict: string; title: s
   const tables: Record<string, React.ReactNode> = {
     occupations: (
       <CrudTable key={`occ${reload}`} endpoint="/org/occupations/" fields={occupations} canEdit={canEdit}
+        rowActions={branding?.payroll_enabled === false ? undefined : (row) => (
+          <Tooltip title={t('pay.pl.occupationItems')}><Button size="small" icon={<WalletOutlined />}
+            onClick={() => setPayFor({ id: Number(row.id), name: String(row.name_ro ?? '') })} /></Tooltip>)}
         defaults={{ category: null, weekly_hours: 40, base_leave_days: 28, extra_leave_days: 0 }}
         title={<Typography.Text type="secondary">{t('org.occupationsHint')}</Typography.Text>}
         extra={canEdit && <ExcelImport code="occupations" label={t('org.importCorm')} onDone={refresh('/org/occupations/')} />} />
@@ -138,6 +165,8 @@ export default function DictionaryPage({ dict, title }: { dict: string; title: s
       {tables[dict] ?? (
         <CrudTable key={dict} endpoint="/org/dict-items/" params={{ kind: dict }} fields={dictFields} canEdit={canEdit} defaults={{ kind: dict }} />
       )}
+      {payFor && <OccupationPayItems occupation={payFor.id} name={payFor.name} onClose={() => setPayFor(null)}
+        canEdit={hasPerm('dictionaries.edit') || hasPerm('payroll_settings.edit')} />}
     </Card>
   )
 }
