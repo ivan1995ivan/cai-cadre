@@ -48,7 +48,6 @@ export default {
       approveHint: 'Usually the schedule is approved by the “Approving the leave schedule” order; use this if it was approved on paper.',
       reopen: 'Reopen', reopenConfirm: 'The schedule goes back to draft. Continue?',
       warnings: 'To check', warnBalance: '{{name}}: {{days}} days planned, only {{available}} available.',
-      warnPhysicians: '{{period}}: all physicians of the department are away ({{count}}).',
       warnOccupation: '{{period}}: all “{{label}}” are away ({{count}}).',
       ordersFor: 'Leave order for those leaving in', makeOrders: 'Make the order (draft)',
       guests: 'Working in the department as a second job (leave follows the main department’s schedule)', home: 'Main department',

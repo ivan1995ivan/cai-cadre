@@ -83,6 +83,7 @@ export interface Branding {
   version: string
   name_en?: string
   payroll_enabled?: boolean
+  military_enabled?: boolean
   function_panel?: boolean
   languages?: Lang[]
 }
@@ -131,6 +132,7 @@ export interface Company {
   hr_head: string
   show_stema: boolean
   payroll_enabled: boolean
+  military_enabled: boolean
   function_panel: boolean
 }
 

@@ -58,7 +58,7 @@ export default {
     codes: {
       CO: 'Annual leave', CA: 'Additional leave', CFP: 'Unpaid leave', CMT: 'Maternity leave', CP: 'Paternity leave',
       CIC: 'Childcare (partly paid)', CICN: 'Childcare (unpaid)', CS: 'Study leave', ZL: 'Paid days off',
-      D: 'Business trip', F: 'Training / CME', CM: 'Sick leave', S: 'Contract suspended', A: 'Unexcused absence', IN: 'Permitted absence',
+      D: 'Business trip', F: 'Training', CM: 'Sick leave', S: 'Contract suspended', A: 'Unexcused absence', IN: 'Permitted absence',
     },
   },
 }

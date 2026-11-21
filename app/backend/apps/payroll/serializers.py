@@ -1,3 +1,5 @@
+from decimal import Decimal, InvalidOperation
+
 from rest_framework import serializers
 
 from .models import (EmployeePayItem, ExemptionRequest, PayConstant, Payment, PaymentLine, Payroll, PayrollItem, PayrollLine,
@@ -26,8 +28,13 @@ class PayTypeSerializer(serializers.ModelSerializer):
             if key in attrs and not isinstance(attrs[key], list):
                 raise serializers.ValidationError({key: "O listă."})
         for step in attrs.get("scale") or []:
-            if not isinstance(step, dict) or "pct" not in step or not ("from" in step or "category" in step):
-                raise serializers.ValidationError({"scale": "Fiecare treaptă are „from” (ani) sau „category” și „pct”."})
+            if not isinstance(step, dict) or set(step) != {"from", "pct"}:
+                raise serializers.ValidationError({"scale": "Fiecare treaptă are „from” (ani de vechime) și „pct”."})
+            try:
+                if Decimal(str(step["from"])) < 0 or Decimal(str(step["pct"])) < 0:
+                    raise serializers.ValidationError({"scale": "Anii și procentul nu pot fi negative."})
+            except (InvalidOperation, ValueError) as exc:
+                raise serializers.ValidationError({"scale": "Anii și procentul sunt numere."}) from exc
         return attrs
 
 

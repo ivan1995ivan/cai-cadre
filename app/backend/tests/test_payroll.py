@@ -6,11 +6,11 @@ import pytest
 
 from apps.leave.models import SickLeave
 from apps.leave import services as leave_services
-from apps.org.models import DictItem, Occupation, Subdivision
+from apps.org.models import Occupation, Subdivision
 from apps.payroll import engine
 from apps.payroll.models import EmployeePayItem, ExemptionRequest, PayConstant, Payment, Payroll, PayType
 from apps.staff import services as staff
-from apps.staff.models import Employee, Qualification
+from apps.staff.models import Employee, PriorExperience
 from apps.worktime import services as worktime
 from apps.worktime.models import Timesheet
 
@@ -46,6 +46,16 @@ def test_constants_history_and_type_validation(admin_client, seeded):
     assert engine.Constants(date(2026, 12, 31))("income_tax_pct") == 12 and engine.Constants(date(2027, 1, 1))("income_tax_pct") == 13
     bad = admin_client.post("/api/payroll/types/", {"code": "X", "name_ro": "x", "formula": "scale", "scale": [{"pct": 5}]}, format="json")
     assert bad.status_code == 400
+    # treptele pe categoria de calificare nu mai există: doar ani de vechime și procentul
+    bad = admin_client.post("/api/payroll/types/", {"code": "X", "name_ro": "x", "formula": "scale", "scale": [{"category": "first", "pct": 5}]},
+                            format="json")
+    assert bad.status_code == 400
+    bad = admin_client.post("/api/payroll/types/", {"code": "X", "name_ro": "x", "formula": "scale", "scale": [{"from": "doi", "pct": 5}]},
+                            format="json")
+    assert bad.status_code == 400
+    # sporurile HG 837/2016 (vechimea, categoria) și gărzile nu se mai preîncarcă; NOCIV rămâne (Codul muncii, art. 139)
+    assert not PayType.objects.filter(code__in=("VECH", "CATEG", "GARDA")).exists() and PayType.objects.filter(code="NOCIV").exists()
+    assert PayType.objects.get(code="SINDICAT").base_codes == ["SAL", "SPOR", "CUMUL", "NOCIV", "NOAPTE", "SARB", "SUPL", "CO", "PREMIU"]
     ok = admin_client.post("/api/payroll/types/", {"code": "TRANSP", "name_ro": "Compensație transport", "formula": "fixed",
                                                    "taxable": False, "cas": False, "cnam": False}, format="json")
     assert ok.status_code == 201 and PayType.objects.get(code="TRANSP").is_system is False
@@ -54,7 +64,11 @@ def test_constants_history_and_type_validation(admin_client, seeded):
 # --- calculul lunii ---------------------------------------------------------------------------------------------------
 def test_monthly_calculation_tax_exemption_scales_and_approval(admin_client, org):
     ion, _job = person(org, "Popescu", "Ion")
-    Qualification.objects.create(employee=ion, category=DictItem.objects.get(kind="qualification", code="superior"), awarded_on=date(2023, 1, 1))
+    # sporul pentru vechime din contractul colectiv al firmei: trepte pe vechimea totală (stagiul anterior + aici)
+    PayType.objects.create(code="SPVECH", name_ro="Spor pentru vechime (contractul colectiv)", category="accrual", formula="scale",
+                           base_codes=["SAL"], scale=[{"from": 3, "pct": 5}, {"from": 10, "pct": 10}, {"from": 20, "pct": 15}], sort=40)
+    PriorExperience.objects.create(employee=ion, organization="„Alfa” SRL", date_from=date(2014, 1, 1), date_to=date(2019, 12, 31),
+                                   in_specialty=False)  # 6 ani înainte + 6 ani aici = 12 ani → 10 %
     ExemptionRequest.objects.create(employee=ion, year=2026, kind="personal", dependents=[{"name": "Popescu Maria", "idnp": "", "disabled": False}])
     r = admin_client.post("/api/payroll/payrolls/", {"year": 2026, "month": 3, "date": "2026-04-02"}, format="json")
     assert r.status_code == 201, r.data
@@ -63,24 +77,23 @@ def test_monthly_calculation_tax_exemption_scales_and_approval(admin_client, org
     line = doc.lines.get()
     it = items_of(line)
     assert it["SAL"].amount == Decimal("14660") and it["SAL"].quantity == Decimal("154")  # fără pontaj: norma întreagă (22 × 7)
-    assert it["VECH"].percent == 10 and it["VECH"].amount == Decimal("1466")  # 6 ani în sănătate
-    assert it["CATEG"].percent == 20 and it["CATEG"].amount == Decimal("2932")
-    gross = Decimal("14660") + 1466 + 2932
-    assert line.gross == gross == Decimal("19058")
+    assert it["SPVECH"].percent == 10 and it["SPVECH"].amount == Decimal("1466")
+    gross = Decimal("14660") + 1466
+    assert line.gross == gross == Decimal("16126")
     # calculul: bazele și CAS; impozitul, scutirea și CNAM nu sunt aici
     assert (line.taxable, line.cnam_base, line.deductions, line.net) == (gross, gross, 0, gross)
-    assert set(it) == {"SAL", "VECH", "CATEG", "CAS"}
-    assert line.cas == Decimal("4573.92") and it["CAS"].pay_type.category == "employer"
-    assert doc.totals["net"] == 19058 and doc.totals["cas"] == 4573.92 and doc.totals["lines"] == 1
+    assert set(it) == {"SAL", "SPVECH", "CAS"}
+    assert line.cas == Decimal("3870.24") and it["CAS"].pay_type.category == "employer"
+    assert doc.totals["net"] == 16126 and doc.totals["cas"] == 3870.24 and doc.totals["lines"] == 1
     # rând de mână: premiu unic; rămâne la recalculare și intră în impozit
     r = admin_client.post("/api/payroll/items/", {"line": line.id, "pay_type": PayType.objects.get(code="ALTE").id, "amount": "1000",
                                                   "note": "premiu unic"}, format="json")
     assert r.status_code == 201, r.data
     line.refresh_from_db()
-    assert line.gross == Decimal("20058") and items_of(line)["ALTE"].manual
+    assert line.gross == Decimal("17126") and items_of(line)["ALTE"].manual
     admin_client.post(f"/api/payroll/payrolls/{doc.id}/calculate/")
     line.refresh_from_db()
-    assert line.gross == Decimal("20058")
+    assert line.gross == Decimal("17126")
     # impozitul pe venit, scutirea și CNAM nu se corectează în calcul (se rețin la plată)
     r = admin_client.post("/api/payroll/items/", {"line": line.id, "pay_type": PayType.objects.get(code="IMPOZIT").id, "amount": "1"},
                           format="json")
@@ -92,9 +105,9 @@ def test_monthly_calculation_tax_exemption_scales_and_approval(admin_client, org
     assert r.status_code == 201, r.data
     assert (r.data["year"], r.data["month"], r.data["payroll"]) == (2026, 3, doc.id)
     pl = Payment.objects.get(pk=r.data["id"]).lines.get()
-    assert (pl.gross, pl.cnam, pl.exemption) == (Decimal("20058"), Decimal("1805.22"), Decimal("3300"))
-    assert pl.income_tax == engine.q((Decimal("20058") - Decimal("1805.22") - 3300) * Decimal("0.12")) == Decimal("1794.33")
-    assert pl.amount == Decimal("20058") - pl.cnam - pl.income_tax
+    assert (pl.gross, pl.cnam, pl.exemption) == (Decimal("17126"), Decimal("1541.34"), Decimal("3300"))
+    assert pl.income_tax == engine.q((Decimal("17126") - Decimal("1541.34") - 3300) * Decimal("0.12")) == Decimal("1474.16")
+    assert pl.amount == Decimal("17126") - pl.cnam - pl.income_tax
     # calculul cu o îndreptare aprobată în baza lui nu se redeschide
     admin_client.post(f"/api/payroll/payments/{pl.payment_id}/approve/")
     r = admin_client.post(f"/api/payroll/payrolls/{doc.id}/reopen/")
@@ -104,7 +117,7 @@ def test_monthly_calculation_tax_exemption_scales_and_approval(admin_client, org
     # fluturașul — din îndreptarea pe salariu (din calcul nu se mai face)
     assert admin_client.get(f"/api/payroll/payrolls/{doc.id}/payslip/").status_code == 404
     slip = admin_client.get(f"/api/payroll/payments/{pl.payment_id}/payslip/", {"employee": line.employee_id}).content.decode()
-    assert "Fișa de calcul" in slip and "Spor pentru vechime" in slip and "Impozitul pe venit" in slip and "1 794,33" in slip
+    assert "Fișa de calcul" in slip and "Spor pentru vechime" in slip and "Impozitul pe venit" in slip and "1 474,16" in slip
 
 
 def test_timesheet_sick_bonus_union_cumul_and_contract(admin_client, org):
@@ -130,8 +143,7 @@ def test_timesheet_sick_bonus_union_cumul_and_contract(admin_client, org):
     assert it["SAL"].quantity == Decimal("98") and it["SAL"].amount == Decimal("5854.55")
     assert it["BOALA"].quantity == 5 and it["BOALA"].percent == 75 and it["BOALA"].amount == Decimal("1150.01")  # 9 200 / 30 zile × 5 × 75 %
     assert it["PREMIU"].amount == Decimal("500") and "pentru martie" in it["PREMIU"].note
-    assert it["VECH"].percent == 5
-    assert it["SINDICAT"].percent == 1 and it["SINDICAT"].amount == engine.q((it["SAL"].amount + it["VECH"].amount + it["PREMIU"].amount) / 100)
+    assert it["SINDICAT"].percent == 1 and it["SINDICAT"].amount == engine.q((it["SAL"].amount + it["PREMIU"].amount) / 100)
     assert main.deductions == it["SINDICAT"].amount and main.net == main.gross - main.deductions
     assert main.taxable == main.cnam_base == main.gross  # boala: fără CAS, dar cu impozit și CNAM
     second = lines[("Rusu", "internal")]

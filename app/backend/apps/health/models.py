@@ -1,8 +1,10 @@
-"""Sănătatea în muncă: examenele medicale, vaccinările și instructajul de securitate și sănătate în muncă (SSM)."""
+"""Sănătatea și securitatea în muncă: examenele medicale ale lucrătorilor (HG 1025/2016 — la angajare, periodic, …) cu
+periodicitatea pe funcție / subdiviziune și instructajul de securitate și sănătate în muncă (Legea 186/2008, HG 95/2009)."""
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
-from apps.org.models import DictItem
+from apps.org.models import Occupation, Subdivision
 from apps.staff.models import Employee
 
 
@@ -29,22 +31,25 @@ class MedicalExam(models.Model):
         verbose_name = "Examen medical"
 
 
-class Vaccination(models.Model):
-    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="vaccinations")
-    vaccine = models.ForeignKey(DictItem, on_delete=models.PROTECT, related_name="+", limit_choices_to={"kind": "vaccine"},
-                                verbose_name="Vaccinul")
-    dose = models.PositiveSmallIntegerField("Doza (nr.)", default=1)
-    date = models.DateField("Data")
-    series = models.CharField("Seria / lotul", max_length=60, blank=True)
-    next_date = models.DateField("Următoarea doză / revaccinarea", null=True, blank=True)
-    refused = models.BooleanField("Refuz (în scris)", default=False)
-    note = models.CharField("Observații", max_length=300, blank=True)
-    created_at = models.DateTimeField(default=timezone.now)
-    deletion_mark = models.BooleanField("Marcat pentru ștergere", default=False)
+class ExamRule(models.Model):
+    """Periodicitatea examenului medical periodic pentru o funcție și / sau o subdiviziune (din evaluarea riscurilor și
+    lista factorilor de risc, HG 1025/2016). Cea mai precisă regulă câștigă: funcția și subdiviziunea > funcția >
+    subdiviziunea (cea mai apropiată în arbore); fără regulă — periodicitatea implicită din setări."""
+
+    occupation = models.ForeignKey(Occupation, on_delete=models.CASCADE, null=True, blank=True, related_name="+",
+                                   verbose_name="Funcția")
+    subdivision = models.ForeignKey(Subdivision, on_delete=models.CASCADE, null=True, blank=True, related_name="+",
+                                    verbose_name="Subdiviziunea (cu subordonatele)")
+    months = models.PositiveSmallIntegerField("Periodicitatea (luni; 0 = fără examen periodic)")
+    note = models.CharField("Factorii de risc / temeiul", max_length=300, blank=True)
 
     class Meta:
-        ordering = ["-date", "-id"]
-        verbose_name = "Vaccinare"
+        ordering = ["occupation__name_ro", "subdivision__name_ro", "id"]
+        verbose_name = "Periodicitatea examenului medical"
+
+    def clean(self):
+        if not self.occupation_id and not self.subdivision_id:
+            raise ValidationError("Alegeți funcția, subdiviziunea sau amândouă.")
 
 
 class SafetyBriefing(models.Model):

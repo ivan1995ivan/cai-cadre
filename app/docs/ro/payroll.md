@@ -8,7 +8,9 @@ un rând pe fiecare **raport de muncă** (de bază, cumul, suplinire, contract d
 - **concediile** din ordine (media zilnică × zilele, HG 426/2004) și compensarea concediului nefolosit;
 - **foile de boală**: primele 5 zile, 75 % din media zilnică (Legea 289/2004);
 - **premiile și ajutorul material** din ordine;
-- **sporurile pe trepte**: vechimea în sistemul sănătății și categoria de calificare;
+- **sporurile pe trepte de vechime** (formula „pe trepte”, pe vechimea totală în muncă) — de exemplu sporul pentru vechime
+  din contractul colectiv; nu se preîncarcă (VECH / CATEG după HG 837/2016 și gărzile au ieșit), îl adăugați la tipurile de
+  calcul dacă firma îl are;
 - **sporurile și reținerile personale** din fișa angajatului (fila „Salariu”): spor individual, plata la contract, sindicat,
   pensie alimentară, împrumut.
 

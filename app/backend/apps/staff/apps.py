@@ -14,10 +14,10 @@ class StaffConfig(AppConfig):
 
         from . import printing, services
         from .models import (Education, Employee, EmployeeDocument, Employment, FamilyMember, MilitaryRecord,
-                             PriorExperience, Qualification)
+                             PriorExperience)
 
         register(Employee, exclude={"checklist"})
-        for model in (EmployeeDocument, FamilyMember, Education, Qualification, PriorExperience, MilitaryRecord, Employment):
+        for model in (EmployeeDocument, FamilyMember, Education, PriorExperience, MilitaryRecord, Employment):
             register(model, parent="employee")
         if services.occupancy_provider not in org_services.OCCUPANCY_PROVIDERS:
             org_services.OCCUPANCY_PROVIDERS.append(services.occupancy_provider)

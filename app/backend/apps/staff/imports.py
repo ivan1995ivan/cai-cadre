@@ -1,6 +1,6 @@
-"""Importul dosarelor din Excel (spitalul n-are bază 1C): angajații cu raportul de muncă, apoi filele dosarului.
+"""Importul dosarelor din Excel (fără bază 1C de preluat): angajații cu raportul de muncă, apoi filele dosarului.
 
-Ordinea recomandată: subdiviziunile și funcțiile (Etapa 1) → angajații → actele, familia, studiile, categoriile, stagiul.
+Ordinea recomandată: subdiviziunile și funcțiile (Etapa 1) → angajații → actele, familia, studiile, stagiul.
 Angajatul din fișierele secundare se găsește după „Nr. tabel” sau „IDNP”.
 """
 from decimal import Decimal
@@ -9,8 +9,7 @@ from apps.core.excel_import import Column, RowError, Spec
 from apps.org.models import DictItem, Occupation, Specialty, Subdivision
 
 from . import services
-from .models import (EMPLOYMENT_KINDS, Education, Employee, EmployeeDocument, FamilyMember, PriorExperience,
-                     Qualification)
+from .models import EMPLOYMENT_KINDS, Education, Employee, EmployeeDocument, FamilyMember, PriorExperience
 
 KIND_ALIASES = {
     "de baza": "main", "baza": "main", "main": "main", "основное": "main",
@@ -19,7 +18,6 @@ KIND_ALIASES = {
     "cumul extern": "external", "extern": "external", "external": "external", "внешнее совместительство": "external",
     "contract de prestari servicii": "contractor", "prestari servicii": "contractor", "contract civil": "contractor",
     "contractat": "contractor", "contractor": "contractor", "договор оказания услуг": "contractor", "по договору": "contractor",
-    "rezident": "resident", "resident": "resident", "резидент": "resident",
     "suplinire": "substitute", "suplinire temporara": "substitute", "substitute": "substitute",
 }
 KINDS_HINT = "Tipul angajării: " + ", ".join(name for _, name in EMPLOYMENT_KINDS)
@@ -167,10 +165,6 @@ def _save_employee(values, ctx):
                     setattr(first, f, getattr(job, f))
                 first.date = job.date_from
                 first.save()
-        if values.get("qualification"):
-            cat = _dict_item("qualification", values["qualification"], "Categoria de calificare")
-            if not emp.qualifications.filter(category=cat).exists():
-                Qualification.objects.create(employee=emp, category=cat, awarded_on=values.get("qualification_date"))
     return emp, status
 
 
@@ -197,9 +191,9 @@ EMPLOYEES = Spec(
         Column("clothing_size", "Mărimea îmbrăcămintei", example="48", aliases=("marimea hainelor", "размер одежды")),
         Column("shoe_size", "Mărimea încălțămintei", example="39", aliases=("marimea incaltamintei", "размер обуви")),
         Column("height", "Înălțimea (cm)", kind="int", example=170, aliases=("inaltimea", "рост")),
-        Column("subdivision", "Subdiviziunea (cod sau denumire)", example="TR1", aliases=("subdiviziunea", "sectia", "secția")),
+        Column("subdivision", "Subdiviziunea (cod sau denumire)", example="CONT", aliases=("subdiviziunea", "sectia", "secția")),
         Column("occupation_code", "Cod CORM", example=""),
-        Column("occupation", "Funcția", example="Medic traumatolog-ortoped", aliases=("functia", "должность")),
+        Column("occupation", "Funcția", example="Contabil", aliases=("functia", "должность")),
         Column("kind", "Tipul angajării", example="de bază", aliases=("tip angajare",)),
         Column("rate", "Norma (1 / 0,5 sau 100% / 50%)", kind="decimal", example=1, aliases=("norma", "unitati", "ставка")),
         Column("date_from", "Data angajării", kind="date", example="01.09.2015", aliases=("data angajarii", "дата приёма")),
@@ -211,8 +205,6 @@ EMPLOYEES = Spec(
         Column("date_to", "CIM pe durată determinată până la", kind="date"),
         Column("probation_until", "Perioada de probă până la", kind="date"),
         Column("hire_order", "Ordinul de angajare (nr., data)", example="45-p din 01.09.2015"),
-        Column("qualification", "Categoria de calificare", example="Categoria întâi"),
-        Column("qualification_date", "Categoria conferită la", kind="date"),
     ],
     save_row=_save_employee,
     notes=["Un rând = un angajat și un raport de muncă. Pentru cumul intern / extern repetați persoana pe alt rând.",
@@ -316,42 +308,13 @@ def _save_education(values, ctx):
 EDUCATION = Spec(
     code="education", title="Studiile angajaților", sheet_title="Studii",
     columns=[*EMP_REF, Column("level", "Nivelul studiilor", example="Superioare"),
-             Column("institution", "Instituția de învățământ", required=True, example="USMF „Nicolae Testemițanu”"),
-             Column("specialty", "Specialitatea", example="Medicină generală"), Column("qualification", "Calificarea"),
+             Column("institution", "Instituția de învățământ", required=True, example="Universitatea Tehnică a Moldovei"),
+             Column("specialty", "Specialitatea", example="Contabilitate"), Column("qualification", "Calificarea"),
              Column("form", "Forma de învățământ", example="La zi"),
              Column("year_from", "Anul admiterii", kind="int"), Column("year_to", "Anul absolvirii", kind="int", example=2004),
              Column("diploma_series", "Diploma: seria"), Column("diploma_number", "Diploma: numărul"),
              Column("diploma_date", "Diploma: data", kind="date")],
     save_row=_save_education,
-)
-
-
-def _save_qualification(values, ctx):
-    emp = find_employee(values)
-    cat = _dict_item("qualification", values.get("category"), "Categoria") if values.get("category") else None
-    spec = _specialty(values.get("specialty"))
-    obj = Qualification.objects.filter(employee=emp, specialty=spec, category=cat).first()
-    status = "updated" if obj else "created"
-    obj = obj or Qualification(employee=emp, specialty=spec, category=cat)
-    if values.get("degree"):
-        obj.degree = _dict_item("degree", values["degree"], "Gradul științific")
-    if values.get("certificate_number"):
-        obj.certificate_number = values["certificate_number"]
-    for f in ("awarded_on", "valid_until"):
-        if values.get(f):
-            setattr(obj, f, values[f])
-    obj.save()
-    return f"{emp.short_name()}: {cat or ''} {spec or ''}", status
-
-
-QUALIFICATIONS = Spec(
-    code="qualifications", title="Categoriile de calificare și gradele științifice", sheet_title="Calificare",
-    columns=[*EMP_REF, Column("specialty", "Specialitatea", example="Ortopedie și traumatologie"),
-             Column("category", "Categoria", example="Categoria superioară"),
-             Column("certificate_number", "Nr. certificatului / ordinului"),
-             Column("awarded_on", "Conferită la", kind="date"), Column("valid_until", "Valabilă până la", kind="date"),
-             Column("degree", "Gradul științific")],
-    save_row=_save_qualification,
 )
 
 
@@ -368,24 +331,22 @@ def _save_experience(values, ctx):
     for f in ("position", "document"):
         if values.get(f):
             setattr(obj, f, values[f])
-    for f in ("in_specialty", "in_healthcare"):
-        if values.get(f) is not None:
-            setattr(obj, f, bool(values[f]))
+    if values.get("in_specialty") is not None:
+        obj.in_specialty = bool(values["in_specialty"])
     obj.save()
     return f"{emp.short_name()}: {obj.organization}", status
 
 
 EXPERIENCE = Spec(
     code="experience", title="Stagiul de muncă anterior", sheet_title="Stagiu",
-    columns=[*EMP_REF, Column("organization", "Unitatea", required=True, example="IMSP Spitalul Clinic Republican"),
-             Column("position", "Funcția", example="Medic rezident"),
+    columns=[*EMP_REF, Column("organization", "Unitatea", required=True, example="„Exemplu” SRL"),
+             Column("position", "Funcția", example="Contabil"),
              Column("date_from", "De la", required=True, kind="date", example="01.09.2004"),
              Column("date_to", "Până la", required=True, kind="date", example="31.08.2015"),
              Column("in_specialty", "În specialitate (da/nu)", kind="bool", example="da"),
-             Column("in_healthcare", "În sistemul sănătății (da/nu)", kind="bool", example="da"),
              Column("document", "Documentul (carnet, certificat)")],
     save_row=_save_experience,
     notes=["Perioadele suprapuse se numără o singură dată la calculul vechimii."],
 )
 
-SPECS = {s.code: s for s in (EMPLOYEES, DOCUMENTS, FAMILY, EDUCATION, QUALIFICATIONS, EXPERIENCE)}
+SPECS = {s.code: s for s in (EMPLOYEES, DOCUMENTS, FAMILY, EDUCATION, EXPERIENCE)}

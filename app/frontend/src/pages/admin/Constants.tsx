@@ -224,6 +224,10 @@ export default function Constants() {
                     extra={t('constants.payroll_enabledHint')}>
                     <Switch checkedChildren={t('constants.withPayroll')} unCheckedChildren={t('constants.withoutPayroll')} />
                   </Form.Item>
+                  <Form.Item name="military_enabled" label={t('constants.military_enabled')} valuePropName="checked"
+                    extra={t('constants.military_enabledHint')}>
+                    <Switch />
+                  </Form.Item>
                   <Form.Item name="function_panel" label={t('constants.function_panel')} valuePropName="checked"
                     extra={t('constants.function_panelHint')}>
                     <Switch />

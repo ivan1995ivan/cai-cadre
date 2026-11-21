@@ -205,7 +205,7 @@ def schedule_guests(schedule: LeaveSchedule, have: list) -> list:
 
 
 def schedule_warnings(rows: list) -> list:
-    """Suprapunerile care lasă secția fără oameni: toți medicii plecați deodată, toți de aceeași funcție (≥ 2)."""
+    """Suprapunerile care lasă subdiviziunea fără oameni: toți cei de aceeași funcție (≥ 2) plecați deodată."""
     warnings = []
     absent = defaultdict(set)  # ziua → angajații plecați
     for r in rows:
@@ -224,12 +224,9 @@ def schedule_warnings(rows: list) -> list:
     for r in rows:
         if r["occupation_id"]:
             groups[("occupation", r["occupation"])].add(r["employee"])
-        if r["category"] == "physicians":
-            groups[("physicians", "")].add(r["employee"])
-    doctors = groups.get(("physicians", ""), set())
     for (kind, label), people in groups.items():
-        if len(people) < 2 or (kind == "occupation" and people == doctors):
-            continue  # toți medicii au aceeași funcție: ajunge avertismentul despre medici
+        if len(people) < 2:
+            continue
         days = [d for d, who in absent.items() if people <= who]
         for start, end in _merge_days(days):
             warnings.append({"kind": kind, "label": label, "count": len(people), "from": start, "to": end})

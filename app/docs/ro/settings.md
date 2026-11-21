@@ -20,11 +20,10 @@ grupa **Setări** de la sfârșit. Setarea debifată nu apare în lista rolului;
 ## Ce este în listă
 - **Instituția și programul**: Constante (datele instituției, logo, conturi, module, tema), Valute, Bănci, Localități,
   Numerotare, Forme de tipar, Câmpuri obligatorii, Meniul principal, Utilizatori, Roluri și drepturi.
-- **Clasificatoarele**, fiecare separat: Funcții (CORM), Specialități, Temeiuri legale, Tipuri de ordine, Categorii de
-  calificare, Grade științifice, Titluri științifico-didactice, Nivelul studiilor, Forma de învățământ, Tipuri de acte,
+- **Clasificatoarele**, fiecare separat: Funcții (CORM), Specialități, Temeiuri legale, Tipuri de ordine, Nivelul studiilor, Forma de învățământ, Tipuri de acte,
   Gradul de rudenie, Starea familială, Naționalitatea, Motivele încetării CIM, Sancțiuni disciplinare, Tipuri de stimulare,
-  Tipul angajării, Evidența militară (grupa, grade, centre militare), Lista de verificare la angajare / eliberare,
-  Vaccinuri. Cum se lucrează cu ele — [Clasificatoare](help:dictionaries).
+  Tipul angajării, Evidența militară (grupa, grade, centre militare — doar cu modulul pornit), Lista de verificare la
+  angajare / eliberare. Cum se lucrează cu ele — [Clasificatoare](help:dictionaries).
 - **Timpul de muncă**: Grafice de lucru, Ture, Calendarul de producție, Odihna între ture și gărzile pe lună — vezi
   [Grafice de lucru și gărzi](help:worktime).
 - **Concediile**: Evidența concediilor (data pornirii evidenței, perioadele care nu dau dreptul la concediu) — vezi

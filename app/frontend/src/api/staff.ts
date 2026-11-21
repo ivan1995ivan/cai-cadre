@@ -4,8 +4,8 @@ import { useMemo } from 'react'
 import { useFetch } from './hooks'
 import { useLocalName } from '../auth/AppContext'
 
-export type EmploymentKind = 'main' | 'main_student' | 'internal' | 'external' | 'resident' | 'substitute' | 'contractor'
-export const EMPLOYMENT_KINDS: EmploymentKind[] = ['main', 'main_student', 'internal', 'external', 'resident', 'substitute', 'contractor']
+export type EmploymentKind = 'main' | 'main_student' | 'internal' | 'external' | 'substitute' | 'contractor'
+export const EMPLOYMENT_KINDS: EmploymentKind[] = ['main', 'main_student', 'internal', 'external', 'substitute', 'contractor']
 
 export interface EmployeeRow {
   id: number
@@ -73,7 +73,7 @@ export interface Employee {
   notes: string
   user: number | null
   created_at: string
-  seniority: Record<'total' | 'healthcare' | 'specialty' | 'institution', SeniorityPart> | null
+  seniority: Record<'total' | 'specialty' | 'institution', SeniorityPart> | null
 }
 
 export interface HistoryRow {

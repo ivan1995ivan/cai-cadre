@@ -75,7 +75,7 @@ def run(force=False):
     from apps.core.models import Company
     from apps.org.models import DictItem, Occupation, Specialty, StaffList, StaffListLine, Subdivision
     from apps.staff import services as staff
-    from apps.staff.models import Education, Employee, FamilyMember, MilitaryRecord, Qualification
+    from apps.staff.models import Education, Employee, FamilyMember, MilitaryRecord
     from apps.users.models import Role, User
 
     if has_business_data() and not force:
@@ -92,7 +92,6 @@ def run(force=False):
 
     occupations = {o.name_ro: o for o in Occupation.objects.all()}
     specialties = list(Specialty.objects.filter(kind="medical")[:10]) or list(Specialty.objects.all()[:10])
-    cat = {c.code: c for c in DictItem.objects.filter(kind="qualification")}
     edu = {c.code: c for c in DictItem.objects.filter(kind="education")}
     family = {c.code: c for c in DictItem.objects.filter(kind="family")}
     groups = list(DictItem.objects.filter(kind="military_group"))
@@ -148,10 +147,6 @@ def run(force=False):
                 Education.objects.create(employee=emp, level=edu.get(level), institution=(
                     "USMF „Nicolae Testemițanu”" if level == "higher" else "Colegiul de Medicină din Chișinău" if level == "vocational"
                     else "Liceul teoretic"), year_to=min(hired.year, birth.year + 23), specialty=rnd.choice(specialties) if medical else None)
-                if medical and rnd.random() < 0.75:
-                    awarded = _years_ago(rnd, today, 0.2, 4.9)
-                    Qualification.objects.create(employee=emp, category=cat[rnd.choice(["second", "first", "first", "superior"])],
-                                                 specialty=rnd.choice(specialties), awarded_on=awarded, certificate_number="Ordinul MS")
                 if rnd.random() < 0.35:
                     FamilyMember.objects.create(employee=emp, relation=family.get(rnd.choice(["son", "daughter"])), full_name=f"{last} {rnd.choice(MEN + WOMEN)}",
                                                 birth_date=_years_ago(rnd, today, 1, 17), dependent=True)
@@ -187,7 +182,7 @@ def _cumul(people, subs, occupations, staff, rnd, today):
 
 def _activity(people, subs, rnd, today):
     """Concedii, cereri, formare, examene medicale, un ordin semnat, pontajul și salariul lunii trecute."""
-    from apps.health.models import MedicalExam, SafetyBriefing, Vaccination
+    from apps.health.models import MedicalExam, SafetyBriefing
     from apps.leave.models import Absence, LeaveRequest
     from apps.org.models import DictItem, OrderType
     from apps.orders import services as order_services
@@ -205,21 +200,13 @@ def _activity(people, subs, rnd, today):
     from apps.leave import balance
 
     balance.save_settings({"start_date": date(today.year - 1, 1, 1).isoformat()})
-    hep = DictItem.objects.filter(kind="vaccine", code="hepatitis_b").first()
-    flu = DictItem.objects.filter(kind="vaccine", code="influenza").first()
     for i, (emp, job) in enumerate(people):
-        medical = job.occupation.category in ("physicians", "nurses", "pharmacists", "junior")
         if i % 6 != 5:
             done = today - timedelta(days=rnd.randint(30, 380))
             MedicalExam.objects.create(employee=emp, kind="periodic", date=done, next_date=done + timedelta(days=365),
                                        institution="Centrul de medicină a muncii", conclusion="fit")
         SafetyBriefing.objects.create(employee=emp, kind="periodic", date=today - timedelta(days=rnd.randint(20, 200)),
                                       next_date=today + timedelta(days=rnd.randint(-10, 160)), instructor="Inginer SSM")
-        if medical and hep and i % 5 != 0:
-            Vaccination.objects.create(employee=emp, vaccine=hep, dose=3, date=today - timedelta(days=rnd.randint(400, 3000)))
-        if medical and flu and i % 2 == 0:
-            Vaccination.objects.create(employee=emp, vaccine=flu, date=today - timedelta(days=rnd.randint(200, 360)),
-                                       next_date=today + timedelta(days=rnd.randint(5, 160)))
         if job.occupation.category in ("physicians", "nurses", "pharmacists"):
             for _ in range(rnd.randint(1, 4)):
                 start = today - timedelta(days=rnd.randint(20, 1500))
@@ -229,7 +216,7 @@ def _activity(people, subs, rnd, today):
                                               provider=rnd.choice(["USMF „Nicolae Testemițanu”", "Centrul de excelență în medicină",
                                                                    "Societatea de ortopedie"]),
                                               date_from=start, date_to=start + timedelta(days=rnd.randint(0, 9)),
-                                              hours=rnd.choice([8, 16, 36, 72]), credits=rnd.choice([10, 15, 25, 40, 50]))
+                                              hours=rnd.choice([8, 16, 36, 72]))
         # concediile: cei mai mulți și-au luat concediul anul trecut, o parte și luna trecută (anul de muncă — cel mai vechi cu sold)
         for start in ([date(today.year - 1, rnd.randint(6, 8), rnd.randint(1, 20))] if i % 5 else []) + (
                 [first_prev + timedelta(days=rnd.randint(0, 10))] if i % 4 == 0 else []):

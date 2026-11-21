@@ -1,53 +1,43 @@
-# Formare și atestare
+# Formarea profesională
 
-Educația medicală continuă (EMC), creditele pe perioada de atestare, calendarul atestării și planul anual de formare al
-instituției.
+Cursurile, instruirile și certificatele angajaților (Codul muncii, titlul „Formarea profesională”) și planul anual de
+formare al întreprinderii.
 
-## Registrul EMC
+## Registrul formării
 
-Toate activitățile de formare ale angajaților: cursuri de perfecționare, cursuri tematice, conferințe, seminare, stagii,
-cursuri online, publicații. Pentru fiecare: datele, organizatorul, **orele**, **creditele EMC** și certificatul.
+Toate activitățile de formare ale angajaților: cursuri de perfecționare, cursuri de specializare / calificare, instruiri
+interne, conferințe, seminare, stagii, cursuri online. Pentru fiecare: datele, organizatorul, **orele**, certificatul și —
+dacă certificatul are termen — **Valabil până la** (de exemplu lucrul la înălțime, stivuitorul, primul ajutor).
 
-- **Activitate nouă** — introducere de mână (de exemplu după certificatul adus de medic).
-- Ordinul **„Trimitere la perfecționare / EMC”**, la semnare, pune singur activitatea în registru: cursul (din „scopul”),
-  organizatorul (din „destinația”) și perioada. După curs completați creditele și certificatul. Activitatea venită din
-  ordin se șterge doar prin anularea ordinului.
-- Sus: totalul de persoane, ore și credite pentru filtrele alese.
-- Activitatea apare și în fișa angajatului, la **Studii și calificare → Educația medicală continuă**.
+- **Activitate nouă** — introducere de mână (de exemplu după certificatul adus de angajat).
+- Ordinul **„Trimitere la perfecționare”**, la semnare, pune singur activitatea în registru: cursul (din „scopul”),
+  organizatorul (din „destinația”) și perioada; angajatul primește absența „perfecționare” pe zilele cursului. După curs
+  completați certificatul și termenul lui. Activitatea venită din ordin se șterge doar prin anularea ordinului.
+- Sus: câte persoane și câte ore pentru filtrele alese. Coloana **Valabil până la** e roșie când certificatul a expirat și
+  portocalie cu 60 de zile înainte.
+- Activitatea apare și în fișa angajatului, la **Studii și formare → Formarea profesională**.
 
-## Creditele
-
-Pentru fiecare angajat cu credite cerute (medici, farmaciști, asistenți medicali):
-
-- perioada se numără de la data conferirii **categoriei actuale**; fără categorie — pe ultimii 5 ani;
-- **Acumulate** — s-a strâns norma; **În grafic** — cât cere perioada scursă; **În urmă** — mai puțin decât cere perioada
-  scursă; **Risc** — categoria expiră în anul următor, iar creditele nu ajung.
-
-**Normele de credite** (administratorul): câte credite se cer pe perioada de atestare, pe categorii de personal, durata
-perioadei și cu câte luni înainte apare riscul. Valorile livrate sunt de pornire — verificați-le după regulamentul EMFC în
-vigoare.
-
-Alerta **„Credite EMC insuficiente înainte de atestare”** apare în *Termene și alerte* cu un an înainte de expirarea categoriei.
-
-## Atestarea
-
-1. **Calendarul atestării** — categoriile care expiră în următoarele luni (12 implicit) și cele deja expirate, cu creditele.
-2. Bifați angajații, alegeți data comisiei și apăsați **Include în lista pentru atestare**.
-3. **Lista candidaților (tipar)** — demersul către comisia de atestare.
-4. După comisie deschideți rândul (dublu clic): starea **Categorie conferită** sau **confirmată**, categoria obținută, data
-   și numărul deciziei.
-5. Bifați rândurile cu rezultat și apăsați **Ordinul de conferire** — se creează ordinul colectiv „Conferirea / confirmarea
-   categoriei de calificare”. La semnare categoria intră în dosar, valabilă 5 ani.
+**Certificatul care expiră.** Alerta **„Expirarea certificatului de formare”** apare în *Termene și alerte* (60 de zile
+înainte, se schimbă în setările alertelor) pentru cadre și șeful subdiviziunii. Când angajatul face din nou același curs
+(aceeași denumire, început după cel vechi), certificatul vechi nu mai alertează.
 
 ## Planul anual
 
-Planul de formare al instituției pe un an (cerut de Regulamentul EMFC).
+Planul de formare al întreprinderii pe un an (cine, ce curs, organizatorul, luna, orele).
 
-- **Plan nou** pentru anul ales, apoi **Completează din credite** — câte un rând pentru cei în urmă sau cu atestarea în anul
-  planului (creditele unui an sau cele lipsă). Rândurile se pot adăuga, schimba și șterge de mână.
+- **Plan nou** pentru anul ales, apoi **Completează din certificatele care expiră** — câte un rând pentru fiecare certificat
+  care expiră în anul planului (reînnoirea lui), în luna expirării; al doilea clic nu dublează rândurile. Rândurile se pot
+  adăuga, schimba și șterge de mână.
 - Când se înregistrează o activitate de formare în anul planului, primul rând deschis al angajatului se marchează
   **Realizat**.
-- **Aprobă** închide planul pentru modificări; **Tipar** — planul cu Stema.
+- **Aprobă** închide planul pentru modificări; **Tipar** — planul cu totalul orelor.
 
-În **Rapoarte → Formare și atestare**: *Creditele EMC în perioada de atestare* și *Formarea pe perioadă* (orele și creditele,
-și pentru FORPRO).
+În **Rapoarte → Formarea profesională**: *Formarea pe perioadă* (orele, certificatele și termenul lor, totalul pe tipuri —
+și pentru raportările statistice despre formare) și *Certificatele de formare care expiră*.
+
+## Pentru cine configurează
+
+- Dreptul: *Formarea profesională* (vizualizare / creare / editare / ștergere / export); șeful subdiviziunii vede doar
+  angajații subdiviziunilor lui.
+- Din etapa S1 nu mai există creditele EMC, normele de credite și atestarea (calendarul, lista candidaților, ordinul de
+  conferire a categoriei) — erau pentru personalul medical. Tipul „Publicație / prezentare” a trecut la „Altă activitate”.

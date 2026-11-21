@@ -58,7 +58,7 @@ export default {
     codes: {
       CO: 'Concediu de odihnă anual', CA: 'Concediu suplimentar', CFP: 'Concediu fără plată', CMT: 'Concediu de maternitate', CP: 'Concediu paternal',
       CIC: 'Îngrijirea copilului (parțial plătit)', CICN: 'Îngrijirea copilului (neplătit)', CS: 'Concediu de studii', ZL: 'Zile libere plătite',
-      D: 'Deplasare', F: 'Perfecționare / EMC', CM: 'Concediu medical', S: 'CIM suspendat', A: 'Absență nemotivată', IN: 'Învoire',
+      D: 'Deplasare', F: 'Perfecționare', CM: 'Concediu medical', S: 'CIM suspendat', A: 'Absență nemotivată', IN: 'Învoire',
     },
   },
 }

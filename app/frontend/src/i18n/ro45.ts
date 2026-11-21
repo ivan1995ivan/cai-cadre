@@ -2,9 +2,9 @@
 export default {
   users: {
     subdivisions: 'Subdiviziunile lui',
-    subdivisionsHint: 'Pentru șeful de secție, asistentul medical superior: rolurile cu „doar ale mele / subdiviziunile mele” văd angajații, concediile, graficele și rapoartele doar din aceste subdiviziuni (cu sub-subdiviziunile, la „subdiviziunile mele”).',
+    subdivisionsHint: 'Pentru șeful de subdiviziune: rolurile cu „doar ale mele / subdiviziunile mele” văd angajații, concediile, graficele și rapoartele doar din aceste subdiviziuni (cu sub-subdiviziunile, la „subdiviziunile mele”).',
   },
-  roles: { hiddenFieldsHint: 'Ce date sensibile nu vede acest rol (de exemplu salariul sau datele de sănătate pentru șeful de secție).' },
+  roles: { hiddenFieldsHint: 'Ce date sensibile nu vede acest rol (de exemplu salariul sau datele de sănătate pentru șeful de subdiviziune).' },
   localities: {
     loadHint: 'Bifați țările ale căror localități le folosiți și apăsați „Încarcă”. Debifat = localitățile țării se scot din clasificator (cele adăugate de mână rămân). Adresele scrise în dosare rămân neschimbate.',
   },

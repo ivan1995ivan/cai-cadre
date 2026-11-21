@@ -11,16 +11,16 @@ import { AUTO_KEYS, FORMULAS, type PayConstant, type PayType } from '../../api/p
 import { useApp } from '../../auth/AppContext'
 import { useNameFields } from '../org/DictionariesPage'
 
-/** Treptele (vechime: {from, pct}; categorie: {category, pct}) scrise ca text: „2:5, 5:10, 10:15” sau „second:10, first:15”. */
-function ScaleInput({ value, onChange }: { value?: { from?: number; category?: string; pct: number }[]; onChange?: (v: unknown[]) => void }) {
+/** Treptele pe vechimea totală în muncă ({from: ani, pct}) scrise ca text: „3:5, 10:10, 20:15”. */
+function ScaleInput({ value, onChange }: { value?: { from: number; pct: number }[]; onChange?: (v: unknown[]) => void }) {
   const { t } = useTranslation()
-  const text = (value ?? []).map((s) => `${s.category ?? s.from}:${s.pct}`).join(', ')
+  const text = (value ?? []).map((s) => `${s.from}:${s.pct}`).join(', ')
   const [draft, setDraft] = useState(text)
   return (
     <Input value={draft} placeholder={t('pay.type.scalePlaceholder')} onChange={(e) => setDraft(e.target.value)} onBlur={() => {
       const steps = draft.split(/[,;]/).map((p) => p.trim()).filter(Boolean).map((p) => {
         const [k, v] = p.split(':').map((x) => x.trim())
-        return /^\d+(\.\d+)?$/.test(k) ? { from: Number(k), pct: Number(v) } : { category: k, pct: Number(v) }
+        return { from: Number(k), pct: Number(v) }  // un text care nu e număr îl respinge serverul, cu mesajul lui
       })
       onChange?.(steps)
     }} />

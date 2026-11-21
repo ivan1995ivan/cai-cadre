@@ -11,7 +11,7 @@ export default {
     leaveRequests: 'Cererile de concediu', newLeave: 'Cerere de concediu', otherRequests: 'Adeverințe și alte cereri', newOther: 'Cerere nouă',
     status: 'Starea', note: 'Mențiuni', order: 'ordinul', text: 'Conținutul', answer: 'Răspunsul', withdraw: 'Retrage', withdrawConfirm: 'Retrageți cererea?',
     send: 'Trimite', sent: 'Cererea a fost trimisă.', reason: 'Motivul / mențiuni',
-    leaveHint: 'Cererea merge la șeful de secție, apoi la secția resurse umane pentru ordin. Primiți notificare la fiecare pas.',
+    leaveHint: 'Cererea merge la șeful subdiviziunii, apoi la serviciul resurse umane pentru ordin. Primiți notificare la fiecare pas.',
     whatChanges: 'Ce date s-au schimbat (numele, domiciliul, telefonul…)', forWhom: 'Pentru ce instituție / mențiuni', copies: 'Exemplare',
     kinds: { certificate_work: 'Adeverință de la locul de muncă', certificate_seniority: 'Adeverință privind vechimea',
       certificate_salary: 'Adeverință despre salariu', data_change: 'Modificarea datelor personale', other: 'Altă cerere' },

@@ -1,18 +1,16 @@
-"""Rapoartele despre personal: mișcarea cadrelor, structura, vechimea, zilele de naștere, pensionările, posturile vacante,
-cadrele medicale (baza raportului MS nr. 17)."""
+"""Rapoartele despre personal: mișcarea cadrelor, structura, vechimea, zilele de naștere, pensionările, posturile vacante."""
 from collections import Counter, defaultdict
 from datetime import timedelta
 from decimal import Decimal
 
 from django.db.models import Q
 
-from apps.org.models import STAFF_CATEGORIES, DictItem, Occupation, Subdivision
+from apps.org.models import STAFF_CATEGORIES, Occupation, Subdivision
 from apps.staff import services as staff
-from apps.staff.models import CIVIL_KINDS, EMPLOYMENT_KINDS, Employee, Employment, EmploymentHistory
+from apps.staff.models import CIVIL_KINDS, EMPLOYMENT_KINDS, MAIN_KINDS, Employee, Employment, EmploymentHistory
 
 from .registry import col, report, subtitle_parts
 
-MAIN_KINDS = {"main", "main_student", "resident"}
 CATEGORY = dict(STAFF_CATEGORIES)
 CATEGORY_T = {
     "leadership": ("Personal de conducere", "Руководящий персонал", "Management"),
@@ -26,7 +24,7 @@ CATEGORY_T = {
 KIND_T = {
     "main": ("De bază", "Основная", "Main"), "main_student": ("De bază (student)", "Основная (студент)", "Main (student)"),
     "internal": ("Cumul intern", "Внутреннее совместительство", "Internal part-time"),
-    "external": ("Cumul extern", "Внешнее совместительство", "External part-time"), "resident": ("Rezident", "Резидент", "Resident"),
+    "external": ("Cumul extern", "Внешнее совместительство", "External part-time"),
     "substitute": ("Suplinire temporară", "Временное замещение", "Temporary substitution"),
     "contractor": ("Prestări servicii", "Договор услуг", "Service contract"),
 }
@@ -172,7 +170,6 @@ def movement(p):
 AGE_GROUPS = [(0, 29, "< 30"), (30, 39, "30–39"), (40, 49, "40–49"), (50, 59, "50–59"), (60, 64, "60–64"), (65, 200, "65 +")]
 SENIORITY_GROUPS = [(0, 2, "< 3"), (3, 4, "3–5"), (5, 9, "5–10"), (10, 19, "10–20"), (20, 29, "20–30"), (30, 200, "30 +")]
 EDU_ORDER = ["primary", "secondary", "vocational", "higher", "residency", "postgraduate", "doctorate"]
-QUAL_ORDER = ["none", "second", "first", "superior"]
 
 
 def age_on(birth, day):
@@ -186,15 +183,6 @@ def _group(value, groups):
     return groups[-1][2]
 
 
-def qualification_on(employee, day):
-    """Categoria de calificare valabilă la data dată (cea mai recentă conferită)."""
-    valid = [q for q in employee.qualifications.all() if q.category_id and (q.awarded_on is None or q.awarded_on <= day)
-             and (q.valid_until is None or q.valid_until >= day)]
-    if not valid:
-        return None
-    return max(valid, key=lambda q: (q.awarded_on or day, q.id)).category
-
-
 def education_of(employee):
     levels = [e.level for e in employee.education.all() if e.level_id]
     if not levels:
@@ -203,11 +191,9 @@ def education_of(employee):
 
 
 @report("structure", "personnel", ("Structura personalului", "Структура персонала", "Staff structure"),
-        ("Pe categorii, sex, vârstă, studii, categoria de calificare, vechime, tipul angajării și normă — baza pentru rapoartele "
-         "statistice MS și BNS.",
-         "По категориям, полу, возрасту, образованию, квалификационной категории, стажу, виду занятости и ставке — основа для "
-         "статистических отчётов МЗ и НБС.",
-         "By category, sex, age, education, qualification category, seniority, employment type and rate."),
+        ("Pe categorii, sex, vârstă, studii, vechime, tipul angajării și normă — baza pentru rapoartele statistice BNS.",
+         "По категориям, полу, возрасту, образованию, стажу, виду занятости и ставке — основа для статистических отчётов НБС.",
+         "By category, sex, age, education, seniority, employment type and rate."),
         ["on_date", "subdivision", "category", "kinds"])
 def structure(p):
     look = Lookup(p.lang)
@@ -216,7 +202,7 @@ def structure(p):
     for e, snap in jobs:
         people.setdefault(e.employee_id, []).append((e, snap))
     employees = {x.pk: x for x in Employee.objects.filter(pk__in=people).prefetch_related(
-        "education__level", "qualifications__category", "experience", "employments__occupation")}
+        "education__level", "experience", "employments")}
     dims = defaultdict(Counter)
     women = defaultdict(Counter)
     for pk, js in people.items():
@@ -229,8 +215,6 @@ def structure(p):
         }
         edu = education_of(emp)
         values["education"] = edu.local_name(p.lang) if edu else "—"
-        qual = qualification_on(emp, p.on_date)
-        values["qualification"] = qual.local_name(p.lang) if qual else p.t(("Fără categorie", "Без категории", "No category"))
         years = staff.seniority(emp, p.on_date)["total"]["years"]
         values["seniority"] = _group(years, SENIORITY_GROUPS)
         rate = sum((s["rate"] for _, s in js), Decimal("0"))
@@ -245,7 +229,6 @@ def structure(p):
     titles = [("category", ("Pe categorii de personal", "По категориям персонала", "By staff category")),
               ("sex", ("Pe sexe", "По полу", "By sex")), ("age", ("Pe grupe de vârstă", "По возрастным группам", "By age group")),
               ("education", ("Pe studii (cele mai înalte)", "По образованию (высшее из имеющихся)", "By education (highest)")),
-              ("qualification", ("Pe categoria de calificare", "По квалификационной категории", "By qualification category")),
               ("seniority", ("Pe vechimea totală (ani)", "По общему стажу (лет)", "By total seniority (years)")),
               ("rate", ("Pe normă", "По ставке", "By rate"))]
     order = {"age": [g[2] for g in AGE_GROUPS] + ["—"], "seniority": [g[2] for g in SENIORITY_GROUPS],
@@ -278,9 +261,9 @@ def structure(p):
 
 # --- vechimea ------------------------------------------------------------------------------------------------------------
 @report("seniority", "personnel", ("Vechimea în muncă", "Трудовой стаж", "Seniority"),
-        ("Vechimea totală, în sistemul sănătății, în specialitate și în instituție pe fiecare angajat — pentru sporuri.",
-         "Общий стаж, в здравоохранении, по специальности и в учреждении по каждому работнику — для надбавок.",
-         "Total, healthcare, specialty and institution seniority per employee — for allowances."),
+        ("Vechimea totală, în specialitate și în întreprindere pe fiecare angajat — pentru adeverințe și sporuri.",
+         "Общий стаж, по специальности и на предприятии по каждому работнику — для справок и надбавок.",
+         "Total, specialty and company seniority per employee — for certificates and allowances."),
         ["on_date", "subdivision", "category"])
 def seniority(p):
     look = Lookup(p.lang)
@@ -293,16 +276,16 @@ def seniority(p):
         s = staff.seniority(emp, p.on_date)
         rows.append({"tab": emp.tab_number, "name": emp.full_name(), "sub": look.sub(snap["subdivision_id"]),
                      "occ": look.occ(snap["occupation_id"]), "date_from": _d(e.date_from),
-                     **{k: staff.seniority_text(s[k], p.lang) for k in ("total", "healthcare", "specialty", "institution")},
-                     "years": s["healthcare"]["years"]})
+                     **{k: staff.seniority_text(s[k], p.lang) for k in ("total", "specialty", "institution")},
+                     "years": s["total"]["years"]})
     rows.sort(key=lambda r: (r["sub"], r["name"]))
     return {
         "subtitle": subtitle_parts(p, f"{p.t(('la data de', 'на', 'as of'))} {p.on_date:%d.%m.%Y}"),
         "columns": [col("tab", p.t(COMMON["tab"])), col("name", p.t(COMMON["name"])), col("sub", p.t(COMMON["sub"])),
                     col("occ", p.t(COMMON["occ"])), col("date_from", p.t(("Angajat la", "Принят", "Hired on")), "date"),
-                    col("total", p.t(("Totală", "Общий", "Total"))), col("healthcare", p.t(("În sănătate", "В здравоохранении", "Healthcare"))),
+                    col("total", p.t(("Totală", "Общий", "Total"))),
                     col("specialty", p.t(("În specialitate", "По специальности", "Specialty"))),
-                    col("institution", p.t(("În instituție", "В учреждении", "Institution")))],
+                    col("institution", p.t(("În întreprindere", "На предприятии", "In the company")))],
         "rows": rows,
     }
 
@@ -387,7 +370,7 @@ def retirements(p):
     }
 
 
-# --- posturile vacante și cadrele medicale ---------------------------------------------------------------------------------
+# --- posturile vacante ---------------------------------------------------------------------------------
 def _occupancy(p):
     from apps.org import services as org_services
 
@@ -420,83 +403,6 @@ def vacancies(p):
     }
 
 
-@report("medical_staff", "external", ("Cadrele medicale (MS, nr. 17)", "Медицинские кадры (МЗ, № 17)", "Medical staff (MoH no. 17)"),
-        ("Pe funcții: unitățile aprobate și ocupate, persoanele fizice (de bază, cumul intern, cumul extern), femeile, categoriile "
-         "de calificare și vârsta de pensionare — datele pentru raportul statistic al Ministerului Sănătății.",
-         "По должностям: утверждённые и занятые единицы, физические лица (основные, внутренние и внешние совместители), женщины, "
-         "квалификационные категории и пенсионный возраст — данные для статистического отчёта МЗ.",
-         "By position: approved and occupied units, persons (main, internal and external part-time), women, qualification categories "
-         "and retirement age."),
-        ["on_date", "subdivision", "category"])
-def medical_staff(p):
-    from apps.alerts import engine
-
-    cfg = engine.get_settings()
-    ages = {"M": int(cfg["retirement_men"]), "F": int(cfg["retirement_women"])}
-    look = Lookup(p.lang)
-    units = defaultdict(lambda: [Decimal("0"), Decimal("0")])
-    for r in _occupancy(p):
-        units[r["occupation_id"]][0] += Decimal(r["approved"])
-        units[r["occupation_id"]][1] += Decimal(r["occupied"])
-    jobs = jobs_on(p, p.on_date, look, kinds="all")
-    employees = {x.pk: x for x in Employee.objects.filter(pk__in={e.employee_id for e, _ in jobs}).prefetch_related("qualifications__category")}
-    stats = defaultdict(Counter)
-    for e, snap in jobs:
-        s = stats[snap["occupation_id"]]
-        emp = employees[e.employee_id]
-        if e.kind in MAIN_KINDS:
-            s["main"] += 1
-            s["women"] += emp.sex == "F"
-            qual = qualification_on(emp, p.on_date)
-            if qual and qual.code in ("superior", "first", "second"):
-                s[qual.code] += 1
-            if emp.birth_date and emp.sex in ages and age_on(emp.birth_date, p.on_date) >= ages[emp.sex]:
-                s["pension"] += 1
-        elif e.kind == "internal":
-            s["internal"] += 1
-        else:
-            s["external"] += 1
-    by_cat = defaultdict(list)
-    for occ_id in set(units) | set(stats):
-        cat = look.category(occ_id)
-        if cat not in ("physicians", "pharmacists", "nurses", "junior"):
-            continue
-        s = stats[occ_id]
-        by_cat[cat].append({"occ": look.occ(occ_id), "code": look.occs[occ_id].code if occ_id in look.occs else "",
-                            "approved": float(units[occ_id][0]), "occupied": float(units[occ_id][1]), "main": s["main"],
-                            "internal": s["internal"], "external": s["external"], "women": s["women"], "superior": s["superior"],
-                            "first": s["first"], "second": s["second"], "pension": s["pension"]})
-    rows, totals = [], Counter()
-    nums = ("approved", "occupied", "main", "internal", "external", "women", "superior", "first", "second", "pension")
-    for cat in ("physicians", "pharmacists", "nurses", "junior"):
-        if not by_cat[cat]:
-            continue
-        part = sorted(by_cat[cat], key=lambda r: r["occ"])
-        sub = Counter()
-        for r in part:
-            for k in nums:
-                sub[k] += r[k]
-        rows.append({"_section": p.t(CATEGORY_T[cat])})
-        rows += part
-        rows.append({"occ": p.t(("Total", "Итого", "Subtotal")), "_subtotal": True, **{k: sub[k] for k in nums}})
-        totals.update(sub)
-    return {
-        "subtitle": subtitle_parts(p, f"{p.t(('la data de', 'на', 'as of'))} {p.on_date:%d.%m.%Y}"),
-        "columns": [col("occ", p.t(COMMON["occ"])), col("code", p.t(("Cod CORM", "Код CORM", "CORM code"))),
-                    col("approved", p.t(("Unități aprobate", "Утверждено ед.", "Approved units")), "num"),
-                    col("occupied", p.t(("Unități ocupate", "Занято ед.", "Occupied units")), "num"),
-                    col("main", p.t(("Persoane (de bază)", "Физ. лиц (основные)", "Persons (main)")), "int"),
-                    col("internal", p.t(("Cumul intern", "Внутр. совм.", "Internal part-time")), "int"),
-                    col("external", p.t(("Cumul extern", "Внешн. совм.", "External part-time")), "int"),
-                    col("women", p.t(COMMON["women"]), "int"),
-                    col("superior", p.t(("Cat. superioară", "Высшая кат.", "Higher cat.")), "int"),
-                    col("first", p.t(("Cat. I", "I кат.", "1st cat.")), "int"), col("second", p.t(("Cat. II", "II кат.", "2nd cat.")), "int"),
-                    col("pension", p.t(("Vârstă de pensionare", "Пенсионного возраста", "Retirement age")), "int")],
-        "rows": rows,
-        "totals": {"occ": p.t(COMMON["total"]), **{k: float(totals[k]) if k in ("approved", "occupied") else totals[k] for k in nums}},
-    }
-
-
 # --- legăturile către rapoartele care au pagina lor ----------------------------------------------------------------------------
 def _links():
     from .registry import LINKS, Link
@@ -512,8 +418,9 @@ def _links():
              ("Contractele individuale de muncă, cu termenele care expiră.", "Индивидуальные трудовые договоры со сроками.",
               "Employment contracts with expiring terms."), "/contracts", "employees.view"),
         Link("alerts", "personnel", ("Expirări și termene", "Истечения и сроки", "Expiries and deadlines"),
-             ("Contracte, probe, acte, categorii, concedii sociale — lista „de făcut”.", "Договоры, испытательные сроки, документы, категории.",
-              "Contracts, probation, documents, categories — the to-do list."), "/alerts", "reports.view"),
+             ("Contracte, probe, acte, certificate, concedii sociale — lista „de făcut”.",
+              "Договоры, испытательные сроки, документы, сертификаты, социальные отпуска.",
+              "Contracts, probation, documents, certificates, social leave — the to-do list."), "/alerts", "reports.view"),
         Link("orders_register", "orders", ("Registrul ordinelor", "Журнал приказов", "Orders register"),
              ("Toate ordinele pe registre, cu tipar și Excel.", "Все приказы по журналам, с печатью и Excel.",
               "All orders by register, with print and Excel."), "/orders/register", "orders.view"),

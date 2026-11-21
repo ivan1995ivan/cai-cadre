@@ -163,8 +163,10 @@ def test_schedule_fill_overlaps_orders_and_print(admin_client, org):
         assert r.status_code == 200, r.data
     assert r.data["date_to"] == "2027-08-15"
     report = admin_client.get(f"/api/leave/schedules/{sid}/report/").data
-    gaps = [w for w in report["warnings"] if w["kind"] == "physicians"]
-    assert gaps and (gaps[0]["from"], gaps[0]["to"]) == (date(2027, 7, 19), date(2027, 8, 1))  # ambii medici plecați
+    assert not [w for w in report["warnings"] if w["kind"] == "physicians"]  # fără avertismentul de spital „toți medicii”
+    gaps = [w for w in report["warnings"] if w["kind"] == "occupation"]
+    assert len(gaps) == 1 and (gaps[0]["from"], gaps[0]["to"]) == (date(2027, 7, 19), date(2027, 8, 1))  # ambii de aceeași funcție
+    assert gaps[0]["count"] == 2
     r = admin_client.post(f"/api/leave/schedules/{sid}/make-orders/", {"month": 7}, format="json")
     assert r.status_code == 201, r.data
     order = admin_client.get(f"/api/orders/orders/{r.data['id']}/").data
@@ -286,6 +288,6 @@ def test_schedule_counts_people_working_in_the_department_by_cumul(admin_client,
     admin_client.patch(f"/api/leave/schedule-lines/{ati_line[0]['id']}/", {"date_from": "2027-07-19"}, format="json")
     report = admin_client.get(f"/api/leave/schedules/{tr['id']}/report/").data
     assert report["guests"][0]["name"] == "Rusu Ana" and report["guests"][0]["home"] == "Secția ATI"
-    assert any(w["kind"] == "physicians" for w in report["warnings"])
+    assert any(w["kind"] == "occupation" for w in report["warnings"])
     rows = admin_client.get(f"/api/leave/schedules/{ati['id']}/report/").data["rows"]
     assert rows[0]["other_jobs"] == ["Cumul intern: Medic traumatolog-ortoped, Secția traumatologie nr. 1 (50%)"]

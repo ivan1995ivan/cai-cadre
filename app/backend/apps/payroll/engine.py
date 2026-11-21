@@ -4,7 +4,7 @@ Pentru fiecare raport de muncă din lună:
 1. pontajul (tabela secției, sau norma întreagă dacă tabela lipsește): ore, noapte, sărbători, suplimentare, absențe;
 2. acumulările automate: salariul de funcție pro-rata la ore, sporurile fixe, plata pentru cumul, noaptea, sărbătorile,
    suplimentarele, concediul (media × zile), compensarea, boala (zilele angajatorului), premiile și ajutorul din ordine;
-3. sporurile pe trepte (vechime, categorie) și rândurile personale ale angajatului (sporuri, contract, rețineri);
+3. sporurile pe trepte de vechime și rândurile personale ale angajatului (sporuri, contract, rețineri);
 4. plafoanele neimpozabile, bazele impozitului pe venit și CNAM, celelalte rețineri, CAS al angajatorului.
 Impozitul pe venit, scutirea și CNAM nu se calculează aici: se rețin la plată, în îndreptarea spre plată
 (apps.payroll.payments), din bazele puse pe rând. Rândurile scrise de mână (manual) rămân la recalculare; restul se refac.
@@ -23,14 +23,13 @@ from apps.leave.models import Absence, LeaveAdjustment, SickLeave
 from apps.org import calendar as holidays
 from apps.orders.models import Incentive
 from apps.staff import services as staff
-from apps.staff.models import Employment, Qualification
+from apps.staff.models import MAIN_KINDS, Employment
 from apps.worktime import services as worktime
 from apps.worktime.models import TimesheetLine
 
 from .models import EmployeePayItem, PayConstant, Payroll, PayrollItem, PayrollLine, PayType
 
 ZERO, CENT = Decimal("0"), Decimal("0.01")
-MAIN_KINDS = ("main", "main_student", "resident")
 AT_PAYMENT = ("income_tax", "cnam", "advance")  # tipurile care țin de plată, nu de calcul
 
 
@@ -257,25 +256,21 @@ class LineCalc:
             for t in m.by_auto["aid" if kind == "aid" else "bonus"]:
                 self.add(t.code, amount, base=self.salary_full if inc.amount is None else None, percent=inc.percent, note=note)
 
-    # -- treptele (vechime, categorie) --
+    # -- treptele pe vechime --
     def scales(self):
+        """Tipurile cu formula „scale”: procentul treptei atinse de vechimea totală în muncă la sfârșitul lunii
+        (trepte {"from": ani, "pct": %}, din contractul colectiv / regulamentul de salarizare al întreprinderii)."""
         m = self.m
+        years = None
         for t in m.types.values():
             if t.formula != "scale" or t.category != "accrual" or not t.scale:
                 continue
+            if years is None:
+                years = staff.seniority(self.job.employee, m.last)["total"]["years"]
             pct = None
-            if any("category" in step for step in t.scale):
-                qual = (Qualification.objects.filter(employee=self.job.employee, awarded_on__lte=m.last)
-                        .filter(Q(valid_until__isnull=True) | Q(valid_until__gte=m.first)).select_related("category")
-                        .order_by("-awarded_on").first())
-                code = qual.category.code if qual and qual.category_id else None
-                pct = next((Decimal(str(s["pct"])) for s in t.scale if s.get("category") == code), None)
-            else:
-                years = staff.seniority(self.job.employee, m.last)["healthcare"]["years"]
-                steps = sorted((Decimal(str(s["from"])), Decimal(str(s["pct"]))) for s in t.scale if "from" in s)
-                for threshold, p in steps:
-                    if years >= threshold:
-                        pct = p
+            for threshold, p in sorted((Decimal(str(s["from"])), Decimal(str(s["pct"]))) for s in t.scale if "from" in s):
+                if years >= threshold:
+                    pct = p
             if pct:
                 base = self.sum_codes(t.base_codes or ["SAL"])
                 self.add(t.code, base * pct / 100, base=base, percent=pct)

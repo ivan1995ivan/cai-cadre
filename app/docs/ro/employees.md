@@ -5,8 +5,7 @@ Lista arată angajații în funcție; filtrele schimbă starea (activi, cu CIM s
 (IDNP, data nașterii, telefonul sunt ascunse implicit); butonul Excel exportă lista cu filtrele puse.
 
 **Fișa scurtă**: țineți mouse-ul o clipă pe numele angajatului — apare fotografia, data nașterii și vârsta, raporturile de
-muncă (funcția, secția, norma, de când), vechimea în instituție, totală și în sistemul sănătății, categoria (cu roșu dacă
-expiră în 90 de zile), absența de azi (concediu, boală), concediul disponibil, contactele și mărimile echipamentului. Fișa
+muncă (funcția, subdiviziunea, norma, de când), vechimea în întreprindere, totală și în specialitate, absența de azi (concediu, boală), concediul disponibil, contactele și mărimile echipamentului. Fișa
 scurtă nu se scrie în jurnalul accesului; datele sensibile se ascund după aceleași drepturi ca în dosar.
 
 ## Fișa angajatului
@@ -15,13 +14,15 @@ scurtă nu se scrie în jurnalul accesului; datele sensibile se ascund după ace
   se încarcă cu clic pe avatar. La sfârșit — **echipamentul de lucru**: mărimea îmbrăcămintei (44, 46, 48… sau S, M, L),
   a încălțămintei și înălțimea; raportul *Angajați → Rapoarte → Mărimile echipamentului de lucru* le adună pe secții, cu
   numărul de bucăți din fiecare mărime (pentru comanda halatelor și a încălțămintei). Se pot importa și din Excel.
-- **Raporturi de muncă** — de bază, cumul intern / extern, rezident, suplinire. Fiecare are istoricul lui: ce funcție,
+- **Raporturi de muncă** — de bază, cumul intern / extern, suplinire, contract de prestări servicii. Fiecare are istoricul lui: ce funcție,
   secție, normă și salariu a avut din fiecare dată și prin ce ordin. *Modificare* adaugă o înregistrare în istoric (cu dată
   în viitor intră în vigoare singură); *Suspendare* / *Reluare* — pentru concediul de îngrijire a copilului, serviciul
   militar etc.; *Încetare* — eliberarea, cu motivul. Creionul este doar pentru greșeli de introducere.
 - **Acte** — buletin, pașaport, diplome, certificate (cu termen de valabilitate) și scanările lor.
-- **Familia**, **Studii și calificare** (inclusiv categoria de calificare cu termenul), **Vechimea** (stagiul anterior +
-  vechimea calculată: totală, în sănătate, în specialitate, în instituție), **Evidența militară**.
+- **Familia**, **Studii și formare** (studiile și [formarea profesională](help:training) — cursurile, instruirile,
+  certificatele cu termen), **Vechimea** (stagiul anterior + vechimea calculată: totală, în specialitate — stagiul bifat „În
+  specialitate” și munca de aici —, în întreprindere), **Sănătate și SSM**, **Evidența militară** (doar cu modulul pornit,
+  [Evidența militară](help:military)).
 - **Angajare / eliberare** — lista de verificare: ce s-a semnat și primit la angajare, ce s-a predat la plecare.
 - **Jurnalul accesului** — cine a deschis, tipărit sau exportat dosarul.
 
@@ -38,11 +39,11 @@ luni** (până la ultima lună cu calcul aprobat — dacă luna trecută nu e ap
 salariu) sau **un interval de luni** ales. Lunile fără calcul aprobat nu apar în tabel.
 
 Datele sensibile (IDNP, acte, sănătate) le văd doar rolurile cu dreptul „Date sensibile”; salariul îl ascund rolurile
-care au câmpul „Salariul” ascuns. Șeful de secție vede doar angajații subdiviziunilor lui (Instituția → subdiviziunea →
+care au câmpul „Salariul” ascuns. Șeful de subdiviziune vede doar angajații subdiviziunilor lui (Instituția → subdiviziunea →
 utilizatorii ei).
 
 **Mai multe raporturi de muncă:** un angajat poate lucra în mai multe secții și pe mai multe funcții deodată — de bază,
-cumul intern / extern, rezident, suplinire sau **contract de prestări servicii** (contract civil: nu ocupă post în statele
+cumul intern / extern, suplinire sau **contract de prestări servicii** (contract civil: nu ocupă post în statele
 de personal, nu dă drept la concediu și nu intră în vechimea în muncă). Fiecare raport are secția, funcția și **norma în
 procente** (100%, 50%, 25%; în statele de personal se socotește în unități: 0,5, 0,25) și, la cumul, **plata pentru cumul**
 în % din salariul funcției cumulate. La importul din Excel norma se poate scrie 0,5 sau 50%.

@@ -54,7 +54,7 @@ export default {
       substitution: 'Замещение / совмещение / и.о.', suspend: 'Приостановление договора', resume: 'Возобновление работы', terminate: 'Прекращение договора',
       leave: 'Отпуск', leave_recall: 'Отзыв / перенос отпуска', travel: 'Командировка', worktime: 'Рабочее время', incentive: 'Поощрение',
       sanction: 'Дисциплинарное взыскание', qualification: 'Квалификация / аттестация / обучение', staff_list: 'Штатное расписание', cancel: 'Отмена приказа' },
-    dictKinds: { qualification: 'Квалификационные категории', degree: 'Учёные степени', title: 'Учёные звания', education: 'Уровень образования',
+    dictKinds: { education: 'Уровень образования',
       education_form: 'Форма обучения', document: 'Виды документов', family: 'Степень родства', marital: 'Семейное положение',
       nationality: 'Национальность', termination: 'Причины прекращения договора', sanction: 'Дисциплинарные взыскания', incentive: 'Виды поощрений',
       employment: 'Вид занятости', military_group: 'Воинский учёт: группа', military_rank: 'Воинский учёт: звания',

@@ -36,6 +36,10 @@ class Company(models.Model):
     hr_head = models.CharField("Șef resurse umane", max_length=150, blank=True)
     show_stema = models.BooleanField("Stema de Stat în antetul formelor", default=True)
     payroll_enabled = models.BooleanField("Modulul Salarizare (livrare cu salariu)", default=True)
+    military_enabled = models.BooleanField(
+        "Modulul Evidența militară", default=False,
+        help_text="Evidența militară a rezerviștilor nu mai e obligatorie pentru agenții economici (Legea 112/2023). Oprit — "
+                  "fila din dosar, registrul, rapoartele și clasificatoarele militare nu apar, iar API-ul lor nu răspunde.")
     function_panel = models.BooleanField(
         "Panoul funcțiilor (ca în 1C)", default=False,
         help_text="Secțiunile sus ca file; secțiunea deschide panoul ei: schema de lucru, registrele, clasificatoarele, "

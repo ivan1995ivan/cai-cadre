@@ -17,7 +17,7 @@ La concedii, zilele se socotesc fără sărbătorile nelucrătoare (data de sfâ
 
 **Semnarea** dă numărul în registru (de ex. 125-p pentru personal, 38-c pentru concedii, 12-d pentru deplasări; fără sufix
 — ordinele de bază) și aplică ordinul în dosare: angajarea, transferul, modificarea normei sau a salariului, suplinirea,
-suspendarea, încetarea, concediile și deplasările, sancțiunile, categoria de calificare, aprobarea statelor. Ordinul semnat
+suspendarea, încetarea, concediile, deplasările și trimiterea la perfecționare, sancțiunile, aprobarea statelor. Ordinul semnat
 nu se mai modifică.
 
 **Anularea** se face prin ordin: „Anulează prin ordin” face ciorna ordinului de anulare; la semnarea ei efectele ordinului

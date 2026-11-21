@@ -1,7 +1,7 @@
 # Panoul de start
 
 Panoul de start este primul ecran după intrare. Arată indicatorii instituției **la ziua de azi** și termenele cele mai
-apropiate. Șeful de secție vede aceiași indicatori, dar **doar pentru secțiile lui**.
+apropiate. Șeful de subdiviziune vede aceiași indicatori, dar **doar pentru subdiviziunile lui**.
 
 ## Indicatorii
 

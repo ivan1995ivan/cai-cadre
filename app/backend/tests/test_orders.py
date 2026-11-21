@@ -202,12 +202,6 @@ def test_sanction_lift_and_category_award(admin_client, org):
     sign(admin_client, lift)
     sanction.refresh_from_db()
     assert sanction.lifted_on == date(2026, 9, 1)
-    cat = DictItem.objects.get(kind="qualification", code="superior")
-    award = make_order(admin_client, "category_award", [a])
-    set_params(admin_client, award, {"category": cat.id, "date_from": "2026-03-01"})
-    sign(admin_client, award)
-    q = a.qualifications.get()
-    assert q.category == cat and q.valid_until == date(2031, 2, 28)
     assert len(admin_client.get("/api/orders/sanctions/", {"employee": a.id}).data) == 1
 
 

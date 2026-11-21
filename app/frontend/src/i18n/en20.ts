@@ -7,7 +7,7 @@ export default {
   },
   peek: {
     error: 'Could not load the data.', age: '{{count}} years', since: 'since', until: 'until',
-    institution: 'Service here', total: 'Total service', healthcare: 'In healthcare', category: 'Category',
+    institution: 'Service here', total: 'Total service', specialty: 'In the specialty',
     leave: 'Leave available', leaveDays: '{{count}} days', contacts: 'Contacts', sizes: 'Sizes', clothing: 'clothing', shoes: 'shoes',
   },
 }

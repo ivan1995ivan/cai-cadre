@@ -12,7 +12,6 @@ from rest_framework.exceptions import ValidationError
 
 from .models import CIVIL_KINDS, OCCUPYING_KINDS, Employee, Employment, EmploymentHistory, PriorExperience
 
-MEDICAL_CATEGORIES = {"physicians", "pharmacists", "nurses", "junior"}
 SNAPSHOT = ("subdivision_id", "occupation_id", "rate", "base_salary", "allowance_pct", "combination_pct")
 SNAPSHOT_FIELDS = ["subdivision", "occupation", "rate", "base_salary", "allowance_pct", "combination_pct"]
 
@@ -227,26 +226,23 @@ def _sum(periods):
 
 
 def seniority(employee: Employee, on_date=None) -> dict:
-    """Vechimea: totală, în sistemul sănătății, în specialitate și în instituție (perioadele suprapuse se numără o dată)."""
+    """Vechimea: totală, în specialitate și în întreprindere (perioadele suprapuse se numără o dată).
+
+    În specialitate — stagiul anterior bifat „în specialitate” și raporturile de muncă de aici (fără prestări servicii)."""
     on_date = on_date or timezone.localdate()
     prior = [p for p in employee.experience.all() if p.date_from <= on_date]
-    here, here_medical = [], []
-    for emp in employee.employments.select_related("occupation"):
+    here = []
+    for emp in employee.employments.all():
         if emp.date_from > on_date or emp.kind in CIVIL_KINDS:
             continue
-        end = min(emp.end_date or on_date, on_date)
-        here.append((emp.date_from, end))
-        if emp.occupation.category in MEDICAL_CATEGORIES:
-            here_medical.append((emp.date_from, end))
+        here.append((emp.date_from, min(emp.end_date or on_date, on_date)))
 
     def clip(p):
         return (p.date_from, min(p.date_to, on_date))
 
     total = _merge([clip(p) for p in prior] + here)
-    healthcare = _merge([clip(p) for p in prior if p.in_healthcare] + here)
-    specialty = _merge([clip(p) for p in prior if p.in_specialty] + here_medical)
-    return {"on_date": on_date, "total": _sum(total), "healthcare": _sum(healthcare), "specialty": _sum(specialty),
-            "institution": _sum(_merge(here))}
+    specialty = _merge([clip(p) for p in prior if p.in_specialty] + here)
+    return {"on_date": on_date, "total": _sum(total), "specialty": _sum(specialty), "institution": _sum(_merge(here))}
 
 
 def seniority_text(s: dict, lang="ro") -> str:

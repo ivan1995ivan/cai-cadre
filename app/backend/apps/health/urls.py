@@ -5,7 +5,7 @@ from . import views
 
 router = DefaultRouter()
 router.register("exams", views.ExamViewSet, basename="medical-exam")
-router.register("vaccinations", views.VaccinationViewSet, basename="vaccination")
+router.register("exam-rules", views.ExamRuleViewSet, basename="exam-rule")
 router.register("briefings", views.BriefingViewSet, basename="safety-briefing")
 
 urlpatterns = [

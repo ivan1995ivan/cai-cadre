@@ -89,8 +89,6 @@ def test_dictionaries_crud_and_permissions(admin_client, make_user, client_for):
     assert inspector.delete(f"/api/org/occupations/{r.data['id']}/").status_code == 403
     found = admin_client.get("/api/org/occupations/", {"q": "traumatolog"}).data
     assert [o["name_ro"] for o in found] == ["Medic traumatolog-ortoped"]
-    items = admin_client.get("/api/org/dict-items/", {"kind": "qualification"}).data
-    assert [i["code"] for i in items] == ["none", "second", "first", "superior"]
 
 
 def test_meta_lists_enums(admin_client):

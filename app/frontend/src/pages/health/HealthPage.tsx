@@ -6,6 +6,7 @@ import { FileDoneOutlined, PlusOutlined, PrinterOutlined, SettingOutlined } from
 import dayjs, { type Dayjs } from 'dayjs'
 
 import AppTable from '../../components/AppTable'
+import CrudTable from '../../components/CrudTable'
 import PrintDialog from '../../components/PrintDialog'
 import { api, errorText, fieldErrors, type Paged } from '../../api/client'
 import { useFetch } from '../../api/hooks'
@@ -29,7 +30,7 @@ const BRIEFING_KINDS = ['introductory', 'initial', 'periodic', 'unplanned', 'tar
 const STATUS_COLOR: Record<string, string> = { overdue: 'red', missing: 'orange', due: 'blue' }
 const CONCLUSION_COLOR: Record<string, string> = { fit: 'green', restricted: 'orange', temporary: 'orange', unfit: 'red' }
 
-function useKinds(): Record<'exams' | 'vaccinations' | 'briefings', Kind> {
+function useKinds(): Record<'exams' | 'briefings', Kind> {
   const { t } = useTranslation()
   const opts = (list: string[], prefix: string) => list.map((k) => ({ value: k, label: t(`hl.${prefix}.${k}`) }))
   return {
@@ -40,11 +41,6 @@ function useKinds(): Record<'exams' | 'vaccinations' | 'briefings', Kind> {
       { key: 'restrictions', span: 24 }, { key: 'document', span: 12 }, { key: 'note', span: 12 },
     ], columns: [{ key: 'date', type: 'date' }, { key: 'kind_label' }, { key: 'institution' }, { key: 'conclusion', type: 'tag' },
       { key: 'restrictions' }, { key: 'next_date', type: 'date' }] },
-    vaccinations: { endpoint: '/health/vaccinations/', fields: [
-      { key: 'vaccine', type: 'select', ref: { dict: 'vaccine' }, required: true, span: 12 }, { key: 'dose', type: 'number', span: 4 },
-      { key: 'date', type: 'date', required: true, span: 8 }, { key: 'series', span: 8 }, { key: 'next_date', type: 'date', span: 8 },
-      { key: 'refused', type: 'bool', span: 8 }, { key: 'note', span: 24 },
-    ], columns: [{ key: 'date', type: 'date' }, { key: 'vaccine_name' }, { key: 'dose' }, { key: 'series' }, { key: 'next_date', type: 'date' }] },
     briefings: { endpoint: '/health/briefings/', fields: [
       { key: 'kind', type: 'select', options: opts(BRIEFING_KINDS, 'briefingKinds'), required: true, span: 12 },
       { key: 'date', type: 'date', required: true, span: 6 }, { key: 'next_date', type: 'date', span: 6 },
@@ -53,7 +49,7 @@ function useKinds(): Record<'exams' | 'vaccinations' | 'briefings', Kind> {
   }
 }
 
-/** Sănătatea în muncă: termenele (examen, instructaj, vaccinare) și registrele lor. */
+/** Sănătatea și securitatea în muncă: termenele (examen, instructaj), registrele lor și periodicitatea examenului pe funcții. */
 export default function HealthPage() {
   const { t } = useTranslation()
   const [params, setParams] = useSearchParams()
@@ -64,8 +60,8 @@ export default function HealthPage() {
       <Tabs activeKey={tab} onChange={(k) => setParams({ tab: k })} destroyOnHidden items={[
         { key: 'due', label: t('hl.tabs.due'), children: <Due /> },
         { key: 'exams', label: t('hl.tabs.exams'), children: <HealthRecords kind={kinds.exams} /> },
-        { key: 'vaccinations', label: t('hl.tabs.vaccinations'), children: <HealthRecords kind={kinds.vaccinations} /> },
         { key: 'briefings', label: t('hl.tabs.briefings'), children: <HealthRecords kind={kinds.briefings} /> },
+        { key: 'rules', label: t('hl.tabs.rules'), children: <ExamRules /> },
       ]} />
     </Card>
   )
@@ -95,7 +91,7 @@ function Due() {
     <>
       <Space wrap style={{ marginBottom: 12 }}>
         <Select allowClear style={{ width: 200 }} placeholder={t('hl.allWhat')} onChange={(v) => set('what', v)}
-          options={['exam', 'briefing', 'vaccine'].map((k) => ({ value: k, label: t(`hl.what.${k}`) }))} />
+          options={['exam', 'briefing'].map((k) => ({ value: k, label: t(`hl.what.${k}`) }))} />
         <SubdivisionSelect style={{ width: 280 }} placeholder={t('org.subdivision')} onChange={(v) => set('subdivision', typeof v === 'number' ? v : undefined)} />
         <InputNumber min={0} max={180} placeholder="30" prefix={t('hl.horizon')} style={{ width: 170 }} onChange={(v) => set('horizon', v ?? undefined)} />
         <Button icon={<PrinterOutlined />} onClick={() => setPrintOpen(true)}>{t('hl.printList')}</Button>
@@ -108,7 +104,7 @@ function Due() {
         columns={[
           { title: t('staff.fullName'), dataIndex: 'name', render: (v: string, r) => <a onClick={() => navigate(`/employees/${r.employee}?tab=health`)}>{v}</a> },
           { title: t('org.subdivision'), dataIndex: 'subdivision' },
-          { title: t('hl.whatCol'), dataIndex: 'label', render: (v: string, r) => r.what === 'vaccine' ? v : t(`hl.what.${r.what}`) },
+          { title: t('hl.whatCol'), dataIndex: 'what', render: (v: string) => t(`hl.what.${v}`) },
           { title: t('hl.last'), dataIndex: 'last', width: 110, render: d },
           { title: t('hl.due'), dataIndex: 'due', width: 110, render: d },
           { title: '', dataIndex: 'status', width: 120, render: (v: string) => <Tag color={STATUS_COLOR[v]}>{t(`hl.status.${v}`)}</Tag> },
@@ -138,16 +134,35 @@ function SettingsModal({ open, onClose, onSaved }: { open: boolean; onClose: () 
   return (
     <Modal open={open} title={t('hl.settings')} onCancel={onClose} onOk={save} destroyOnHidden>
       <Form form={form} layout="vertical">
-        <Form.Item name="exam_months" label={t('hl.examMonths')}><InputNumber min={1} max={60} /></Form.Item>
+        <Form.Item name="exam_months" label={t('hl.examMonths')} extra={t('hl.examMonthsHint')}><InputNumber min={1} max={60} /></Form.Item>
         <Form.Item name="briefing_months" label={t('hl.briefingMonths')}><InputNumber min={1} max={24} /></Form.Item>
         <Form.Item name="horizon_days" label={t('hl.horizonDays')}><InputNumber min={0} max={180} /></Form.Item>
-        <Typography.Text type="secondary">{t('hl.vaccineHint')}</Typography.Text>
       </Form>
     </Modal>
   )
 }
 
-/** Registrul examenelor / vaccinărilor / instructajelor (în pagină sau în fișa unui angajat). */
+/** Periodicitatea examenului medical periodic pe funcție / subdiviziune (din evaluarea riscurilor, HG 1025/2016). */
+function ExamRules() {
+  const { t } = useTranslation()
+  const { hasPerm } = useApp()
+  return (
+    <>
+      <Typography.Paragraph type="secondary">{t('hl.rulesHint')}</Typography.Paragraph>
+      <CrudTable endpoint="/health/exam-rules/" canEdit={hasPerm('health.edit')}
+        fields={[
+          { key: 'occupation', label: t('hl.rule.occupation'), ref: 'occupation', render: (_v, r) => String(r.occupation_name || '—') },
+          { key: 'subdivision', label: t('hl.rule.subdivision'), render: (_v, r) => String(r.subdivision_name || '—'),
+            input: () => <SubdivisionSelect /> },
+          { key: 'months', label: t('hl.rule.months'), type: 'number', required: true, width: 120, extra: t('hl.rule.monthsHint'),
+            render: (v) => Number(v) ? String(v) : t('hl.rule.none') },
+          { key: 'note', label: t('hl.rule.note') },
+        ]} />
+    </>
+  )
+}
+
+/** Registrul examenelor / instructajelor (în pagină sau în fișa unui angajat). */
 export function HealthRecords({ kind, employee }: { kind: Kind; employee?: number }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -248,7 +263,7 @@ export function EmployeeHealth({ employee }: { employee: number }) {
   const kinds = useKinds()
   return (
     <Space orientation="vertical" style={{ width: '100%' }} size={24}>
-      {(['exams', 'vaccinations', 'briefings'] as const).map((k) => (
+      {(['exams', 'briefings'] as const).map((k) => (
         <div key={k}>
           <Typography.Title level={5} style={{ marginTop: 0 }}>{t(`hl.tabs.${k}`)}</Typography.Title>
           <HealthRecords kind={kinds[k]} employee={employee} />

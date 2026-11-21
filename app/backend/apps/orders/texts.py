@@ -88,7 +88,7 @@ DEFAULT_POINTS = {
 }
 
 KIND_TEXT = {"main": "funcție de bază", "main_student": "funcție de bază (student)", "internal": "prin cumul intern",
-             "external": "prin cumul extern", "resident": "în calitate de medic rezident", "substitute": "pentru suplinire",
+             "external": "prin cumul extern", "substitute": "pentru suplinire",
              "contractor": "prin contract de prestări servicii"}
 
 

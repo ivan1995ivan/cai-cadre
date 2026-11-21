@@ -16,11 +16,10 @@ const STEPS: Step[] = [
   { code: 'documents', url: '/staff/import/', perm: 'employees.edit' },
   { code: 'family', url: '/staff/import/', perm: 'employees.edit' },
   { code: 'education', url: '/staff/import/', perm: 'employees.edit' },
-  { code: 'qualifications', url: '/staff/import/', perm: 'employees.edit' },
   { code: 'experience', url: '/staff/import/', perm: 'employees.edit' },
 ]
 
-/** Importul din Excel: pornirea unei baze noi (spitalul nu are 1C) — clasificatoare, subdiviziuni, angajați, dosare. */
+/** Importul din Excel: pornirea unei baze noi (fără bază 1C de preluat) — clasificatoare, subdiviziuni, angajați, dosare. */
 export default function ImportPage() {
   const { t } = useTranslation()
   const { hasPerm } = useApp()

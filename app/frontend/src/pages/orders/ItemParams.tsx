@@ -217,13 +217,12 @@ export default function ItemParams({ form, effect, code, employee, disabled }: {
       <Col xs={24} md={12}>{date('date_from', t('ord.date'))}</Col>
       <Col xs={24}><Form.Item name="misconduct" label={t('ord.p.misconduct')} rules={[{ required: true }]}><Input.TextArea rows={2} /></Form.Item></Col>
     </Row>
-  } else if (effect === 'qualification') {
+  } else if (effect === 'qualification') {  // grupa „formare” (examenul medical, alte trimiteri): perioada și specialitatea
     body = <Row gutter={24}>
       <Col xs={24} md={12}><Form.Item name="specialty" label={t('staff.edu.specialty')}>
         <RefSelect spec="specialty" /></Form.Item></Col>
-      <Col xs={24} md={12}><Form.Item name="category" label={t('staff.qual.category')}><RefSelect spec={{ dict: 'qualification' }} /></Form.Item></Col>
-      <Col xs={24} md={12}>{date('date_from', t('staff.qual.awarded'))}</Col>
-      <Col xs={24} md={12}>{date('date_to', code === 'medical_exam' ? t('ord.p.until') : t('staff.qual.validUntil'))}</Col>
+      <Col xs={24} md={12}>{date('date_from', t('ord.date'))}</Col>
+      <Col xs={24} md={12}>{date('date_to', t('ord.p.until'))}</Col>
     </Row>
   } else if (effect === 'staff_list') {
     body = <Form.Item name="staff_list" label={t('menu.staffList')} rules={[{ required: true }]} extra={t('ord.p.staffListHint')}>

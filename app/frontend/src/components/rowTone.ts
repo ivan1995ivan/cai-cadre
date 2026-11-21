@@ -18,5 +18,4 @@ export const ROW_TONE = {
   monthDoc: tone(['submitted'], ['approved', 'closed']), // graficul lunar se încheie cu „Aprobat”, pontajul — cu „Închis”
   payroll: tone(['checked'], ['approved']),
   payment: tone(['approved'], ['paid']),
-  attestation: tone(['submitted'], ['awarded', 'confirmed']),
 }

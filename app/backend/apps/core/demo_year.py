@@ -24,12 +24,12 @@ TRAVEL = [("Chișinău, Ministerul Sănătății", "participării la ședința d
           ("Bălți, Spitalul Clinic Municipal", "consultării pacienților"),
           ("Iași, România — Spitalul „Sf. Spiridon”", "schimbului de experiență"),
           ("Cahul, Spitalul Raional", "acordării asistenței metodice")]
-COURSES = [("Actualități în traumatologie și ortopedie", "USMF „Nicolae Testemițanu”", 72, 50),
-           ("Urgențe medico-chirurgicale", "USMF „Nicolae Testemițanu”", 36, 25),
-           ("Controlul infecțiilor asociate asistenței medicale", "Agenția Națională pentru Sănătate Publică", 16, 10),
-           ("Anestezia regională — curs practic", "Societatea de Anesteziologie", 36, 25),
-           ("Nursing în ortopedie", "Centrul de Educație Medicală Continuă", 72, 40),
-           ("Îngrijirea pacientului imobilizat", "Centrul de Educație Medicală Continuă", 36, 20)]
+COURSES = [("Actualități în traumatologie și ortopedie", "USMF „Nicolae Testemițanu”", 72),
+           ("Urgențe medico-chirurgicale", "USMF „Nicolae Testemițanu”", 36),
+           ("Controlul infecțiilor asociate asistenței medicale", "Agenția Națională pentru Sănătate Publică", 16),
+           ("Anestezia regională — curs practic", "Societatea de Anesteziologie", 36),
+           ("Nursing în ortopedie", "Centrul de Educație Medicală Continuă", 72),
+           ("Îngrijirea pacientului imobilizat", "Centrul de Educație Medicală Continuă", 36)]
 BONUS_NOTES = {3: "pentru rezultatele activității în trimestrul I", 6: "pentru rezultatele activității în trimestrul II",
                9: "pentru rezultatele activității în trimestrul III", 12: "pentru rezultatele activității în anul curent"}
 
@@ -75,7 +75,7 @@ class Year:
         """Raporturile de bază active la data dată (angajați înainte de ea)."""
         from apps.staff.models import Employment
 
-        return list(Employment.objects.filter(kind__in=("main", "main_student", "resident"), date_from__lt=on)
+        return list(Employment.objects.filter(kind__in=("main", "main_student"), date_from__lt=on)
                     .exclude(status="ended").select_related("employee", "occupation", "subdivision")
                     .order_by("employee__last_name", "employee__first_name"))
 
@@ -331,19 +331,19 @@ class Year:
             if leave_services.overlapping(job.employee, start, end).exists():
                 continue
             n += 1
-            title, provider, hours, credits = rnd.choice(COURSES[:4] if job.occupation.category == "physicians" else COURSES[4:])
+            title, provider, hours = rnd.choice(COURSES[:4] if job.occupation.category == "physicians" else COURSES[4:])
             self._item(order, job.employee, {"date_from": start.isoformat(), "date_to": end.isoformat(), "destination": provider,
                                              "purpose": f"participării la cursul „{title}”"}, n)
-            chosen.append((job, title, provider, hours, credits))
+            chosen.append((job, title, provider, hours))
         if not n:
             order.delete()
             return
         if self._sign(order, f"perfecționare {m:02d}.{y}"):
             for item in order.items.select_related("employee"):
-                job, title, provider, hours, credits = next(c for c in chosen if c[0].employee_id == item.employee_id)
+                job, title, provider, hours = next(c for c in chosen if c[0].employee_id == item.employee_id)
                 TrainingRecord.objects.create(employee=item.employee, kind="course", title=title, provider=provider,
-                                              date_from=start, date_to=end, hours=Decimal(hours), credits=Decimal(credits),
-                                              certificate_number=f"EMC-{y}-{self.rnd.randint(100, 999)}", certificate_date=end,
+                                              date_from=start, date_to=end, hours=Decimal(hours),
+                                              certificate_number=f"C-{y}-{self.rnd.randint(100, 999)}", certificate_date=end,
                                               order_item=item)
                 self.count("formare")
 
@@ -402,36 +402,6 @@ class Year:
             self._item(order, job.employee, {"base_salary": str(new), "date_from": date(y, m, 1).isoformat()}, n)
         if self._sign(order, "majorare salarii"):
             self.count("majorări", 3)
-
-    def category_orders(self, y: int, m: int):
-        """Conferirea categoriei superioare la doi medici (iunie), după atestare."""
-        if (y, m) != (self.year, 6):
-            return
-        from apps.org.models import DictItem
-        from apps.staff.models import Qualification
-        from apps.training.models import Attestation
-
-        rnd = self.rnd
-        cats = {c.code: c for c in DictItem.objects.filter(kind="qualification")}
-        if "first" not in cats or "superior" not in cats:
-            return
-        quals = list(Qualification.objects.filter(category__code__in=("second", "first"), employee__employments__kind="main",
-                                                  employee__employments__status="active").select_related("employee", "category", "specialty").distinct())
-        if not quals:
-            return
-        session = _weekday(date(y, m, 12))
-        order = self._order("category_award", _weekday(session + timedelta(days=5)), basis="Decizia Comisiei de atestare a Ministerului Sănătății")
-        if order is None:
-            return
-        for n, q in enumerate(rnd.sample(quals, min(len(quals), 2)), start=1):
-            new = cats["first" if q.category.code == "second" else "superior"]
-            self._item(order, q.employee, {"category": new.pk, "specialty": q.specialty_id, "date_from": session.isoformat()}, n)
-            Attestation.objects.create(employee=q.employee, specialty=q.specialty, current_category=q.category, due_date=q.valid_until,
-                                       requested_category=new, session_date=session, submitted_on=session - timedelta(days=45),
-                                       status="awarded", result_category=new, result_date=session,
-                                       decision=f"Procesul-verbal nr. {rnd.randint(10, 40)}")
-        if self._sign(order, "categorii"):
-            self.count("categorii", 2)
 
     def hire_orders(self, y: int, m: int):
         """Două angajări în anul curent: o asistentă la traumatologie (martie) și un îngrijitor (iulie)."""
@@ -589,7 +559,6 @@ class Year:
         if m % 2 == 0:
             self.training_orders(y, m)
         self.salary_orders(y, m)
-        self.category_orders(y, m)
         self.terminate_order(y, m)
         self.bonus_orders(y, m)
         # 2. graficele de gărzi și tabelele de pontaj
@@ -615,36 +584,12 @@ class Year:
             return
         staff = [j for j in self.main_jobs(date(self.year, 1, 1)) if j.occupation.category in ("physicians", "nurses", "pharmacists")]
         for n, job in enumerate(rnd.sample(staff, min(len(staff), 24)), start=1):
-            title, provider, hours, credits = rnd.choice(COURSES[:4] if job.occupation.category == "physicians" else COURSES[4:])
+            title, provider, hours = rnd.choice(COURSES[:4] if job.occupation.category == "physicians" else COURSES[4:])
             month = rnd.randint(2, 11)
             record = TrainingRecord.objects.filter(employee=job.employee, date_from__year=self.year, title=title).first()
             TrainingPlanLine.objects.create(plan=plan, employee=job.employee, kind="course", title=title, provider=provider, month=month,
-                                            hours=Decimal(hours), credits=Decimal(credits), record=record)
+                                            hours=Decimal(hours), record=record)
         self.count("plan de formare", 1)
-
-    def attestations(self):
-        from apps.org.models import DictItem
-        from apps.staff.models import Qualification
-        from apps.training.models import Attestation
-
-        cats = {c.code: c for c in DictItem.objects.filter(kind="qualification")}
-        # categoria e valabilă 5 ani (Ordinul MS 386/2018): cine o are de 4–5 ani se pregătește de atestare
-        due = []
-        for q in (Qualification.objects.filter(awarded_on__isnull=False, category__code__in=("second", "first"))
-                  .exclude(employee__attestations__isnull=False).select_related("employee", "category", "specialty")
-                  .order_by("awarded_on")):
-            expires = q.valid_until or (q.awarded_on.replace(year=q.awarded_on.year + 5) - timedelta(days=1))
-            if self.today <= expires <= self.today + timedelta(days=300):
-                due.append((q, expires))
-            if len(due) == 4:
-                break
-        for n, (q, expires) in enumerate(due):
-            Attestation.objects.create(employee=q.employee, specialty=q.specialty, current_category=q.category, due_date=expires,
-                                       requested_category=cats.get("superior" if q.category.code == "first" else "first", q.category),
-                                       session_date=_weekday(expires - timedelta(days=30)),
-                                       submitted_on=self.today - timedelta(days=10) if n % 2 else None,
-                                       status="submitted" if n % 2 else "planned")
-            self.count("atestări")
 
     def cleanup(self):
         """Documentele lunare făcute de `crm_demo` (luna trecută) se refac aici în ordine cronologică."""
@@ -673,7 +618,6 @@ class Year:
         ny, nm = (self.year + 1, 1) if self.today.month == 12 else (self.year, self.today.month + 1)
         self.rosters(ny, nm, approved=False)
         self.training_plan()
-        self.attestations()
         return self.stats
 
 

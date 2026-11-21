@@ -8,7 +8,7 @@ from django.utils import timezone
 from apps.leave.models import Absence
 from apps.org.models import DictItem, Occupation, Subdivision
 from apps.staff import services as staff
-from apps.staff.models import Employee, Qualification
+from apps.staff.models import Employee
 
 TODAY = timezone.localdate()
 MONTH_START = TODAY.replace(day=1)
@@ -36,7 +36,7 @@ def rows_of(data):
 def test_catalog_lists_reports_and_links(org, admin_client, make_user, client_for):
     cat = admin_client.get("/api/reports/").data
     keys = {r["key"] for r in cat}
-    assert {"movement", "structure", "seniority", "birthdays", "retirements", "vacancies", "medical_staff", "leave_period",
+    assert {"movement", "structure", "seniority", "birthdays", "retirements", "vacancies", "leave_period",
             "timesheet_summary", "orders_payroll", "orders_by_type", "munca1"} <= keys
     assert next(r for r in cat if r["key"] == "occupancy")["link"] == "/staff-list/occupancy"
     ru = admin_client.get("/api/reports/?lang=ru").data
@@ -69,13 +69,12 @@ def test_structure_by_sex_age_and_category(org, admin_client):
     a, _ = person(org, "Popescu", "Ion", sex="M", birth_date=date(TODAY.year - 45, 1, 1))
     b, _ = person(org, "Rusu", "Ana", sex="F", birth_date=date(TODAY.year - 28, 1, 1), rate="0.5")
     person(org, "Lungu", "Vera", sex="F", kind="external")  # cumulul extern nu intră în „de bază”
-    Qualification.objects.create(employee=a, category=DictItem.objects.get(kind="qualification", code="superior"),
-                                 awarded_on=TODAY - timedelta(days=100))
     data = admin_client.get("/api/reports/structure/").data
     by = {(r["label"]): r for r in rows_of(data)}
     assert by["Femei"]["total"] == 1 and by["Bărbați"]["total"] == 1
     assert by["< 30"]["total"] == 1 and by["40–49"]["total"] == 1
-    assert by["Categoria superioară"]["total"] == 1 and by["Medici"]["total"] == 2 and by["Medici"]["women"] == 1
+    assert by["Medici"]["total"] == 2 and by["Medici"]["women"] == 1
+    assert "Pe categoria de calificare" not in {r["_section"] for r in data["rows"] if "_section" in r}
     assert by["Normă parțială"]["total"] == 1
     every = admin_client.get("/api/reports/structure/?kinds=all").data
     assert {s["label"]: s["value"] for s in every["summary"]}["Total persoane"] == 3
@@ -92,9 +91,10 @@ def test_birthdays_retirements_seniority(org, admin_client):
     assert [x["name"] for x in r["rows"]] == ["Rusu Ana"]
     s = admin_client.get("/api/reports/seniority/").data
     assert len(s["rows"]) == 2 and s["rows"][0]["institution"].startswith("1 ani")
+    assert "healthcare" not in {c["key"] for c in s["columns"]} and s["rows"][0]["years"] == 1
 
 
-def test_vacancies_and_medical_staff(org, admin_client):
+def test_vacancies(org, admin_client):
     from apps.org.models import StaffList, StaffListLine
 
     sl = StaffList.objects.create(number="1", effective_from=TODAY - timedelta(days=500), status="approved")
@@ -103,9 +103,7 @@ def test_vacancies_and_medical_staff(org, admin_client):
     person(org, "Ceban", "Dan", kind="internal", rate="0.5")
     v = admin_client.get("/api/reports/vacancies/").data
     assert v["rows"][0]["vacant"] == 1.5 and v["totals"]["approved"] == 3.0
-    m = admin_client.get("/api/reports/medical_staff/").data
-    row = next(r for r in rows_of(m) if r.get("occ") == "Medic traumatolog-ortoped")
-    assert (row["approved"], row["occupied"], row["main"], row["internal"], row["women"]) == (3.0, 1.5, 1, 1, 1)
+    assert admin_client.get("/api/reports/medical_staff/").status_code == 400  # raportul MS nr. 17 nu mai există
 
 
 def test_leave_period_and_department_head_scope(org, admin_client, make_user, client_for):

@@ -10,7 +10,7 @@ meniul e cel obișnuit, în stânga.
   document se face din primul: graficul concediilor → concediul, graficul lunar (gărzile) → pontajul, calculul salariului
   → îndreptarea spre plată.
 - **Registre** — listele de consultat ale secțiunii: angajații, registrul ordinelor, ocuparea posturilor, formarea,
-  sănătatea în muncă, evidența militară.
+  sănătatea și securitatea în muncă, evidența militară (cu modulul pornit).
 - **Clasificatoare** — cataloagele pe care le folosesc documentele secțiunii (la Angajați: nivelul studiilor, actele,
   starea familială...; la Ordine: tipurile de ordine, temeiurile legale, motivele încetării...; la Concedii: calendarul de
   producție, graficele de lucru, turele). Sunt aceleași setări ca la [Administrare → Setări](help:settings).

@@ -1,4 +1,5 @@
-"""Etapa 6 (partea 1): registrul EMC, creditele pe perioada de atestare, atestarea, planul anual de formare."""
+"""Formarea profesională: registrul cursurilor cu certificatul și termenul lui, alerta și raportul certificatelor care
+expiră, planul anual propus din ele, ordinul de trimitere la perfecționare; fără EMC și fără atestare."""
 from datetime import date, timedelta
 from decimal import Decimal
 
@@ -7,135 +8,114 @@ from django.utils import timezone
 
 from apps.alerts import engine
 from apps.leave.models import Absence
-from apps.org.models import DictItem, Occupation, Specialty, Subdivision
+from apps.org.models import Occupation, Subdivision
 from apps.staff import services as staff
-from apps.staff.models import Employee, Qualification
-from apps.training.models import Attestation, TrainingPlan, TrainingRecord
+from apps.staff.models import Employee
+from apps.training import services
+from apps.training.models import KINDS, TrainingRecord
 
 TODAY = timezone.localdate()
 
 
 @pytest.fixture
 def org(seeded):
-    tr1 = Subdivision.objects.create(code="TR1", name_ro="Secția traumatologie nr. 1")
-    ati = Subdivision.objects.create(code="ATI", name_ro="Secția ATI")
-    doctor = Occupation.objects.get(name_ro="Medic traumatolog-ortoped")
-    assert doctor.category == "physicians"
-    return {"tr1": tr1, "ati": ati, "doctor": doctor, "spec": Specialty.objects.first(),
-            "first": DictItem.objects.get(kind="qualification", code="first"),
-            "superior": DictItem.objects.get(kind="qualification", code="superior")}
+    prod = Subdivision.objects.create(code="PROD", name_ro="Secția producție")
+    it = Subdivision.objects.create(code="IT", name_ro="Departamentul IT")
+    operator = Occupation.objects.create(code="818901", name_ro="Operator la linia de producție")
+    return {"prod": prod, "it": it, "operator": operator}
 
 
-def person(org, last, first, sub="tr1"):
+def person(org, last, first, sub="prod"):
     e = Employee.objects.create(tab_number=staff.next_tab_number(), last_name=last, first_name=first)
-    staff.hire(e, kind="main", subdivision=org[sub], occupation=org["doctor"], rate=Decimal("1"), base_salary=Decimal("14000"),
+    staff.hire(e, kind="main", subdivision=org[sub], occupation=org["operator"], rate=Decimal("1"), base_salary=Decimal("9000"),
                date_from=TODAY - timedelta(days=3000))
     return e
 
 
-def qualify(org, e, awarded, cat="first"):
-    return Qualification.objects.create(employee=e, category=org[cat], specialty=org["spec"], awarded_on=awarded)
-
-
-def test_credits_in_attestation_period(org, admin_client):
+def test_record_without_credits_with_validity(org, admin_client):
     a = person(org, "Popescu", "Ion")
-    qualify(org, a, TODAY - timedelta(days=365 * 4 + 200))  # expiră în ~5 luni
-    TrainingRecord.objects.create(employee=a, title="Curs vechi", date_from=TODAY - timedelta(days=365 * 6), credits=100)  # înainte de perioadă
-    r = admin_client.post("/api/training/records/", {"employee": a.pk, "title": "Traumatologie pediatrică", "kind": "course",
-                                                     "date_from": (TODAY - timedelta(days=100)).isoformat(), "hours": 36, "credits": 120},
-                          format="json")
+    body = {"employee": a.pk, "title": "Operarea stivuitorului", "kind": "course", "date_from": (TODAY - timedelta(days=100)).isoformat(),
+            "hours": 24, "certificate_number": "S-17", "valid_until": (TODAY + timedelta(days=20)).isoformat()}
+    r = admin_client.post("/api/training/records/", body, format="json")
     assert r.status_code == 201, r.data
-    b = person(org, "Rusu", "Ana", sub="ati")
-    qualify(org, b, TODAY - timedelta(days=200))
-    TrainingRecord.objects.create(employee=b, title="Congres", date_from=TODAY - timedelta(days=30), credits=30)
-    data = admin_client.get("/api/training/credits/").data
-    by = {x["name"]: x for x in data["rows"]}
-    assert by["Popescu Ion"]["credits"] == 120 and by["Popescu Ion"]["required"] == 250 and by["Popescu Ion"]["status"] == "risk"
-    assert by["Rusu Ana"]["status"] == "ok"  # 30 de credite în 200 de zile — peste cât se cere pro-rata
-    assert data["counts"]["risk"] == 1
-    # norma se schimbă din setări
-    admin_client.put("/api/training/settings/", {"credits": {"physicians": 100}}, format="json")
-    assert {x["name"]: x["status"] for x in admin_client.get("/api/training/credits/").data["rows"]}["Popescu Ion"] == "done"
-    # alerta „credite insuficiente” vine cu un an înainte de expirare
-    admin_client.put("/api/training/settings/", {"credits": {"physicians": 250}}, format="json")
-    alerts = [x for x in engine.collect(TODAY, ["credits_missing"])]
-    assert [x.employee for x in alerts] == [a.pk]
+    assert "credits" not in r.data and r.data["valid_until"] == body["valid_until"]
+    bad = admin_client.post("/api/training/records/", {**body, "valid_until": (TODAY - timedelta(days=200)).isoformat()}, format="json")
+    assert bad.status_code == 400 and "valid_until" in bad.data
+    assert "publication" not in dict(KINDS) and "internal" in dict(KINDS)
+    summary = admin_client.get("/api/training/records/summary/").data
+    assert summary == {"hours": 24.0, "people": 1}
+    # EMC și atestarea nu mai există
+    for url in ("/api/training/credits/", "/api/training/attestation-due/", "/api/training/attestations/", "/api/training/settings/"):
+        assert admin_client.get(url).status_code == 404, url
+    assert admin_client.get("/api/reports/emc_credits/").status_code == 400
+    assert "credits_missing" not in engine.KINDS
 
 
-def test_attestation_flow_until_award_order(org, admin_client):
-    from .test_orders import sign
-
+def test_expiring_certificates_alert_and_report(org, admin_client):
     a = person(org, "Popescu", "Ion")
-    qualify(org, a, TODAY - timedelta(days=365 * 5 - 60))
-    b = person(org, "Rusu", "Ana")
-    qualify(org, b, TODAY - timedelta(days=100))  # nu e în calendar
-    due = admin_client.get("/api/training/attestation-due/?months=6").data["rows"]
-    assert [x["name"] for x in due] == ["Popescu Ion"] and not due[0]["in_list"]
-    r = admin_client.post("/api/training/attestations/plan/", {"employees": [a.pk], "session_date": (TODAY + timedelta(days=30)).isoformat()},
-                          format="json")
-    assert r.data["created"] == 1
-    assert admin_client.get("/api/training/attestation-due/?months=6").data["rows"][0]["in_list"]
-    att = Attestation.objects.get(employee=a)
-    assert att.requested_category == org["first"] and att.due_date
-    html = admin_client.get("/api/training/attestations/print-list/?status=open").content.decode()
-    assert "LISTA CANDIDAȚILOR" in html and "Popescu Ion" in html
-    # rezultatul pozitiv cere categoria și data
-    bad = admin_client.patch(f"/api/training/attestations/{att.pk}/", {"status": "awarded"}, format="json")
-    assert bad.status_code == 400
-    ok = admin_client.patch(f"/api/training/attestations/{att.pk}/", {"status": "awarded", "result_category": org["superior"].pk,
-                                                                     "result_date": TODAY.isoformat(), "decision": "PV nr. 7"}, format="json")
-    assert ok.status_code == 200, ok.data
-    made = admin_client.post("/api/training/attestations/make-order/", {"ids": [att.pk]}, format="json")
-    assert made.status_code == 200, made.data
-    order = admin_client.get(f"/api/orders/orders/{made.data['orders'][0]['id']}/").data
-    sign(admin_client, order)
-    q = Qualification.objects.filter(employee=a).order_by("-awarded_on").first()
-    assert q.category == org["superior"] and q.awarded_on == TODAY and q.valid_until.year == TODAY.year + 5
-    assert admin_client.post("/api/training/attestations/make-order/", {"ids": [att.pk]}, format="json").status_code == 400
+    b = person(org, "Rusu", "Ana", sub="it")
+    c = person(org, "Ceban", "Dan")
+    TrainingRecord.objects.create(employee=a, title="Lucrul la înălțime", date_from=TODAY - timedelta(days=700),
+                                  valid_until=TODAY + timedelta(days=10), certificate_number="H-1")
+    old = TrainingRecord.objects.create(employee=b, title="Lucrul la înălțime", date_from=TODAY - timedelta(days=700),
+                                        valid_until=TODAY + timedelta(days=15))
+    TrainingRecord.objects.create(employee=b, title="lucrul la înălțime ", date_from=TODAY - timedelta(days=5),
+                                  valid_until=TODAY + timedelta(days=700))  # reînnoit: cel vechi nu mai alertează
+    TrainingRecord.objects.create(employee=c, title="Prim ajutor", date_from=TODAY - timedelta(days=400),
+                                  valid_until=TODAY + timedelta(days=200))  # departe
+    TrainingRecord.objects.create(employee=c, title="Curs fără termen", date_from=TODAY - timedelta(days=40))
+    alerts = engine.collect(TODAY, ["training_expiry"])
+    assert [(x.employee, x.due) for x in alerts] == [(a.pk, TODAY + timedelta(days=10))]
+    assert "H-1" in alerts[0].text and alerts[0].level == "info"
+    expired = engine.collect(TODAY + timedelta(days=12), ["training_expiry"])
+    assert expired[0].level == "warning" and expired[0].title.startswith("A expirat")
+    rep = admin_client.get(f"/api/reports/training_expiry/?date_from={TODAY}&date_to={TODAY + timedelta(days=60)}").data
+    assert [r["name"] for r in rep["rows"]] == ["Popescu Ion"]
+    assert old.pk not in [r.pk for r in services.expiring(TODAY, TODAY + timedelta(days=60))]
+    listed = admin_client.get(f"/api/training/records/?valid_until={TODAY + timedelta(days=30)}").data["results"]
+    assert {r["employee_name"] for r in listed} == {"Popescu Ion", "Rusu Ana"}
 
 
-def test_training_order_creates_record_and_plan(org, admin_client):
+def test_plan_from_expiring_and_training_order(org, admin_client):
     from .test_orders import cancel, make_order, set_params, sign
 
     a = person(org, "Popescu", "Ion")
-    qualify(org, a, TODAY - timedelta(days=365 * 2))
-    plan = admin_client.post("/api/training/plans/", {"year": TODAY.year, "number": "1"}, format="json").data
-    filled = admin_client.post(f"/api/training/plans/{plan['id']}/fill/", {"only_behind": False}, format="json").data
-    assert filled["added"] == 1
+    year = TODAY.year
+    TrainingRecord.objects.create(employee=a, kind="course", title="Securitatea la incendiu", provider="Centrul de instruire",
+                                  date_from=date(year - 3, 5, 1), valid_until=date(year, 11, 30), hours=16)
+    plan = admin_client.post("/api/training/plans/", {"year": year, "number": "1"}, format="json").data
+    assert admin_client.post(f"/api/training/plans/{plan['id']}/fill/").data["added"] == 1
+    assert admin_client.post(f"/api/training/plans/{plan['id']}/fill/").data["added"] == 0  # al doilea clic nu dublează
     lines = admin_client.get(f"/api/training/plan-lines/?plan={plan['id']}").data
-    assert lines[0]["credits"] == "50.0" and not lines[0]["record"]
-    start = date(TODAY.year, TODAY.month, 1)
+    assert len(lines) == 1 and lines[0]["month"] == 11 and lines[0]["hours"] == "16.0" and "credits" not in lines[0]
+    listed = admin_client.get("/api/training/plans/").data[0]
+    assert listed["hours_total"] == "16.0" and listed["lines_count"] == 1 and "credits_total" not in listed
+    start = date(year, TODAY.month, 1)
     order = make_order(admin_client, "training", [a], date_=start.isoformat())
-    set_params(admin_client, order, {"date_from": start.isoformat(), "date_to": (start + timedelta(days=4)).isoformat(),
-                                     "destination": "USMF „Nicolae Testemițanu”", "purpose": "Ortopedie modernă"})
+    set_params(admin_client, order, {"date_from": start.isoformat(), "date_to": (start + timedelta(days=2)).isoformat(),
+                                     "destination": "Centrul de instruire", "purpose": "Securitatea la incendiu"})
     sign(admin_client, order)
-    rec = TrainingRecord.objects.get(employee=a)
-    assert rec.provider.startswith("USMF") and rec.title == "Ortopedie modernă" and rec.order_item_id
-    assert Absence.objects.filter(employee=a, kind="training").exists()
+    rec = TrainingRecord.objects.get(employee=a, order_item__isnull=False)
+    assert rec.title == "Securitatea la incendiu" and Absence.objects.filter(employee=a, kind="training").exists()
     assert admin_client.get(f"/api/training/plan-lines/?plan={plan['id']}").data[0]["record"] == rec.pk
-    plans = admin_client.get("/api/training/plans/").data
-    assert plans[0]["done_count"] == 1
     assert admin_client.delete(f"/api/training/records/{rec.pk}/").status_code == 400  # vine din ordin
     html = admin_client.get(f"/api/training/plans/{plan['id']}/print/").content.decode()
-    assert "PLANUL ANUAL DE FORMARE" in html and "realizat" in html
+    assert "PLANUL ANUAL DE FORMARE PROFESIONALĂ" in html and "realizat" in html and "Credite" not in html
     admin_client.post(f"/api/training/plans/{plan['id']}/approve/")
     assert admin_client.post(f"/api/training/plans/{plan['id']}/fill/").status_code == 400
     cancel(admin_client, order)
-    assert not TrainingRecord.objects.filter(employee=a).exists()
+    assert not TrainingRecord.objects.filter(employee=a, order_item__isnull=False).exists()
 
 
 def test_reports_and_scope(org, admin_client, make_user, client_for):
     a = person(org, "Popescu", "Ion")
-    b = person(org, "Rusu", "Ana", sub="ati")
+    b = person(org, "Rusu", "Ana", sub="it")
     for e in (a, b):
-        qualify(org, e, TODAY - timedelta(days=300))
-        TrainingRecord.objects.create(employee=e, title="Curs", date_from=TODAY - timedelta(days=10), hours=24, credits=20)
+        TrainingRecord.objects.create(employee=e, title="Curs", date_from=TODAY - timedelta(days=10), hours=24)
     data = admin_client.get(f"/api/reports/training_period/?date_from={TODAY - timedelta(days=30)}&date_to={TODAY}").data
-    assert data["totals"]["credits"] == 40 and len(data["rows"]) == 2
-    assert len(admin_client.get("/api/reports/emc_credits/").data["rows"]) == 2
+    assert data["totals"]["hours"] == 48 and len(data["rows"]) == 2 and "credits" not in data["totals"]
     head = make_user("sef", ["department_head"])
-    org["ati"].users.add(head)
+    org["it"].users.add(head)
     api = client_for(head)
-    assert [r["name"] for r in api.get("/api/training/credits/").data["rows"]] == ["Rusu Ana"]
     assert [r["employee_name"] for r in api.get("/api/training/records/").data["results"]] == ["Rusu Ana"]
     assert api.post("/api/training/records/", {"employee": a.pk, "title": "x", "date_from": TODAY.isoformat()}, format="json").status_code in (403, 404)

@@ -77,20 +77,6 @@ SPECIALTIES = [
 
 # tip: [(cod, RO, RU, EN, extra)]
 DICTS = {
-    "qualification": [
-        ("none", "Fără categorie", "Без категории", "No category", {}),
-        ("second", "Categoria a doua", "Вторая категория", "Second category", {}),
-        ("first", "Categoria întâi", "Первая категория", "First category", {}),
-        ("superior", "Categoria superioară", "Высшая категория", "Higher category", {}),
-    ],
-    "degree": [
-        ("dr", "Doctor în științe medicale", "Доктор медицинских наук", "PhD in medical sciences", {}),
-        ("dr_hab", "Doctor habilitat în științe medicale", "Доктор хабилитат медицинских наук", "Habilitated doctor", {}),
-    ],
-    "title": [
-        ("conf", "Conferențiar universitar", "Доцент", "Associate professor", {}),
-        ("prof", "Profesor universitar", "Профессор", "Professor", {}),
-    ],
     "education": [  # din enumerarea 1C „Studii”, completată cu rezidențiatul
         ("primary", "Primare", "Начальное", "Primary", {}),
         ("secondary", "Medii", "Среднее", "Secondary", {}),
@@ -162,20 +148,11 @@ DICTS = {
         ("diploma", "Diplomă de onoare", "Почётная грамота", "Certificate of honour", {}),
         ("aid", "Ajutor material", "Материальная помощь", "Financial aid", {}),
     ],
-    "vaccine": [  # extra: months — revaccinarea (0 = fără), required — obligatoriu pentru personalul medical
-        ("hepatitis_b", "Hepatita virală B", "Вирусный гепатит B", "Hepatitis B", {"months": 0, "required": True}),
-        ("influenza", "Gripa sezonieră", "Сезонный грипп", "Seasonal influenza", {"months": 12}),
-        ("covid19", "COVID-19", "COVID-19", "COVID-19", {"months": 12}),
-        ("dt", "Difterie-tetanos (dT)", "Дифтерия-столбняк (АДС-м)", "Diphtheria-tetanus (dT)", {"months": 120}),
-        ("mmr", "Rujeolă-oreion-rubeolă (ROR)", "Корь-паротит-краснуха (КПК)", "Measles-mumps-rubella (MMR)", {"months": 0}),
-        ("other", "Alt vaccin", "Другая вакцина", "Other vaccine", {"months": 0}),
-    ],
     "employment": [  # din enumerarea 1C „TipAngajare”, completată cu suplinirea
         ("main", "De bază", "Основное место работы", "Main job", {}),
         ("main_student", "De bază (student)", "Основное (студент)", "Main job (student)", {}),
         ("external", "Cumul extern", "Внешнее совместительство", "External second job", {}),
         ("internal", "Cumul intern", "Внутреннее совместительство", "Internal second job", {}),
-        ("resident", "Rezident", "Резидент", "Resident", {}),
         ("substitute", "Suplinire temporară", "Временное замещение", "Temporary substitution", {}),
     ],
     "military_group": [  # din enumerarea 1C „GrupaEvidentei”

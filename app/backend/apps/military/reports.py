@@ -1,5 +1,6 @@
-"""Evidența militară (HG 631/2003): registrul recruților și rezerviștilor, modificările lunii pentru centrul militar,
-lista recruților, angajații fără fișă de evidență militară."""
+"""Evidența militară (HG 631/2003) — modul opțional, oprit implicit (Legea 112/2023 a scos obligația pentru agenții
+economici): registrul recruților și rezerviștilor, modificările lunii pentru centrul militar, lista recruților, angajații
+fără fișă de evidență militară. Cu modulul oprit drepturile `military.*` nu se acordă nimănui, deci rapoartele nu apar."""
 import calendar
 from datetime import date, datetime, time
 
@@ -9,8 +10,7 @@ from apps.reports.personnel import COMMON, MAIN_KINDS, Lookup, _d, age_on, jobs_
 from apps.reports.registry import GROUPS, col, report, subtitle_parts
 from apps.staff.models import Employment, EmploymentHistory, MilitaryRecord
 
-GROUPS.setdefault("health", ("Sănătate și evidență militară", "Здоровье и воинский учёт", "Health and military records"))
-MEDICAL = {"physicians", "pharmacists", "nurses", "junior"}
+GROUPS.setdefault("military", ("Evidența militară", "Воинский учёт", "Military records"))
 STATUS = dict(MilitaryRecord.STATUSES)
 COMPOSITION = dict(MilitaryRecord.COMPOSITIONS)
 # datele care se comunică centrului militar când se schimbă
@@ -38,7 +38,7 @@ def _record_cells(m: MilitaryRecord, lang):
             "fit": "apt" if m.fit else "inapt", "special": "da" if m.special_record else "", "book": m.book}
 
 
-@report("military_register", "health", ("Registrul evidenței militare", "Реестр воинского учёта", "Military record register"),
+@report("military_register", "military", ("Registrul evidenței militare", "Реестр воинского учёта", "Military record register"),
         ("Recruții și rezerviștii angajați: categoria, grupa, componența, gradul, specialitatea, centrul militar, aptitudinea, "
          "evidența specială, livretul — registrul ținut de angajator.",
          "Призывники и военнообязанные: категория, группа, состав, звание, ВУС, военкомат, годность, бронь, военный билет.",
@@ -72,10 +72,10 @@ def military_register(p):
     }
 
 
-@report("military_missing", "health", ("Fără fișă de evidență militară", "Без карточки воинского учёта", "Without military record"),
-        ("Bărbații de 16–60 de ani și femeile cu pregătire medicală de 18–50 de ani, angajați, care nu au fișa de evidență "
-         "militară completată — de verificat livretul sau certificatul de recrutare.",
-         "Мужчины 16–60 лет и женщины-медики 18–50 лет без карточки воинского учёта.",
+@report("military_missing", "military", ("Fără fișă de evidență militară", "Без карточки воинского учёта", "Without military record"),
+        ("Bărbații angajați de 16–60 de ani care nu au fișa de evidență militară completată — de verificat livretul sau "
+         "certificatul de recrutare.",
+         "Работающие мужчины 16–60 лет без карточки воинского учёта.",
          "Employees who should be on the military record but have no record."),
         ["on_date", "subdivision"], perm="military.view")
 def military_missing(p):
@@ -88,9 +88,7 @@ def military_missing(p):
         if emp_id in have or not emp.birth_date:
             continue
         age = age_on(emp.birth_date, p.on_date)
-        man = emp.sex == "M" and 16 <= age <= 60
-        woman = emp.sex == "F" and 18 <= age <= 50 and look.category(snap["occupation_id"]) in MEDICAL
-        if man or woman:
+        if emp.sex == "M" and 16 <= age <= 60:
             rows.append({"tab": emp.tab_number, "name": emp.full_name(), "birth": _d(emp.birth_date), "age": age,
                          "sub": look.sub(snap["subdivision_id"]), "occ": look.occ(snap["occupation_id"])})
     rows.sort(key=lambda r: r["name"])
@@ -102,7 +100,7 @@ def military_missing(p):
     }
 
 
-@report("military_changes", "health", ("Modificările lunii pentru centrul militar", "Изменения за месяц для военкомата",
+@report("military_changes", "military", ("Modificările lunii pentru centrul militar", "Изменения за месяц для военкомата",
                                        "Monthly changes for the military centre"),
         ("Recruții și rezerviștii angajați, eliberați, transferați în lună și schimbările datelor lor (nume, domiciliu, starea "
          "familială, datele de evidență) — informația lunară către centrul militar teritorial.",
@@ -172,7 +170,7 @@ def military_changes(p):
     }
 
 
-@report("military_recruits", "health", ("Lista recruților", "Список призывников", "List of recruits"),
+@report("military_recruits", "military", ("Lista recruților", "Список призывников", "List of recruits"),
         ("Angajații cu statutul de recrut și bărbații de 16–27 de ani — lista anuală pentru centrul militar.",
          "Работники-призывники и мужчины 16–27 лет — годовой список для военкомата.",
          "Recruit employees and men aged 16–27 — the annual list for the military centre."),

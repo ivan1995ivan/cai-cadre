@@ -47,7 +47,8 @@ export default function EmployeeCard() {
   const { id } = useParams()
   const isNew = id === 'new'
   const navigate = useNavigate()
-  const { hasPerm, me } = useApp()
+  const { hasPerm, me, branding } = useApp()
+  const military = branding?.military_enabled === true  // modulul opțional „Evidența militară” (Constante → Module)
   const [emp, setEmp] = useState<Employee | null>(null)
   const [search] = useSearchParams()
   const [tab, setTab] = useState(search.get('tab') || 'personal')
@@ -227,7 +228,7 @@ export default function EmployeeCard() {
           { key: 'education', label: t('staff.tabs.education'), children: <EducationTab employee={e.id} /> },
           { key: 'seniority', label: t('staff.tabs.seniority'), children: <SeniorityTab employee={e} onChanged={load} /> },
           ...(hasPerm('health.view') ? [{ key: 'health', label: t('staff.tabs.health'), children: <EmployeeHealth employee={e.id} /> }] : []),
-          ...(hasPerm('military.view') || me?.is_admin ? [{ key: 'military', label: t('staff.tabs.military'), children: <MilitaryTab employee={e.id} /> }] : []),
+          ...(military && (hasPerm('military.view') || me?.is_admin) ? [{ key: 'military', label: t('staff.tabs.military'), children: <MilitaryTab employee={e.id} /> }] : []),
           { key: 'checklist', label: t('staff.tabs.checklist'), children: <ChecklistTab employee={e} onSaved={(x) => setEmp(x)} /> },
           ...(sensitive || hasPerm('audit.view') ? [{ key: 'access', label: t('staff.tabs.access'), children: <AccessTab employee={e.id} /> }] : []),
         ]} />
@@ -238,7 +239,7 @@ export default function EmployeeCard() {
           params={{ doc: printDoc, purpose, ...(printDoc !== 'certificate_salary' ? {} : salaryMonths === 'range'
             ? { from: salaryRange[0].format('YYYY-MM'), to: salaryRange[1].format('YYYY-MM') } : { months: salaryMonths }) }}
           title={t(`staff.print.${printDoc}`)}
-          optionKeys={PRINT_DOCS.find((d) => d.key === printDoc)?.options ?? []} />
+          optionKeys={(PRINT_DOCS.find((d) => d.key === printDoc)?.options ?? []).filter((o) => military || o !== 'show_military')} />
       )}
       {printDoc && printDoc !== 'employee_card' && (
         <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 1100 }}>
@@ -339,9 +340,6 @@ function EducationTab({ employee }: { employee: number }) {
   const localName = useLocalName()
   const levels = useDict('education')
   const forms = useDict('education_form')
-  const categories = useDict('qualification')
-  const degrees = useDict('degree')
-  const titles = useDict('title')
   const { data: specs } = useFetch<Specialty[]>('/org/specialties/', { active: 1 })
   const specOptions = (specs ?? []).map((s) => ({ value: s.id, label: localName(s) }))
   const canEdit = hasPerm('employees.edit')
@@ -363,21 +361,6 @@ function EducationTab({ employee }: { employee: number }) {
           { key: 'diploma_number', label: t('staff.edu.diplomaNumber'), width: 130 },
           { key: 'diploma_date', label: t('staff.edu.diplomaDate'), type: 'date', inTable: false },
         ])} />
-      <CrudTable endpoint="/staff/qualifications/" params={{ employee }} defaults={{ employee }} canEdit={canEdit}
-        title={<Typography.Text strong>{t('staff.qual.title')}</Typography.Text>}
-        fields={childFields([
-          { key: 'specialty', label: t('staff.edu.specialty'), type: 'select', options: specOptions, ref: 'specialty', width: 240,
-            render: (_v, r) => String(r.specialty_name ?? '') },
-          { key: 'category', label: t('staff.qual.category'), type: 'select', options: categories, ref: { dict: 'qualification' }, width: 190,
-            render: (_v, r) => String(r.category_name ?? '') },
-          { key: 'certificate_number', label: t('staff.qual.number'), width: 140 },
-          { key: 'awarded_on', label: t('staff.qual.awarded'), type: 'date', width: 110 },
-          { key: 'valid_until', label: t('staff.qual.validUntil'), type: 'date', width: 130,
-            render: (v) => v ? <Tag color={dayjs(String(v)).diff(dayjs(), 'day') < 180 ? 'orange' : undefined}>{fmtDate(v)}</Tag> : '' },
-          { key: 'degree', label: t('staff.qual.degree'), type: 'select', options: degrees, ref: { dict: 'degree' }, render: (_v, r) => String(r.degree_name ?? '') },
-          { key: 'title', label: t('staff.qual.academicTitle'), type: 'select', options: titles, ref: { dict: 'title' }, inTable: false },
-          { key: 'note', label: t('org.notes'), inTable: false },
-        ])} />
       {hasPerm('training.view') && <EmployeeTraining employee={employee} />}
     </Space>
   )
@@ -391,13 +374,13 @@ function SeniorityTab({ employee, onChanged }: { employee: Employee; onChanged: 
     <Space direction="vertical" style={{ width: '100%' }} size={16}>
       {s && (
         <Row gutter={16}>
-          {(['total', 'healthcare', 'specialty', 'institution'] as const).map((k) => (
-            <Col xs={12} md={6} key={k}><Statistic title={t(`staff.sen.${k}`)} value={s[k].text} /></Col>
+          {(['total', 'specialty', 'institution'] as const).map((k) => (
+            <Col xs={12} md={8} key={k}><Statistic title={t(`staff.sen.${k}`)} value={s[k].text} /></Col>
           ))}
         </Row>
       )}
       <Typography.Paragraph type="secondary" style={{ margin: 0 }}>{t('staff.sen.hint')}</Typography.Paragraph>
-      <CrudTable endpoint="/staff/experience/" params={{ employee: employee.id }} defaults={{ employee: employee.id, in_specialty: true, in_healthcare: true }}
+      <CrudTable endpoint="/staff/experience/" params={{ employee: employee.id }} defaults={{ employee: employee.id, in_specialty: true }}
         canEdit={hasPerm('employees.edit')} title={<Typography.Text strong>{t('staff.sen.prior')}</Typography.Text>}
         extra={<Button size="small" onClick={onChanged}>{t('staff.sen.recalc')}</Button>}
         fields={childFields([
@@ -406,7 +389,6 @@ function SeniorityTab({ employee, onChanged }: { employee: Employee; onChanged: 
           { key: 'date_from', label: t('staff.sen.from'), type: 'date', required: true, width: 110 },
           { key: 'date_to', label: t('staff.sen.to'), type: 'date', required: true, width: 110 },
           { key: 'in_specialty', label: t('staff.sen.inSpecialty'), type: 'bool', width: 110 },
-          { key: 'in_healthcare', label: t('staff.sen.inHealthcare'), type: 'bool', width: 110 },
           { key: 'document', label: t('staff.sen.document'), inTable: false },
         ])} />
     </Space>

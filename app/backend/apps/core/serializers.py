@@ -86,7 +86,7 @@ class BrandingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Company
         fields = ["name_ro", "name_ru", "name_en", "logo", "logo_small", "logo_dark", "default_theme", "primary_color",
-                  "payroll_enabled", "function_panel", "languages"]
+                  "payroll_enabled", "military_enabled", "function_panel", "languages"]
 
     def to_representation(self, instance):
         data = super().to_representation(instance)

@@ -2,7 +2,7 @@
 
 Pornirea unei baze noi fără 1C. Pașii se fac în ordine, pentru că fiecare fișier se sprijină pe cele de dinainte:
 funcțiile (CORM) → specialitățile → subdiviziunile → angajații cu raportul de muncă → actele, familia, studiile,
-categoriile de calificare, stagiul anterior. Se văd doar pașii pentru care aveți drepturi.
+stagiul anterior. Se văd doar pașii pentru care aveți drepturi.
 
 Pentru fiecare pas: **Descarcă șablonul**, completați-l (antetul se păstrează, ordinea coloanelor nu contează, coloanele
 cu * sunt obligatorii), încărcați-l. Sistemul face întâi o **încercare**: arată câte rânduri se adaugă, câte se
