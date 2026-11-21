@@ -68,6 +68,7 @@ def month_parts(year: int, month: int, c, month_taxable: dict) -> dict:
     limit = c("exemption_income_limit", "360000")
     out = {}
     for emp, req in requests.items():
-        over = bool(limit) and before[emp] + month_taxable.get(emp, ZERO) > limit
+        # dreptul la P / M e doar pentru venitul anual impozabil MAI MIC decât plafonul: la exact 360 000 — fără scutire
+        over = bool(limit) and before[emp] + month_taxable.get(emp, ZERO) >= limit
         out[emp] = annual_parts(req, first, c, personal_allowed=not over)
     return out

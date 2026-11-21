@@ -21,9 +21,9 @@ angajatul depune **o cerere nouă în 10 zile** (pct. 22 din Regulament): o adă
   **dreptul de la / până la**, **documentul** (certificatul de naștere, de dizabilitate) și bifa **„Venitul ≤ 12 400 lei / an”**
   (fără bifă persoana nu dă scutire). Scutirea pentru o persoană se aplică **din luna următoare apariției dreptului** (art. 35
   alin. (4)) — copilul născut în aprilie dă N din mai.
-- **Renunțarea la P / M** — data cererii angajatului dacă venitul lui anual trece de **360 000 lei** (de exemplu are venituri și
-  în altă parte): P / M nu se mai acordă din luna următoare, lunile trecute nu se recalculează. Dacă venitul anului la
-  întreprindere (cu luna) trece de plafon, P / M se opresc singure din luna aceea. Când venitul de aici atinge 90 % din
+- **Renunțarea la P / M** — data cererii angajatului dacă venitul lui anual ajunge la **360 000 lei** sau mai mult (de exemplu are venituri și
+  în altă parte): P / M nu se mai acordă din luna următoare, lunile trecute nu se recalculează (scutirea e doar pentru venitul anual mai mic de 360 000). Dacă venitul anului la
+  întreprindere (cu luna) ajunge la plafon, P / M se opresc singure din luna aceea. Când venitul de aici atinge 90 % din
   plafon (procentul e în constante), contabilitatea primește alerta în *Termene și alerte*.
 
 **Codul** cererii se formează singur: P / M, Sm, **Nx** (câte persoane N), **Hx** (câte H) — de exemplu PN2H1. Coloana

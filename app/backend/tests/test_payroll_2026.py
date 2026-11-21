@@ -301,6 +301,8 @@ def test_waiver_and_income_limit_stop_p_without_touching_past_months(org):  # no
         timesheet(org, month=m)
         calc(m, approve=True)
     assert monthly_exemptions(2026, 3, c, {rich.id: D("0")})[rich.id] == D("2475")  # 240 000 până în martie
+    assert monthly_exemptions(2026, 3, c, {rich.id: D("119999.99")})[rich.id] == D("2475")  # sub plafon: P rămâne
+    assert monthly_exemptions(2026, 3, c, {rich.id: D("120000")})[rich.id] == 0  # exact 360 000: nu e „mai mic” — fără P
     assert monthly_exemptions(2026, 4, c, {rich.id: D("120000")})[rich.id] == 0  # 360 000 + 120 000 > 360 000
     from apps.alerts import engine as alerts
 
