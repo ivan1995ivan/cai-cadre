@@ -102,6 +102,7 @@ export default function EmploymentsTab({ employee, onChanged }: { employee: Empl
             ...(emp.status === 'ended' ? [{ key: 'end', label: t('staff.job.ended'), children: `${d(emp.end_date)} · ${emp.termination_reason_name} ${emp.end_order}` }] : []),
             ...(emp.suspension_reason ? [{ key: 'susp', label: t('staff.job.suspensionReason'), children: emp.suspension_reason }] : []),
           ]} />
+          {(emp.warnings ?? []).map((w) => <Alert key={w} type="warning" showIcon message={w} style={{ marginTop: 8 }} />)}
           {hasPerm('worktime.view') && emp.status !== 'ended' && emp.kind !== 'contractor' && <JobScheduleBox employment={emp.id} canEdit={hasPerm('worktime.edit')} />}
           <Table<HistoryRow> size="small" rowKey="id" pagination={false} dataSource={emp.history} style={{ marginTop: 8 }}
             columns={[

@@ -96,6 +96,7 @@ export interface HistoryRow {
 export interface Employment {
   id: number
   employee: number
+  warnings?: string[]
   kind: EmploymentKind
   kind_label: string
   subdivision: number

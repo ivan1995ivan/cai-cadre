@@ -13,6 +13,7 @@ export interface OrderItem {
   sort: number
   acknowledged_on: string | null
   result: Record<string, unknown>
+  warnings?: string[]
 }
 
 export interface Approval { name: string; position: string }

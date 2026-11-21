@@ -278,6 +278,7 @@ function PointCard({ no, item, order, disabled, register, onChange, onRemove, on
         {order.status !== 'draft' && item.employee && <Button size="small" onClick={onExtract}>{t('ord.extract')}</Button>}
         {!disabled && <Popconfirm title={t('common.confirmDelete')} onConfirm={onRemove}><Button size="small" type="text" danger icon={<DeleteOutlined />} /></Popconfirm>}
       </Space>}>
+      {(item.warnings ?? []).map((w) => <Alert key={w} type="warning" showIcon message={w} style={{ marginBottom: 8 }} />)}
       <Form form={form} {...DOC_HEAD} disabled={disabled} onValuesChange={onChange}>
         <ItemParams form={form} effect={order.effect === 'cancel' || order.type_code === 'cancel_order' ? 'cancel' : order.effect}
           code={order.type_code} employee={item.employee} disabled={disabled} />

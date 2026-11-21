@@ -109,9 +109,14 @@ export default function TimesheetEditor() {
           { title: t('wt.ro.night'), key: 'tn', width: 64, align: 'right', fixed: 'right', render: (_: unknown, r) => fmtH(r.totals.night) },
           { title: t('wt.ts.holiday'), key: 'thol', width: 55, align: 'right', fixed: 'right', render: (_: unknown, r) => fmtH(r.totals.holiday) },
           { title: t('wt.ro.norm'), key: 'tnorm', width: 60, align: 'right', fixed: 'right', render: (_: unknown, r) => fmtH(r.totals.norm) },
-          { title: '±', key: 'diff', width: 60, align: 'right', fixed: 'right', render: (_: unknown, r) => r.totals.overtime
-            ? <Typography.Text type="warning">+{fmtH(r.totals.overtime)}</Typography.Text>
-            : r.totals.missing ? <Typography.Text type="secondary">−{fmtH(r.totals.missing)}</Typography.Text> : '' },
+          { title: '±', key: 'diff', width: 60, align: 'right', fixed: 'right', render: (_: unknown, r) => {
+            const tt = r.totals
+            const split = t('wt.ts.overtimeSplit', { first: fmtH(tt.overtime_2 ?? tt.overtime), next: fmtH(tt.overtime_over ?? 0),
+              inNorm: fmtH(tt.holiday_in_norm ?? 0), over: fmtH(tt.holiday_over_norm ?? 0) })
+            const text = tt.overtime ? <Typography.Text type="warning">+{fmtH(tt.overtime)}</Typography.Text>
+              : tt.missing ? <Typography.Text type="secondary">−{fmtH(tt.missing)}</Typography.Text> : ''
+            return tt.overtime || tt.holiday_in_norm || tt.holiday_over_norm ? <Tooltip title={split}>{text || '·'}</Tooltip> : text
+          } },
           { title: t('wt.ts.absences'), key: 'codes', width: 120, fixed: 'right', render: (_: unknown, r) =>
             Object.entries(r.totals.codes ?? {}).map(([c, n]) => <Tooltip key={c} title={codeOf(c)}><Tag style={{ marginRight: 2 }}>{c} {n}</Tag></Tooltip>) },
         ]} />
