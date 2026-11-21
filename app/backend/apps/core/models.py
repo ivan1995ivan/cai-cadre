@@ -12,8 +12,8 @@ def _upload_to(instance, filename):
 class Company(models.Model):
     """Constantele întreprinderii (un singur rând, id=1): datele din antetul formelor și din declarații, semnatarii."""
 
-    THEMES = [("green", "Verde"), ("turquoise", "Turcoaz"), ("blue", "Albastru"), ("dark", "Întunecată"),
-              ("onec", "Ca în 1C (galben)")]
+    THEMES = [("desktop", "Clasic de birou"), ("desktop_dark", "Clasic de birou, întunecat"), ("green", "Verde"),
+              ("turquoise", "Turcoaz"), ("blue", "Albastru"), ("dark", "Întunecată"), ("onec", "Ca în 1C (galben)")]
 
     name_ro = models.CharField("Denumire (RO)", max_length=200)
     name_ru = models.CharField("Denumire (RU)", max_length=200, blank=True)
@@ -55,7 +55,7 @@ class Company(models.Model):
     signature = models.FileField(upload_to=_upload_to, blank=True)
     stamp = models.FileField(upload_to=_upload_to, blank=True)
 
-    default_theme = models.CharField(max_length=12, choices=THEMES, default="green")
+    default_theme = models.CharField(max_length=12, choices=THEMES, default="desktop")
     primary_color = models.CharField("Culoare principală proprie", max_length=7, blank=True)
     installed_at = models.DateTimeField(default=timezone.now)
 

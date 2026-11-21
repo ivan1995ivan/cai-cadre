@@ -128,7 +128,7 @@ class CompanySetupSerializer(serializers.Serializer):
     email = serializers.EmailField(allow_blank=True, required=False, default="")
     director = serializers.CharField(max_length=150, allow_blank=True, required=False, default="")
     director_position_ro = serializers.CharField(max_length=100, allow_blank=True, required=False, default="")
-    default_theme = serializers.ChoiceField(choices=[x for x, _ in Company.THEMES], required=False, default="green")
+    default_theme = serializers.ChoiceField(choices=[x for x, _ in Company.THEMES], required=False, default="desktop")
     bank = serializers.DictField(required=False)
 
     def validate_caem(self, value):

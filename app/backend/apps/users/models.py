@@ -47,8 +47,9 @@ class Role(models.Model):
 
 
 class User(AbstractUser):
-    THEMES = [("green", "Verde"), ("turquoise", "Turcoaz"), ("blue", "Albastru"), ("dark", "Întunecată"),
-              ("onec", "Ca în 1C (galben)"), ("auto", "Automat")]
+    THEMES = [("desktop", "Clasic de birou"), ("desktop_dark", "Clasic de birou, întunecat"), ("green", "Verde"),
+              ("turquoise", "Turcoaz"), ("blue", "Albastru"), ("dark", "Întunecată"), ("onec", "Ca în 1C (galben)"),
+              ("auto", "Automat")]
     BUTTONS = [("2d", "Plate (2D)"), ("3d", "În relief (3D)")]
     LANGUAGES = [("ro", "Română"), ("ru", "Русский"), ("en", "English")]
 
