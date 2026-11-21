@@ -11,7 +11,7 @@ specialitatea, centrul militar, aptitudinea, evidența specială, livretul). Pag
 | **Modificările lunii** | Pentru recruții și rezerviștii angajați: cine a fost angajat, eliberat, transferat în lună (cu ordinul) și ale cui date s-au schimbat (numele, domiciliul, starea familială, telefonul, studiile, familia, datele de evidență) — informația lunară către centrul militar |
 | **Recruții** | Angajații cu statutul de recrut și bărbații de 16–27 de ani — lista anuală |
 
-Fiecare filă are filtrele (data sau luna, subdiviziunea), **Excel** și **Tipar** cu Stema.
+Fiecare filă are filtrele (data sau luna, subdiviziunea), **Excel** și **Tipar** cu antetul întreprinderii.
 
 Modificările datelor se iau din jurnalul de audit: tot ce se schimbă în fișa angajatului apare singur în raportul lunii.
 

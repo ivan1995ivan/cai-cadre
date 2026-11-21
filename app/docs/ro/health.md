@@ -13,7 +13,7 @@ Lista celor care trebuie trimiși la examenul medical periodic, la instructajul 
 
 Sus se filtrează pe *ce* (examen / instructaj / vaccin) și pe subdiviziune.
 
-- **Lista pentru medicina muncii** — tipar cu Stema, pentru instituția care face examenul.
+- **Lista pentru medicina muncii** — tipar cu antetul întreprinderii, pentru instituția care face examenul.
 - Bifați angajații și apăsați **Ordinul de trimitere la examen** — se creează ordinul colectiv „Examenul medical periodic”
   (termenul: 30 de zile), de verificat și semnat.
 - **Periodicitatea** (administratorul): examenul periodic o dată la 12 luni, instructajul periodic SSM o dată la 6 luni (se

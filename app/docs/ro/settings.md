@@ -10,7 +10,7 @@ măsură ce scrieți. Diacriticele și majusculele nu contează („campuri” g
 bara de jos; în meniu rămâne evidențiat rândul **Setări**.
 
 Fiecare vede doar setările la care are drept (de ex. clasificatoarele — dreptul *Clasificatoare*, tipurile de calcul —
-*Setările salariului*). Cine nu are drept la nicio setare nu vede rândul **Setări** în meniu. Când instituția lucrează fără
+*Setările salariului*). Cine nu are drept la nicio setare nu vede rândul **Setări** în meniu. Când întreprinderea lucrează fără
 salarizare (*Constante → Module*), setările salarizării nu apar.
 
 Administratorul poate ascunde setări anume pentru un rol: [Roluri și drepturi](help:admin/roles) → *Meniul principal*,
@@ -18,7 +18,7 @@ grupa **Setări** de la sfârșit. Setarea debifată nu apare în lista rolului;
 **Setări** din meniu. Ca la funcțiile din meniu, bifa nu ia dreptul: drepturile rămân cele din tabelul rolului.
 
 ## Ce este în listă
-- **Instituția și programul**: Constante (datele instituției, logo, conturi, module, tema), Valute, Bănci, Localități,
+- **Întreprinderea și programul**: Constante (datele întreprinderii, logo, conturi, module, tema), Valute, Bănci, Localități,
   Numerotare, Forme de tipar, Câmpuri obligatorii, Meniul principal, Utilizatori, Roluri și drepturi.
 - **Clasificatoarele**, fiecare separat: Funcții (CORM), Specialități, Temeiuri legale, Tipuri de ordine, Categorii de
   calificare, Grade științifice, Titluri științifico-didactice, Nivelul studiilor, Forma de învățământ, Tipuri de acte,

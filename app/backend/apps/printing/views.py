@@ -31,7 +31,7 @@ class PrintTemplateSerializer(serializers.ModelSerializer):
     def get_placeholders(self, obj):
         from . import texts
 
-        return texts.PLACEHOLDERS.get(obj.doc_type, [])
+        return texts.placeholders_for(obj.doc_type)
 
     def get_text_fields(self, obj):
         from . import texts

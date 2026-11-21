@@ -6,8 +6,8 @@ previzualizarea pe ecran, **exportul Excel** (pentru verificare) și **declaraț
 Fiscal de Stat, gata de încărcat în SFS. Sus apar avertismentele: date lipsă în antet, persoane fără IDNP, funcții fără cod
 CORM.
 
-**Datele plătitorului** (o dată, la pornire; *Administrare → Setări → Raportări fiscale: datele plătitorului*): codul CNAS al plătitorului, codul subdiviziunii SFS, CUATM (4 semne), CAEM (de regulă
-8610), e-mailul și telefonul de contact. Denumirea, IDNO, directorul și contabilul-șef se iau din Constante.
+**Datele plătitorului** (o dată, la pornire; *Administrare → Setări → Raportări fiscale: datele plătitorului*): codul CNAS al plătitorului, codul subdiviziunii SFS, CUATM (4 semne), e-mailul și telefonul de contact. Denumirea, IDNO, **codul CAEM**, conducătorul și contabilul-șef se iau
+din [Constante](help:admin/constants).
 
 **IPC21** (lunar, până la 25 a lunii următoare):
 - tabelul 1: codul 11 „SAL” — venitul achitat în lună, impozitul și primele CNAM reținute (din îndreptările achitate în

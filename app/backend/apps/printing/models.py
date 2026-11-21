@@ -12,7 +12,7 @@ DOC_TYPES = [
     ("certificate_salary", "Adeverință privind salariul (pentru bancă)"),
     ("contract", "Contract individual de muncă"),
     ("timesheet", "Tabel de pontaj"),
-    ("roster", "Graficul lunar al secției (gărzi)"),
+    ("roster", "Graficul lunar de lucru (ture)"),
     ("leave_schedule", "Graficul concediilor"),
     ("orders_register", "Registrul ordinelor"),
     ("employee_list", "Lista angajaților"),

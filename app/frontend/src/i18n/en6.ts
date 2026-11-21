@@ -3,10 +3,10 @@ export default {
   staff: { tabs: { pay: 'Payroll' } },
   print: { docTypes: { payslip: 'Payslip', payroll_sheet: 'Payroll sheet' } },
   pay: {
-    new: 'New calculation', whole: 'whole institution', lines: 'Employments', gross: 'Gross', tax: 'Income tax', net: 'Net pay', cas: 'Employer social insurance',
+    new: 'New calculation', whole: 'whole company', lines: 'Employments', gross: 'Gross', tax: 'Income tax', net: 'Net pay', cas: 'Employer social insurance',
     exemption: 'Exemption', deductions: 'Other deductions', calculatedAt: 'Calculated at',
-    emptyHint: 'There are no calculations for the chosen month. “New calculation” — the whole institution or one department; it fills itself from timesheets, employments, leave, sick leave and orders.',
-    newHint: 'Empty — the whole institution in one calculation.',
+    emptyHint: 'There are no calculations for the chosen month. “New calculation” — the whole company or one department; it fills itself from timesheets, employments, leave, sick leave and orders.',
+    newHint: 'Empty — the whole company in one calculation.',
     heading: 'Payroll no. {{number}} — {{month}} {{year}}', calculate: 'Recalculate', calculated: 'Recalculated.', check: 'Checked',
     approve: 'Approve', approveConfirm: 'An approved calculation no longer changes; its amounts enter the average pay and the payment. Approve?',
     reopenConfirm: 'The calculation goes back to draft. Continue?', printSheet: 'Payroll sheet', printSlips: 'Payslips', printSlip: 'Payslip',

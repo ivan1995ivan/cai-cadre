@@ -1,20 +1,26 @@
-// CAI CADRE — Etapa 1: instituția, clasificatoarele, statele de personal, importul din Excel.
+// CAI CADRE — Etapa 1: întreprinderea, clasificatoarele, statele de personal, importul din Excel.
 export default {
   common: { active: 'Activ', inactive: 'Inactiv' },
   login: {
-    tagline: 'Evidența cadrelor și salarizarea în instituțiile medicale — de la statele de personal până la ordine și salariu',
-    features: ['State de personal și ocuparea posturilor', 'Dosarul angajatului și toate tipurile de ordine', 'Concedii, gărzi și tabelul de pontaj', 'Salariu, IPC21, IALS21 și rapoarte'],
+    tagline: 'Evidența cadrelor și salarizarea în întreprinderile private din Moldova — de la statele de personal până la ordine și salariu',
+    features: ['State de personal și ocuparea posturilor', 'Dosarul angajatului și toate tipurile de ordine', 'Concedii, grafice de lucru și tabelul de pontaj', 'Salariu, IPC21, IALS21 și rapoarte'],
   },
   setup: {
-    title: 'Instalarea CAI CADRE', steps: { company: 'Instituția' }, companyTitle: 'Datele instituției',
-    demoHint: 'Un spital fictiv cu secții, state de personal și angajați, pentru prezentare. Pentru lucru real instalați o bază curată.',
+    title: 'Instalarea CAI CADRE', steps: { company: 'Întreprinderea' }, companyTitle: 'Datele întreprinderii',
+    companyHint: 'Apar în antetul formelor de tipar și în declarațiile IPC21 / IALS21. Se pot schimba oricând în Constante.',
+    demoHint: 'O întreprindere fictivă cu subdiviziuni, state de personal și angajați, pentru prezentare. Pentru lucru real instalați o bază curată.',
   },
-  about: { tagline: 'Evidența cadrelor, ordine, concedii, timp de muncă și salarizare pentru instituții medicale' },
+  about: { tagline: 'Evidența cadrelor, ordine, concedii, timp de muncă și salarizare pentru întreprinderi private' },
   constants: {
-    hr_head: 'Șef resurse umane', name_en: 'Denumirea (EN)', founder_ro: 'Fondatorul (antetul formelor), RO',
-    founder_ru: 'Fondatorul, RU', founderHint: 'Apare sub „REPUBLICA MOLDOVA”: de ex. MINISTERUL SĂNĂTĂȚII sau CONSILIUL RAIONAL …',
-    show_stema: 'Stema de Stat în antetul formelor', show_stemaHint: 'Ordinele, statele de personal și adeverințele se tipăresc cu Stema.',
-    tabs: { modules: 'Module' }, payroll_enabled: 'Modulul Salarizare',
+    name_ro: 'Denumirea (RO)', name_ru: 'Denumirea (RU)', name_en: 'Denumirea (EN)',
+    nameHint: 'Fără forma juridică — ea se adaugă din câmpul alăturat: „Denumirea” SRL.', namePlaceholder: '„Denumirea”',
+    companyHint: 'Datele întreprinderii apar în antetul tuturor formelor de tipar (logo-ul, denumirea, IDNO, CAEM, adresa, telefonul, e-mailul, site-ul, contul bancar implicit) și în declarațiile IPC21 / IALS21. Ce nu e completat nu apare.',
+    sections: { identity: 'Denumirea și codurile', contacts: 'Adresa și contactele', signers: 'Semnăturile de pe forme' },
+    caem: 'Codul CAEM', caemHint: 'Genul principal de activitate: patru cifre (de ex. 6201); intră și în IPC21 / IALS21.',
+    signersHint: 'Numele și funcția fiecăruia apar la semnăturile ordinelor, adeverințelor, statelor de personal și de plată. Funcția goală = cea obișnuită (Director, Contabil-șef, Șef resurse umane).',
+    director: 'Conducătorul (numele)', director_position: 'Funcția conducătorului', chief_accountant: 'Contabilul-șef (numele)',
+    hr_head: 'Responsabilul de personal (numele)', position_ro: 'Funcția (RO)', position_ru: 'Funcția (RU)',
+    tabs: { company: 'Întreprinderea', modules: 'Module' }, payroll_enabled: 'Modulul Salarizare',
     payroll_enabledHint: 'Livrarea „cu salariu” sau „fără salariu”. Oprit: calculul, plata, achitarea și raportările IPC21 / IALS21 dispar din meniu.',
     withPayroll: 'cu salariu', withoutPayroll: 'fără salariu',
   },

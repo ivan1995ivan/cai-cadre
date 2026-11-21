@@ -1,7 +1,7 @@
 // CAI CADRE — Etapa 4 (partea 2): timpul de muncă.
 export default {
   menu: { rosters: 'Graficul lunar (gărzi)' },
-  print: { docTypes: { roster: 'Graficul lunar al secției (gărzi)' } },
+  print: { docTypes: { roster: 'Graficul lunar de lucru (ture)' } },
   wt: {
     off: 'liber', rosters: 'Graficul lunar al secției (ture, gărzi)',
     weekdays: { mon: 'Luni', tue: 'Marți', wed: 'Miercuri', thu: 'Joi', fri: 'Vineri', sat: 'Sâmbătă', sun: 'Duminică' },

@@ -23,7 +23,7 @@ nu se mai modifică.
 **Anularea** se face prin ordin: „Anulează prin ordin” face ciorna ordinului de anulare; la semnarea ei efectele ordinului
 anulat se întorc înapoi (angajarea dispare, transferul revine, concediul se șterge, eliberarea se anulează).
 
-**Tipar:** ordinul cu Stema, vizele și tabelul „Am luat cunoștință”; **extrasul** pentru un angajat (butonul de pe punct).
+**Tipar:** ordinul cu antetul întreprinderii, vizele și tabelul „Am luat cunoștință”; **extrasul** pentru un angajat (butonul de pe punct).
 **Registrul ordinelor** arată ordinele pe registru și an, în ordinea numerelor, cu numerele lipsă.
 
 Textele-model ale punctelor se schimbă în Administrare → Setări → Tipuri de ordine.

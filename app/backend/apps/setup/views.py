@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import subprocess
 import sys
 import threading
@@ -13,6 +14,7 @@ from rest_framework import serializers
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.core.models import Company
 from config.dbconfig import ENGINES
 from config.instance import INSTANCE_DIR, encrypt, load_config, save_config
 
@@ -112,6 +114,37 @@ class AdminSerializer(serializers.Serializer):
         return value
 
 
+class CompanySetupSerializer(serializers.Serializer):
+    """Datele întreprinderii din asistentul de instalare (restul se completează apoi în Constante)."""
+
+    name_ro = serializers.CharField(max_length=200)
+    name_ru = serializers.CharField(max_length=200, allow_blank=True, required=False, default="")
+    legal_form = serializers.CharField(max_length=20, allow_blank=True, required=False, default="")
+    idno = serializers.RegexField(r"^\d{13}$", allow_blank=True, required=False, default="",
+                                  error_messages={"invalid": "IDNO are 13 cifre."})
+    caem = serializers.CharField(max_length=6, allow_blank=True, required=False, default="")
+    legal_address = serializers.CharField(max_length=300, allow_blank=True, required=False, default="")
+    phone = serializers.CharField(max_length=64, allow_blank=True, required=False, default="")
+    email = serializers.EmailField(allow_blank=True, required=False, default="")
+    director = serializers.CharField(max_length=150, allow_blank=True, required=False, default="")
+    director_position_ro = serializers.CharField(max_length=100, allow_blank=True, required=False, default="")
+    default_theme = serializers.ChoiceField(choices=[x for x, _ in Company.THEMES], required=False, default="green")
+    bank = serializers.DictField(required=False)
+
+    def validate_caem(self, value):
+        value = re.sub(r"[\s.]", "", value)
+        if value and not re.fullmatch(r"\d{4}", value):
+            raise serializers.ValidationError("Codul CAEM are patru cifre (de ex. 6201).")
+        return value
+
+    def validate_bank(self, value):
+        iban = str(value.get("iban") or "").replace(" ", "").upper()
+        if iban and not re.fullmatch(r"[A-Z]{2}\d{2}[A-Z0-9]{8,30}", iban):
+            raise serializers.ValidationError("IBAN incorect.")
+        return {"iban": iban, "bank_name": str(value.get("bank_name") or "")[:150],
+                "bic": str(value.get("bic") or "")[:11]} if iban else {}
+
+
 class InstallView(SetupView):
     def post(self, request):
         ser = DbSerializer(data=request.data.get("db") or {})
@@ -125,10 +158,10 @@ class InstallView(SetupView):
             admin = AdminSerializer(data=request.data.get("admin") or {})
             if not admin.is_valid():
                 return Response({"admin": admin.errors}, status=400)
-            company = request.data.get("company") or {}
-            if not company.get("name_ro"):
-                return Response({"company": {"name_ro": ["Câmp obligatoriu."]}}, status=400)
-            payload.update(admin=admin.validated_data, company=company, demo=bool(request.data.get("demo")))
+            company = CompanySetupSerializer(data=request.data.get("company") or {})
+            if not company.is_valid():
+                return Response({"company": company.errors}, status=400)
+            payload.update(admin=admin.validated_data, company=company.validated_data, demo=bool(request.data.get("demo")))
 
         probe = dbtools.probe(db)
         if not probe["server_ok"] or (db["engine"] != "sqlite" and not probe["database_exists"]):

@@ -1,4 +1,4 @@
-{% gov_header %}
+{% company_header %}
 
 <div style="display:flex; justify-content:space-between; margin:6px 0 18px">
   <div>Nr. {{ number }}</div><div>{{ today }}</div>
@@ -8,10 +8,10 @@
 
 <p style="text-indent:12mm; line-height:1.6; font-size:11pt; margin-top:12px">
   Prin prezenta se adeverește că {% if emp.sex_code == "F" %}dna{% else %}dl{% endif %} <b>{{ emp.full_name }}</b>{% if options.show_idnp and emp.idnp %}, IDNP {{ emp.idnp }}{% endif %},
-  {% if main %}este {% if emp.sex_code == "F" %}angajată{% else %}angajat{% endif %} al {{ company.name }}{% if company.idno %} (IDNO {{ company.idno }}){% endif %} din {{ main.date_from }},
+  {% if main %}este {% if emp.sex_code == "F" %}angajată{% else %}angajat{% endif %} al {{ company.full_name }}{% if company.idno %} (IDNO {{ company.idno }}){% endif %} din {{ main.date_from }},
   în funcția de <b>{{ main.occupation }}</b> ({{ main.subdivision }}{% if main.rate != "1" %}, {{ main.rate }} normă{% endif %}),
   cu contract individual de muncă {% if main.date_to %}pe durată determinată, până la {{ main.date_to }}{% else %}pe durată nedeterminată{% endif %}{% if main.contract %} nr. {{ main.contract }}{% if main.contract_date %} din {{ main.contract_date }}{% endif %}{% endif %}{% if main.salary %}, cu salariul de funcție de {{ main.salary }} lei{% endif %}.
-  {% else %}nu are raporturi de muncă active în {{ company.name }}.{% endif %}
+  {% else %}nu are raporturi de muncă active în {{ company.full_name }}.{% endif %}
 </p>
 
 <p style="text-indent:12mm; font-size:11pt; margin:6px 0">Salariul în perioada {{ salary.from }} – {{ salary.to }} (lei):</p>
@@ -39,7 +39,7 @@
 {% if texts.footer %}<p style="text-indent:12mm; font-size:11pt">{{ texts.footer|linebreaksbr }}</p>{% endif %}
 
 <div class="signatures" style="margin-top:32px">
-  <div>Director<div class="line"></div><div class="who">{{ company.director }}</div></div>
-  <div>Contabil-șef<div class="line"></div><div class="who">{{ company.chief_accountant }}</div></div>
+  <div>{{ company.director_position }}<div class="line"></div><div class="who">{{ company.director }}</div></div>
+  <div>{{ company.chief_accountant_position }}<div class="line"></div><div class="who">{{ company.chief_accountant }}</div></div>
 </div>
 <div class="muted" style="margin-top:8px">L.Ș.</div>

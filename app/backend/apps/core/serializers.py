@@ -38,6 +38,7 @@ class CompanySerializer(serializers.ModelSerializer):
     class Meta:
         model = Company
         exclude = ["installed_at"]
+        extra_kwargs = {"caem": {"max_length": 8}}  # „62.01” se primește și se păstrează ca 6201
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -62,6 +63,13 @@ class CompanySerializer(serializers.ModelSerializer):
     def validate_idno(self, value):
         if value and not re.fullmatch(r"\d{13}", value):
             raise serializers.ValidationError("IDNO are 13 cifre.")
+        return value
+
+    def validate_caem(self, value):
+        """Codul CAEM: patru cifre (punctul din „62.01” se scoate)."""
+        value = re.sub(r"[\s.]", "", value or "")
+        if value and not re.fullmatch(r"\d{4}", value):
+            raise serializers.ValidationError("Codul CAEM are patru cifre (de ex. 6201).")
         return value
 
     def validate_primary_color(self, value):

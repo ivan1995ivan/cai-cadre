@@ -1,7 +1,7 @@
 {% for s in slips %}
 <div style="page-break-inside:avoid; border:1px solid #999; padding:6px 10px; margin-bottom:10px; font-size:9pt">
   <div style="display:flex; justify-content:space-between">
-    <div><b>{{ company.name }}</b><br><span class="muted">{{ texts.title }} · luna {{ doc.month }} {{ doc.year }}</span></div>
+    <div><b>{{ company.full_name }}</b><br><span class="muted">{{ texts.title }} · luna {{ doc.month }} {{ doc.year }}</span></div>
     <div style="text-align:right"><b>{{ s.name }}</b> · nr. tabel {{ s.tab_number }}</div>
   </div>
   {% for j in s.jobs %}

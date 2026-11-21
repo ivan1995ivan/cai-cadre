@@ -27,7 +27,7 @@ VAT_RATES = [
 # Modalitățile de plată a salariului
 PAYMENT_METHODS = [
     ("card", "Card bancar (transfer pe cont)", "Банковская карта (перевод на счёт)", "bank", False, ""),
-    ("cash", "Numerar (casa instituției)", "Наличные (касса)", "cash", False, ""),
+    ("cash", "Numerar (casa întreprinderii)", "Наличные (касса)", "cash", False, ""),
 ]
 
 # tip document: (RO, RU, prefix)

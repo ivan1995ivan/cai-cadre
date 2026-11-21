@@ -2,7 +2,7 @@
 
 Aici administratorul modifică aspectul documentelor tipărite: ordinul și extrasul din ordin, registrul ordinelor, statele
 de personal, fișa personală (MR-2), adeverințele, lista angajaților, graficul concediilor, tabelul de pontaj, graficul
-lunar al secției, statele de calcul și de plată, fișa de calcul, lista pentru bancă, fișa anuală a veniturilor,
+lunar de lucru, statele de calcul și de plată, fișa de calcul, lista pentru bancă, fișa anuală a veniturilor,
 rapoartele.
 
 ## Cum se lucrează
@@ -15,8 +15,18 @@ rapoartele.
 
 Tot sus: **Implicită** (forma propusă la tipar), **Activ**, orientarea (**Portret** / **Peisaj**).
 
+## Antetul și semnăturile
+Toate formele încep cu `{% company_header %}` — antetul întreprinderii din *Constante*: logo-ul, denumirea cu forma
+juridică, IDNO, CAEM, adresa, telefonul, e-mailul, site-ul și contul bancar implicit (doar ce e completat). Semnăturile
+de jos iau numele și funcțiile din *Constante → Semnăturile de pe forme* (conducătorul, contabilul-șef, responsabilul de
+personal). În **Textele formularului** se pot pune, în acolade, datele întreprinderii: `{întreprinderea}`,
+`{conducătorul}`, `{funcția_conducătorului}`, `{contabilul}`, `{funcția_contabilului}`, `{resurse_umane}`,
+`{funcția_resurse_umane}` (lista completă e sub titlul „Textele formularului”). De exemplu, mențiunea „Aprob” din graficul
+concediilor e implicit `APROB` / `{funcția_conducătorului} ______ {conducătorul}`.
+
 ## Variabile
-Valorile se pun cu `{{ variabilă }}`, de ex. `{{ company.name }}`, `{{ emp.full_name }}`.
+Valorile se pun cu `{{ variabilă }}`, de ex. `{{ company.full_name }}`, `{{ company.director_position }}`,
+`{{ emp.full_name }}`; lista datelor întreprinderii e în „Variabile disponibile”, sub editor.
 Condiții: `{% if options.show_idnp %} ... {% endif %}`. Repetare: `{% for ... %} ... {% endfor %}`.
 Formatare bani: `{{ valoare|money }}` → 1 234,50.
 

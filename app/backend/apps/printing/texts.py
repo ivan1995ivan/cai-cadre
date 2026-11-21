@@ -1,8 +1,9 @@
 """Textele formularelor pe care le schimbă oricine, fără HTML (editorul simplu din „Forme de tipar”).
 
-Fiecare tip de document are câteva texte cu nume (titlul, valabilitatea, sloganul, textul de la sfârșit), în română și
-rusă, cu valori implicite. Șablonul le folosește ca {{ texts.slogan }}; în text se pot pune {număr}, {data},
-{valabil_până} — se înlocuiesc cu valorile documentului. Stilul: mărimea scrisului și logo-ul (da / nu).
+Fiecare tip de document are câteva texte cu nume (titlul, semnăturile, textul de la sfârșit), în română și rusă, cu
+valori implicite. Șablonul le folosește ca {{ texts.title }}; în text se pot pune valorile documentului ({număr},
+{data} …) și datele din Constante ({întreprinderea}, {funcția_conducătorului}, {conducătorul} …) — semnăturile iau
+implicit funcțiile semnatarilor scrise în Constante. Stilul: mărimea scrisului și logo-ul (da / nu).
 """
 
 # tip document → [(cheia, eticheta în editor, implicit RO, implicit RU, mai multe rânduri)]
@@ -17,33 +18,33 @@ FIELDS: dict = {
     "employee_card": [
         ("title", "Titlul", "FIȘA PERSONALĂ A SALARIATULUI", "ЛИЧНАЯ КАРТОЧКА РАБОТНИКА", False),
         ("subtitle", "Sub titlu", "formular MR-2", "форма MR-2", False),
-        ("hr_label", "Semnătura: resurse umane", "Șef resurse umane", "Начальник отдела кадров", False),
+        ("hr_label", "Semnătura: resurse umane", "{funcția_resurse_umane}", "{funcția_resurse_umane}", False),
         ("footer", "Text la sfârșit", "", "", True),
     ],
     "certificate_work": [
         ("title", "Titlul", "ADEVERINȚĂ", "СПРАВКА", False),
-        ("hr_label", "Semnătura: resurse umane", "Șef resurse umane", "Начальник отдела кадров", False),
+        ("hr_label", "Semnătura: resurse umane", "{funcția_resurse_umane}", "{funcția_resurse_umane}", False),
         ("footer", "Text după conținut", "", "", True),
     ],
     "certificate_seniority": [
         ("title", "Titlul", "ADEVERINȚĂ PRIVIND VECHIMEA ÎN MUNCĂ", "СПРАВКА О ТРУДОВОМ СТАЖЕ", False),
-        ("hr_label", "Semnătura: resurse umane", "Șef resurse umane", "Начальник отдела кадров", False),
+        ("hr_label", "Semnătura: resurse umane", "{funcția_resurse_umane}", "{funcția_resurse_umane}", False),
         ("footer", "Text la sfârșit", "Vechimea s-a calculat în baza carnetului de muncă (până la 01.01.2019), a "
-                                    "certificatelor prezentate și a ordinelor instituției.", "", True),
+                                    "certificatelor prezentate și a ordinelor întreprinderii.", "", True),
     ],
     "certificate_salary": [
         ("title", "Titlul", "ADEVERINȚĂ PRIVIND SALARIUL", "СПРАВКА О ЗАРАБОТНОЙ ПЛАТЕ", False),
-        ("footer", "Text după tabel", "Instituția nu se află în proces de insolvabilitate sau lichidare. Ne asumăm răspunderea "
+        ("footer", "Text după tabel", "Întreprinderea nu se află în proces de insolvabilitate sau lichidare. Ne asumăm răspunderea "
                                       "pentru veridicitatea datelor din prezenta adeverință. Adeverința este valabilă 30 de zile "
                                       "de la data eliberării.", "", True),
     ],
     "employee_list": [
         ("title", "Titlul", "LISTA ANGAJAȚILOR", "СПИСОК СОТРУДНИКОВ", False),
-        ("hr_label", "Semnătura", "Șef resurse umane", "Начальник отдела кадров", False),
+        ("hr_label", "Semnătura", "{funcția_resurse_umane}", "{funcția_resurse_umane}", False),
         ("footer", "Text la sfârșit", "", "", True),
     ],
     "report": [
-        ("signer_label", "Semnătura", "Șef resurse umane", "Начальник отдела кадров", False),
+        ("signer_label", "Semnătura", "{funcția_resurse_umane}", "{funcția_resurse_umane}", False),
         ("footer", "Text la sfârșit", "", "", True),
     ],
     "order": [
@@ -59,13 +60,13 @@ FIELDS: dict = {
     ],
     "payroll_sheet": [
         ("title", "Titlul", "STAT DE CALCUL AL SALARIULUI", "РАСЧЁТНАЯ ВЕДОМОСТЬ", False),
-        ("accountant_label", "Semnătura: contabil-șef", "Contabil-șef", "Главный бухгалтер", False),
+        ("accountant_label", "Semnătura: contabil-șef", "{funcția_contabilului}", "{funcția_contabilului}", False),
         ("made_by", "Semnătura: a calculat", "A calculat (contabil salarii)", "Рассчитал (бухгалтер по зарплате)", False),
         ("footer", "Text la sfârșit", "", "", True),
     ],
     "payment_sheet": [
         ("title", "Titlul", "STAT DE PLATĂ", "ПЛАТЁЖНАЯ ВЕДОМОСТЬ", False),
-        ("accountant_label", "Semnătura: contabil-șef", "Contabil-șef", "Главный бухгалтер", False),
+        ("accountant_label", "Semnătura: contabil-șef", "{funcția_contabilului}", "{funcția_contabilului}", False),
         ("cashier_label", "Semnătura: casierul", "A plătit (casierul)", "Выплатил (кассир)", False),
         ("footer", "Text la sfârșit", "", "", True),
     ],
@@ -73,7 +74,7 @@ FIELDS: dict = {
         ("title", "Titlul", "LISTA PENTRU BANCĂ", "СПИСОК ДЛЯ БАНКА", False),
         ("intro", "Textul de sub titlu", "privind transferul salariilor pe conturile de card ale angajaților",
          "о перечислении заработной платы на карточные счета работников", True),
-        ("accountant_label", "Semnătura: contabil-șef", "Contabil-șef", "Главный бухгалтер", False),
+        ("accountant_label", "Semnătura: contabil-șef", "{funcția_contabilului}", "{funcția_contabilului}", False),
         ("footer", "Text la sfârșit", "", "", True),
     ],
     "annual_card": [
@@ -81,7 +82,7 @@ FIELDS: dict = {
          "ЛИЧНАЯ КАРТОЧКА УЧЁТА ДОХОДОВ В ВИДЕ ЗАРАБОТНОЙ ПЛАТЫ И УДЕРЖАННОГО ПОДОХОДНОГО НАЛОГА", False),
         ("annex", "Mențiunea „Anexa” (dreapta sus)", "Anexa nr. 8\nla Regulamentul aprobat prin HG nr. 697/2014",
          "Приложение № 8\nк Положению, утверждённому ПП № 697/2014", True),
-        ("accountant_label", "Semnătura: contabil-șef", "Contabil-șef", "Главный бухгалтер", False),
+        ("accountant_label", "Semnătura: contabil-șef", "{funcția_contabilului}", "{funcția_contabilului}", False),
         ("footer", "Text la sfârșit", "", "", True),
     ],
     "payslip": [
@@ -91,23 +92,24 @@ FIELDS: dict = {
     "timesheet": [
         ("title", "Titlul", "TABELA DE PONTAJ", "ТАБЕЛЬ УЧЁТА РАБОЧЕГО ВРЕМЕНИ", False),
         ("head_label", "Semnătura: șeful subdiviziunii", "Șeful subdiviziunii", "Заведующий подразделением", False),
-        ("made_by", "Semnătura: a întocmit", "A întocmit (asistentul medical superior)", "Составил (старшая медсестра)", False),
+        ("made_by", "Semnătura: a întocmit", "A întocmit (pontatorul)", "Составил (табельщик)", False),
         ("footer", "Text la sfârșit", "", "", True),
     ],
     "roster": [
         ("approve", "Mențiunea „Aprob” (dreapta sus)", "APROB\nȘeful subdiviziunii ______________",
          "УТВЕРЖДАЮ\nЗаведующий ______________", True),
-        ("title", "Titlul", "GRAFICUL DE LUCRU (TURE, GĂRZI)", "ГРАФИК РАБОТЫ (СМЕНЫ, ДЕЖУРСТВА)", False),
+        ("title", "Titlul", "GRAFICUL DE LUCRU (TURE)", "ГРАФИК РАБОТЫ (СМЕНЫ)", False),
         ("head_label", "Semnătura: șeful subdiviziunii", "Șeful subdiviziunii", "Заведующий подразделением", False),
-        ("hr_label", "Semnătura: resurse umane", "Șef resurse umane", "Начальник отдела кадров", False),
+        ("hr_label", "Semnătura: resurse umane", "{funcția_resurse_umane}", "{funcția_resurse_umane}", False),
         ("footer", "Text la sfârșit", "", "", True),
     ],
     "leave_schedule": [
-        ("approve", "Mențiunea „Aprob” (dreapta sus)", "APROB\nDirector ______________", "УТВЕРЖДАЮ\nДиректор ______________",
+        ("approve", "Mențiunea „Aprob” (dreapta sus)", "APROB\n{funcția_conducătorului} ______________ {conducătorul}",
+         "УТВЕРЖДАЮ\n{funcția_conducătorului} ______________ {conducătorul}",
          True),
         ("title", "Titlul", "GRAFICUL CONCEDIILOR DE ODIHNĂ ANUALE", "ГРАФИК ЕЖЕГОДНЫХ ОТПУСКОВ", False),
         ("head_label", "Semnătura: șeful subdiviziunii", "Șeful subdiviziunii", "Заведующий подразделением", False),
-        ("hr_label", "Semnătura: resurse umane", "Șef resurse umane", "Начальник отдела кадров", False),
+        ("hr_label", "Semnătura: resurse umane", "{funcția_resurse_umane}", "{funcția_resurse_umane}", False),
         ("footer", "Text la sfârșit", "", "", True),
     ],
     "orders_register": [
@@ -116,8 +118,17 @@ FIELDS: dict = {
     ],
 }
 
-# Ce se poate scrie în texte (în acolade) — arătat în editor
+# Ce se poate scrie în texte (în acolade) — arătat în editor: ale documentului și cele din Constante (în toate formele)
 PLACEHOLDERS: dict = {"staff_list": ["număr", "data", "aprobat_prin"]}
+COMPANY_PLACEHOLDERS = {
+    "întreprinderea": "full_name", "conducătorul": "director", "funcția_conducătorului": "director_position",
+    "contabilul": "chief_accountant", "funcția_contabilului": "chief_accountant_position",
+    "resurse_umane": "hr_head", "funcția_resurse_umane": "hr_head_position",
+}
+
+
+def placeholders_for(doc_type: str) -> list:
+    return [*PLACEHOLDERS.get(doc_type, []), *COMPANY_PLACEHOLDERS]
 
 FONT_SIZES = {"small": "11px", "normal": "12.5px", "large": "14px"}
 
@@ -145,7 +156,10 @@ def resolve(doc_type: str, stored: dict | None, lang: str, values: dict | None =
 def apply(context: dict, doc_type: str, texts: dict | None, style: dict | None, lang: str) -> dict:
     """Pune în context textele (`texts`) și stilul (`style`): fără logo, dacă așa s-a ales."""
     style = {"font_size": "normal", "show_logo": True, **(style or {})}
-    context = {**context, "texts": resolve(doc_type, texts, lang, context.get("placeholders")), "style": style}
+    company = context.get("company") or {}
+    values = {name: company.get(key, "") for name, key in COMPANY_PLACEHOLDERS.items()}
+    values.update(context.get("placeholders") or {})
+    context = {**context, "texts": resolve(doc_type, texts, lang, values), "style": style}
     if not style.get("show_logo") and context.get("company"):
         context["company"] = {**context["company"], "logo": ""}
     return context

@@ -10,9 +10,10 @@ from apps.core.banks import fill
 from apps.core.models import BankAccount, Company
 from apps.users.models import Role, User
 
+# datele întreprinderii pe care le poate aduce asistentul de instalare (restul — în Constante)
 COMPANY_FIELDS = [
-    "name_ro", "name_ru", "legal_form", "idno", "vat_code", "legal_address", "postal_address",
-    "phone", "email", "website", "director", "chief_accountant", "base_currency", "default_theme",
+    "name_ro", "name_ru", "legal_form", "idno", "caem", "legal_address", "postal_address", "phone", "email", "website",
+    "director", "director_position_ro", "chief_accountant", "hr_head", "default_theme",
 ]
 
 

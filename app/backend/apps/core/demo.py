@@ -84,7 +84,7 @@ def run(force=False):
     rnd = random.Random(2026)
     today = timezone.localdate()
     company = Company.get()
-    for field, value in (("founder_ro", "MINISTERUL SĂNĂTĂȚII"), ("director", "Gheorghe Ciobanu"), ("chief_accountant", "Valentina Cojocaru"),
+    for field, value in (("director", "Gheorghe Ciobanu"), ("chief_accountant", "Valentina Cojocaru"),
                          ("hr_head", "Silvia Moraru"), ("legal_address", "mun. Chișinău, str. Demo 1"), ("phone", "022 000 000")):
         if not getattr(company, field):
             setattr(company, field, value)

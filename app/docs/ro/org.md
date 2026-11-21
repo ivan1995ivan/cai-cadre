@@ -8,5 +8,5 @@ suplimentar și ziua de muncă redusă. Aceste valori trec mai departe în soldu
 **Import din Excel:** descărcați șablonul, completați câte un rând pe subdiviziune (părintele — prin cod sau denumire,
 mai sus în fișier) și încărcați-l. Întâi se face o încercare, apoi **Importă**.
 
-Datele instituției (denumirea RO / RU / EN, IDNO, adresa, directorul, șeful resurselor umane, fondatorul pentru antetul
-formelor, Stema) se completează în **Administrare → Setări → Constante**.
+Datele întreprinderii (denumirea RO / RU / EN, forma juridică, IDNO, CAEM, adresa, conducătorul, contabilul-șef,
+responsabilul de personal, logo-ul pentru antetul formelor) se completează în **Administrare → Setări → Constante**.

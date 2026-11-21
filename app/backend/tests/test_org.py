@@ -267,24 +267,20 @@ def test_import_staff_lines_into_draft(admin_client, subs, occ):
 
 
 # --- tiparul ----------------------------------------------------------------------------------
-def test_staff_list_print_with_stema_and_languages(admin_client, subs, occ):
+def test_staff_list_print_with_company_header_and_languages(admin_client, subs, occ):
     from apps.core.models import Company
 
     company = Company.get()
-    company.founder_ro, company.name_ro = "Ministerul Sănătății", "IMSP Spitalul Clinic de Traumatologie și Ortopedie"
+    company.name_ro, company.name_ru, company.legal_form = "„Exemplu Prim”", "«Пример Прим»", "SRL"
     company.save()
     sl = make_list(subs, occ)
     html = admin_client.get(f"/api/org/staff-lists/{sl.id}/print/").content.decode()
-    assert "STATELE DE PERSONAL" in html and "REPUBLICA MOLDOVA" in html
-    assert "data:image/svg+xml;base64," in html  # Stema de Stat, pusă în pagină
+    assert "STATELE DE PERSONAL" in html and "„Exemplu Prim” SRL" in html and 'class="company-header"' in html
+    assert "REPUBLICA MOLDOVA" not in html and "data:image/svg+xml" not in html  # fără Stema de Stat
     assert "Secția traumatologie nr. 1" in html and "Efectivul-limită" in html and "14,75" in html
-    assert "Anexa nr. 1" in html and "Ordinul MS nr. 1" in html and "· IDNO" not in html
+    assert "Anexa nr. 1" in html and "Ordinul MS nr. 1" in html and "IDNO" not in html  # IDNO necompletat — nu apare
     ru = admin_client.get(f"/api/org/staff-lists/{sl.id}/print/", {"lang": "ru"}).content.decode()
-    assert "ШТАТНОЕ РАСПИСАНИЕ" in ru and "РЕСПУБЛИКА МОЛДОВА" in ru
-    company.show_stema = False
-    company.save()
-    plain = admin_client.get(f"/api/org/staff-lists/{sl.id}/print/").content.decode()
-    assert "data:image/svg+xml" not in plain
+    assert "ШТАТНОЕ РАСПИСАНИЕ" in ru and "«Пример Прим» SRL" in ru and "РЕСПУБЛИКА МОЛДОВА" not in ru
 
 
 def test_print_template_preview_for_staff_list(admin_client, subs, occ):

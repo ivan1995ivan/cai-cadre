@@ -177,7 +177,7 @@ def ipc21_xml(year: int, month: int) -> HttpResponse:
     root = ET.Element("dec", TypeName="IPC21")
     fc = _sub(root, "fiscCod")
     for tag, value in (("fiscal", c.idno), ("name", c.name_ro), ("cuatm", cfg["cuatm"]), ("fisc", cfg["sfs_code"]),
-                       ("caem", cfg["caem"]), ("email", cfg["email"] or c.email), ("telefon", cfg["phone"] or c.phone),
+                       ("caem", c.caem), ("email", cfg["email"] or c.email), ("telefon", cfg["phone"] or c.phone),
                        ("cnas", cfg["cnas_code"])):
         _sub(fc, tag, value)
     _sub(_sub(root, "peroidnalog"), "datefisc", f"L/{month:02d}/{year}")
@@ -286,7 +286,7 @@ def ials21_xml(year: int) -> HttpResponse:
     root = ET.Element("dec", TypeName="IALS21")
     fc = _sub(root, "fiscCod")
     for tag, value in (("fiscal", c.idno), ("name", c.name_ro[:127]), ("datefisc", f"A/{year}"), ("cuatm", cfg["cuatm"]),
-                       ("fisc", cfg["sfs_code"]), ("caem", cfg["caem"])):
+                       ("fisc", cfg["sfs_code"]), ("caem", c.caem)):
         _sub(fc, tag, value)
     _sub(root, "nrinscr", len(data["rows"]))
     _sub(root, "dataPrezent", present_date())

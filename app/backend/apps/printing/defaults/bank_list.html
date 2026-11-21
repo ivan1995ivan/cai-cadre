@@ -1,4 +1,4 @@
-{% gov_header %}
+{% company_header %}
 
 <div class="doc-title">{{ texts.title }}</div>
 <div class="doc-subtitle">nr. {{ doc.number }} din {{ doc.date }} · {{ texts.intro }} · {{ doc.kind|lower }} pentru luna {{ doc.month }} {{ doc.year }}</div>
@@ -22,7 +22,7 @@
 </table>
 
 <div class="signatures">
-  <div>Director<div class="line"></div><div class="who">{{ company.director }}</div></div>
+  <div>{{ company.director_position }}<div class="line"></div><div class="who">{{ company.director }}</div></div>
   <div>{{ texts.accountant_label }}<div class="line"></div><div class="who">{{ company.chief_accountant }}</div></div>
 </div>
 {% if texts.footer %}<div class="doc-footer">{{ texts.footer|linebreaksbr }}</div>{% endif %}

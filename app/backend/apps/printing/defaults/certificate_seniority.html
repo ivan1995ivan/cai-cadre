@@ -1,4 +1,4 @@
-{% gov_header %}
+{% company_header %}
 
 <div style="display:flex; justify-content:space-between; margin:6px 0 18px">
   <div>Nr. {{ number }}</div><div>{{ today }}</div>
@@ -13,9 +13,8 @@
 
 <table class="grid" style="max-width:150mm; margin:6px auto 12px">
   <tr><td>Vechimea totală în muncă</td><td class="num"><b>{{ seniority.total }}</b></td></tr>
-  <tr><td>Vechimea în sistemul sănătății</td><td class="num">{{ seniority.healthcare }}</td></tr>
   <tr><td>Vechimea în specialitate</td><td class="num">{{ seniority.specialty }}</td></tr>
-  <tr><td>Vechimea în {{ company.name }}</td><td class="num">{{ seniority.institution }}</td></tr>
+  <tr><td>Vechimea în {{ company.full_name }}</td><td class="num">{{ seniority.institution }}</td></tr>
 </table>
 
 {% if options.show_periods %}
@@ -28,6 +27,6 @@
 {% if texts.footer %}<p style="font-size:10pt">{{ texts.footer|linebreaksbr }}</p>{% endif %}
 
 <div class="signatures" style="margin-top:30px">
-  <div>Director<div class="line"></div><div class="who">{{ company.director }}</div></div>
+  <div>{{ company.director_position }}<div class="line"></div><div class="who">{{ company.director }}</div></div>
   <div>{{ texts.hr_label }}<div class="line"></div><div class="who">{{ company.hr_head }}</div></div>
 </div>

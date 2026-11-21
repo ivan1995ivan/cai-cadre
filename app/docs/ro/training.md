@@ -47,7 +47,7 @@ Planul de formare al instituției pe un an (cerut de Regulamentul EMFC).
   planului (creditele unui an sau cele lipsă). Rândurile se pot adăuga, schimba și șterge de mână.
 - Când se înregistrează o activitate de formare în anul planului, primul rând deschis al angajatului se marchează
   **Realizat**.
-- **Aprobă** închide planul pentru modificări; **Tipar** — planul cu Stema.
+- **Aprobă** închide planul pentru modificări; **Tipar** — planul cu antetul întreprinderii.
 
 În **Rapoarte → Formare și atestare**: *Creditele EMC în perioada de atestare* și *Formarea pe perioadă* (orele și creditele,
 și pentru FORPRO).

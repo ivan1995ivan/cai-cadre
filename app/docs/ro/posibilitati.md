@@ -1,13 +1,13 @@
 # Posibilitățile sistemului
 
-**CAI CADRE** — evidența cadrelor și salarizarea pentru instituțiile medico-sanitare publice (IMSP): statele de personal,
+**CAI CADRE** — evidența cadrelor și salarizarea pentru întreprinderile private din Republica Moldova (SRL, SA, ÎI): statele de personal,
 dosarele angajaților, ordinele, concediile, timpul de muncă, salariul, formarea, sănătatea în muncă, evidența militară,
 rapoartele și cabinetul angajatului — în limbile alese (română, rusă, engleză), pe calculator și pe telefon.
 
-## Instituția și statele de personal
+## Întreprinderea și statele de personal
 - **Subdiviziunile** (secții clinice, paraclinice, administrative) cu paturile, condițiile vătămătoare și zilele de concediu suplimentar.
 - **Statele de personal** cu versiuni, data intrării în vigoare, aprobare, funcțiile cu **cod CORM 006-21**, unități
-  fracționate, efectivul-limită pe categorii; tipar cu Stema de Stat.
+  fracționate, efectivul-limită pe categorii; tipar cu antetul întreprinderii.
 - **Ocuparea posturilor**: unități aprobate / ocupate / temporar vacante / vacante.
 - **Clasificatoarele**: funcții, specialități, temeiuri legale, tipuri de ordine, categorii de calificare, acte, vaccinuri și
   altele; la fiecare câmp — butonul **„…”** care deschide clasificatorul.
@@ -56,5 +56,5 @@ rapoartele și cabinetul angajatului — în limbile alese (română, rusă, eng
 - **Roluri și drepturi** (șef resurse umane, inspector, director, șef de secție, contabilitate, angajat), vizibilitatea pe
   secții, câmpurile sensibile ascunse pe rol; jurnalul de audit; **formele de tipar editabile**.
 - Limbile sistemului, tema, meniul ca în 1C, toate setările într-un singur loc (Administrare → Setări, cu căutare); copii de rezervă și actualizări din program.
-- Instalare pe serverul instituției (Windows, cu Python inclus) sau în Docker; SQLite, PostgreSQL, MySQL, MS SQL, Oracle.
+- Instalare pe serverul întreprinderii (Windows, cu Python inclus) sau în Docker; SQLite, PostgreSQL, MySQL, MS SQL, Oracle.
 - Licența după numărul de utilizatori; modulul **Salarizare** se licențiază separat.

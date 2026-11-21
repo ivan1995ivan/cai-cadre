@@ -266,7 +266,7 @@ def test_prints_card_certificates_and_list(admin_client, org):
     PriorExperience.objects.create(employee=emp, organization="IMSP SCR", date_from=date(2010, 1, 1), date_to=date(2019, 12, 31))
     card = admin_client.get(f"/api/staff/employees/{emp.id}/print/", {"doc": "employee_card"}).content.decode()
     assert "FIȘA PERSONALĂ A SALARIATULUI" in card and "Popescu Ion" in card and "2001000123456" in card
-    assert "data:image/svg+xml" in card and "IMSP SCR" in card
+    assert 'class="company-header"' in card and "data:image/svg+xml" not in card and "IMSP SCR" in card
     cert = admin_client.get(f"/api/staff/employees/{emp.id}/print/", {"doc": "certificate_work", "purpose": "Banca"}).content.decode()
     assert "dna" in cert and "Medic traumatolog-ortoped" in cert and "contractului individual de muncă nr. 15" in cert
     assert "AD-" in cert and "Banca" in cert

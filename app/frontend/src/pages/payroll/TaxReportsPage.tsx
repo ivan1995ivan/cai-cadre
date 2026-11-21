@@ -204,7 +204,6 @@ function TaxSettings() {
         {field('cnas_code', t('tax.set.cnasHint'))}
         {field('sfs_code', t('tax.set.sfsHint'))}
         {field('cuatm', t('tax.set.cuatmHint'))}
-        {field('caem', t('tax.set.caemHint'))}
         {field('email')}
         {field('phone')}
         {field('income_source', t('tax.sourceHint'))}

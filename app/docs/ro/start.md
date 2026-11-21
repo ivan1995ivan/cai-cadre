@@ -1,6 +1,6 @@
 # Panoul de start
 
-Panoul de start este primul ecran după intrare. Arată indicatorii instituției **la ziua de azi** și termenele cele mai
+Panoul de start este primul ecran după intrare. Arată indicatorii întreprinderii **la ziua de azi** și termenele cele mai
 apropiate. Șeful de secție vede aceiași indicatori, dar **doar pentru secțiile lui**.
 
 ## Indicatorii

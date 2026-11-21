@@ -1,21 +1,28 @@
-// CAI CADRE — Stage 1: institution, classifiers, staff list, Excel import.
+// CAI CADRE — Stage 1: company, classifiers, staff list, Excel import.
 export default {
   common: { inactive: 'Inactive', required: 'Required', notes: 'Notes' },
   login: {
     title: 'Sign in', username: 'User', password: 'Password', submit: 'Sign in', failed: 'Wrong user name or password',
-    tagline: 'HR records and payroll for medical institutions — from the staff list to orders and salaries',
-    features: ['Staff list and position occupancy', 'Personal files and every type of HR order', 'Leave, on-call duty and timesheets', 'Payroll, IPC21, IALS21 and reports'],
+    tagline: 'HR records and payroll for private companies in Moldova — from the staff list to orders and salaries',
+    features: ['Staff list and position occupancy', 'Personal files and every type of HR order', 'Leave, work schedules and timesheets', 'Payroll, IPC21, IALS21 and reports'],
   },
   setup: {
-    title: 'Installing CAI CADRE', steps: { company: 'Institution' }, companyTitle: 'Institution details',
-    demoHint: 'A fictitious hospital with departments, a staff list and employees, for presentations. For real work install a clean database.',
+    title: 'Installing CAI CADRE', steps: { company: 'Company' }, companyTitle: 'Company details',
+    companyHint: 'Printed in the header of the forms and used in the IPC21 / IALS21 returns. They can be changed any time in Constants.',
+    demoHint: 'A fictitious company with departments, a staff list and employees, for presentations. For real work install a clean database.',
   },
-  about: { tagline: 'HR records, orders, leave, working time and payroll for medical institutions' },
+  about: { tagline: 'HR records, orders, leave, working time and payroll for private companies' },
   constants: {
-    hr_head: 'Head of HR', name_en: 'Name (EN)', founder_ro: 'Founder (form header), RO', founder_ru: 'Founder, RU',
-    founderHint: 'Printed under “REPUBLIC OF MOLDOVA”, e.g. MINISTRY OF HEALTH or DISTRICT COUNCIL …',
-    show_stema: 'State coat of arms in form headers', show_stemaHint: 'Orders, staff lists and certificates are printed with the coat of arms.',
-    tabs: { modules: 'Modules' }, payroll_enabled: 'Payroll module',
+    name_ro: 'Name (RO)', name_ru: 'Name (RU)', name_en: 'Name (EN)', legal_form: 'Legal form', idnoHint: 'IDNO has 13 digits',
+    nameHint: 'Without the legal form — it is added from the next field: “Name” SRL.', namePlaceholder: '“Name”',
+    companyHint: 'The company details are printed in the header of every form (logo, name, IDNO, CAEM, address, phone, e-mail, website, default bank account) and used in the IPC21 / IALS21 returns. Empty fields are not printed.',
+    sections: { identity: 'Name and codes', contacts: 'Address and contacts', signers: 'Signatures on forms' },
+    caem: 'CAEM code', caemHint: 'Main activity: four digits (e.g. 6201); also used in IPC21 / IALS21.',
+    phone: 'Phone', legal_address: 'Registered address', postal_address: 'Postal address', website: 'Website',
+    signersHint: 'The name and position of each person are printed at the signatures of orders, certificates, staff lists and payroll sheets. Empty position = the usual one (Director, Chief accountant, Head of HR).',
+    director: 'Head of the company (name)', director_position: 'Position of the head', chief_accountant: 'Chief accountant (name)',
+    hr_head: 'HR officer (name)', position_ro: 'Position (RO)', position_ru: 'Position (RU)',
+    tabs: { company: 'Company', images: 'Logo and stamp', bank: 'Bank accounts', theme: 'Theme', modules: 'Modules' }, payroll_enabled: 'Payroll module',
     payroll_enabledHint: 'Delivered “with payroll” or “without payroll”. Off: calculation, payment, payout and IPC21 / IALS21 reports are hidden from the menu.',
     withPayroll: 'with payroll', withoutPayroll: 'without payroll',
   },

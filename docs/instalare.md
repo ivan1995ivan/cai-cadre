@@ -1,7 +1,7 @@
 # CAI CADRE — instalarea și administrarea pe server (pentru cel care configurează)
 
-Aplicația este **CAI CADRE** (evidența cadrelor și salarizarea pentru instituții
-medicale, scrisă de Anatol; codul în `app/`), rulată în stiva Docker a acestui
+Aplicația este **CAI CADRE** (evidența cadrelor și salarizarea pentru întreprinderi
+private, scrisă de Anatol; codul în `app/`), rulată în stiva Docker a acestui
 server: Postgres 17 → `app` (Django + React, port 8000 în rețeaua compose) →
 nginx (`127.0.0.1:3960`) → tunelul Cloudflare → `https://cai-cadre.integratii.md`.
 Instrucțiunile pentru cine lucrează cu ecranul sunt în aplicație (meniul
@@ -29,11 +29,14 @@ server nou: `git clone git@github.com:ivan1995ivan/cai-cadre.git /srv/projects/c
    `APP_DB_PASSWORD` din `.env`. Baza există deja (o creează Postgres la prima
    pornire, cu rolul `caicadre_app` proprietar — `deploy/db/10-app-role.sh`), deci
    se alege „Instalare nouă”, nu „Creează baza”.
-4. La instalare se dau: limba, datele instituției (numele se schimbă oricând în
-   **Administrare → Setări → Constante**), administratorul și, dacă e nevoie de o prezentare, bifa **date demo**.
+4. La instalare se dau: limba, datele întreprinderii — denumirea (obligatoriu),
+   forma juridică, IDNO (13 cifre), codul CAEM (4 cifre), telefonul, adresa juridică,
+   conducătorul și funcția lui, contul bancar (IBAN, banca); toate se schimbă oricând
+   în **Administrare → Setări → Constante**, unde se pun și logo-ul pentru antetul
+   formelor, contabilul-șef și responsabilul de personal —, administratorul și, dacă e nevoie de o prezentare, bifa **date demo**.
    Instalarea rulează migrările, încarcă clasificatoarele și repornește serverul.
 
-Această instalare e **curată** (fără date demo): instituția și administratorul
+Această instalare e **curată** (fără date demo): întreprinderea și administratorul
 se dau în asistent. Cu bifa demo apar și utilizatorii `cadre`, `inspector`,
 `director`, `sef.trauma`, `contabil`, `angajat` cu parola `Demo-Cadre-2026` —
 doar pentru prezentări, niciodată pe o bază cu date reale.
@@ -192,7 +195,7 @@ cheile din copie; la final o șterge. Stiva `cai-cadre` nu e atinsă.
   fără refuz ar ocoli regula de mai sus.
 - **Limita autentificării**: `POST /api/auth/login/` — 10 pe minut de pe un IP,
   cu 20 în rafală, apoi 429 cu mesajul „Prea multe încercări…” pe ecranul de
-  intrare. E pe IP: tot spitalul poate ieși printr-un singur IP, dar tokenul
+  intrare. E pe IP: toată firma poate ieși printr-un singur IP, dar tokenul
   ține 7 zile, deci intrările sunt rare. Dacă oamenii văd mesajul la
   începutul turei, se mărește `rate` / `burst`. Limita pe cont (blocarea după
   N parole greșite) ține de aplicație.

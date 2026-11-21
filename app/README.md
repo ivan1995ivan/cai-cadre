@@ -1,15 +1,19 @@
 # CAI CADRE
 
-Evidența cadrelor și salarizarea pentru **instituții medico-sanitare** (spitale, centre de sănătate) din Republica Moldova:
-state de personal, dosarul angajatului (fișa MR-2), toate tipurile de ordine, concedii, timp de muncă, salariu (calcul, plată,
-achitare, IPC21 / IALS21 / IRM19), rapoarte și notificări, forme de tipar cu Stema de Stat. Interfață RO / RU / EN.
+Evidența cadrelor și salarizarea pentru **întreprinderile private** din Republica Moldova (SRL, SA, ÎI): state de personal,
+dosarul angajatului (fișa MR-2), toate tipurile de ordine, concedii, timp de muncă, salariu (calcul, plată, achitare,
+IPC21 / IALS21 / IRM19), rapoarte și notificări, forme de tipar cu antetul întreprinderii (logo, denumirea cu forma juridică,
+IDNO, CAEM, adresa, contactele, contul bancar) și semnăturile din Constante. Interfață RO / RU / EN.
+
+Produsul a fost făcut la început pentru un spital de stat (vezi istoricul de mai jos și [PLAN.md](PLAN.md)); trecerea la
+sectorul privat — [PLAN-SRL.md](PLAN-SRL.md) (etapa S1: fără Stemă, fondator și actele de stat).
 
 Proiectul pornește din **CAI ERP Vânzări** (`D:\Proiecte Cloude\CAI ERP VInzari`) — același nucleu (asistent de instalare,
 utilizatori și roluri, constante, forme de tipar editabile, jurnal de audit, licență, copii de rezervă, actualizări, platforma
 cu mai multe baze, installer Windows) — și din configurația 1C `Personal.cf` („Cadre”, Lear Ungheni), analizată în
-[PLAN.md](PLAN.md). Instituția-pilot: IMSP Spitalul Clinic de Traumatologie și Ortopedie.
+[PLAN.md](PLAN.md). Prima instalare (1.x): IMSP Spitalul Clinic de Traumatologie și Ortopedie.
 
-**Planul de lucru și starea etapelor:** [PLAN.md](PLAN.md).
+**Planul de lucru și starea etapelor:** [PLAN-SRL.md](PLAN-SRL.md) (sectorul privat), [PLAN.md](PLAN.md) (istoricul 1.x).
 
 ## Starea actuală
 
@@ -38,8 +42,8 @@ cd ..
 start.bat
 ```
 
-Deschideți **http://localhost:8030**. Se pornește asistentul de instalare (limba, baza de date, datele instituției,
-administratorul). Din alte calculatoare din rețea: `http://<IP-ul serverului>:8030`.
+Deschideți **http://localhost:8030**. Se pornește asistentul de instalare (limba, baza de date, datele întreprinderii —
+denumirea, forma juridică, IDNO, CAEM, adresa, conducătorul, contul bancar —, administratorul). Din alte calculatoare din rețea: `http://<IP-ul serverului>:8030`.
 
 Dezvoltare: `backend` — `..\.venv\Scripts\python manage.py runserver 8030`; `frontend` — `npm run dev` (Vite trimite `/api`
 la 8030). Verificări: `npm run typecheck`, `pytest` în `backend`.
@@ -57,9 +61,9 @@ datele PostgreSQL afișate de script. Actualizarea: arhiva nouă dezarhivată pe
 
 ## Structura
 
-- `backend/` — Django 6 + DRF: `apps/core` (instituția, constante, audit, licență), `apps/users` (utilizatori, roluri — catalogul
-  modulelor în `registry.py`), `apps/setup` (asistentul de instalare, backup, întreținere), `apps/printing` (forme de tipar),
-  `apps/help` (instrucțiunile din `docs/`); modulele de cadre: `org` (instituția, clasificatoare, state), `staff` (dosarele),
+- `backend/` — Django 6 + DRF: `apps/core` (constantele întreprinderii, audit, licență), `apps/users` (utilizatori, roluri — catalogul
+  modulelor în `registry.py`), `apps/setup` (asistentul de instalare, backup, întreținere), `apps/printing` (forme de tipar, antetul `{% company_header %}`),
+  `apps/help` (instrucțiunile din `docs/`); modulele de cadre: `org` (subdiviziunile, clasificatoare, state), `staff` (dosarele),
   `orders`, `leave`, `worktime`, `payroll`, `alerts` (termene, e-mail, panoul de start), `reports` (catalogul de rapoarte),
   `training`, `health`, `military`, `portal` (cabinetul angajatului).
 - `frontend/` — React 19 + TypeScript + Ant Design 6 (Vite); traducerile în `src/i18n` (`ro*.ts`, `ru*.ts`, `en*.ts`).

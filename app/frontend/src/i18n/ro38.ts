@@ -27,7 +27,7 @@ export default {
       next_month_leave: 'Concediile din luna următoare', roster_missing: 'Graficul lunii următoare lipsește', irm19_due: 'Termenul IRM19',
     },
     smtp: {
-      hint: 'Serverul de e-mail al instituției, prin care se trimit notificările. Parola se păstrează criptat.',
+      hint: 'Serverul de e-mail al întreprinderii, prin care se trimit notificările. Parola se păstrează criptat.',
       enabled: 'Trimiterea pe e-mail este pornită', host: 'Serverul SMTP', port: 'Portul', username: 'Utilizatorul', password: 'Parola',
       from: 'Adresa expeditorului', testTo: 'Adresa pentru probă', test: 'Trimite proba', testOk: 'Proba a fost trimisă la {{to}}.',
     },

@@ -14,11 +14,10 @@ export default {
     ialsHint: 'Annual information note (by 25 January): the year’s income, exemptions by code P / M / Sm / N / H (from the requests), health insurance and tax; control sum = total tax; annex with dependents.',
     irmHint: 'Entries from signed orders: col. 8 — 01 indefinite hiring, 05 fixed-term, 02 termination (col. 9 reason: 113–116), 03 suspension, 04 resumption; cols 5–7 — 157 / 158 childcare, 165 paternity leave. Filed within 10 working days (overdue in red).',
     set: {
-      hint: 'Header data of the electronic returns. Name, IDNO, director and chief accountant come from Constants.',
+      hint: 'Header data of the electronic returns. Name, IDNO, CAEM code, head and chief accountant come from Constants.',
       cnas_code: 'CNAS code (of the payer)', cnasHint: 'Registration code assigned by CNAS (up to 7 digits).',
       sfs_code: 'State Tax Service code', sfsHint: 'The SFS office serving you (2 characters).',
       cuatm: 'Locality code (CUATM)', cuatmHint: 'Code of the head office (4 characters) per the CUATM classifier.',
-      caem: 'Main activity code (CAEM)', caemHint: 'Four-digit code; usually 8610 for hospitals.',
       email: 'Contact e-mail', phone: 'Contact phone', income_source: 'Income source code',
     },
   },

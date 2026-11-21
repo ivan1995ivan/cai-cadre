@@ -16,7 +16,7 @@ export default {
     hint: 'Secțiunile meniului și, în fiecare, grupele Registre / Rapoarte, ca în 1C (setările nu stau în secțiuni: toate sunt la Administrare → Setări). Trageți cu mouse-ul o funcție în altă grupă sau secțiune, ori mai sus / mai jos; aceeași funcție poate sta în mai multe locuri. Secțiunile se mută la fel; alegeți una ca s-o redenumiți sau să-i schimbați iconița. Cine ce vede — bifele de la fiecare rol (Administrare → Setări → Roluri).',
     pool: 'Funcții neafișate',
     poolHint: 'Funcțiile de la „Funcții neafișate” nu sunt în meniu (rămân în program: din favorite sau după adresă): trageți-le într-o grupă ca să apară; o funcție trasă acolo dispare din grupa de unde a fost luată.',
-    icons: { home: 'Principal', org: 'Instituția', crm: 'Angajați', orders: 'Ordine', calendar: 'Calendar', wallet: 'Salariu', training: 'Formare', reports: 'Rapoarte', admin: 'Administrare', star: 'Stea', folder: 'Dosar' },
+    icons: { home: 'Principal', org: 'Întreprinderea', crm: 'Angajați', orders: 'Ordine', calendar: 'Calendar', wallet: 'Salariu', training: 'Formare', reports: 'Rapoarte', admin: 'Administrare', star: 'Stea', folder: 'Dosar' },
   },
   tabs: { closeAll: 'Închide toate', closeAllHint: 'Închide toate paginile deschise și rămâne doar Pagina de start' },
   empPicker: {
@@ -25,5 +25,5 @@ export default {
     occupation: 'Funcția', status: 'Starea', hint: 'Clic pe rând = alege.', hintMany: 'Clic pe rând adaugă angajatul; cei aleși sunt evidențiați.',
     done: 'Gata ({{count}})',
   },
-  subPicker: { open: 'Alege din structura instituției', title: 'Alegerea subdiviziunii', hint: 'Clic pe subdiviziune = alege.' },
+  subPicker: { open: 'Alege din structura întreprinderii', title: 'Alegerea subdiviziunii', hint: 'Clic pe subdiviziune = alege.' },
 }

@@ -3,10 +3,10 @@ export default {
   staff: { tabs: { pay: 'Salariu' } },
   print: { docTypes: { payslip: 'Fișa de calcul (fluturașul)', payroll_sheet: 'Stat de calcul' } },
   pay: {
-    new: 'Calcul nou', whole: 'toată instituția', lines: 'Raporturi', gross: 'Calculat (brut)', tax: 'Impozit', net: 'De plată', cas: 'CAS angajator',
+    new: 'Calcul nou', whole: 'toată întreprinderea', lines: 'Raporturi', gross: 'Calculat (brut)', tax: 'Impozit', net: 'De plată', cas: 'CAS angajator',
     exemption: 'Scutire', deductions: 'Alte rețineri', calculatedAt: 'Calculat la',
-    emptyHint: 'Pentru luna aleasă nu există calcule. „Calcul nou” — toată instituția sau o subdiviziune; se completează singur din pontaj, raporturi de muncă, concedii, foi de boală și ordine.',
-    newHint: 'Gol — toată instituția într-un singur calcul.',
+    emptyHint: 'Pentru luna aleasă nu există calcule. „Calcul nou” — toată întreprinderea sau o subdiviziune; se completează singur din pontaj, raporturi de muncă, concedii, foi de boală și ordine.',
+    newHint: 'Gol — toată întreprinderea într-un singur calcul.',
     heading: 'Calculul salariului nr. {{number}} — {{month}} {{year}}', calculate: 'Recalculează', calculated: 'Recalculat.', check: 'Verificat',
     approve: 'Aprobă', approveConfirm: 'Calculul aprobat nu se mai schimbă; sumele intră în media pentru concedii și în plata salariului. Aprobați?',
     reopenConfirm: 'Calculul revine la ciornă. Continuați?', printSheet: 'Stat de calcul', printSlips: 'Fișele de calcul', printSlip: 'Fișa de calcul',

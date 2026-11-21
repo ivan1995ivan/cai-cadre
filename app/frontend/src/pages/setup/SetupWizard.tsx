@@ -361,30 +361,43 @@ export default function SetupWizard() {
           )}
 
           {current === 'company' && (
-            <Form form={companyForm} layout="vertical" initialValues={{ default_theme: 'green', base_currency: 'MDL' }}>
+            <Form form={companyForm} layout="vertical" initialValues={{ default_theme: 'green', legal_form: 'SRL' }}>
               <Typography.Title level={4}>{t('setup.companyTitle')}</Typography.Title>
+              <Typography.Paragraph type="secondary">{t('setup.companyHint')}</Typography.Paragraph>
               <Row gutter={16}>
                 <Col xs={24} md={12}>
-                  <Form.Item name="name_ro" label={t('constants.name_ro')} rules={[{ required: true, message: t('common.required') }]}>
-                    <Input placeholder="Alimente Grup SRL" />
+                  <Form.Item name="name_ro" label={t('constants.name_ro')} rules={[{ required: true, message: t('common.required') }]}
+                    extra={t('constants.nameHint')}>
+                    <Input placeholder={t('constants.namePlaceholder')} />
                   </Form.Item>
                 </Col>
                 <Col xs={24} md={12}>
                   <Form.Item name="name_ru" label={t('constants.name_ru')}><Input /></Form.Item>
                 </Col>
-                <Col xs={24} md={8}>
+                <Col xs={8} md={4}>
+                  <Form.Item name="legal_form" label={t('constants.legal_form')}><Input placeholder="SRL" /></Form.Item>
+                </Col>
+                <Col xs={16} md={8}>
                   <Form.Item name="idno" label="IDNO" rules={[{ pattern: /^\d{13}$/, message: t('constants.idnoHint') }]}>
                     <Input maxLength={13} />
                   </Form.Item>
                 </Col>
-                <Col xs={24} md={8}>
-                  <Form.Item name="vat_code" label={t('constants.vat_code')}><Input /></Form.Item>
+                <Col xs={12} md={6}>
+                  <Form.Item name="caem" label={t('constants.caem')} rules={[{ pattern: /^\d{2}\.?\d{2}$/, message: t('constants.caemHint') }]}>
+                    <Input maxLength={5} placeholder="6201" />
+                  </Form.Item>
                 </Col>
-                <Col xs={24} md={8}>
+                <Col xs={12} md={6}>
                   <Form.Item name="phone" label={t('constants.phone')}><Input /></Form.Item>
                 </Col>
                 <Col xs={24}>
                   <Form.Item name="legal_address" label={t('constants.legal_address')}><Input /></Form.Item>
+                </Col>
+                <Col xs={24} md={12}>
+                  <Form.Item name="director" label={t('constants.director')}><Input /></Form.Item>
+                </Col>
+                <Col xs={24} md={12}>
+                  <Form.Item name="director_position_ro" label={t('constants.director_position')}><Input placeholder="Director" /></Form.Item>
                 </Col>
                 <Col xs={24} md={12}>
                   <Form.Item name="iban" label="IBAN"><Input placeholder="MD24AG000225100013104168" /></Form.Item>

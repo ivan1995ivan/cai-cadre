@@ -1,5 +1,5 @@
 /** Produsul și producătorul (pagina „Despre program”, ecranul de intrare). Aceleași date: installer/crm.iss, site/index.html.
- * CAI CADRE: evidența cadrelor și salarizarea în instituțiile medicale. */
+ * CAI CADRE: evidența cadrelor și salarizarea în întreprinderile private din Republica Moldova. */
 export const PRODUCT = {
   name: 'CAI CADRE',
   producer: 'Melnic Prim SRL',

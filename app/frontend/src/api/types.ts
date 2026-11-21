@@ -100,38 +100,35 @@ export interface Company {
   id: number
   name_ro: string
   name_ru: string
+  name_en: string
   legal_form: string
   idno: string
-  vat_code: string
+  caem: string
   legal_address: string
   postal_address: string
   phone: string
   email: string
   website: string
   director: string
+  director_position_ro: string
+  director_position_ru: string
   chief_accountant: string
+  chief_accountant_position_ro: string
+  chief_accountant_position_ru: string
+  hr_head: string
+  hr_head_position_ro: string
+  hr_head_position_ru: string
   logo: string | null
   logo_small: string | null
   logo_dark: string | null
   signature: string | null
   stamp: string | null
-  base_currency: string
-  default_vat_rate: string
-  price_rounding: number
   default_theme: ThemeName
   primary_color: string
-  offer_validity_days: number
-  cost_method: 'fifo' | 'average'
-  margin_visible_to_all: boolean
-  min_margin_pct: string
   bank_accounts: BankAccount[]
-  name_en: string
-  founder_ro: string
-  founder_ru: string
-  hr_head: string
-  show_stema: boolean
   payroll_enabled: boolean
   function_panel: boolean
+  languages: Lang[]
 }
 
 export interface Currency {

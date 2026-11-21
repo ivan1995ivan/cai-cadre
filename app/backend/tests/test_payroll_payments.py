@@ -162,9 +162,10 @@ def test_xml_declarations_follow_the_sfs_schemas(admin_client, org):  # noqa: F8
 
     c = Company.get()
     c.idno, c.name_ro, c.director, c.chief_accountant = "1003600012345", "IMSP Spitalul Clinic", "Director", "Contabil"
+    c.caem = "8610"  # din Constante (nu mai e în setările declarațiilor)
     c.save()
     admin_client.put("/api/payroll/tax-reports/settings/", {"cnas_code": "1234567", "sfs_code": "01", "cuatm": "0100",
-                                                           "caem": "8610", "email": "hr@spital.md", "phone": "022000000"}, format="json")
+                                                           "email": "hr@spital.md", "phone": "022000000"}, format="json")
     ion, job = person(org, "Popescu", "Ion")
     ion.idnp = "2001000123456"
     ion.save()
@@ -181,6 +182,7 @@ def test_xml_declarations_follow_the_sfs_schemas(admin_client, org):  # noqa: F8
     assert r.status_code == 200 and r["Content-Disposition"].endswith('IPC21-2026-03.xml"')
     root = ET.fromstring(r.content)
     assert root.get("TypeName") == "IPC21" and root.findtext("peroidnalog/datefisc") == "L/03/2026"
+    assert root.findtext("fiscCod/caem") == "8610"
     gross = sum(ln.gross for ln in Payroll.objects.get(month=3).lines.all())
     assert root.findtext("table1/row/r11c4") == f"{gross:.2f}" == root.findtext("table1/row/r61c4")
     assert root.findtext("summContr") == root.findtext("table1/row/r11c5")

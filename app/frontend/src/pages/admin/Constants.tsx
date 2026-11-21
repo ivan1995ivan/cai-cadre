@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
-  Checkbox, Button, Card, Col, ColorPicker, Form, Input, Modal, Popconfirm, Row, Select, Space, Switch, Tabs, Tag, Typography, Upload, message,
+  Checkbox, Button, Card, Col, ColorPicker, Divider, Form, Input, Modal, Popconfirm, Row, Select, Space, Switch, Tabs, Tag, Typography, Upload, message,
 } from 'antd'
 import Table from '../../components/AppTable'
 import { DeleteOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons'
@@ -155,32 +155,40 @@ export default function Constants() {
               key: 'company', label: t('constants.tabs.company'), forceRender: true,
               children: (
                 <Card>
+                  <Typography.Paragraph type="secondary">{t('constants.companyHint')}</Typography.Paragraph>
                   <FormLayout formKey="constants-company"><Row gutter={16}>
+                    <Divider titlePlacement="start" style={{ marginTop: 0 }}>{t('constants.sections.identity')}</Divider>
                     <Col xs={24} md={12}>
-                      <Form.Item name="name_ro" label={t('constants.name_ro')} rules={[{ required: true, message: t('common.required') }]}><Input /></Form.Item>
+                      <Form.Item name="name_ro" label={t('constants.name_ro')} rules={[{ required: true, message: t('common.required') }]}
+                        extra={t('constants.nameHint')}><Input placeholder={t('constants.namePlaceholder')} /></Form.Item>
                     </Col>
                     {languages.includes('ru') && <Col xs={24} md={12}><Form.Item name="name_ru" label={t('constants.name_ru')}><Input /></Form.Item></Col>}
+                    {languages.includes('en') && <Col xs={24} md={12}><Form.Item name="name_en" label={t('constants.name_en')}><Input /></Form.Item></Col>}
                     <Col xs={8} md={4}><Form.Item name="legal_form" label={t('constants.legal_form')}><Input placeholder="SRL" /></Form.Item></Col>
                     <Col xs={16} md={6}>
                       <Form.Item name="idno" label="IDNO" rules={[{ pattern: /^\d{13}$/, message: t('constants.idnoHint') }]}><Input maxLength={13} /></Form.Item>
                     </Col>
-                    <Col xs={24} md={6}><Form.Item name="vat_code" label={t('constants.vat_code')}><Input /></Form.Item></Col>
-                    <Col xs={24} md={8}><Form.Item name="phone" label={t('constants.phone')}><Input /></Form.Item></Col>
+                    <Col xs={24} md={6}>
+                      <Form.Item name="caem" label={t('constants.caem')} extra={t('constants.caemHint')}
+                        rules={[{ pattern: /^\d{2}\.?\d{2}$/, message: t('constants.caemHint') }]}><Input maxLength={5} placeholder="6201" /></Form.Item>
+                    </Col>
+                    <Divider titlePlacement="start">{t('constants.sections.contacts')}</Divider>
                     <Col xs={24} md={12}><Form.Item name="legal_address" label={t('constants.legal_address')}><Input /></Form.Item></Col>
                     <Col xs={24} md={12}><Form.Item name="postal_address" label={t('constants.postal_address')}><Input /></Form.Item></Col>
+                    <Col xs={24} md={8}><Form.Item name="phone" label={t('constants.phone')}><Input /></Form.Item></Col>
                     <Col xs={24} md={8}><Form.Item name="email" label="E-mail" rules={[{ type: 'email' }]}><Input /></Form.Item></Col>
                     <Col xs={24} md={8}><Form.Item name="website" label={t('constants.website')}><Input /></Form.Item></Col>
-                    <Col xs={24} md={12}><Form.Item name="director" label={t('constants.director')}><Input /></Form.Item></Col>
-                    <Col xs={24} md={12}><Form.Item name="chief_accountant" label={t('constants.chief_accountant')}><Input /></Form.Item></Col>
-                    <Col xs={24} md={12}><Form.Item name="hr_head" label={t('constants.hr_head')}><Input /></Form.Item></Col>
-                    {languages.includes('en') && <Col xs={24} md={12}><Form.Item name="name_en" label={t('constants.name_en')}><Input /></Form.Item></Col>}
-                    <Col xs={24} md={12}>
-                      <Form.Item name="founder_ro" label={t('constants.founder_ro')} extra={t('constants.founderHint')}><Input placeholder="MINISTERUL SĂNĂTĂȚII" /></Form.Item>
-                    </Col>
-                    {languages.includes('ru') && <Col xs={24} md={12}><Form.Item name="founder_ru" label={t('constants.founder_ru')}><Input placeholder="МИНИСТЕРСТВО ЗДРАВООХРАНЕНИЯ" /></Form.Item></Col>}
-                    <Col xs={24} md={12}>
-                      <Form.Item name="show_stema" label={t('constants.show_stema')} valuePropName="checked" extra={t('constants.show_stemaHint')}><Switch /></Form.Item>
-                    </Col>
+                    <Divider titlePlacement="start">{t('constants.sections.signers')}</Divider>
+                    <Col xs={24}><Typography.Text type="secondary">{t('constants.signersHint')}</Typography.Text></Col>
+                    <Col xs={24} md={8}><Form.Item name="director" label={t('constants.director')}><Input /></Form.Item></Col>
+                    <Col xs={24} md={8}><Form.Item name="director_position_ro" label={t('constants.position_ro')}><Input placeholder="Director" /></Form.Item></Col>
+                    {languages.includes('ru') && <Col xs={24} md={8}><Form.Item name="director_position_ru" label={t('constants.position_ru')}><Input placeholder="Директор" /></Form.Item></Col>}
+                    <Col xs={24} md={8}><Form.Item name="chief_accountant" label={t('constants.chief_accountant')}><Input /></Form.Item></Col>
+                    <Col xs={24} md={8}><Form.Item name="chief_accountant_position_ro" label={t('constants.position_ro')}><Input placeholder="Contabil-șef" /></Form.Item></Col>
+                    {languages.includes('ru') && <Col xs={24} md={8}><Form.Item name="chief_accountant_position_ru" label={t('constants.position_ru')}><Input placeholder="Главный бухгалтер" /></Form.Item></Col>}
+                    <Col xs={24} md={8}><Form.Item name="hr_head" label={t('constants.hr_head')}><Input /></Form.Item></Col>
+                    <Col xs={24} md={8}><Form.Item name="hr_head_position_ro" label={t('constants.position_ro')}><Input placeholder="Șef resurse umane" /></Form.Item></Col>
+                    {languages.includes('ru') && <Col xs={24} md={8}><Form.Item name="hr_head_position_ru" label={t('constants.position_ru')}><Input placeholder="Начальник отдела кадров" /></Form.Item></Col>}
                   </Row></FormLayout>
                 </Card>
               ),

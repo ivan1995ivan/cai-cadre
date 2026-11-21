@@ -26,7 +26,7 @@ export default {
       next_month_leave: 'Next month leave', roster_missing: 'Next month roster missing', irm19_due: 'IRM19 deadline',
     },
     smtp: {
-      hint: 'The institution mail server used to send notifications. The password is stored encrypted.',
+      hint: 'The company mail server used to send notifications. The password is stored encrypted.',
       enabled: 'E-mail sending is on', host: 'SMTP server', port: 'Port', username: 'User', password: 'Password',
       from: 'Sender address', testTo: 'Test address', test: 'Send test', testOk: 'Test sent to {{to}}.',
     },

@@ -1,4 +1,4 @@
-{% gov_header %}
+{% company_header %}
 
 <div class="doc-title">{{ texts.title }}</div>
 <div class="doc-subtitle">{{ texts.subtitle }} · nr. de tabel <b>{{ emp.tab_number }}</b></div>
@@ -48,9 +48,9 @@
   {% empty %}<tr><td colspan="4" class="muted">—</td></tr>{% endfor %}
   </tbody>
 </table>
-<p style="margin:4px 0">Vechimea totală: <b>{{ seniority.total }}</b> · în sistemul sănătății: <b>{{ seniority.healthcare }}</b> · în specialitate: <b>{{ seniority.specialty }}</b> · în instituție: <b>{{ seniority.institution }}</b></p>
+<p style="margin:4px 0">Vechimea totală: <b>{{ seniority.total }}</b> · în specialitate: <b>{{ seniority.specialty }}</b> · în întreprindere: <b>{{ seniority.institution }}</b></p>
 
-<h2 class="group">IV. Angajări, transferuri, modificări în instituție</h2>
+<h2 class="group">IV. Angajări, transferuri, modificări în întreprindere</h2>
 <table class="grid">
   <thead><tr><th style="width:22mm">Data</th><th>Mențiunea</th><th>Subdiviziunea</th><th>Funcția</th><th style="width:14mm">Norma</th>{% if options.show_salary %}<th>Salariul</th>{% endif %}<th>Temeiul (ordinul)</th></tr></thead>
   <tbody>
@@ -73,15 +73,13 @@
 </table>
 {% endif %}
 
-{% if options.show_military %}
+{% if options.show_military and military %}
 <h2 class="group">VI. Evidența militară</h2>
-{% if military %}
 <table class="grid">
   <tr><th style="text-align:left; width:42mm">Starea</th><td>{{ military.status }}</td><th style="text-align:left; width:36mm">Categoria / grupa</th><td>{{ military.category }} {{ military.group }}</td></tr>
   <tr><th style="text-align:left">Componența / gradul</th><td>{{ military.composition }} {{ military.rank }}</td><th style="text-align:left">Specialitatea militară</th><td>{{ military.specialty }}</td></tr>
   <tr><th style="text-align:left">Centrul militar</th><td>{{ military.center }}</td><th style="text-align:left">Apt / livret</th><td>{% if military.fit %}apt{% else %}inapt{% endif %} · {{ military.book }}</td></tr>
 </table>
-{% else %}<p class="muted">—</p>{% endif %}
 {% endif %}
 
 <div class="signatures">

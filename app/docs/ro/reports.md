@@ -13,7 +13,7 @@ angajaților, ocuparea posturilor, registrul ordinelor, soldurile concediilor, p
    **subdiviziunea** (cu subdiviziunile ei), **categoria de personal**, **doar raporturile de bază** sau *și cumulul /
    suplinirea*, **tipul absenței**. Raportul se recalculează imediat.
 2. Sus apar indicatorii pe scurt (de exemplu efectivul la început și la sfârșit), dedesubt — tabelul cu secțiuni și total.
-3. **Excel** descarcă exact ce vedeți (dreptul *Rapoarte → export*). **Tipar** — cu Stema, antetul instituției și
+3. **Excel** descarcă exact ce vedeți (dreptul *Rapoarte → export*). **Tipar** — cu antetul întreprinderii și
    semnătura (forma „Raport” din *Administrare → Setări → Forme de tipar*).
 
 Șeful de secție vede în rapoarte doar secțiile lui.

@@ -20,8 +20,8 @@ ZERO = Decimal("0")
 MONTHS = ["", "ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie", "august", "septembrie", "octombrie",
           "noiembrie", "decembrie"]
 SETTINGS_KEY = "tax_report_settings"
-# datele din antetul declarațiilor (pe lângă cele din Constante: IDNO, denumirea, directorul, contabilul-șef)
-DEFAULTS = {"income_source": "SAL", "cnas_code": "", "sfs_code": "", "cuatm": "", "caem": "", "email": "", "phone": ""}
+# datele din antetul declarațiilor (pe lângă cele din Constante: IDNO, CAEM, denumirea, directorul, contabilul-șef)
+DEFAULTS = {"income_source": "SAL", "cnas_code": "", "sfs_code": "", "cuatm": "", "email": "", "phone": ""}
 SETTINGS_FIELDS = list(DEFAULTS)
 
 
@@ -40,7 +40,7 @@ def header_problems() -> list:
     c, cfg = Company.get(), get_settings()
     missing = [label for label, value in (("IDNO (Constante)", c.idno), ("codul CNAS", cfg["cnas_code"]),
                                           ("codul Serviciului Fiscal de Stat", cfg["sfs_code"]), ("CUATM", cfg["cuatm"]),
-                                          ("CAEM", cfg["caem"])) if not value]
+                                          ("CAEM (Constante)", c.caem)) if not value]
     return missing
 
 

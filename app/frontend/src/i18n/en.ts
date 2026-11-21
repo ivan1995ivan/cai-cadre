@@ -9,7 +9,7 @@ export default {
   },
   menu: {
     dashboard: 'Home', portal: 'My cabinet',
-    org: 'Institution and departments', staffList: 'Staff list', dictionaries: 'Classifiers',
+    org: 'Company and departments', staffList: 'Staff list', dictionaries: 'Classifiers',
     employees: 'Employees', contracts: 'Employment contracts',
     orders: 'Orders', ordersRegister: 'Orders register',
     leave: 'Leave', leaveSchedule: 'Leave schedule', sickLeave: 'Sick leave', worktime: 'Work schedules and shifts',
@@ -17,17 +17,17 @@ export default {
     payroll: 'Payroll calculation', payrollPayments: 'Payment and payout', payrollSettings: 'Payroll settings', taxReports: 'Tax reports (IPC21, IALS21, IRM19)',
     training: 'Training and attestation', health: 'Occupational health', military: 'Military records',
     reports: 'Reports',
-    users: 'Users', online: 'Who is online', roles: 'Roles and permissions', constants: 'Constants (institution)',
+    users: 'Users', online: 'Who is online', roles: 'Roles and permissions', constants: 'Constants (company)',
     currencies: 'Currencies', numbering: 'Document numbering', printTemplates: 'Print forms', excelImport: 'Import from Excel',
     audit: 'Audit log', mainMenu: 'Main menu', localities: 'Localities', banks: 'Banks',
     requiredFields: 'Required fields', maintenance: 'Maintenance', license: 'License',
   },
   menuSections: {
-    principal: 'Home', institutia: 'Institution', angajati: 'Employees', ordine: 'Orders', concedii: 'Leave and working time',
+    principal: 'Home', institutia: 'Company', angajati: 'Employees', ordine: 'Orders', concedii: 'Leave and working time',
     salarii: 'Payroll', formare: 'Training and records', rapoarte: 'Reports', administrare: 'Administration', altele: 'Other',
   },
   dashboard: {
-    title: 'Home', welcome: 'Hello, {{name}}! The institution indicators appear here together with the HR modules.',
+    title: 'Home', welcome: 'Hello, {{name}}! The company indicators appear here together with the HR modules.',
     employees: 'Active employees', vacancies: 'Vacant positions', onLeave: 'On leave today', sick: 'On sick leave today',
   },
 }

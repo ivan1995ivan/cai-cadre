@@ -16,39 +16,16 @@ import { useUnsavedGuard } from '../../components/UnsavedGuard'
 
 interface DocType { code: string; name: string; ready: boolean }
 
-const VARIABLES: Record<string, string> = {
-  price_list: `company.name, company.idno, company.phone, company.email, company.address, company.logo, company.stamp,
-company.accent, company.bank_accounts[ ].iban / bank
-price_list.name, price_list.currency, price_list.include_vat, price_list.decimals
-today, lang, t.<etichetă> (texte RO/RU), item_count
-options.show_images, options.show_codes, options.group_by_category, options.only_with_price
-groups[ ].category, groups[ ].items[ ].sku / name / unit / price / image / color_hex / brand
-Filtre: {{ valoare|money }}  {{ valoare|money:0 }}  {{ cantitate|qty }}`,
-  assortment_offer: `company.name, company.idno, company.phone, company.email, company.address, company.logo, company.stamp, company.signature
-doc.number, doc.date, doc.year, doc.valid_from, doc.title, doc.comment, doc.client, doc.client_idno, doc.client_address,
-doc.client_phone, doc.manager, doc.price_list, doc.operation, doc.status, doc.sites, doc.positions
-texts.title / subtitle / header / footer / buyer_label / supplier_label / sign_hint (fila „Simplu”)
-options.show_company, options.show_signatures, options.show_stamp, options.delisted_first
-columns[ ].title / width / align   — coloanele alese în fila „Coloanele tabelului”
-groups[ ].name (Produse noi / Produse delistate), groups[ ].rows[ ].cells[ ].value / align / image
-rows[ ].no / price_vat / price_no_vat / new_price_vat / ... (valorile rândului, fără coloane)`,
-  assortment_change: `company.name, company.idno, company.phone, company.email, company.address, company.logo, company.stamp, company.signature
-doc.number, doc.date, doc.year, doc.valid_from, doc.title, doc.comment, doc.client, doc.client_idno, doc.client_address,
-doc.client_phone, doc.manager, doc.price_list, doc.operation, doc.status, doc.sites, doc.positions
-texts.title / subtitle / header / footer / buyer_label / supplier_label / sign_hint (fila „Simplu”)
-options.show_company, options.show_signatures, options.show_stamp, options.delisted_first
-columns[ ].title / width / align   — coloanele alese în fila „Coloanele tabelului”
-groups[ ].name (Produse noi / Produse delistate), groups[ ].rows[ ].cells[ ].value / align / image
-rows[ ].no / price_vat / price_no_vat / new_price_vat / ... (valorile rândului, fără coloane)`,
-  assortment_price: `company.name, company.idno, company.phone, company.email, company.address, company.logo, company.stamp, company.signature
-doc.number, doc.date, doc.year, doc.valid_from, doc.title, doc.comment, doc.client, doc.client_idno, doc.client_address,
-doc.client_phone, doc.manager, doc.price_list, doc.operation, doc.status, doc.sites, doc.positions
-texts.title / subtitle / header / footer / buyer_label / supplier_label / sign_hint (fila „Simplu”)
-options.show_company, options.show_signatures, options.show_stamp, options.delisted_first
-columns[ ].title / width / align   — coloanele alese în fila „Coloanele tabelului”
-groups[ ].name (Produse noi / Produse delistate), groups[ ].rows[ ].cells[ ].value / align / image
-rows[ ].no / price_vat / price_no_vat / new_price_vat / ... (valorile rândului, fără coloane)`,
-}
+/** Datele întreprinderii (din Constante), aceleași în toate formele; datele documentului — în formele livrate. */
+const COMPANY_VARIABLES = `{% company_header %}  — antetul: logo-ul, denumirea, IDNO, CAEM, adresa, contactele, contul bancar implicit
+company.full_name (cu forma juridică), company.name, company.legal_form, company.idno, company.caem
+company.address, company.postal_address, company.phone, company.email, company.website
+company.logo, company.stamp, company.signature  (imaginile din Constante, puse în pagină)
+company.director / director_position, company.chief_accountant / chief_accountant_position,
+company.hr_head / hr_head_position  (numele și funcțiile semnatarilor, în limba formei)
+company.bank.iban / bank / bic (contul implicit), company.bank_accounts[ ].iban / bank / bic / currency
+lang, today, texts.<cheie> (fila „Simplu”), options.<opțiune>, style.show_logo
+Filtre: {{ valoare|money }}  {{ valoare|money:0 }}  {{ cantitate|qty }}`
 
 const mono: React.CSSProperties = { fontFamily: 'Consolas, "Courier New", monospace', fontSize: 12.5 }
 
@@ -57,7 +34,7 @@ export default function PrintTemplates() {
   const { hasPerm, languages } = useApp()
   const canEdit = hasPerm('settings.edit')
   const docTypes = useFetch<DocType[]>('/print-templates/doc-types/')
-  const [docType, setDocType] = useState('price_list')
+  const [docType, setDocType] = useState('order')
   const { data: templates, reload } = useFetch<PrintTemplate[]>('/print-templates/', { doc_type: docType })
   const [current, setCurrent] = useState<PrintTemplate | null>(null)
   const [draft, setDraft] = useState<PrintTemplate | null>(null)
@@ -250,12 +227,10 @@ export default function PrintTemplates() {
                         readOnly={!canEdit} spellCheck={false} style={{ ...mono, height: '58vh' }} placeholder={t('print.cssHint')} />,
                     },
                   ]} />
-                  {VARIABLES[docType] && (
-                    <Collapse size="small" items={[{
-                      key: 'vars', label: t('print.variables'),
-                      children: <pre style={{ ...mono, whiteSpace: 'pre-wrap', margin: 0 }}>{VARIABLES[docType]}</pre>,
-                    }]} />
-                  )}
+                  <Collapse size="small" items={[{
+                    key: 'vars', label: t('print.variables'),
+                    children: <pre style={{ ...mono, whiteSpace: 'pre-wrap', margin: 0 }}>{COMPANY_VARIABLES}</pre>,
+                  }]} />
                 </Col>
                 <Col xs={24} xl={12}>
                   <Space style={{ marginBottom: 8 }}>

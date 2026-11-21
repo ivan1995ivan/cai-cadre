@@ -1,7 +1,7 @@
 // CAI CADRE — Stage 4 (part 2): working time.
 export default {
   menu: { rosters: 'Monthly roster (duties)' },
-  print: { docTypes: { roster: 'Department monthly roster (duties)' } },
+  print: { docTypes: { roster: 'Monthly work roster (shifts)' } },
   wt: {
     off: 'off', rosters: 'Department monthly roster (shifts, duties)',
     weekdays: { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' },

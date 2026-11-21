@@ -226,7 +226,7 @@ def test_print_order_extract_and_register_with_gaps(admin_client, org):
     from apps.core.models import Company
 
     company = Company.get()
-    company.director, company.founder_ro = "Ion Director", "Ministerul Sănătății"
+    company.director = "Ion Director"
     company.save()
     a, b = hired(org), hired(org, "Rusu", "Ana")
     order = make_order(admin_client, "leave_annual", [a, b])
@@ -238,7 +238,7 @@ def test_print_order_extract_and_register_with_gaps(admin_client, org):
     html = admin_client.get(f"/api/orders/orders/{order['id']}/print/").content.decode()
     assert "ORDIN" in html and "ORDON:" in html and f"<b>{signed['number']}</b>" in html
     assert "Popescu Ion" in html and "Rusu Ana" in html and "Am luat cunoștință" in html and "Ion Director" in html
-    assert "data:image/svg+xml" in html
+    assert 'class="company-header"' in html and "REPUBLICA MOLDOVA" not in html and "data:image/svg+xml" not in html
     extract = admin_client.get(f"/api/orders/orders/{order['id']}/print/", {"item": signed["items"][1]["id"]}).content.decode()
     assert "EXTRAS" in extract and "Rusu Ana" in extract and "Popescu Ion" not in extract
     admin_client.post(f"/api/orders/orders/{order['id']}/acknowledge/", {"date": "2026-06-25"}, format="json")

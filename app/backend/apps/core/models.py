@@ -10,31 +10,34 @@ def _upload_to(instance, filename):
 
 
 class Company(models.Model):
-    """Constantele firmei (un singur rând, id=1)."""
+    """Constantele întreprinderii (un singur rând, id=1): datele din antetul formelor și din declarații, semnatarii."""
 
-    COST_METHODS = [("fifo", "FIFO"), ("average", "Cost mediu")]
     THEMES = [("green", "Verde"), ("turquoise", "Turcoaz"), ("blue", "Albastru"), ("dark", "Întunecată"),
               ("onec", "Ca în 1C (galben)")]
 
     name_ro = models.CharField("Denumire (RO)", max_length=200)
     name_ru = models.CharField("Denumire (RU)", max_length=200, blank=True)
-    legal_form = models.CharField("Formă juridică", max_length=20, blank=True)
+    name_en = models.CharField("Denumire (EN)", max_length=200, blank=True)
+    legal_form = models.CharField("Formă juridică", max_length=20, blank=True, help_text="De ex. SRL, SA, ÎI")
     idno = models.CharField("IDNO", max_length=13, blank=True)
-    vat_code = models.CharField("Cod TVA", max_length=20, blank=True)
+    caem = models.CharField("Codul CAEM (genul principal de activitate)", max_length=4, blank=True,
+                            help_text="Patru cifre, fără punct (de ex. 6201); intră în antetul declarațiilor IPC21 / IALS21.")
     legal_address = models.CharField("Adresa juridică", max_length=300, blank=True)
     postal_address = models.CharField("Adresa poștală", max_length=300, blank=True)
     phone = models.CharField(max_length=64, blank=True)
     email = models.EmailField(blank=True)
     website = models.CharField(max_length=200, blank=True)
-    director = models.CharField("Director", max_length=150, blank=True)
-    chief_accountant = models.CharField("Contabil-șef", max_length=150, blank=True)
-    # CAI CADRE: instituția medicală
-    name_en = models.CharField("Denumire (EN)", max_length=200, blank=True)
-    founder_ro = models.CharField("Fondatorul (antetul formelor), RO", max_length=200, blank=True,
-                                  help_text="De ex. MINISTERUL SĂNĂTĂȚII sau CONSILIUL RAIONAL …")
-    founder_ru = models.CharField("Fondatorul, RU", max_length=200, blank=True)
-    hr_head = models.CharField("Șef resurse umane", max_length=150, blank=True)
-    show_stema = models.BooleanField("Stema de Stat în antetul formelor", default=True)
+    # Semnatarii formelor: numele și funcția (RO / RU); funcția goală = denumirea obișnuită (Director, Contabil-șef …)
+    director = models.CharField("Conducătorul (numele)", max_length=150, blank=True)
+    director_position_ro = models.CharField("Funcția conducătorului (RO)", max_length=100, blank=True,
+                                            help_text="De ex. Director, Director general, Administrator")
+    director_position_ru = models.CharField("Funcția conducătorului (RU)", max_length=100, blank=True)
+    chief_accountant = models.CharField("Contabil-șef (numele)", max_length=150, blank=True)
+    chief_accountant_position_ro = models.CharField("Funcția contabilului (RO)", max_length=100, blank=True)
+    chief_accountant_position_ru = models.CharField("Funcția contabilului (RU)", max_length=100, blank=True)
+    hr_head = models.CharField("Responsabilul de personal (numele)", max_length=150, blank=True)
+    hr_head_position_ro = models.CharField("Funcția responsabilului de personal (RO)", max_length=100, blank=True)
+    hr_head_position_ru = models.CharField("Funcția responsabilului de personal (RU)", max_length=100, blank=True)
     payroll_enabled = models.BooleanField("Modulul Salarizare (livrare cu salariu)", default=True)
     function_panel = models.BooleanField(
         "Panoul funcțiilor (ca în 1C)", default=False,
@@ -48,25 +51,16 @@ class Company(models.Model):
     signature = models.FileField(upload_to=_upload_to, blank=True)
     stamp = models.FileField(upload_to=_upload_to, blank=True)
 
-    base_currency = models.CharField(max_length=3, default="MDL")
-    default_vat_rate = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal("20"))
-    price_rounding = models.PositiveSmallIntegerField("Zecimale la prețuri", default=2)
     default_theme = models.CharField(max_length=12, choices=THEMES, default="green")
     primary_color = models.CharField("Culoare principală proprie", max_length=7, blank=True)
-    offer_validity_days = models.PositiveSmallIntegerField(default=10)
-    # Controlul marjei
-    margin_visible_to_all = models.BooleanField(
-        "Toți utilizatorii cu acces la vânzări văd marja", default=False,
-        help_text="Dacă e bifat, marja și costul nu se mai ascund prin rol (setarea pe utilizator are prioritate).",
-    )
-    min_margin_pct = models.DecimalField(
-        "Marja minimă (%)", max_digits=5, decimal_places=2, default=Decimal("0"),
-        help_text="Sub această marjă documentul cere aprobare. Rolul poate avea o marjă minimă proprie.",
-    )
-    cost_method = models.CharField(max_length=10, choices=COST_METHODS, default="fifo")
-    DISCOUNT_MODES = [("sum", "Se cumulează"), ("max", "Se aplică doar cel mai mare")]
-    discount_mode = models.CharField("Discounturile automate", max_length=4, choices=DISCOUNT_MODES, default="sum")
     installed_at = models.DateTimeField(default=timezone.now)
+
+    # Funcțiile semnatarilor când nu sunt scrise în Constante: (RO, RU, EN)
+    DEFAULT_POSITIONS = {
+        "director": ("Director", "Директор", "Director"),
+        "chief_accountant": ("Contabil-șef", "Главный бухгалтер", "Chief accountant"),
+        "hr_head": ("Șef resurse umane", "Начальник отдела кадров", "Head of HR"),
+    }
 
     class Meta:
         verbose_name = "Constante"
@@ -83,6 +77,23 @@ class Company(models.Model):
             return obj if obj is not None else cls.objects.create(pk=1, name_ro="Firma mea")
 
         return request_cache.get("company", load)  # o singură citire pe cerere (se cere pe fiecare rând / linie)
+
+    def position(self, who: str, lang: str = "ro") -> str:
+        """Funcția semnatarului (`director`, `chief_accountant`, `hr_head`) în limba formei. Nescrisă în limba formei —
+        cea scrisă în română (e funcția reală din actele firmei); nescrisă deloc — denumirea obișnuită."""
+        ro, ru, en = self.DEFAULT_POSITIONS[who]
+        own_ro, own_ru = getattr(self, f"{who}_position_ro").strip(), getattr(self, f"{who}_position_ru").strip()
+        if lang == "ru":
+            return own_ru or own_ro or ru
+        return own_ro or (en if lang == "en" else ro)
+
+    def display_name(self, lang: str = "ro") -> str:
+        """Denumirea în limba formei, cu forma juridică dacă nu e scrisă deja în denumire: „Exemplu” SRL."""
+        name = (lang == "ru" and self.name_ru) or (lang == "en" and self.name_en) or self.name_ro
+        form = (self.legal_form or "").strip()
+        if form and form.casefold().replace(".", "") not in name.casefold().replace(".", "").split():
+            name = f"{name} {form}"
+        return name
 
     def enabled_languages(self) -> list:
         """Limbile în care lucrează sistemul (bifele din Constante); fără bife — toate trei."""

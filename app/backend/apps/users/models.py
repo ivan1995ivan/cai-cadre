@@ -167,8 +167,7 @@ class User(AbstractUser):
         Regula generală: un câmp e ascuns doar dacă e ascuns în TOATE rolurile utilizatorului.
         Pentru marjă și cost, în ordinea priorității:
           1. bifa de pe utilizator (vede / nu vede);
-          2. bifa firmei „toți văd marja” (din Constante);
-          3. rolurile.
+          2. rolurile.
         Administratorul vede totul.
         """
         if self.is_crm_admin:
@@ -184,11 +183,6 @@ class User(AbstractUser):
             hidden -= self.MARGIN_FIELDS
         elif self.margin_visibility == "hide":
             hidden |= self.MARGIN_FIELDS
-        else:
-            from apps.core.models import Company
-
-            if Company.get().margin_visible_to_all:
-                hidden -= self.MARGIN_FIELDS
         return hidden
 
     def can_see_margin(self) -> bool:
@@ -196,9 +190,7 @@ class User(AbstractUser):
 
     def min_margin(self) -> Decimal:
         """Marja minimă sub care documentele cer aprobare (cea mai permisivă dintre roluri)."""
-        from apps.core.models import Company
-
         if self.is_crm_admin:
             return Decimal("0")
         values = [r.min_margin for r in self._role_cache() if r.min_margin is not None]
-        return min(values) if values else Company.get().min_margin_pct
+        return min(values) if values else Decimal("0")

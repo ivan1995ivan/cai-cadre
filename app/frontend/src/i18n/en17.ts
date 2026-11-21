@@ -23,5 +23,5 @@ export default {
     occupation: 'Position', status: 'Status', hint: 'Click a row to choose.', hintMany: 'Click a row to add the employee; chosen ones are highlighted.',
     done: 'Done ({{count}})',
   },
-  subPicker: { open: 'Choose from the institution structure', title: 'Choose a department', hint: 'Click a department to choose.' },
+  subPicker: { open: 'Choose from the company structure', title: 'Choose a department', hint: 'Click a department to choose.' },
 }

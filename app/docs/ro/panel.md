@@ -1,7 +1,7 @@
 # Panoul funcțiilor
 
 Meniul ca în 1C: secțiunile programului stau **sus, ca file**, iar clic pe o secțiune deschide **panoul** ei. Se
-pornește pentru toată instituția din [Constante → Module](help:admin/constants) (*Panoul funcțiilor (ca în 1C)*); oprit,
+pornește pentru toată întreprinderea din [Constante → Module](help:admin/constants) (*Panoul funcțiilor (ca în 1C)*); oprit,
 meniul e cel obișnuit, în stânga.
 
 ## Ce are panoul unei secțiuni
