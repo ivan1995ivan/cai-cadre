@@ -15,7 +15,7 @@ import SubdivisionSelect from '../../components/SubdivisionSelect'
 import type { OccupationPayItem, PlannedRow } from '../../api/payroll'
 import { useApp } from '../../auth/AppContext'
 import PlannedRowsInput from '../payroll/PlannedRows'
-import { CombinationFields, HourRatesInput, type HourRateRow } from '../worktime/HourRates'
+import { CombinationFields, HourRatesInput, combinationPay, type HourRateRow } from '../worktime/HourRates'
 
 export const DATE_KEYS = ['date_from', 'date_to', 'probation_until', 'contract_date', 'work_year_from', 'work_year_to']
 
@@ -198,7 +198,7 @@ export default function ItemParams({ form, effect, code, employee, disabled, onC
       {combMode !== 'separate' && combAction === 'stop' ? <>
         <Col xs={24}><Form.Item name="combination" label={t('ht.comb.title')} rules={[{ required: true }]}>
           <Select options={existing.filter((c) => !c.date_to || c.date_to >= dayjs().format('YYYY-MM-DD')).map((c) => ({ value: c.id,
-            label: `${c.kind_label}: ${c.occupation_name} — ${c.value_text} (${dayjs(c.date_from).format('DD.MM.YYYY')} – ${c.date_to ? dayjs(c.date_to).format('DD.MM.YYYY') : '…'})` }))} />
+            label: `${t(`ht.comb.kinds.${c.kind}`)}: ${c.occupation_name} — ${combinationPay(t, c)} (${dayjs(c.date_from).format('DD.MM.YYYY')} – ${c.date_to ? dayjs(c.date_to).format('DD.MM.YYYY') : '…'})` }))} />
         </Form.Item></Col>
         <Col xs={24} md={12}>{date('date_to', t('ht.comb.lastDay'), true)}</Col>
       </> : combMode !== 'separate' ? <>

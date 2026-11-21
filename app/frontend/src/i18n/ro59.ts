@@ -9,6 +9,7 @@ export default {
     payModes: { salary: 'Salariu lunar', hourly: 'Tarif orar', hour_types: 'Pe tipuri de ore', mixed: 'Mixt: salariu + tarife pe ore' },
     payShort: { salary: 'salariu', hourly: 'tarif orar', hour_types: 'tarife pe tipuri de ore', mixed: 'salariu + tarife' },
     rates: {
+      hoursMonth: 'ore/lună',
       title: 'Tarife pe tipuri de ore', rate: 'Tariful (lei pe oră)', guaranteed: 'Ore garantate pe lună',
       guaranteedHint: 'Minimul plătit: se plătesc max(orele efective, garantate). Garanția lunii se reduce cu zilele fără raport, suspendarea și absențele din setare.',
       orderHint: 'La semnare rândurile intră pe raportul de muncă al ordinului; anularea ordinului le scoate. „Modifică” închide tariful în vigoare în ajunul datei și deschide unul nou; „Oprește” pune „până la”. Tarifele se plătesc la modalitatea „Pe tipuri de ore” sau „Mixt”.',
@@ -17,6 +18,7 @@ export default {
       occupationTitle: 'Tarifele-tip pe tipuri de ore', occupationHint: 'La angajare tabelul „Tarife pe tipuri de ore” din ordin se completează din ele.',
     },
     comb: {
+      payText: { pct_own: '{{value}} % din salariul propriu', pct_other: '{{value}} % din salariul funcției ({{salary}} lei)', fixed: '{{value}} lei pe lună', hourly: '{{value}} lei pe oră ({{code}})' },
       title: 'Funcții exercitate în plus pe același contract (cumulare, suplinire, interimat)', none: 'Nu are cumulări / supliniri.',
       kind: 'Felul', occupation: 'Funcția cumulată / suplinită', for: 'pentru {{name}}', pay: 'Plata', payMode: 'Modalitatea plății',
       kinds: { combination: 'Cumularea funcțiilor (profesiilor)', substitution: 'Suplinirea salariatului temporar absent', acting: 'Interimatul funcției' },
@@ -31,7 +33,7 @@ export default {
       action: 'Ce face ordinul', actions: { add: 'Stabilește cumularea / suplinirea', stop: 'Încheie mai devreme cumularea / suplinirea' }, lastDay: 'Ultima zi',
     },
     ts: {
-      cellLine: 'gar. {{g}} → {{p}}', import: 'Ore pe tipuri din Excel',
+      cellLine: 'gar. {{g}}', cellPaid: '→ {{p}} (gar.)', import: 'Ore pe tipuri din Excel',
       importHint: 'Coloanele: nr. de tabel, raportul de muncă (doar la mai multe raporturi), codul tipului de ore, ziua (gol — total pe lună), orele. Întâi se încearcă, apoi se importă.',
       summary: 'Efective {{hours}} · garantate {{guaranteed}} (zile disponibile {{available}} / {{total}}) · de plată {{paid}}',
       editTitle: '{{code}} — {{name}} · {{who}}', clear: 'Scoate orele', guaranteed: 'Garantate', available: 'Zile disponibile', effective: 'Efective',

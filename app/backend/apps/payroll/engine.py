@@ -452,19 +452,19 @@ class LineCalc:
                 hours = Decimal(str((self.hour_summary.get(code) or {}).get("hours") or 0))
                 if hours:
                     self.add(types[0].code, hours * rec.value, quantity=hours, base=rec.value,
-                             note=f"{label} — {code} {num(hours)} ore × {num(rec.value)} lei")
+                             note=f"{label} — {code} {hour_types.fmt(hours)} ore × {hour_types.fmt(rec.value, True)} lei")
                 continue
             if not mine:
                 continue
             if rec.pay_mode == "fixed":
                 self.add(types[0].code, rec.value * period, base=rec.value,
-                         note=f"{label} — {hour_types.fmt(rec.value)} lei × {days_text}")
+                         note=f"{label} — {hour_types.fmt(rec.value, True)} lei × {days_text}")
                 continue
             own = rec.pay_mode == "pct_own"
             salary = self.salary_full if own else Decimal(rec.other_salary or 0)
             base = salary * self.worked_share * period
             self.add(types[0].code, base * rec.value / 100, base=base, percent=rec.value,
-                     note=f"{label} — {num(rec.value)} % din salariul {'propriu' if own else 'funcției'} {hour_types.fmt(salary)} × "
+                     note=f"{label} — {num(rec.value)} % din salariul {'propriu' if own else 'funcției'} {hour_types.fmt(salary, True)} × "
                           f"partea lucrată {float(self.worked_share) * 100:.4g} % × {days_text}")
 
     def _holiday(self, code, hourly, hourly_paid=False):

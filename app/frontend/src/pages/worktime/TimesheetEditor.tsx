@@ -101,8 +101,8 @@ export default function TimesheetEditor() {
     const s = r.hour_types[col.code]
     const node = !s ? <span style={{ color: 'var(--ant-color-text-quaternary)' }}>·</span> : <div style={{ lineHeight: 1.1 }}>
       <div><b>{fmtH(s.hours) || '0'}</b></div>
-      {s.guaranteed !== null && <div style={{ fontSize: 10, color: 'var(--ant-color-text-tertiary)' }}>
-        {t('ht.ts.cellLine', { g: fmtH(s.guaranteed) || '0', p: fmtH(s.paid) || '0' })}</div>}
+      {s.guaranteed !== null && <div style={{ fontSize: 10, color: s.paid > s.hours ? 'var(--ant-color-warning-text)' : 'var(--ant-color-text-tertiary)' }}>
+        {s.paid > s.hours ? t('ht.ts.cellPaid', { p: fmtH(s.paid) || '0' }) : t('ht.ts.cellLine', { g: fmtH(s.guaranteed) || '0' })}</div>}
     </div>
     const tip = s ? <div>
       <div>{t('ht.ts.summary', { hours: fmtH(s.hours) || '0', guaranteed: s.guaranteed === null ? '—' : fmtH(s.guaranteed) || '0',
@@ -157,7 +157,7 @@ export default function TimesheetEditor() {
             },
           })),
           ...data.hour_types.map((col) => ({
-            title: <Tooltip title={localName(col)}>{col.code}</Tooltip>, key: `ht-${col.code}`, width: 64, align: 'right' as const,
+            title: <Tooltip title={localName(col)}>{col.code}</Tooltip>, key: `ht-${col.code}`, width: 78, align: 'right' as const,
             onCell: () => ({ style: { background: 'var(--ant-color-fill-quaternary)' } }),
             render: (_: unknown, r: TimesheetRow) => typedCell(r, col),
           })),
@@ -214,11 +214,11 @@ export default function TimesheetEditor() {
                 <Radio.Group options={[{ value: 'day', label: t('ht.ts.byDay'), disabled: typedEdit.col.entry === 'month' },
                   { value: 'month', label: t('ht.ts.byMonth') }]} />
               </Form.Item>
-              {typedMode === 'month' ? <Form.Item name="month" label={t('ht.ts.total')}><InputNumber min={0} max={744} step={0.5} /></Form.Item>
+              {typedMode === 'month' ? <Form.Item name="month" label={t('ht.ts.total')}><InputNumber min={0} max={744} step={1} /></Form.Item>
                 : <Space wrap size={[4, 4]}>
                   {data.days.map((d) => (
                     <Form.Item key={d.day} name={`d${d.day}`} label={dayTitle(d, t)} style={{ marginBottom: 4, width: 64 }}>
-                      <InputNumber min={0} max={24} step={0.5} size="small" style={{ width: 60 }} />
+                      <InputNumber min={0} max={24} step={1} size="small" style={{ width: 60 }} />
                     </Form.Item>
                   ))}
                 </Space>}

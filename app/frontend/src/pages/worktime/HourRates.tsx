@@ -73,7 +73,7 @@ export function HourRatesInput({ value, onChange, existing, disabled, onFromOccu
             {r.action !== 'stop' && <>
               <InputNumber style={{ width: 120 }} min={0} placeholder={t('ht.rates.rate')} suffix="lei" disabled={disabled}
                 value={r.rate as number | null} onChange={(v) => set(i, { rate: v })} />
-              <InputNumber style={{ width: 130 }} min={0} max={744} placeholder={t('ht.rates.guaranteed')} disabled={disabled}
+              <InputNumber style={{ width: 150 }} min={0} max={744} placeholder={t('ht.rates.guaranteed')} suffix={t('ht.rates.hoursMonth')} disabled={disabled}
                 value={r.guaranteed_hours as number | null} onChange={(v) => set(i, { guaranteed_hours: v })} />
             </>}
             <DatePicker style={{ width: 130 }} format="DD.MM.YYYY" disabled={disabled}
@@ -100,6 +100,12 @@ export function HourRatesInput({ value, onChange, existing, disabled, onFromOccu
 /** „salariu + tarife”, „tarif orar” … — modalitatea de remunerare pe scurt. */
 export function payShort(t: (k: string, o?: Record<string, unknown>) => string, mode: string | null | undefined) {
   return t(`ht.payShort.${mode || 'salary'}`)
+}
+
+/** „30 % din salariul propriu”, „2 200 lei pe lună”, „120 lei/oră (INSTR)” — plata cumulării, în limba interfeței. */
+export function combinationPay(t: (k: string, o?: Record<string, unknown>) => string, c: Pick<FunctionCombination,
+  'pay_mode' | 'value' | 'other_salary' | 'hour_type_code'>) {
+  return t(`ht.comb.payText.${c.pay_mode}`, { value: num(c.value), salary: num(c.other_salary), code: c.hour_type_code })
 }
 
 /** „De bază: Pilot — salariu + tarife” / „Cumulare: Instructor — 30 %” — un rând pentru fișă și pontaj. */
@@ -167,7 +173,7 @@ export function RemunerationBox({ job, canEdit, onChanged }: { job: Employment; 
     <div className="remuneration-box" style={{ marginTop: 8 }}>
       <Space wrap size={4} style={{ marginBottom: 4 }}>
         <Typography.Text strong>{t('ht.remuneration')}:</Typography.Text>
-        <Tag color="geekblue">{job.pay_mode_label}</Tag>
+        <Tag color="geekblue">{t(`ht.payModes.${job.pay_mode}`)}</Tag>
         {job.pay_mode === 'hourly' && <span>{t('ht.hourlyRate')}: <b>{num(job.hourly_rate)} lei</b></span>}
         {(job.pay_mode === 'salary' || job.pay_mode === 'mixed') && job.base_salary !== null && <span>{t('org.sl.salary')}: <b>{num(job.base_salary)} lei</b></span>}
       </Space>
@@ -197,9 +203,9 @@ export function RemunerationBox({ job, canEdit, onChanged }: { job: Employment; 
         </Space>}
         locale={{ emptyText: t('ht.comb.none') }}
         columns={[
-          { title: t('ht.comb.kind'), dataIndex: 'kind_label', width: 190 },
+          { title: t('ht.comb.kind'), dataIndex: 'kind', width: 190, render: (v) => t(`ht.comb.kinds.${v}`) },
           { title: t('ht.comb.occupation'), dataIndex: 'occupation_name', render: (v, r) => <>{v}{r.substituted_name ? <Typography.Text type="secondary"> · {t('ht.comb.for', { name: r.substituted_name })}</Typography.Text> : null}</> },
-          { title: t('ht.comb.pay'), dataIndex: 'value_text', width: 210 },
+          { title: t('ht.comb.pay'), dataIndex: 'value', width: 230, render: (_v, r) => combinationPay(t, r) },
           { title: t('staff.sen.from'), dataIndex: 'date_from', width: 100, render: d },
           { title: t('staff.sen.to'), dataIndex: 'date_to', width: 100, render: (v) => d(v) || '…' },
           { title: t('pay.pl.source'), key: 'src', width: 190, render: (_v, r) => source(r.source) },

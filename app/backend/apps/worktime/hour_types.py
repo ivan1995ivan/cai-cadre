@@ -36,10 +36,13 @@ def q(value) -> Decimal:
     return Decimal(value or 0).quantize(CENT, rounding=ROUND_HALF_UP)
 
 
-def fmt(value) -> str:
-    """„40,91”, „50”, „1 234,5” — pentru explicații."""
-    v = Decimal(value or 0)
-    text = format(v.quantize(CENT, rounding=ROUND_HALF_UP).normalize(), "f")
+def fmt(value, money=False) -> str:
+    """„40,91”, „50”, „1 234,5” — pentru explicații; `money` — sumele în lei: întregi fără zecimale, altfel cu două
+    („9 166,50”)."""
+    v = Decimal(value or 0).quantize(CENT, rounding=ROUND_HALF_UP)
+    text = format(v.normalize(), "f") if not money or v == v.to_integral_value() else format(v, "f")
+    if "E" in text:
+        text = format(v.to_integral_value(), "f")
     whole, _, frac = text.partition(".")
     sign = "−" if whole.startswith("-") else ""
     whole = whole.lstrip("-")
@@ -275,7 +278,7 @@ def summarize(ctx, jd, typed: dict, rates: list, hour_types: dict, conf=None) ->
                             f"{_reasons_text(counts)} = {fmt(reduced)}; efectiv {fmt(h)} → plătit {fmt(paid)}")
             amount = q(paid * r.rate)
             row.update({"paid": float(q(paid)), "amount": float(amount)})
-            text += f" × {fmt(r.rate)} lei = {fmt(amount)} lei"
+            text += f" × {fmt(r.rate, True)} lei = {fmt(amount, True)} lei"
             if len(rows) > 1:
                 text = f"{max(r.date_from, first):%d.%m}–{min(r.date_to or last, last):%d.%m}: {text}"
             paid_total += paid

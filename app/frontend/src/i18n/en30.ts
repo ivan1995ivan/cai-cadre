@@ -9,6 +9,7 @@ export default {
     payModes: { salary: 'Monthly salary', hourly: 'Hourly rate', hour_types: 'By hour types', mixed: 'Mixed: salary + hourly rates by type' },
     payShort: { salary: 'salary', hourly: 'hourly rate', hour_types: 'rates by hour type', mixed: 'salary + rates' },
     rates: {
+      hoursMonth: 'h/month',
       title: 'Rates by hour type', rate: 'Rate (lei per hour)', guaranteed: 'Guaranteed hours per month',
       guaranteedHint: 'A paid minimum: max(actual, guaranteed) is paid. The month guarantee is reduced by days without the employment, suspension and the absences in the setting.',
       orderHint: 'On signing the rows go to the employment of the order; cancelling the order removes them. “Modify” closes the rate in force the day before and opens a new one; “Stop” sets “until”. Rates are paid with the “By hour types” or “Mixed” pay mode.',
@@ -17,6 +18,7 @@ export default {
       occupationTitle: 'Default rates by hour type', occupationHint: 'On hiring the “Rates by hour type” table of the order is filled from them.',
     },
     comb: {
+      payText: { pct_own: '{{value}} % of own salary', pct_other: '{{value}} % of the post salary ({{salary}} lei)', fixed: '{{value}} lei per month', hourly: '{{value}} lei per hour ({{code}})' },
       title: 'Extra duties under the same contract (combining posts, substitution, acting)', none: 'No combined posts / substitutions.',
       kind: 'Kind', occupation: 'Combined / substituted post', for: 'for {{name}}', pay: 'Pay', payMode: 'Pay method',
       kinds: { combination: 'Combining posts (professions)', substitution: 'Substituting a temporarily absent employee', acting: 'Acting appointment' },
@@ -31,7 +33,7 @@ export default {
       action: 'What the order does', actions: { add: 'Sets combining / substitution', stop: 'Ends combining / substitution early' }, lastDay: 'Last day',
     },
     ts: {
-      cellLine: 'gtd {{g}} → {{p}}', import: 'Hours by type from Excel',
+      cellLine: 'gtd {{g}}', cellPaid: '→ {{p}} (gtd)', import: 'Hours by type from Excel',
       importHint: 'Columns: tab number, employment (only with several), hour type code, day (empty — month total), hours. First a trial, then the import.',
       summary: 'Actual {{hours}} · guaranteed {{guaranteed}} (available days {{available}} / {{total}}) · to pay {{paid}}',
       editTitle: '{{code}} — {{name}} · {{who}}', clear: 'Remove hours', guaranteed: 'Guaranteed', available: 'Available days', effective: 'Actual',
