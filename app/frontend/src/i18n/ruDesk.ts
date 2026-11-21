@@ -5,7 +5,7 @@ export default {
   desk: {
     menuBar: 'Строка меню', toolbar: 'Панель инструментов', statusBar: 'Строка состояния', mobileMenu: 'Меню',
     menu: { file: 'Файл', windows: 'Окна', help: 'Справка' },
-    tab: { order: 'Приказ {{number}}', payroll: 'Расчёт {{number}}', payment: 'Ведомость {{number}}' },
+    tab: { order: 'Приказ {{number}}', payroll: 'Расчёт {{number}}', itemChange: 'Изменение {{number}}', payment: 'Ведомость {{number}}' },
     noFavorites: '(в избранном пусто)', closeWindow: 'Закрыть окно', admin: 'Администратор',
     tool: {
       new: 'Создать', noNew: 'Создать — в открытом окне нечего создавать',

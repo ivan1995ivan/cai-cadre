@@ -121,6 +121,7 @@ def exemption_context(request, req, lang="ro") -> dict:
     e = req.employee
     data = {"year": start.year, "number": req.number, "date": _d(req.date), "date_from": _d(req.date_from), "date_to": _d(req.date_to),
             "employee": {"name": e.full_name(), "idnp": e.idnp, "address": e.address},
+            "place": req.get_place_display(), "place_main": req.place == "main",
             "P": req.kind == "personal", "M": req.kind == "major",
             "major_category": req.get_major_category_display() if req.kind == "major" and req.major_category else "",
             "Sm": req.spouse_major, "spouse": {"name": req.spouse_name, "idnp": req.spouse_idnp,

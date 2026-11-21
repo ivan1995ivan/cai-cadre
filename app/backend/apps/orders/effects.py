@@ -111,6 +111,9 @@ def undo_hire(item, result):
         return
     if job.history.exclude(event__in=("hire", "import")).exists():
         _err(item, "raportul de muncă are deja alte modificări; anulați întâi ordinele de după angajare.")
+    if job.pay_items.exclude(order_item=item).exists():
+        _err(item, "raportul de muncă are acumulări / rețineri puse după angajare (fila „Salariu”); scoateți-le sau anulați "
+                   "întâi documentele lor.")
     employee = job.employee
     job.delete()
     staff.refresh_status(employee)
@@ -139,6 +142,9 @@ def change(item, order, user):
         job.date_to = new_to
         job.save(update_fields=["date_to"])
     elif not fields and code != "change_terms":
+        if pay_rows(item, order):  # doar acumulările planificate (de ex. un spor personal) — raportul rămâne cum e
+            item.employment = job
+            return result
         _err(item, "nu se schimbă nimic (funcția, secția, norma și salariul sunt aceleași).")
     day = p_date(item, "date_from", required=code != "extend_contract") or order.date
     result["before"] = {f: str(getattr(job, f)) for f in staff.SNAPSHOT}
@@ -540,3 +546,57 @@ def for_type(order_type):
 
 # tipurile care nu cer angajat (organizatorice)
 NO_EMPLOYEE = {"staff_list", "none", "worktime"}
+
+
+# --- tabelul „Acumulări și rețineri” (apps.payroll.planned) ---------------------------------------------------------
+PAY_ITEM_EFFECTS = {"hire", "change", "salary", "substitution"}  # angajarea, transferul, condițiile, salariul, sporurile, cumulul
+PAY_ITEM_CODES = {"deduction"}  # reținerea din salariu (CM art. 148): rândul reținerii
+
+
+def has_pay_items(order_type) -> bool:
+    return order_type.effect in PAY_ITEM_EFFECTS or order_type.code in PAY_ITEM_CODES
+
+
+def pay_rows(item, order) -> list:
+    """Rândurile tabelului din punct (`params.pay_items`); la angajare, dacă tabelul n-a fost atins deloc, — acumulările-tip
+    ale funcției."""
+    from apps.payroll import planned
+
+    if not has_pay_items(order.order_type):
+        return []
+    p = item.params or {}
+    if "pay_items" in p:
+        rows = p.get("pay_items") or []
+    elif order.order_type.effect == "hire":
+        rows = planned.occupation_defaults(Occupation.objects.filter(pk=p.get("occupation")).first() if p.get("occupation") else None)
+    else:
+        rows = []
+    if not isinstance(rows, list) or any(not isinstance(r, dict) for r in rows):
+        _err(item, "tabelul „Acumulări și rețineri” nu este o listă de rânduri.")
+    return rows
+
+
+def apply_pay_items(item, order, result) -> list:
+    """La semnare: rândurile tabelului intră în fila „Salariu”, pe raportul de muncă al ordinului (cel nou la angajare / cumul)."""
+    from apps.payroll import planned
+
+    rows = pay_rows(item, order)
+    if not rows:
+        return []
+    job = Employment.objects.filter(pk=result.get("employment")).first() if result.get("employment") else None
+    job = job or item.employment or job_of(item)
+    day = p_date(item, "date_from", required=False) or order.date
+    who = item.employee.full_name() if item.employee_id else f"punctul {item.sort}"
+    out = [planned.apply(row, employee=item.employee, employment=job, default_from=day, reference=f"Ordinul nr. {order.reference()}",
+                         who=f"{who}, rândul {n} din „Acumulări și rețineri”", source={"order_item": item})
+           for n, row in enumerate(rows, start=1)]
+    if "pay_items" not in (item.params or {}):  # completat din funcție: ordinul păstrează ce s-a aplicat
+        item.params = {**(item.params or {}), "pay_items": rows}
+    return out
+
+
+def undo_pay_items(item, result):
+    from apps.payroll import planned
+
+    who = item.employee.full_name() if item.employee_id else f"punctul {item.sort}"
+    planned.undo(result.get("pay_items"), who)

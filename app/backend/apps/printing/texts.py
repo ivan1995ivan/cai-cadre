@@ -100,6 +100,14 @@ FIELDS: dict = {
         ("accountant_label", "Semnătura: contabil-șef", "{funcția_contabilului}", "{funcția_contabilului}", False),
         ("footer", "Text la sfârșit", "", "", True),
     ],
+    "pay_item_change": [
+        ("title", "Titlul", "MODIFICAREA ACUMULĂRILOR PLANIFICATE", "ИЗМЕНЕНИЕ ПЛАНОВЫХ НАЧИСЛЕНИЙ", False),
+        ("intro", "Textul de deasupra tabelului", "Se stabilesc, se modifică sau se opresc acumulările și reținerile angajaților:",
+         "Устанавливаются, изменяются или прекращаются начисления и удержания работников:", True),
+        ("accountant_label", "Semnătura: contabil-șef", "{funcția_contabilului}", "{funcția_contabilului}", False),
+        ("made_by", "Semnătura: a întocmit", "A întocmit", "Составил", False),
+        ("footer", "Text la sfârșit", "", "", True),
+    ],
     "payslip": [
         ("title", "Titlul", "Fișa de calcul a salariului", "Расчётный листок", False),
         ("footer", "Text la sfârșit", "Fișa este confidențială; se înmânează doar angajatului.", "Листок конфиденциален; выдаётся только работнику.", True),
@@ -134,7 +142,7 @@ FIELDS: dict = {
 }
 
 # Ce se poate scrie în texte (în acolade) — arătat în editor: ale documentului și cele din Constante (în toate formele)
-PLACEHOLDERS: dict = {"staff_list": ["număr", "data", "aprobat_prin"]}
+PLACEHOLDERS: dict = {"staff_list": ["număr", "data", "aprobat_prin"], "pay_item_change": ["număr", "data"]}
 COMPANY_PLACEHOLDERS = {
     "întreprinderea": "full_name", "conducătorul": "director", "funcția_conducătorului": "director_position",
     "contabilul": "chief_accountant", "funcția_contabilului": "chief_accountant_position",

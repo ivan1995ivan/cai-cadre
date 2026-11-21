@@ -46,7 +46,7 @@ export default function StaffListEditor() {
   const draft = doc?.status === 'draft' && !doc.deletion_mark  // statele marcate pentru ștergere nu se mai schimbă
   const canEdit = draft && hasPerm('org.edit')
   const { touch, clean } = useEditGuard(() => saveHeader(), !!canEdit)
-  useTabTitle(doc ? t('org.sl.title', { date: dayjs(doc.effective_from).format('DD.MM.YYYY') }) : null)
+  useTabTitle(doc ? { key: 'org.sl.title', params: { date: dayjs(doc.effective_from).format('DD.MM.YYYY') } } : null)
 
   const load = async () => {
     try {

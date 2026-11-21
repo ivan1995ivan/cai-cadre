@@ -51,6 +51,12 @@ class OrderItemSerializer(serializers.ModelSerializer):
         params = attrs.get("params")
         if params is not None and not isinstance(params, dict):
             raise serializers.ValidationError({"params": "Parametrii sunt un obiect."})
+        rows = (params or {}).get("pay_items")
+        if rows is not None:
+            if not isinstance(rows, list) or any(not isinstance(r, dict) for r in rows):
+                raise serializers.ValidationError({"params": "Tabelul „Acumulări și rețineri” este o listă de rânduri."})
+            if any(r.get("action", "add") not in ("add", "modify", "stop") for r in rows):
+                raise serializers.ValidationError({"params": "Acțiunea rândului: adaugă, modifică sau oprește."})
         return attrs
 
 

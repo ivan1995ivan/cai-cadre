@@ -26,6 +26,11 @@ angajatul depune **o cerere nouă în 10 zile** (pct. 22 din Regulament): o adă
   întreprindere (cu luna) ajunge la plafon, P / M se opresc singure din luna aceea. Când venitul de aici atinge 90 % din
   plafon (procentul e în constante), contabilitatea primește alerta în *Termene și alerte*.
 
+**Locul depunerii** (Regulamentul aprobat prin HG 697/2014, pct. 9): angajatul cere scutirea **la locul de muncă de bază sau la
+cel prin cumul** — într-un singur loc. Câmpul „Locul depunerii” (*de bază* / *prin cumul*) se pune singur după rapoartele de
+muncă de aici (fără raport de bază — *prin cumul*) și apare în tiparul cererii. Scutirea se aplică pe tot venitul angajatului
+de la întreprindere, și când singurul lui raport aici e un **cumul extern**.
+
 **Codul** cererii se formează singur: P / M, Sm, **Nx** (câte persoane N), **Hx** (câte H) — de exemplu PN2H1. Coloana
 „Codul luna aceasta” arată ce se aplică acum. **Pe lună** se acordă suma anuală a scutirilor valabile în lună / 12, cel mult
 venitul lunii; scutirea se ia la plata salariului (vezi *Îndreptarea spre plată*).

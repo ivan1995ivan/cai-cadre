@@ -75,7 +75,7 @@ export default function PayrollEditor() {
   }
   useUnsavedGuard(dirty, saveHeader)
   const title = data ? t('pay.heading', { number: data.number, date: dayjs(data.date).format('DD.MM.YYYY') }) : ''
-  useTabTitle(data ? t('desk.tab.payroll', { number: data.number }) : null)
+  useTabTitle(data ? { key: 'desk.tab.payroll', params: { number: data.number } } : null)
 
   if (!data) return <Card loading={loading}><Spin /></Card>
   const run = async (fn: () => Promise<unknown>, ok?: string) => {

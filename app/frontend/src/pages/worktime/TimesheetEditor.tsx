@@ -35,7 +35,7 @@ export default function TimesheetEditor() {
   const navigate = useNavigate()
   const { hasPerm } = useApp()
   const { data, loading, reload } = useFetch<TimesheetReport>(`/worktime/timesheets/${id}/report/`)
-  useTabTitle(data ? t('wt.ts.heading', { month: dayjs().month(data.month - 1).format('MMMM'), year: data.year, subdivision: data.subdivision_name }) : null)
+  useTabTitle(data ? { key: 'wt.ts.heading', params: { month: { month: data.month }, year: data.year, subdivision: data.subdivision_name } } : null)
   const shifts = useShifts()
   const { post } = useDocActions('/worktime/timesheets/', id, reload)
   const [printOpen, setPrintOpen] = useState(false)

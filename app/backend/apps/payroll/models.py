@@ -2,7 +2,8 @@
 reținerile / sporurile personale și calculul lunar al salariului (angajat × raport de muncă × tip de calcul).
 
 Totul se calculează pe **raportul de muncă** (de bază, cumul, suplinire, contract de prestări servicii — fiecare cu
-norma și salariul lui); scutirea de impozit se acordă o singură dată pe persoană, la raportul de bază.
+norma și salariul lui); scutirea de impozit se acordă o singură dată pe persoană, pe tot venitul de la acest angajator — la
+locul de muncă de bază sau la cel prin cumul, după cererea angajatului (HG 697/2014, Regulamentul, pct. 9).
 """
 from datetime import timedelta
 from decimal import Decimal
@@ -47,7 +48,12 @@ class PayType(models.Model):
         ("pct_base", "% din baza de calcul (tipurile alese)"),
         ("hourly", "Tarif orar × ore lucrate"),
         ("scale", "% după treapta de vechime totală în muncă"),
+        ("expr", "Formulă"),
     ]
+    APPLIES = [("row", "Doar angajații care au rândul (fila „Salariu”, ordinul, documentul)"),
+               ("all", "Toți angajații (tip general, de ex. un spor din pontaj)")]
+    # formulele care se pot calcula și fără rândul angajatului (procentul / baza / formula sunt ale tipului)
+    GENERAL_FORMULAS = ("expr", "scale", "pct_salary", "pct_base")
     # cheia motorului de calcul pentru formula „auto” (apps.payroll.engine)
     AUTO = [
         ("salary", "Salariul de funcție (pro-rata la orele lucrate)"), ("allowance", "Sporurile fixe din raportul de muncă (%)"),
@@ -70,6 +76,9 @@ class PayType(models.Model):
     formula = models.CharField("Formula", max_length=12, choices=FORMULAS, default="fixed")
     auto = models.CharField("Calculul automat", max_length=16, choices=AUTO, default="none")
     percent = models.DecimalField("Procentul (la formulele cu %)", max_digits=7, decimal_places=3, default=ZERO)
+    expression = models.TextField("Formula (expresia)", blank=True,
+                                  help_text="De ex. TarifOrar * OreNoapte * C.night_pct / 100 (apps.payroll.formula)")
+    applies_to = models.CharField("Se calculează pentru", max_length=4, choices=APPLIES, default="row")
     base_codes = models.JSONField("Baza de calcul (codurile tipurilor)", default=list, blank=True)
     scale = models.JSONField("Treptele [{de la (ani): %}]", default=list, blank=True)
     taxable = models.BooleanField("Se impozitează cu impozitul pe venit", default=True)
@@ -97,7 +106,10 @@ class PayType(models.Model):
 
 
 class EmployeePayItem(models.Model):
-    """Sporurile și reținerile personale, permanente: sindicat, pensie alimentară, împrumut, spor individual, plata la contract."""
+    """Acumulările și reținerile planificate ale angajatului (sindicat, pensie alimentară, împrumut, spor individual, plata la
+    contract). Se pun de mână în fila „Salariu” sau vin dintr-un document: punctul ordinului de personal (`order_item`) ori
+    rândul documentului „Modificarea acumulărilor planificate” (`change_line`); cele din documente se schimbă / se opresc
+    doar printr-un document (anularea lui le întoarce)."""
 
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="pay_items")
     employment = models.ForeignKey(Employment, on_delete=models.CASCADE, null=True, blank=True, related_name="pay_items",
@@ -105,14 +117,93 @@ class EmployeePayItem(models.Model):
     pay_type = models.ForeignKey(PayType, on_delete=models.PROTECT, related_name="employee_items", verbose_name="Tipul")
     amount = models.DecimalField("Suma pe lună (lei)", max_digits=12, decimal_places=2, null=True, blank=True)
     percent = models.DecimalField("Procentul", max_digits=7, decimal_places=3, null=True, blank=True)
+    quantity = models.DecimalField("Cantitatea (ore, zile, bucăți)", max_digits=12, decimal_places=3, null=True, blank=True)
     date_from = models.DateField("De la")
     date_to = models.DateField("Până la", null=True, blank=True)
     document = models.CharField("Temeiul (ordinul, titlul executoriu, cererea)", max_length=200, blank=True)
     note = models.CharField("Observații", max_length=300, blank=True)
+    order_item = models.ForeignKey("orders.OrderItem", on_delete=models.PROTECT, null=True, blank=True, related_name="pay_items",
+                                   verbose_name="Din punctul ordinului")
+    change_line = models.ForeignKey("PayItemChangeLine", on_delete=models.PROTECT, null=True, blank=True, related_name="pay_items",
+                                    verbose_name="Din documentul „Modificarea acumulărilor planificate”")
 
     class Meta:
         ordering = ["employee", "pay_type__category", "date_from"]
         verbose_name = "Sporul / reținerea angajatului"
+
+    @property
+    def from_document(self) -> bool:
+        return bool(self.order_item_id or self.change_line_id)
+
+
+class OccupationPayItem(models.Model):
+    """Acumularea-tip a funcției: la angajare tabelul „Acumulări și rețineri” al ordinului se completează din ea."""
+
+    occupation = models.ForeignKey("org.Occupation", on_delete=models.CASCADE, related_name="pay_items")
+    pay_type = models.ForeignKey(PayType, on_delete=models.PROTECT, related_name="occupation_items", verbose_name="Tipul")
+    amount = models.DecimalField("Suma (lei)", max_digits=12, decimal_places=2, null=True, blank=True)
+    percent = models.DecimalField("Procentul", max_digits=7, decimal_places=3, null=True, blank=True)
+    quantity = models.DecimalField("Cantitatea", max_digits=12, decimal_places=3, null=True, blank=True)
+    sort = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ["sort", "id"]
+        verbose_name = "Acumularea-tip a funcției"
+
+
+class PayItemChange(models.Model):
+    """Documentul „Modificarea acumulărilor planificate”: schimbările fără ordin de personal (titlul executoriu, cotizația
+    sindicală la cerere, tichetele de masă…) pentru unul sau mai mulți angajați. Aprobat — rândurile intră în fila
+    „Salariu”; anularea aprobării le întoarce."""
+
+    STATUSES = [("draft", "Ciornă"), ("approved", "Aprobat")]
+    number = models.CharField("Numărul", max_length=30, blank=True)
+    date = models.DateField("Data", default=timezone.localdate)
+    status = models.CharField(max_length=10, choices=STATUSES, default="draft", db_index=True)
+    note = models.TextField("Observații", blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+    created_at = models.DateTimeField(default=timezone.now)
+    approved_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+    approved_at = models.DateTimeField(null=True, blank=True)
+    deletion_mark = models.BooleanField("Marcat pentru ștergere", default=False)
+
+    class Meta:
+        ordering = ["-date", "-id"]
+        verbose_name = "Modificarea acumulărilor planificate"
+
+    def __str__(self):
+        return f"Modificarea acumulărilor planificate nr. {self.number or '—'} din {self.date:%d.%m.%Y}"
+
+    def reference(self) -> str:
+        return f"nr. {self.number} din {self.date:%d.%m.%Y}" if self.number else f"din {self.date:%d.%m.%Y}"
+
+
+PAY_ACTIONS = [("add", "Adaugă"), ("modify", "Modifică"), ("stop", "Oprește")]
+
+
+class PayItemChangeLine(models.Model):
+    """Un rând al documentului: angajatul, raportul de muncă, tipul, acțiunea, valorile, perioada, temeiul."""
+
+    change = models.ForeignKey(PayItemChange, on_delete=models.CASCADE, related_name="lines")
+    employee = models.ForeignKey(Employee, on_delete=models.PROTECT, related_name="pay_item_changes")
+    employment = models.ForeignKey(Employment, on_delete=models.PROTECT, null=True, blank=True, related_name="+",
+                                   verbose_name="Raportul de muncă (gol = cel de bază)")
+    pay_type = models.ForeignKey(PayType, on_delete=models.PROTECT, related_name="+", verbose_name="Tipul")
+    action = models.CharField("Acțiunea", max_length=6, choices=PAY_ACTIONS, default="add")
+    target = models.ForeignKey(EmployeePayItem, on_delete=models.SET_NULL, null=True, blank=True, related_name="+",
+                               verbose_name="Rândul care se modifică / se oprește")
+    amount = models.DecimalField("Suma (lei)", max_digits=12, decimal_places=2, null=True, blank=True)
+    percent = models.DecimalField("Procentul", max_digits=7, decimal_places=3, null=True, blank=True)
+    quantity = models.DecimalField("Cantitatea", max_digits=12, decimal_places=3, null=True, blank=True)
+    date_from = models.DateField("De la (gol = data documentului)", null=True, blank=True)
+    date_to = models.DateField("Până la", null=True, blank=True)
+    document = models.CharField("Temeiul (titlul executoriu, cererea…)", max_length=200, blank=True)
+    result = models.JSONField("Ce s-a schimbat la aprobare (pentru anulare)", default=dict, blank=True)
+    sort = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ["sort", "id"]
+        verbose_name = "Rândul modificării acumulărilor planificate"
 
 
 def next_month(day):
@@ -147,6 +238,9 @@ class ExemptionRequest(models.Model):
                                        blank=True)
     spouse_document = models.CharField("Documentul soțului / soției", max_length=200, blank=True)
     waiver_date = models.DateField("Renunțarea la P / M (venitul anual peste plafon): data cererii", null=True, blank=True)
+    # HG 697/2014, Regulamentul, pct. 9: scutirea se cere la locul de muncă de bază sau la cel prin cumul — o singură dată
+    PLACES = [("main", "Locul de muncă de bază"), ("secondary", "Locul de muncă prin cumul")]
+    place = models.CharField("Cererea e depusă la acest angajator ca", max_length=10, choices=PLACES, default="main")
     documents = models.CharField("Alte documente anexate", max_length=300, blank=True)
     needs_review = models.BooleanField("De verificat", default=False)
     review_note = models.CharField("Ce trebuie verificat", max_length=300, blank=True)

@@ -18,9 +18,13 @@ export interface PayType {
   name_en: string
   category: 'accrual' | 'deduction' | 'employer'
   category_label: string
-  formula: 'auto' | 'fixed' | 'pct_salary' | 'pct_base' | 'hourly' | 'scale'
+  formula: 'auto' | 'fixed' | 'pct_salary' | 'pct_base' | 'hourly' | 'scale' | 'expr'
   formula_label: string
   auto: string
+  expression: string
+  applies_to: 'row' | 'all'
+  applies_to_label: string
+  how: { ro: string; ru: string; en: string }
   percent: string
   base_codes: string[]
   scale: { from: number; pct: number }[]
@@ -37,6 +41,7 @@ export interface PayType {
   sort: number
   is_active: boolean
   is_system: boolean
+  deletion_mark?: boolean
 }
 
 export interface EmployeePayItem {
@@ -46,14 +51,74 @@ export interface EmployeePayItem {
   employment_label: string
   pay_type: number
   pay_type_name: string
+  pay_type_code: string
+  formula: string
   category: string
   amount: string | null
   percent: string | null
+  quantity: string | null
   date_from: string
   date_to: string | null
   document: string
   note: string
+  source: PayItemSource
 }
+
+/** De unde vine rândul din fila „Salariu”: ordinul, documentul „Modificarea acumulărilor planificate” sau de mână. */
+export interface PayItemSource { kind: 'order' | 'change' | 'manual'; id: number | null; label: string; status: string }
+
+export type PayAction = 'add' | 'modify' | 'stop'
+export const PAY_ACTIONS: PayAction[] = ['add', 'modify', 'stop']
+
+/** Un rând al tabelului „Acumulări și rețineri” (în parametrii punctului de ordin: `params.pay_items`). */
+export interface PlannedRow {
+  pay_type: number | null
+  action: PayAction
+  target?: number | null
+  amount?: string | number | null
+  percent?: string | number | null
+  quantity?: string | number | null
+  date_from?: string | null
+  date_to?: string | null
+  document?: string
+}
+
+export interface PayItemChangeLine extends PlannedRow {
+  id?: number
+  employee: number | null
+  employee_name?: string
+  tab_number?: string
+  employment: number | null
+  employment_label?: string
+  pay_type_code?: string
+  pay_type_name?: string
+  action_label?: string
+}
+
+export interface PayItemChange {
+  id: number
+  number: string
+  date: string
+  status: 'draft' | 'approved'
+  status_label: string
+  note: string
+  deletion_mark?: boolean
+  approved_at: string | null
+  lines: PayItemChangeLine[]
+  employees: string
+}
+
+export interface OccupationPayItem { id: number; occupation: number; pay_type: number; pay_type_code: string; pay_type_name: string;
+  amount: string | null; percent: string | null; quantity: string | null; sort: number }
+
+export interface FormulaVariable { name: string; ro: string; ru: string; en: string }
+export interface FormulaCatalog { variables: FormulaVariable[]; functions: FormulaVariable[]; constants: { code: string; name: string }[] }
+export interface FormulaCheck { ok: boolean; error?: string; position?: number; variables?: string[]; constants?: string[]; refs?: string[] }
+export interface TryTrace { code: string; name: string; expression: string; error: string; result: string | null; note: string;
+  variables: { name: string; value: string; description: string }[]; negative?: boolean }
+export interface TryLine { employment: number; employment_label: string; result: string; notes: string[]; traces: TryTrace[]; error: string;
+  items: { code: string; name: string; category: string; amount: string; note: string }[]; gross: string; deductions: string }
+export interface TryResult { employee?: number; employee_name?: string; lines: TryLine[]; errors: string[] }
 
 export interface Dependent {
   id?: number
@@ -87,6 +152,8 @@ export interface ExemptionRequest {
   spouse_category: string
   spouse_document: string
   waiver_date: string | null
+  place: 'main' | 'secondary'
+  place_label: string
   documents: string
   needs_review: boolean
   review_note: string
@@ -165,7 +232,9 @@ export interface PayrollReport extends Payroll {
 export const AT_PAYMENT_AUTOS = ['advance', 'income_tax', 'cnam']
 
 export const PAYROLL_STATUS_COLOR: Record<string, string> = { draft: 'gold', checked: 'blue', approved: 'green' }
-export const FORMULAS = ['auto', 'fixed', 'pct_salary', 'pct_base', 'hourly', 'scale']
+export const FORMULAS = ['auto', 'fixed', 'pct_salary', 'pct_base', 'hourly', 'scale', 'expr']
+/** Formulele care se pot calcula și fără rândul angajatului („pentru toți angajații”). */
+export const GENERAL_FORMULAS = ['expr', 'scale', 'pct_salary', 'pct_base']
 export const AUTO_KEYS = ['none', 'salary', 'allowance', 'combination', 'night', 'holiday', 'overtime', 'leave', 'leave_comp', 'sick', 'sick_accident',
   'min_wage', 'bonus', 'aid', 'income_tax', 'cnam', 'cas', 'cas_min']
 

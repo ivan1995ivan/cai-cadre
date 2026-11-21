@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Button, Tabs, Tooltip } from 'antd'
+import dayjs from 'dayjs'
 import { CloseCircleOutlined, HomeOutlined, StarFilled, StarOutlined } from '@ant-design/icons'
 
 import { useFavorites } from './favorites'
@@ -16,7 +17,17 @@ import { movedTo, navLabel } from './nav'
  * Fila paginii curente se închide abia după ce s-a plecat de pe ea: forma cu modificări nesalvate poate opri plecarea
  * („Salvați modificările?” → Anulare, vezi UnsavedGuard) și atunci fila rămâne.
  */
-export interface OpenTab { path: string; title?: string }
+/**
+ * Titlul filei: un text care nu se traduce (numele angajatului) sau cheia de traducere cu parametrii ei — se traduce la
+ * fiecare afișare, ca fila să urmeze limba interfeței („Ordinul 1-p” → „Приказ 1-p”); `{ month: n }` — luna n în limba
+ * interfeței.
+ */
+export type TabTitle = string | { key: string; params?: Record<string, string | number | { month: number }> }
+
+export interface OpenTab { path: string; title?: TabTitle }
+
+const validTitle = (x: unknown): x is TabTitle => typeof x === 'string'
+  || (!!x && typeof x === 'object' && typeof (x as { key?: unknown }).key === 'string')
 
 const STORE = 'crm.tabs.v2'
 const OLD_STORE = 'crm.tabs' // până la 1.4.1: și denumirea din meniu de la deschidere, rămasă apoi veche
@@ -24,8 +35,8 @@ const MAX = 20
 const HOME = '/'
 
 interface TabsApi {
-  tabs: Required<OpenTab>[]
-  setTitle: (path: string, title: string) => void
+  tabs: { path: string; title: string }[]
+  setTitle: (path: string, title: TabTitle) => void
   close: (path: string) => void
   closeAll: () => void
   /** Plecarea de pe pagină a fost oprită (utilizatorul rămâne în formă): filele puse la închidere rămân. */
@@ -44,7 +55,7 @@ function read(): OpenTab[] {
     const moved = (path: string) => { const [p, q = ''] = path.split('?'); return movedTo(p, q) }
     return Array.isArray(data)
       ? data.filter((x) => typeof x?.path === 'string' && x.path.startsWith('/') && !moved(x.path)).slice(0, MAX)
-        .map((x) => ({ path: x.path, ...(own !== null && typeof x.title === 'string' ? { title: x.title } : {}) }))
+        .map((x) => ({ path: x.path, ...(own !== null && validTitle(x.title) ? { title: x.title } : {}) }))
       : []
   } catch {
     return []
@@ -93,8 +104,9 @@ export function TabsProvider({ children }: { children: ReactNode }) {
     } catch { /* fără stocare */ }
   }, [tabs])
 
-  const setTitle = useCallback((path: string, title: string) => {
-    setTabs((cur) => cur.map((x) => (x.path.split('?')[0] === path && x.title !== title ? { ...x, title } : x)))
+  const setTitle = useCallback((path: string, title: TabTitle) => {
+    const sig = JSON.stringify(title)
+    setTabs((cur) => cur.map((x) => (x.path.split('?')[0] === path && JSON.stringify(x.title) !== sig ? { ...x, title } : x)))
   }, [])
   const close = useCallback((path: string) => {
     if (current !== path) {
@@ -118,7 +130,15 @@ export function TabsProvider({ children }: { children: ReactNode }) {
 
   const keepClosing = useCallback(() => { closing.current = null }, [])
 
-  const titled = useMemo(() => tabs.map((x) => ({ ...x, title: x.title ?? fallback(x.path) })), [tabs, fallback])
+  const { t, i18n } = useTranslation()
+  const render = useCallback((title: TabTitle) => {
+    if (typeof title === 'string') return title
+    const params = Object.fromEntries(Object.entries(title.params ?? {}).map(([k, v]) => [k,
+      typeof v === 'object' ? dayjs().locale(i18n.language).month(v.month - 1).format('MMMM') : v]))
+    return t(title.key, params)
+  }, [t, i18n.language])
+  const titled = useMemo(() => tabs.map((x) => ({ path: x.path, title: x.title !== undefined ? render(x.title) : fallback(x.path) })),
+    [tabs, fallback, render])
   const value = useMemo(() => ({ tabs: titled, setTitle, close, closeAll, keepClosing }),
     [titled, setTitle, close, closeAll, keepClosing])
   return <TabsContext.Provider value={value}>{children}</TabsContext.Provider>
@@ -129,13 +149,14 @@ export function useTabs() {
   return useContext(TabsContext)
 }
 
-/** Pagina își dă titlul filei de jos (de ex. „Ofertă OF-2026-00012 · Montator SRL”). */
-export function useTabTitle(title: string | null | undefined) {
+/** Pagina își dă titlul filei (numele angajatului; „Ordinul 1-p” ca cheie de traducere, ca să urmeze limba interfeței). */
+export function useTabTitle(title: TabTitle | null | undefined) {
   const { setTitle } = useContext(TabsContext)
   const { pathname } = useLocation()
+  const sig = title ? JSON.stringify(title) : ''
   useEffect(() => {
-    if (title) setTitle(pathname, title)
-  }, [title, pathname, setTitle])
+    if (sig) setTitle(pathname, JSON.parse(sig) as TabTitle)
+  }, [sig, pathname, setTitle])
 }
 
 /** Bara de jos cu ferestrele deschise: „Închide toate” lângă Pagina de start; steluța pune pagina curentă la favorite. */

@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button, Checkbox, DatePicker, Input, Select, Space, Tag, Typography } from 'antd'
+import { Link } from 'react-router-dom'
+import { Button, Checkbox, DatePicker, Input, Segmented, Select, Space, Tag, Typography } from 'antd'
 import { DeleteOutlined, FileTextOutlined, PlusOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 
 import CrudTable, { type CrudField } from '../../components/CrudTable'
 import PrintDialog from '../../components/PrintDialog'
 import { useFetch } from '../../api/hooks'
-import type { Dependent, PayType } from '../../api/payroll'
+import type { Dependent, PayItemSource, PayType } from '../../api/payroll'
 import type { Employment } from '../../api/staff'
 import { useApp, useLocalName } from '../../auth/AppContext'
 
@@ -73,6 +74,7 @@ export default function PayTab({ employee }: { employee: number }) {
   const [printReq, setPrintReq] = useState<number | null>(null)
   const [cardYear, setCardYear] = useState(dayjs().year())
   const [cardOpen, setCardOpen] = useState(false)
+  const [history, setHistory] = useState<'current' | 'all'>('all')
   const canEdit = hasPerm('payroll.edit')
   const typeOptions = (types ?? []).map((x) => ({ value: x.id, label: `${x.code} — ${localName(x)} (${x.category_label})` }))
   const jobOptions = (jobs ?? []).filter((j) => j.status !== 'ended').map((j) => ({ value: j.id, label: `${j.kind_label}: ${j.occupation_name}, ${j.subdivision_name}` }))
@@ -84,6 +86,8 @@ export default function PayTab({ employee }: { employee: number }) {
     { key: 'number', label: t('pay.ex2.number'), inTable: false },
     { key: 'kind', label: t('pay.ex.kind'), type: 'select', required: true, width: 150,
       options: ['personal', 'major', 'none'].map((k) => ({ value: k, label: t(`pay.ex.kinds.${k}`) })) },
+    { key: 'place', label: t('pay.pl.place'), type: 'select', width: 120, extra: t('pay.pl.placeHint'),
+      options: ['main', 'secondary'].map((k) => ({ value: k, label: t(`pay.pl.places.${k}`) })) },
     { key: 'major_category', label: t('pay.ex2.majorCategory'), type: 'select', options: categories, inTable: false, extra: t('pay.ex2.majorHint') },
     { key: 'major_document', label: t('pay.ex2.majorDocument'), inTable: false },
     { key: 'spouse_major', label: t('pay.ex2.spouseMajor'), type: 'bool', inTable: false, extra: t('pay.ex2.spouseMajorHint') },
@@ -109,10 +113,23 @@ export default function PayTab({ employee }: { employee: number }) {
     { key: 'employment', label: t('ord.p.employment'), type: 'select', options: jobOptions, inTable: false, extra: t('ord.p.employmentHint') },
     { key: 'amount', label: t('pay.amount'), type: 'number', width: 110, render: (v) => (v ? Number(v).toLocaleString('ro-MD') : '') },
     { key: 'percent', label: '%', type: 'number', width: 70 },
+    { key: 'quantity', label: t('pay.fx.quantity'), type: 'number', width: 90, extra: t('pay.pl.quantityHint') },
     { key: 'date_from', label: t('staff.sen.from'), type: 'date', required: true, width: 110 },
     { key: 'date_to', label: t('staff.sen.to'), type: 'date', width: 110 },
-    { key: 'document', label: t('pay.itemDocument'), width: 220 },
-    { key: 'note', label: t('org.notes'), inTable: false },
+    { key: 'state', label: t('ord.status'), display: true, width: 110, render: (_v, r) => {
+      const today = dayjs().format('YYYY-MM-DD')
+      if (r.date_to && String(r.date_to) < today) return <Tag>{t('pay.pl.closed')}</Tag>
+      if (String(r.date_from) > today) return <Tag color="blue">{t('pay.pl.future')}</Tag>
+      return <Tag color="green">{t('pay.pl.inForce')}</Tag>
+    } },
+    { key: 'document', label: t('pay.itemDocument'), width: 200 },
+    { key: 'source', label: t('pay.pl.source'), display: true, width: 220, render: (v) => {
+      const src = v as PayItemSource | undefined
+      if (!src || src.kind === 'manual') return <Typography.Text type="secondary">{t('pay.pl.manual')}</Typography.Text>
+      const to = src.kind === 'order' ? `/orders/${src.id}` : `/payroll/item-changes/${src.id}`
+      return <Space size={4}><Link to={to}>{src.label}</Link>{src.status === 'cancelled' && <Tag color="red">{t('pay.pl.cancelled')}</Tag>}</Space>
+    } },
+    { key: 'note', label: t('org.notes'), inTable: false, extra: t('pay.pl.noteHint') },
   ]
 
   return (
@@ -132,10 +149,13 @@ export default function PayTab({ employee }: { employee: number }) {
         defaults={{ employee, kind: 'personal', spouse_major: false, dependents: [], is_active: true, date: dayjs().format('YYYY-MM-DD') }}
         title={<Space orientation="vertical" size={0}><Typography.Text strong>{t('pay.ex.title')}</Typography.Text>
           <Typography.Text type="secondary">{t('pay.ex.hint')}</Typography.Text></Space>} />
-      <CrudTable endpoint="/payroll/employee-items/" params={{ employee }} canEdit={canEdit} fields={itemFields}
+      <CrudTable key={history} endpoint="/payroll/employee-items/" params={history === 'current' ? { employee, current: 1 } : { employee }}
+        canEdit={canEdit} fields={itemFields}
         defaults={{ employee, date_from: dayjs().startOf('month').format('YYYY-MM-DD') }}
+        extra={<Segmented size="small" value={history} onChange={(v) => setHistory(v as 'current' | 'all')}
+          options={[{ value: 'current', label: t('pay.pl.onlyCurrent') }, { value: 'all', label: t('pay.pl.withHistory') }]} />}
         title={<Space orientation="vertical" size={0}><Typography.Text strong>{t('pay.items.title')}</Typography.Text>
-          <Typography.Text type="secondary">{t('pay.items.hint')}</Typography.Text></Space>} />
+          <Typography.Text type="secondary">{t('pay.pl.itemsHint')}</Typography.Text></Space>} />
     </Space>
   )
 }

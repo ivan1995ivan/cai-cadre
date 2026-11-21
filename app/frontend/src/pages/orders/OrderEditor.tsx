@@ -90,7 +90,7 @@ export default function OrderEditor() {
     }
   }
   useUnsavedGuard(dirty && !!canEdit, () => saveAll(true))
-  useTabTitle(order ? (order.number ? t('desk.tab.order', { number: order.number }) : t('ord.draftHeading')) : null)
+  useTabTitle(order ? (order.number ? { key: 'desk.tab.order', params: { number: order.number } } : { key: 'ord.draftHeading' }) : null)
 
   const sign = async () => {
     setBusy(true)

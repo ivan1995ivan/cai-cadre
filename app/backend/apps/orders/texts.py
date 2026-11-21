@@ -3,7 +3,8 @@
 Textul se poate schimba în Administrare → Setări → Tipuri de ordine (câmpul „Textul punctului”) sau direct în ordin. Câmpurile
 din acolade: {angajat}, {tab}, {functia}, {sectia}, {norma}, {salariul}, {sporuri}, {din}, {pana}, {zile}, {an_de},
 {an_pana}, {motivul}, {destinatia}, {scopul}, {suma}, {suma_text}, {procent}, {sanctiunea}, {abaterea},
-{fel}, {proba}, {termen}, {data}, {ore}, {suplinit}, {ordin_anulat}, {text}.
+{fel}, {proba}, {termen}, {data}, {ore}, {suplinit}, {ordin_anulat}, {text}, {acumulari}. Tabelul „Acumulări și rețineri”
+({acumulari}) se adaugă la sfârșitul punctului dacă textul-model nu îl are.
 """
 from collections import defaultdict
 from decimal import Decimal
@@ -174,11 +175,51 @@ def context(item) -> dict:
     return ctx
 
 
+ACTIONS_TEXT = {"add": "se stabilește", "modify": "se modifică", "stop": "se oprește"}
+
+
+def pay_items_text(item) -> str:
+    """„Acumulări și rețineri: se stabilește NOCIV Spor … 10 % de la 01.03.2026; se oprește SINDICAT … de la …”."""
+    from apps.payroll.models import PayType
+
+    rows = (item.params or {}).get("pay_items") or []
+    if not isinstance(rows, list):
+        return ""
+    types = {t.pk: t for t in PayType.objects.filter(pk__in=[r.get("pay_type") for r in rows if isinstance(r, dict)])}
+    parts = []
+    for r in rows:
+        if not isinstance(r, dict) or r.get("pay_type") not in types:
+            continue
+        t = types[r["pay_type"]]
+        action = r.get("action") or "add"
+        words = [ACTIONS_TEXT.get(action, ""), t.name_ro.lower() if t.name_ro else t.code]
+        if action != "stop":
+            if r.get("amount") not in (None, ""):
+                words.append(f"{_fmt_money(r['amount'])} lei")
+            if r.get("percent") not in (None, ""):
+                words.append(f"{_fmt_rate(r['percent'])}%")
+            if r.get("quantity") not in (None, ""):
+                words.append(f"× {_fmt_rate(r['quantity'])}")
+        if r.get("date_from"):
+            words.append(f"de la {_d(r['date_from'])}")
+        if r.get("date_to"):
+            words.append(f"până la {_d(r['date_to'])}")
+        if r.get("document"):
+            words.append(f"({r['document']})")
+        parts.append(" ".join(w for w in words if w))
+    return ("Acumulări și rețineri: " + "; ".join(parts) + ".") if parts else ""
+
+
 def point_text(item) -> str:
     ot = item.order.order_type
     template = ot.point_template_ro or DEFAULT_POINTS.get(ot.code) or "{text}"
+    pay = pay_items_text(item)
+    if pay and "{acumulari}" not in template:
+        template = template + " {acumulari}"
     try:
-        text = template.format_map(context(item))
+        ctx = context(item)
+        ctx["acumulari"] = pay
+        text = template.format_map(ctx)
     except (KeyError, ValueError, IndexError) as exc:
         return f"[Textul-model are o greșeală: {exc}] " + (item.params or {}).get("text", "")
     return " ".join(text.split())

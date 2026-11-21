@@ -91,6 +91,9 @@ def sign(order: Order, user=None) -> Order:
         apply, _undo = effects.for_type(order.order_type)
         for item in items:
             item.result = apply(item, order, user) or {}
+            pay = effects.apply_pay_items(item, order, item.result)
+            if pay:
+                item.result["pay_items"] = pay
             refresh_text(item)
             item.save(update_fields=["result", "employment", "params", "text"])
     order.status, order.signed_at, order.signed_by = "signed", timezone.now(), user
@@ -117,6 +120,7 @@ def undo_order(target: Order, cancelled_by: Order):
         raise ValidationError({"detail": "Un ordin de anulare nu se anulează; emiteți ordinul din nou."})
     _apply, undo = effects.for_type(target.order_type)
     for item in target.items.select_related("employee").order_by("-sort", "-id"):
+        effects.undo_pay_items(item, item.result or {})  # întâi acumulările (stau pe raportul pe care îl poate șterge efectul)
         if undo:
             undo(item, item.result or {})
         item.result = {**(item.result or {}), "undone": True}

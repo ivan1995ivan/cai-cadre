@@ -9,6 +9,8 @@ Fiecare clasificator este o setare separată în *Administrare → Setări* (că
   oficial; cele fără cod nu au o denumire identică în CORM — codul se alege la instalare (observația funcției arată
   variantele). Clasificatorul complet se poate aduce cu **Import CORM din Excel** (codul și denumirea ajung). Atenție:
   Ordinul MMPS nr. 212/2025 (din 04.07.2026) a redenumit și a mutat unele ocupații — verificați codurile înainte de raportare.
+  Butonul cu portmoneul de pe rând — **acumulările-tip ale funcției** (tipul de calcul, suma / procentul / cantitatea): la
+  angajare tabelul „Acumulări și rețineri” din ordin se completează din ele (vezi *Ordine*).
 - **Categoriile de personal** — un clasificator ca toate celelalte: se livrează cu cele 9 grupe majore CORM
   (1 — conducători, 2 — specialiști, 3 — tehnicieni și maiștri, 4 — funcționari administrativi, 5 — lucrători în servicii și
   comerț, 6 — agricultură, 7 — muncitori calificați, 8 — operatori de mașini și conducători auto, 9 — muncitori

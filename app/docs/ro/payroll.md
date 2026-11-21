@@ -11,6 +11,10 @@ un rând pe fiecare **raport de muncă** (de bază, cumul, suplinire, contract d
 - **sporurile pe trepte de vechime** (formula „pe trepte”, pe vechimea totală în muncă) — de exemplu sporul pentru vechime
   din contractul colectiv; nu se preîncarcă, îl adăugați la tipurile de
   calcul dacă firma îl are;
+- **tipurile cu formulă** (vezi *Tipurile de calcul: formula și baza*) — pe rândul angajatului sau „pentru toți angajații”;
+  explicația rândului arată formula cu valorile ei (`TarifOrar 37,28 × OreNoapte 16 × C.night_pct 50 / 100 = 298,24`);
+- **acumulările și reținerile planificate** din fila „Salariu” — puse de **ordinele de personal** (tabelul „Acumulări și
+  rețineri”), de documentul **„Modificarea acumulărilor planificate”** sau de mână; fiecare rând are sursa lui;
 - **sporurile și reținerile personale** din fișa angajatului (fila „Salariu”): spor individual, plata la contract, sindicat,
   pensie alimentară, împrumut.
 

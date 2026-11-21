@@ -1,5 +1,22 @@
 # Ce e nou
 
+## Etapa S3: formula în tipurile de calcul și acumulările planificate
+
+- **Tipul de calcul „Formulă”**: o expresie scrisă de dvs. (`TarifOrar * OreNoapte * C.night_pct / 100`), cu variabilele din
+  pontaj și din rândul angajatului, constantele `C.cod` și alte tipuri `[COD]`; verificarea pe loc cu poziția erorii,
+  dependențele circulare respinse, ordinea de calcul după dependențe; **„Încearcă pe un angajat”** fără să se salveze
+  nimic. Explicația rândului din calcul arată formula cu valorile ei.
+- **Din ce se calculează** — coloana nouă la toate tipurile (și la cele automate: regula, cu valorile constantelor), plus
+  impozitul, CNAM, CAS, media, plafonul neimpozabil și codul IPC; editorul grupează „Ce se impozitează”.
+- **Tabelul „Acumulări și rețineri”** în ordinele de angajare, transfer, condiții, salariu, sporuri, cumul / suplinire și
+  reținere: adaugă / modifică / oprește; la semnare intră în fila „Salariu”, anularea ordinului le întoarce. La angajare —
+  din **acumulările-tip ale funcției**.
+- **Documentul „Modificarea acumulărilor planificate”** (Salarizare) — pentru schimbările fără ordin: titlul executoriu,
+  sindicatul la cerere, tichetele de masă; aprobarea și anularea aprobării, tiparul.
+- **Fila „Salariu”**: sursa fiecărui rând (ordinul nr. / documentul nr. / de mână) cu legătura, istoricul rândurilor închise.
+- **Scutirea** se aplică și angajatului al cărui singur raport aici e cumulul extern; cererea arată locul depunerii (de bază /
+  prin cumul), și în tipar.
+
 ## Aspectul „Clasic de birou”
 - Programul arată ca o aplicație de birou: **bara de titlu** (*CAI CADRE — întreprinderea*), **bara de meniu** (Fișier,
   secțiunile meniului principal, Ferestre, Ajutor; din tastatură cu **Alt**, săgețile, Enter, Esc), **bara de unelte**

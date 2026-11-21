@@ -103,7 +103,7 @@ export default function PaymentEditor() {
   }
   useUnsavedGuard(dirty, saveHeader)
   const title = doc ? t('pp.heading', { number: doc.number, date: dayjs(doc.date).format('DD.MM.YYYY') }) : ''
-  useTabTitle(doc ? t('desk.tab.payment', { number: doc.number }) : null)
+  useTabTitle(doc ? { key: 'desk.tab.payment', params: { number: doc.number } } : null)
 
   if (!doc) return <Card><Spin /></Card>
   const run = async (fn: () => Promise<unknown>, ok?: string) => {

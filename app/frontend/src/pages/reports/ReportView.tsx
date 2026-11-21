@@ -13,6 +13,7 @@ import { useFetch } from '../../api/hooks'
 import { downloadFile } from '../../api/payroll'
 import { useApp } from '../../auth/AppContext'
 import { useTabTitle } from '../../layout/tabs'
+import { REPORT_NAV } from '../../layout/nav'
 import type { CatalogItem } from './ReportsPage'
 import SubdivisionSelect from '../../components/SubdivisionSelect'
 
@@ -51,7 +52,8 @@ export default function ReportView({ reportKey, embedded }: { reportKey?: string
   const { data: catalog } = useFetch<CatalogItem[]>('/reports/', { lang: i18n.language })
   const info = catalog?.find((c) => c.key === key)
   const has = (f: string) => !!info?.filters.includes(f)
-  useTabTitle(embedded ? null : info?.title)
+  // raportul din meniu își ia fila din denumirea lui de meniu (se traduce singură); ceilalți — titlul din catalog
+  useTabTitle(embedded || REPORT_NAV.some((r) => r.path === `/reports/${key}`) ? null : info?.title)
   const now = dayjs()
   const [period, setPeriod] = useState<Period>([now.startOf('month'), now])
   const [onDate, setOnDate] = useState<Dayjs>(now)

@@ -61,7 +61,7 @@ export default function ScheduleEditor() {
   const navigate = useNavigate()
   const { hasPerm } = useApp()
   const { data, loading, reload } = useFetch<ScheduleReport>(`/leave/schedules/${id}/report/`)
-  useTabTitle(data ? t('lv.sch.heading', { year: data.year, subdivision: data.subdivision_name }) : null)
+  useTabTitle(data ? { key: 'lv.sch.heading', params: { year: data.year, subdivision: data.subdivision_name } } : null)
   const [adding, setAdding] = useState<number | undefined>()
   const [printOpen, setPrintOpen] = useState(false)
   const [month, setMonth] = useState<number>(dayjs().month() + 2 > 12 ? 1 : dayjs().month() + 2)

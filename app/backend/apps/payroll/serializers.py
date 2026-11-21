@@ -6,8 +6,9 @@ from django.utils import timezone
 
 from rest_framework import serializers
 
-from .models import (EmployeePayItem, ExemptionDependent, ExemptionRequest, PayConstant, Payment, PaymentLine, Payroll, PayrollItem, PayrollLine,
-                     PayType)
+from . import dependencies, explain, formula
+from .models import (EmployeePayItem, ExemptionDependent, ExemptionRequest, OccupationPayItem, PayConstant, PayItemChange,
+                     PayItemChangeLine, Payment, PaymentLine, Payroll, PayrollItem, PayrollLine, PayType)
 
 
 class PayConstantSerializer(serializers.ModelSerializer):
@@ -19,13 +20,28 @@ class PayConstantSerializer(serializers.ModelSerializer):
 class PayTypeSerializer(serializers.ModelSerializer):
     category_label = serializers.CharField(source="get_category_display", read_only=True)
     formula_label = serializers.CharField(source="get_formula_display", read_only=True)
+    applies_to_label = serializers.CharField(source="get_applies_to_display", read_only=True)
+    how = serializers.SerializerMethodField()
 
     class Meta:
         model = PayType
         fields = ["id", "code", "name_ro", "name_ru", "name_en", "category", "category_label", "formula", "formula_label", "auto",
+                  "expression", "applies_to", "applies_to_label", "how",
                   "percent", "base_codes", "scale", "taxable", "cas", "cnam", "exempt_month", "exempt_year", "exempt_avg_pct",
                   "in_average", "ipc_code", "account", "on_payslip", "sort", "is_active", "is_system"]
         read_only_fields = ["is_system"]
+
+    def get_how(self, obj):
+        """Din ce se calculează (RO / RU / EN): regula motorului la tipurile automate, formula / baza la celelalte."""
+        cache = self.context.setdefault("_how", {}) if isinstance(self.context, dict) else {}
+        if "names" not in cache:
+            from django.utils import timezone
+
+            from .engine import Constants
+
+            cache["names"] = {t.code: (t.name_ro, t.name_ru, t.name_en) for t in PayType.objects.all()}
+            cache["const"] = Constants(timezone.localdate())
+        return explain.how(obj, cache["names"], cache["const"])
 
     def validate(self, attrs):
         for key in ("base_codes", "scale"):
@@ -39,38 +55,245 @@ class PayTypeSerializer(serializers.ModelSerializer):
                     raise serializers.ValidationError({"scale": "Anii și procentul nu pot fi negative."})
             except (InvalidOperation, ValueError) as exc:
                 raise serializers.ValidationError({"scale": "Anii și procentul sunt numere."}) from exc
+        if self.instance is None and attrs.get("formula") == "scale" and "applies_to" not in self.initial_data:
+            attrs["applies_to"] = "all"  # treptele de vechime — implicit pentru toți angajații (ca până la formulă)
+        check_type(self.instance, attrs)
         return attrs
 
 
+def type_candidate(instance, attrs) -> PayType:
+    """Tipul așa cum ar fi după salvare (nesalvat): valorile noi peste cele vechi."""
+    fields = {f.name: getattr(instance, f.name) for f in PayType._meta.concrete_fields} if instance else {}
+    cand = PayType(**{k: v for k, v in fields.items() if k != "id"})
+    cand.pk = instance.pk if instance else None
+    for k, v in attrs.items():
+        setattr(cand, k, v)
+    cand.code = (cand.code or "").strip()
+    return cand
+
+
+def check_type(instance, attrs) -> PayType:
+    """Verificările tipului la salvare: formula (sintaxa, variabilele, codurile, cu poziția), baza (coduri existente, fără
+    tipurile calculate după formule), dependența circulară, „pentru toți” doar unde se poate, redenumirea unui cod folosit."""
+    cand = type_candidate(instance, attrs)
+    if (instance is None or cand.code != instance.code) and not re.fullmatch(r"[A-Za-z0-9_\-]+", cand.code):
+        raise serializers.ValidationError({"code": "Codul: litere latine, cifre, „_” și „-” (în formule se scrie [COD])."})
+    others = [t for t in PayType.objects.all() if t.pk != cand.pk]
+    by_code = {t.code: t for t in others}
+    known = set(by_code) | {cand.code}
+    if cand.formula == "expr":
+        try:
+            parsed = formula.check(cand.expression, type_codes=known,
+                                   constant_codes=set(PayConstant.objects.values_list("code", flat=True)))
+        except formula.FormulaError as exc:
+            raise serializers.ValidationError({"expression": exc.text()}) from None
+        refs = parsed.refs
+    else:
+        refs = []
+    if cand.formula in ("pct_base", "expr", "scale"):
+        unknown = [c for c in cand.base_codes or [] if c not in known]
+        if unknown:
+            raise serializers.ValidationError({"base_codes": "Tipurile nu există: " + ", ".join(unknown)})
+        for code in [*(cand.base_codes or []), *refs]:
+            t = cand if code == cand.code else by_code.get(code)
+            if t is not None and t.formula == "auto" and t.auto in dependencies.LATE_AUTOS:
+                raise serializers.ValidationError({"expression" if code in refs else "base_codes": (
+                    f"{code} ({t.name_ro}) se calculează după formule sau la plată; nu poate intra în baza / formula altui tip.")})
+    if cand.applies_to == "all" and cand.formula not in PayType.GENERAL_FORMULAS:
+        raise serializers.ValidationError({"applies_to": "„Toți angajații” — doar la formulă, trepte de vechime și procente; "
+                                                         "suma fixă și tariful orar vin din rândul angajatului."})
+    graph = {t.code: dependencies.deps_of(t) for t in others}
+    graph[cand.code] = dependencies.deps_of(cand)
+    path = dependencies.find_cycle(graph, cand.code)
+    if path:
+        field = "expression" if cand.formula == "expr" else "base_codes"
+        raise serializers.ValidationError({field: dependencies.cycle_text(path)})
+    if instance is not None and cand.code != instance.code:
+        users = dependencies.users_of(instance.code, others)
+        if users:
+            raise serializers.ValidationError({"code": f"Codul {instance.code} e folosit în baza / formula tipurilor "
+                                                       f"{', '.join(t.code for t in users)}; schimbați-le întâi."})
+    return cand
+
+
 class EmployeePayItemSerializer(serializers.ModelSerializer):
+    """Rândul din fila „Salariu”. Cel venit dintr-un document (ordinul, „Modificarea acumulărilor planificate”) are sursa cu
+    legătura spre el și nu se schimbă de mână (doar observațiile): se modifică / se oprește printr-un document nou."""
+
     pay_type_name = serializers.CharField(source="pay_type.name_ro", read_only=True)
+    pay_type_code = serializers.CharField(source="pay_type.code", read_only=True)
+    formula = serializers.CharField(source="pay_type.formula", read_only=True)
     category = serializers.CharField(source="pay_type.category", read_only=True)
     employment_label = serializers.SerializerMethodField()
+    source = serializers.SerializerMethodField()
 
     class Meta:
         model = EmployeePayItem
-        fields = ["id", "employee", "employment", "employment_label", "pay_type", "pay_type_name", "category", "amount", "percent",
-                  "date_from", "date_to", "document", "note"]
+        fields = ["id", "employee", "employment", "employment_label", "pay_type", "pay_type_name", "pay_type_code", "formula",
+                  "category", "amount", "percent", "quantity", "date_from", "date_to", "document", "note", "source"]
 
     def get_employment_label(self, obj):
         j = obj.employment
         return f"{j.get_kind_display()}: {j.occupation.name_ro}" if j else ""
 
+    def get_source(self, obj):
+        """De unde vine rândul: {kind: order | change | manual, id, label}."""
+        if obj.order_item_id:
+            order = obj.order_item.order
+            return {"kind": "order", "id": order.pk, "label": f"Ordinul nr. {order.reference()}", "status": order.status}
+        if obj.change_line_id:
+            doc = obj.change_line.change
+            return {"kind": "change", "id": doc.pk, "label": f"Modificarea acumulărilor {doc.reference()}", "status": doc.status}
+        return {"kind": "manual", "id": None, "label": "", "status": ""}
+
     def validate(self, attrs):
+        if self.instance is not None and self.instance.from_document:
+            changed = [k for k, v in attrs.items() if k != "note" and v != getattr(self.instance, k)]
+            if changed:
+                raise serializers.ValidationError({"detail": "Rândul vine dintr-un document; se modifică / se oprește printr-un ordin "
+                                                             "sau prin „Modificarea acumulărilor planificate”."})
+            return attrs
         t = attrs.get("pay_type", getattr(self.instance, "pay_type", None))
         amount = attrs.get("amount", getattr(self.instance, "amount", None))
         percent = attrs.get("percent", getattr(self.instance, "percent", None))
-        if t and t.formula in ("fixed", "hourly") and amount is None:
-            raise serializers.ValidationError({"amount": "Dați suma (sau tariful)."})
-        if t and t.formula in ("pct_salary", "pct_base") and percent is None and not t.percent:
-            raise serializers.ValidationError({"percent": "Dați procentul."})
-        if t and t.formula == "auto":
-            raise serializers.ValidationError({"pay_type": "Tipul se calculează singur; nu se pune pe angajat."})
+        problem = row_problem(t, amount, percent)
+        if problem:
+            raise serializers.ValidationError(problem)
         job = attrs.get("employment")
         emp = attrs.get("employee", getattr(self.instance, "employee", None))
         if job is not None and emp is not None and job.employee_id != emp.pk:
             raise serializers.ValidationError({"employment": "Raportul de muncă este al altui angajat."})
+        start = attrs.get("date_from", getattr(self.instance, "date_from", None))
+        end = attrs.get("date_to", getattr(self.instance, "date_to", None))
+        if start and end and end < start:
+            raise serializers.ValidationError({"date_to": "Sfârșitul este înaintea începutului."})
         return attrs
+
+
+def row_problem(t, amount, percent) -> dict | None:
+    """Ce lipsește rândului angajatului pentru tipul `t` (aceleași reguli în fila „Salariu”, în ordin și în document)."""
+    if t is None:
+        return {"pay_type": "Alegeți tipul de calcul."}
+    if t.formula == "auto":
+        return {"pay_type": "Tipul se calculează singur; nu se pune pe angajat."}
+    if t.formula in ("fixed", "hourly") and amount is None:
+        return {"amount": "Dați suma (sau tariful)."}
+    if t.formula in ("pct_salary", "pct_base") and percent is None and not t.percent:
+        return {"percent": "Dați procentul."}
+    for value, field in ((amount, "amount"), (percent, "percent")):
+        if value is not None and Decimal(value) < 0:
+            return {field: "Nu poate fi negativ."}
+    return None
+
+
+class OccupationPayItemSerializer(serializers.ModelSerializer):
+    """Acumularea-tip a funcției (clasificatorul funcțiilor)."""
+
+    pay_type_code = serializers.CharField(source="pay_type.code", read_only=True)
+    pay_type_name = serializers.CharField(source="pay_type.name_ro", read_only=True)
+
+    class Meta:
+        model = OccupationPayItem
+        fields = ["id", "occupation", "pay_type", "pay_type_code", "pay_type_name", "amount", "percent", "quantity", "sort"]
+
+    def validate(self, attrs):
+        t = attrs.get("pay_type", getattr(self.instance, "pay_type", None))
+        problem = row_problem(t, attrs.get("amount", getattr(self.instance, "amount", None)),
+                              attrs.get("percent", getattr(self.instance, "percent", None)))
+        if problem:
+            raise serializers.ValidationError(problem)
+        return attrs
+
+
+class PayItemChangeLineSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
+    employee_name = serializers.CharField(source="employee.full_name", read_only=True)
+    tab_number = serializers.CharField(source="employee.tab_number", read_only=True)
+    pay_type_code = serializers.CharField(source="pay_type.code", read_only=True)
+    pay_type_name = serializers.CharField(source="pay_type.name_ro", read_only=True)
+    action_label = serializers.CharField(source="get_action_display", read_only=True)
+    employment_label = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PayItemChangeLine
+        fields = ["id", "employee", "employee_name", "tab_number", "employment", "employment_label", "pay_type", "pay_type_code",
+                  "pay_type_name", "action", "action_label", "target", "amount", "percent", "quantity", "date_from", "date_to",
+                  "document", "result", "sort"]
+        read_only_fields = ["result", "sort"]
+
+    def get_employment_label(self, obj):
+        j = obj.employment
+        return f"{j.get_kind_display()}: {j.occupation.name_ro}" if j else ""
+
+
+class PayItemChangeSerializer(serializers.ModelSerializer):
+    """Documentul „Modificarea acumulărilor planificate” cu rândurile lui (se trimit cu documentul și îl înlocuiesc întreg)."""
+
+    deletion_mark = serializers.BooleanField(read_only=True)
+    status_label = serializers.CharField(source="get_status_display", read_only=True)
+    lines = PayItemChangeLineSerializer(many=True, required=False)
+    employees = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PayItemChange
+        fields = ["id", "deletion_mark", "number", "date", "status", "status_label", "note", "created_at", "approved_at", "lines",
+                  "employees"]
+        read_only_fields = ["number", "status", "created_at", "approved_at"]
+
+    def get_employees(self, obj):
+        names = list(dict.fromkeys(ln.employee.short_name() for ln in obj.lines.all()))
+        return ", ".join(names[:4]) + (f" și încă {len(names) - 4}" if len(names) > 4 else "")
+
+    def validate(self, attrs):
+        for n, ln in enumerate(attrs.get("lines") or [], start=1):
+            emp, job, t, target = ln.get("employee"), ln.get("employment"), ln.get("pay_type"), ln.get("target")
+            if job is not None and job.employee_id != emp.pk:
+                raise serializers.ValidationError({"lines": f"Rândul {n}: raportul de muncă este al altui angajat."})
+            if target is not None and (target.employee_id != emp.pk or target.pay_type_id != t.pk):
+                raise serializers.ValidationError({"lines": f"Rândul {n}: rândul ales din fila „Salariu” e al altui angajat / tip."})
+            action = ln.get("action", "add")
+            if action == "add":
+                problem = row_problem(t, ln.get("amount"), ln.get("percent"))
+                if problem:
+                    raise serializers.ValidationError({"lines": f"Rândul {n}, {t.code}: {next(iter(problem.values()))}"})
+            elif t.formula == "auto":
+                raise serializers.ValidationError({"lines": f"Rândul {n}: tipul {t.code} se calculează singur."})
+            for key in ("amount", "percent", "quantity"):
+                if ln.get(key) is not None and ln[key] < 0:
+                    raise serializers.ValidationError({"lines": f"Rândul {n}: valorile nu pot fi negative."})
+            if ln.get("date_from") and ln.get("date_to") and ln["date_to"] < ln["date_from"] and action != "stop":
+                raise serializers.ValidationError({"lines": f"Rândul {n}: „până la” este înaintea lui „de la”."})
+        return attrs
+
+    def _save_lines(self, doc, rows):
+        if rows is None:
+            return
+        keep = []
+        for n, data in enumerate(rows, start=1):
+            pk = data.pop("id", None)
+            obj = doc.lines.filter(pk=pk).first() if pk else None
+            if obj is None:
+                obj = PayItemChangeLine(change=doc)
+            for k, v in data.items():
+                setattr(obj, k, v)
+            obj.sort = n * 10
+            obj.save()
+            keep.append(obj.pk)
+        doc.lines.exclude(pk__in=keep).delete()
+
+    @transaction.atomic
+    def create(self, validated_data):
+        rows = validated_data.pop("lines", [])
+        doc = super().create(validated_data)
+        self._save_lines(doc, rows)
+        return doc
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        rows = validated_data.pop("lines", None)
+        doc = super().update(instance, validated_data)
+        self._save_lines(doc, rows)
+        return doc
 
 
 FAMILY_RELATION = {"son": "child", "daughter": "child", "mother": "parent", "father": "parent"}  # rudenia din „Familia”
@@ -102,13 +325,14 @@ class ExemptionRequestSerializer(serializers.ModelSerializer):
     employee_name = serializers.CharField(source="employee.full_name", read_only=True)
     dependents = ExemptionDependentSerializer(many=True, required=False)
     warnings = serializers.SerializerMethodField()
+    place_label = serializers.CharField(source="get_place_display", read_only=True)
 
     class Meta:
         model = ExemptionRequest
         fields = ["id", "employee", "employee_name", "number", "date", "date_from", "date_to", "kind", "major_category",
                   "major_document", "spouse_major", "spouse_name", "spouse_idnp", "spouse_category", "spouse_document",
-                  "waiver_date", "documents", "needs_review", "review_note", "is_active", "dependents", "code", "code_now",
-                  "warnings"]
+                  "waiver_date", "place", "place_label", "documents", "needs_review", "review_note", "is_active", "dependents", "code",
+                  "code_now", "warnings"]
 
     def get_code(self, obj):
         return obj.code()
@@ -182,6 +406,11 @@ class ExemptionRequestSerializer(serializers.ModelSerializer):
     @transaction.atomic
     def create(self, validated_data):
         rows = validated_data.pop("dependents", [])
+        if "place" not in self.initial_data:  # implicit: locul de bază, dacă angajatul are aici raport de bază; altfel — cumulul
+            from apps.staff.models import MAIN_KINDS
+
+            main = validated_data["employee"].main_employment()
+            validated_data["place"] = "main" if main is not None and main.kind in MAIN_KINDS else "secondary"
         req = super().create(validated_data)
         self._save_dependents(req, rows)
         req.replace_previous()
