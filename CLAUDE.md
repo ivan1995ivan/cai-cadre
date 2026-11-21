@@ -73,6 +73,22 @@ pornească de unde s-a rămas, nu de la zero.
   CAS; rubrica IPC21 pentru diferența de bază CAS; forma anexei 6 (HG 697/2014) în vigoare. **Rămas:** locul
   aplicării scutirii (bază / cumul) — de făcut împreună cu S3.
 
+- **S3 „formula și acumulările la angajare” — gata** (2026-11-21): tipul de calcul cu **formulă**
+  (`payroll/formula.py`: evaluator `ast` cu listă albă, Decimal; sintaxa RO — `;` între argumente,
+  `1,5`; variabilele `SalariuFunctie`, `TarifOrar`, `OreNoapte`, `OreSuplim2`, `Suma`, `Procent`,
+  `Cantitate`, `Baza`, `C.<cod>`, `[COD]`…; ciclurile respinse la salvare; ordinea topologică;
+  explicația rândului cu valorile), `/api/payroll/types/{id}/try/` („Încearcă”, fără salvare),
+  `how` pentru toate tipurile; tabelul **„Acumulări și rețineri”** în ordine (adaugă / modifică /
+  oprește; semnarea → `EmployeePayItem`, anularea le întoarce), acumulările-tip pe funcție
+  (`OccupationPayItem`); documentul **„Modificarea acumulărilor planificate”** (`PayItemChange`, seria
+  MA); fila „Salariu” cu sursa rândurilor; scutirea la cumul extern + `ExemptionRequest.place`.
+- **Interfața „Clasic de birou”** (2026-11-21, cerută de Anatol: „să fie ca C++ / Java”): tema și
+  aspectul `desktop` (implicit pentru întreprindere; `desktop_dark`): bara de titlu, meniul clasic
+  (Alt + litera), bara de unelte legată de fereastra activă, ferestrele ca file, bara de stare, tabele
+  dense cu grilă, dialoguri ca ferestre; pe telefon „☰”. `layout/DesktopLayout.tsx`, `layout/desktop/`,
+  `theme/themes.ts`, `styles.css` (`html[data-look='desktop']`); temele vechi rămân de ales.
+  Verificat: 210 teste, typecheck, build, capturi Playwright (RO / RU / telefon).
+
 ## Următorii pași (de aici pornește sesiunea următoare)
 
 0. **Deschiderea**: (a) ~~Public Hostname~~ — făcut. (b) asistentul de
