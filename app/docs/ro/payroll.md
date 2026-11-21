@@ -79,3 +79,9 @@ totalurile și suma de plată; pe mai multe luni — și rândul fiecărei luni.
 zilele de boală ale angajatorului) cu „în vigoare din” — la schimbarea legii se adaugă un rând nou;
 **tipurile de calcul** — formula (automat, sumă fixă, % din salariu, % din bază, tarif orar, trepte), impozabil, CAS, CNAM,
 plafoanele, intră în medie, codul pentru IPC21 / IALS21.
+
+
+**Regimul IT Park** (rezidentul unui parc IT, din luna aleasă în *Constantele salarizării → Regimul fiscal*): salariul din
+contractele individuale de muncă e **impozitat final** — fără CAS, fără CNAM și impozit la plată, fără scutiri; completarea
+până la salariul minim rămâne; contractele de prestări servicii — în regimul general. Calculul are eticheta „IT Park —
+impozitat final”, coloana CAS arată „IT Park”, iar restul e chiar suma de plată. Detaliat — [Regimul IT Park](help:payroll/it-park).
