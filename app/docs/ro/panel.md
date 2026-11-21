@@ -34,5 +34,9 @@ secțiunea fără nimic vizibil nu are filă. Așezarea secțiunilor și a func�
 Fără meniul din stânga, **favoritele** stau sub butonul ★ *Favorite* din antet (apare când aveți cel puțin una). Steluța
 din bara de jos pune pagina curentă la favorite.
 
+## În aspectul „Clasic de birou”
+Secțiunile nu mai stau și ca rând de file (ar dubla bara de meniu): panoul secțiunii se deschide din meniul ei,
+primul rând — **Panoul funcțiilor**; favoritele sunt în **Fișier → Favorite**. Vezi [Aspectul programului](help:interfata).
+
 ## Pe telefon
 Pe ecranul îngust meniul rămâne cel obișnuit (butonul ☰), iar panourile se deschid din adresă.

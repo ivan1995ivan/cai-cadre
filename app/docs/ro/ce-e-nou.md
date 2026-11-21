@@ -1,5 +1,17 @@
 # Ce e nou
 
+## Aspectul „Clasic de birou”
+- Programul arată ca o aplicație de birou: **bara de titlu** (*CAI CADRE — întreprinderea*), **bara de meniu** (Fișier,
+  secțiunile meniului principal, Ferestre, Ajutor; din tastatură cu **Alt**, săgețile, Enter, Esc), **bara de unelte**
+  (Nou, Salvează — și Ctrl+S, Tipar, Excel, Reîmprospătează, Căutare, Ferestrele deschise — legate de fereastra activă),
+  ferestrele deschise ca **file**, **bara de stare** (legătura cu serverul, utilizatorul, rolul, notificările, cine e
+  online, versiunea).
+- Ferestre gri deschis, câmpuri și tabele albe cu chenar subțire, rânduri dese cu grilă, rândul ales albastru, grupele de
+  câmpuri în chenar cu titlu, dialoguri cu bară de titlu și OK / Anulare în dreapta jos; fără colțuri rotunde și animații.
+- E **tema implicită** a instalărilor noi și a întreprinderii rămase pe vechea temă implicită; există și varianta
+  **întunecată**. Celelalte teme (cu meniul în stânga) rămân de ales în Profil sau în Constante. Vezi
+  [Aspectul programului](help:interfata).
+
 ## Etapa S1 (CAI CADRE pentru întreprinderi): fără funcțiile de spital — formarea, sănătatea, evidența militară, vechimea
 - **Formarea profesională** în locul EMC și al atestării: registrul cursurilor și instruirilor cu orele, certificatul și
   **termenul lui de valabilitate**; alerta și raportul *Certificatele de formare care expiră*; planul anual se completează

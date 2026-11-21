@@ -3,7 +3,7 @@
 Aici vă schimbați datele personale, aspectul sistemului și parola.
 
 ## Aspect
-- **Tema**: Verde prospețime, Turcoaz, Albastru, Întunecată sau **Automat** (ziua tema firmei, noaptea tema întunecată, după setarea calculatorului).
+- **Tema**: *Tema întreprinderii* (cea din Constante), **Clasic de birou** sau **Clasic de birou, întunecat** (programul cu bara de meniu, bara de unelte și bara de stare — vezi [Aspectul programului](help:interfata)), Verde prospețime, Turcoaz, Albastru, Întunecată, Ca în 1C (galben) sau **Automat** (ziua tema firmei, noaptea varianta ei întunecată, după setarea calculatorului). Tema se schimbă și din meniul **Fișier → Tema**.
 - **Butoanele**: *În relief (3D)* — cu lumină sus și umbră jos, se „apasă” sub deget; *Plate (2D)* — simple, fără umbre. Sub alegere se vede pe loc cum arată.
 - **Densitatea tabelelor**: *Compactă* arată mai multe rânduri pe ecran.
 - **Limba**: una dintre limbile pornite în sistem (română, rusă, engleză). Se păstrează pentru contul dvs. pe orice calculator.

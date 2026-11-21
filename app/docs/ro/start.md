@@ -27,6 +27,9 @@ Clic pe indicator deschide lista respectivă.
 
 ## Antetul
 
+În aspectul **Clasic de birou** (implicit) în locul antetului sunt bara de meniu, bara de unelte și bara de stare — vezi
+[Aspectul programului](help:interfata). În celelalte teme:
+
 - **?** (sau F1): instrucțiunea pentru ecranul curent.
 - **Clopoțelul**: notificările — termenele, ordinele de semnat, cererile de concediu.
 - **Paleta**: tema și așezarea meniului.
@@ -35,7 +38,7 @@ Clic pe indicator deschide lista respectivă.
 
 ## Ferestrele deschise (bara de jos)
 
-Fiecare pagină deschisă rămâne ca filă în bara de jos.
+Fiecare pagină deschisă rămâne ca filă în bara de jos (în aspectul *Clasic de birou* — filele de sub bara de unelte).
 - **Esc** închide pagina deschisă — o formă sau o listă — și fila ei; se trece la fila de alături. Dacă forma are
   modificări nesalvate, programul întreabă **„Salvați modificările?”**: *Da* (salvează și închide), *Nu* (închide fără
   ele), *Anulare* (rămâne). Cât e deschisă o fereastră, o listă derulantă sau un calendar, Esc le închide pe ele.

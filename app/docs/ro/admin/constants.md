@@ -40,4 +40,6 @@ Conturile (IBAN) întreprinderii; contul **implicit** apare în antetul formelor
   forme de tipar se ascund pentru limbile oprite. Utilizatorii care lucrau într-o limbă oprită trec pe prima limbă bifată.
 
 ## Tema
-Tema implicită pentru toți și, opțional, culoarea principală a întreprinderii.
+Tema implicită pentru toți și, opțional, culoarea principală a întreprinderii (pentru temele Verde, Turcoaz, Albastru).
+Implicit — **Clasic de birou**: programul cu bara de meniu, bara de unelte și bara de stare (vezi
+[Aspectul programului](help:interfata)). Fiecare își poate alege altă temă în [Profilul meu](help:profile).

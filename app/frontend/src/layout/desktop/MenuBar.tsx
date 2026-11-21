@@ -35,13 +35,13 @@ const lastSelectable = (items: MenuEntry[]) => step(items, 0, -1)
 /** Litera fără diacritice (Î → I, Ș → S), pentru Alt+litera. */
 const plain = (ch: string) => ch.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase()
 
-/** Litera de acces a fiecărui meniu: prima literă latină din denumire pe care n-o are alt meniu dinainte. */
+/** Litera de acces a fiecărui meniu: prima literă din denumire (latină sau chirilică) pe care n-o are alt meniu dinainte. */
 function mnemonics(labels: string[]): { index: number; letter: string }[] {
   const used = new Set<string>()
   return labels.map((label) => {
     for (let i = 0; i < label.length; i++) {
       const letter = plain(label[i])
-      if (/^[A-Z]$/.test(letter) && !used.has(letter)) {
+      if (/^\p{L}$/u.test(letter) && !used.has(letter)) {
         used.add(letter)
         return { index: i, letter }
       }
@@ -114,7 +114,15 @@ export default function MenuBar({ menus, label }: { menus: MenuDef[]; label: str
   const [focusIdx, setFocusIdx] = useState<number | null>(null)
   /** literele de acces se văd (s-a lucrat din tastatură) */
   const [keys, setKeys] = useState(false)
-  const keysOf = useMemo(() => mnemonics(menus.map((m) => m.label)), [menus])
+  const labels = menus.map((m) => m.label).join('\n')
+  const keysOf = useMemo(() => mnemonics(labels.split('\n')), [labels])
+  /** meniul cu litera apăsată: litera din aranjamentul tastaturii (și chirilica), apoi tasta latină (KeyF) */
+  const keyIndex = useCallback((e: KeyboardEvent | React.KeyboardEvent) => {
+    const typed = e.key.length === 1 ? plain(e.key) : ''
+    let i = typed ? keysOf.findIndex((k) => k.letter === typed) : -1
+    if (i < 0 && /^Key[A-Z]$/.test(e.code)) i = keysOf.findIndex((k) => k.letter === e.code.slice(3))
+    return i
+  }, [keysOf])
   const state = useRef({ open, path, focusIdx, menus })
   state.current = { open, path, focusIdx, menus }
 
@@ -166,8 +174,8 @@ export default function MenuBar({ menus, label }: { menus: MenuDef[]; label: str
         return
       }
       armed = false
-      if (!e.altKey || e.ctrlKey || e.metaKey || e.getModifierState?.('AltGraph') || !/^Key[A-Z]$/.test(e.code)) return
-      const i = keysOf.findIndex((k) => k.letter === e.code.slice(3))
+      if (!e.altKey || e.ctrlKey || e.metaKey || e.getModifierState?.('AltGraph')) return
+      const i = keyIndex(e)
       if (i < 0) return
       e.preventDefault()
       e.stopPropagation()
@@ -195,7 +203,7 @@ export default function MenuBar({ menus, label }: { menus: MenuDef[]; label: str
       window.removeEventListener('keyup', up, true)
       window.removeEventListener('blur', blurWindow)
     }
-  }, [keysOf, openMenu, leave, enter])
+  }, [keyIndex, openMenu, leave, enter])
 
   // clic în afara barei închide meniul
   useEffect(() => {
@@ -224,8 +232,8 @@ export default function MenuBar({ menus, label }: { menus: MenuDef[]; label: str
       else if (e.key === 'ArrowLeft') { handled(); setFocusIdx((at + n - 1) % n) }
       else if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') { handled(); openMenu(at, true) }
       else if (e.key === 'Escape' || e.key === 'Tab') { handled(); leave() }
-      else if (/^[a-zA-Z]$/.test(e.key)) {
-        const i = keysOf.findIndex((k) => k.letter === e.key.toUpperCase())
+      else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
+        const i = keyIndex(e)
         if (i >= 0) { handled(); openMenu(i, true) }
       }
       return
