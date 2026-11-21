@@ -222,6 +222,13 @@ zbor). Ce cere:
 - **Scopul:** datele puse o dată în cartelă umplu singure pontajul și calculul — fără introducere repetată și fără
   neconcordanțe; analiza întregului drum cartelă → pontaj → salariu → rapoarte.
 
+Precizat de Anatol (2026-11-21): **fiecare tip de ore are tariful lui pe oră** (zbor, instruire, examinare …);
+**orele garantate sunt un minim plătit**, nu o sumă fixă: plătite = max(orele efective, orele garantate) — garantat 50,
+efectiv 34 → se plătesc 50; efectiv 54 → se plătesc 54. Garanția se pune pe raport (pe funcție), pe tipul de ore, pe lună
+(proporțional cu zilele lucrate în luna angajării / eliberării și cu absențele care o suspendă — de stabilit la S4b cu
+clientul; implicit: proporțional cu zilele raportului în lună, fără reducere pentru concediul de odihnă plătit din medie
+— de confirmat).
+
 Răspunsul în produs (etapa **S4b**, comună pentru fabrică, aviație, transport):
 - **Clasificatorul tipurilor de ore** (cod, denumire RO / RU / EN, grupa: lucrate / zbor / instruire / examinare / rezervă /
   staționare / conducere / disponibilitate …, intră în norma lunii sau nu, se plătește cu ce tip de calcul) — profilurile
