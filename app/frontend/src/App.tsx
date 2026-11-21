@@ -89,6 +89,7 @@ const SETTING_PAGES: Record<string, (title: string) => React.ReactNode> = {
   ...Object.fromEntries(DICT_KINDS.map((kind) => [`dict:${kind}`, (title: string) => <DictionaryPage dict={kind} title={title} />])),
   workSchedules: (title) => <WorktimeSettingsPage part="schedules" title={title} />,
   shiftTypes: (title) => <WorktimeSettingsPage part="shifts" title={title} />,
+  hourTypes: (title) => <WorktimeSettingsPage part="hourTypes" title={title} />,
   productionCalendar: (title) => <WorktimeSettingsPage part="calendar" title={title} />,
   worktimeSettings: (title) => <WorktimeSettingsPage part="settings" title={title} />,
   leaveSettings: (title) => <LeaveSettingsPage title={title} />,

@@ -11,7 +11,8 @@ import { api, errorText, fieldErrors } from '../../api/client'
 import { RateInput, fmtRate, rateProps } from '../../components/RateInput'
 import JobScheduleBox from '../worktime/JobScheduleBox'
 import { useFetch } from '../../api/hooks'
-import { EMPLOYMENT_KINDS, type Employee, type Employment, type HistoryRow } from '../../api/staff'
+import { EMPLOYMENT_KINDS, PAY_MODES, type Employee, type Employment, type HistoryRow } from '../../api/staff'
+import { RemunerationBox, combinationShort, payShort } from '../worktime/HourRates'
 import { useApp } from '../../auth/AppContext'
 import RefSelect from '../../components/RefSelect'
 import SubdivisionSelect from '../../components/SubdivisionSelect'
@@ -38,15 +39,16 @@ export default function EmploymentsTab({ employee, onChanged }: { employee: Empl
     setMode(m)
     setCurrent(emp ?? null)
     form.resetFields()
-    if (m === 'hire') form.setFieldsValue({ kind: (data ?? []).some((e) => e.status !== 'ended' && e.kind === 'main') ? 'internal' : 'main', rate: 1, date_from: today })
+    if (m === 'hire') form.setFieldsValue({ kind: (data ?? []).some((e) => e.status !== 'ended' && e.kind === 'main') ? 'internal' : 'main', rate: 1,
+      pay_mode: 'salary', date_from: today })
     if (m === 'change' && emp) form.setFieldsValue({ date: today, subdivision: emp.subdivision, occupation: emp.occupation, rate: Number(emp.rate),
       base_salary: emp.base_salary === null ? undefined : Number(emp.base_salary), allowance_pct: emp.allowance_pct === null ? undefined : Number(emp.allowance_pct),
-      combination_pct: emp.combination_pct === null ? undefined : Number(emp.combination_pct) })
+      pay_mode: emp.pay_mode, hourly_rate: emp.hourly_rate === null ? undefined : Number(emp.hourly_rate) })
     if (m === 'edit' && emp) form.setFieldsValue({ ...emp, date_from: dayjs(emp.date_from),
       date_to: emp.date_to ? dayjs(emp.date_to) : null, probation_until: emp.probation_until ? dayjs(emp.probation_until) : null,
       contract_date: emp.contract_date ? dayjs(emp.contract_date) : null, rate: Number(emp.rate),
       base_salary: emp.base_salary === null ? undefined : Number(emp.base_salary), allowance_pct: emp.allowance_pct === null ? undefined : Number(emp.allowance_pct),
-      combination_pct: emp.combination_pct === null ? undefined : Number(emp.combination_pct) })
+      hourly_rate: emp.hourly_rate === null ? undefined : Number(emp.hourly_rate) })
     if (m === 'suspend' || m === 'resume' || m === 'terminate') form.setFieldsValue({ date: today })
   }
 
@@ -82,6 +84,10 @@ export default function EmploymentsTab({ employee, onChanged }: { employee: Empl
             <Tag color="blue">{emp.kind_label}</Tag>
             <b>{emp.occupation_name}</b>
             <span>· {emp.subdivision_name}</span>
+            {emp.kind !== 'contractor' && <Tag color="geekblue">{payShort(t, emp.pay_mode)}{(emp.hour_rates ?? []).length
+              ? `: ${[...new Set((emp.hour_rates ?? []).filter((r) => !r.date_to || r.date_to >= today.format('YYYY-MM-DD')).map((r) => r.hour_type_code))].join(', ')}` : ''}</Tag>}
+            {(emp.combinations ?? []).filter((c) => !c.date_to || c.date_to >= today.format('YYYY-MM-DD')).map((c) => (
+              <Tag key={c.id} color="purple">{combinationShort(t, c)}</Tag>))}
             <Tag color={STATUS_COLOR[emp.status]}>{emp.status_label}{emp.status === 'suspended' && emp.suspended_from ? ` ${d(emp.suspended_from)}` : ''}</Tag>
           </Space>}
           extra={canEdit && emp.status !== 'ended' && <Space wrap size={4}>
@@ -94,8 +100,9 @@ export default function EmploymentsTab({ employee, onChanged }: { employee: Empl
           <Descriptions size="small" column={{ xs: 1, md: 3 }} items={[
             { key: 'from', label: t('staff.hiredOn'), children: d(emp.date_from) },
             { key: 'rate', label: t('staff.rate'), children: fmtRate(emp.rate) },
-            ...(Number(emp.combination_pct) ? [{ key: 'comb', label: t('staff.combinationPct'), children: `${num(emp.combination_pct)}%` }] : []),
-            { key: 'salary', label: t('org.sl.salary'), children: emp.base_salary === null ? '—' : `${num(emp.base_salary)} lei${Number(emp.allowance_pct) ? ` + ${num(emp.allowance_pct)}%` : ''}` },
+            emp.pay_mode === 'hourly'
+              ? { key: 'salary', label: t('ht.hourlyRate'), children: emp.hourly_rate === null ? '—' : `${num(emp.hourly_rate)} lei${Number(emp.allowance_pct) ? ` + ${num(emp.allowance_pct)}%` : ''}` }
+              : { key: 'salary', label: t('org.sl.salary'), children: emp.base_salary === null ? '—' : `${num(emp.base_salary)} lei${Number(emp.allowance_pct) ? ` + ${num(emp.allowance_pct)}%` : ''}` },
             { key: 'contract', label: t('staff.job.contract'), children: emp.contract_number ? `${emp.contract_number}${emp.contract_date ? ` / ${d(emp.contract_date)}` : ''}` : '—' },
             { key: 'term', label: t('staff.job.dateTo'), children: emp.date_to ? d(emp.date_to) : t('staff.job.indefinite') },
             { key: 'probation', label: t('staff.job.probation'), children: emp.probation_until ? d(emp.probation_until) : '—' },
@@ -103,6 +110,7 @@ export default function EmploymentsTab({ employee, onChanged }: { employee: Empl
             ...(emp.suspension_reason ? [{ key: 'susp', label: t('staff.job.suspensionReason'), children: emp.suspension_reason }] : []),
           ]} />
           {(emp.warnings ?? []).map((w) => <Alert key={w} type="warning" showIcon message={w} style={{ marginTop: 8 }} />)}
+          {emp.hour_rates !== null && <RemunerationBox job={emp} canEdit={canEdit} onChanged={() => { reload(); onChanged() }} />}
           {hasPerm('worktime.view') && emp.status !== 'ended' && emp.kind !== 'contractor' && <JobScheduleBox employment={emp.id} canEdit={hasPerm('worktime.edit')} />}
           <Table<HistoryRow> size="small" rowKey="id" pagination={false} dataSource={emp.history} style={{ marginTop: 8 }}
             columns={[
@@ -112,6 +120,8 @@ export default function EmploymentsTab({ employee, onChanged }: { employee: Empl
               { title: t('org.sl.position'), dataIndex: 'occupation_name' },
               { title: t('staff.rate'), dataIndex: 'rate', width: 70, align: 'right', render: fmtRate },
               { title: t('org.sl.salary'), dataIndex: 'base_salary', width: 110, align: 'right', render: num },
+              { title: t('ht.payMode'), dataIndex: 'pay_mode', width: 140, render: (v: string, r: HistoryRow) =>
+                `${payShort(t, v)}${v === 'hourly' ? ` ${num(r.hourly_rate)} lei` : ''}` },
               { title: t('staff.job.order'), dataIndex: 'order', width: 160 },
               { title: t('org.notes'), dataIndex: 'note', width: 180 },
             ]} />
@@ -135,7 +145,9 @@ export default function EmploymentsTab({ employee, onChanged }: { employee: Empl
               <Col xs={12} md={6}><Form.Item name="rate" label={t('staff.rate')} rules={[{ required: true }]} {...rateProps}><RateInput /></Form.Item></Col>
               <Col xs={12} md={6}><Form.Item name="base_salary" label={t('org.sl.salary')}><InputNumber min={0} style={{ width: '100%' }} /></Form.Item></Col>
               <Col xs={12} md={6}><Form.Item name="allowance_pct" label={t('org.sl.allowance')}><InputNumber min={0} max={500} style={{ width: '100%' }} /></Form.Item></Col>
-              <Col xs={12} md={6}><Form.Item name="combination_pct" label={t('staff.combinationPct')} tooltip={t('staff.combinationHint')}><InputNumber min={0} max={100} suffix="%" style={{ width: '100%' }} /></Form.Item></Col>
+              <Col xs={12} md={8}><Form.Item name="pay_mode" label={t('ht.payMode')} tooltip={t('ht.payModeHint')}>
+                <Select options={PAY_MODES.map((k) => ({ value: k, label: t(`ht.payModes.${k}`) }))} /></Form.Item></Col>
+              <Col xs={12} md={4}><Form.Item name="hourly_rate" label={t('ht.hourlyRate')}><InputNumber min={0} suffix="lei" style={{ width: '100%' }} /></Form.Item></Col>
               <Col xs={12} md={8}><Form.Item name="date_from" label={t('staff.hiredOn')} rules={[{ required: true }]}><DatePicker format="DD.MM.YYYY" style={{ width: '100%' }} /></Form.Item></Col>
               <Col xs={12} md={8}><Form.Item name="date_to" label={t('staff.job.dateTo')}><DatePicker format="DD.MM.YYYY" style={{ width: '100%' }} /></Form.Item></Col>
               <Col xs={12} md={8}><Form.Item name="probation_until" label={t('staff.job.probation')}><DatePicker format="DD.MM.YYYY" style={{ width: '100%' }} /></Form.Item></Col>
@@ -155,7 +167,9 @@ export default function EmploymentsTab({ employee, onChanged }: { employee: Empl
               <Col xs={12} md={6}><Form.Item name="rate" label={t('staff.rate')} {...rateProps}><RateInput /></Form.Item></Col>
               <Col xs={12} md={6}><Form.Item name="base_salary" label={t('org.sl.salary')}><InputNumber min={0} style={{ width: '100%' }} /></Form.Item></Col>
               <Col xs={12} md={6}><Form.Item name="allowance_pct" label={t('org.sl.allowance')}><InputNumber min={0} max={500} style={{ width: '100%' }} /></Form.Item></Col>
-              <Col xs={12} md={6}><Form.Item name="combination_pct" label={t('staff.combinationPct')} tooltip={t('staff.combinationHint')}><InputNumber min={0} max={100} suffix="%" style={{ width: '100%' }} /></Form.Item></Col>
+              <Col xs={12} md={8}><Form.Item name="pay_mode" label={t('ht.payMode')} tooltip={t('ht.payModeHint')}>
+                <Select options={PAY_MODES.map((k) => ({ value: k, label: t(`ht.payModes.${k}`) }))} /></Form.Item></Col>
+              <Col xs={12} md={4}><Form.Item name="hourly_rate" label={t('ht.hourlyRate')}><InputNumber min={0} suffix="lei" style={{ width: '100%' }} /></Form.Item></Col>
               <Col xs={24}><Form.Item name="note" label={t('org.notes')}><Input /></Form.Item></Col>
             </Row></FormLayout>
           </>}

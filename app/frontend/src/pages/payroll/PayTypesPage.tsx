@@ -52,6 +52,7 @@ function FormulaInput({ value, onChange, types, code, disabled }: {
   const localName = useLocalName()
   const { data: catalog } = useFetch<FormulaCatalog>('/payroll/types/variables/')
   const [check, setCheck] = useState<FormulaCheck | null>(null)
+  const [hourCode, setHourCode] = useState<string | null>(null)
   const ref = useRef<HTMLTextAreaElement | null>(null)
   const text = value ?? ''
 
@@ -93,6 +94,18 @@ function FormulaInput({ value, onChange, types, code, disabled }: {
             <Tooltip key={v.name} title={describe(v)}><Tag style={{ cursor: 'pointer' }} color="blue" onClick={() => insert(v.name)}>{v.name}</Tag></Tooltip>
           ))}
         </Space>
+        {(catalog?.hour_types ?? []).length > 0 && <>
+          <Typography.Text type="secondary">{t('ht.fx.title')}</Typography.Text>
+          <Space wrap size={[4, 4]}>
+            <Select size="small" style={{ width: 220 }} value={hourCode ?? catalog?.hour_types?.[0]?.code} onChange={setHourCode}
+              options={(catalog?.hour_types ?? []).map((h) => ({ value: h.code, label: `${h.code} — ${localName(h)}` }))} />
+            {(catalog?.hour_variables ?? []).map((v) => {
+              const code = hourCode ?? catalog?.hour_types?.[0]?.code ?? 'COD'
+              return <Tooltip key={v.name} title={describe(v)}><Tag style={{ cursor: 'pointer' }} color="cyan"
+                onClick={() => insert(`${v.name}.${code}`)}>{v.name}.{code}</Tag></Tooltip>
+            })}
+          </Space>
+        </>}
         <Typography.Text type="secondary">{t('pay.fx.functions')}</Typography.Text>
         <Space wrap size={[4, 4]}>
           {(catalog?.functions ?? []).map((f) => (

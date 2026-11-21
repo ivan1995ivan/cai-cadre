@@ -10,11 +10,21 @@ import type { OrgMeta } from '../../api/org'
 import { useDict } from '../../api/staff'
 import { useApp } from '../../auth/AppContext'
 import { usePersonalTypes } from '../payroll/PlannedRows'
+import { useHourTypes } from '../worktime/HourRates'
 
 /** Acumulările-tip ale funcției: la angajare completează tabelul „Acumulări și rețineri” din ordin (se corectează acolo). */
 function OccupationPayItems({ occupation, name, onClose, canEdit }: { occupation: number; name: string; onClose: () => void; canEdit: boolean }) {
   const { t } = useTranslation()
   const { options } = usePersonalTypes()
+  const { options: hourOptions } = useHourTypes()
+  const rateFields: CrudField[] = [
+    { key: 'occupation', label: '', hidden: true },
+    { key: 'hour_type', label: t('ht.type'), type: 'select', required: true, options: hourOptions,
+      render: (_v, r) => `${r.hour_type_code} — ${r.hour_type_name}` },
+    { key: 'rate', label: t('ht.rates.rate'), type: 'number', required: true, width: 120 },
+    { key: 'guaranteed_hours', label: t('ht.rates.guaranteed'), type: 'number', width: 130 },
+    { key: 'sort', label: t('org.sort'), type: 'number', width: 80 },
+  ]
   const fields: CrudField[] = [
     { key: 'occupation', label: '', hidden: true },
     { key: 'pay_type', label: t('pay.item'), type: 'select', required: true, options, render: (_v, r) => `${r.pay_type_code} — ${r.pay_type_name}` },
@@ -27,6 +37,9 @@ function OccupationPayItems({ occupation, name, onClose, canEdit }: { occupation
     <Modal open onCancel={onClose} footer={null} width={900} title={`${t('pay.pl.occupationItems')} — ${name}`}>
       <CrudTable endpoint="/payroll/occupation-items/" params={{ occupation }} fields={fields} canEdit={canEdit}
         defaults={{ occupation, sort: 10 }} title={<Typography.Text type="secondary">{t('pay.pl.occupationItemsHint')}</Typography.Text>} />
+      <Typography.Title level={5} style={{ marginTop: 16 }}>{t('ht.rates.occupationTitle')}</Typography.Title>
+      <CrudTable endpoint="/worktime/occupation-hour-rates/" params={{ occupation }} fields={rateFields} canEdit={canEdit}
+        defaults={{ occupation, sort: 10 }} title={<Typography.Text type="secondary">{t('ht.rates.occupationHint')}</Typography.Text>} />
     </Modal>
   )
 }

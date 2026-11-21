@@ -9,18 +9,21 @@ import type { StaffList } from '../../api/org'
 import { fmtDays, type Balance, type LeaveSchedule } from '../../api/leave'
 import { RateInput, fmtRate, rateProps } from '../../components/RateInput'
 import type { Absence, SanctionRec } from '../../api/orders'
-import { EMPLOYMENT_KINDS, type Employment } from '../../api/staff'
+import { EMPLOYMENT_KINDS, PAY_MODES, type Employment, type PayMode } from '../../api/staff'
 import RefSelect from '../../components/RefSelect'
 import SubdivisionSelect from '../../components/SubdivisionSelect'
 import type { OccupationPayItem, PlannedRow } from '../../api/payroll'
 import { useApp } from '../../auth/AppContext'
 import PlannedRowsInput from '../payroll/PlannedRows'
+import { CombinationFields, HourRatesInput, type HourRateRow } from '../worktime/HourRates'
 
 export const DATE_KEYS = ['date_from', 'date_to', 'probation_until', 'contract_date', 'work_year_from', 'work_year_to']
 
 /** Ordinele cu tabelul „Acumulări și rețineri” (apps.orders.effects.has_pay_items): angajarea, transferul, condițiile,
  *  salariul, sporurile, cumulul / suplinirea și reținerea din salariu. */
 export const hasPayItems = (effect: string, code: string) => ['hire', 'change', 'salary', 'substitution'].includes(effect) || code === 'deduction'
+/** Ordinele cu tabelul „Tarife pe tipuri de ore” (apps.orders.effects.has_hour_rates); la cumulare pe același contract — nu. */
+export const hasHourRates = (effect: string) => ['hire', 'change', 'salary', 'substitution'].includes(effect)
 
 const LEAVE_KIND: Record<string, string> = {
   leave_annual: 'annual', leave_extra: 'extra', leave_unpaid: 'unpaid', leave_maternity: 'maternity', leave_paternity: 'paternity',
@@ -72,9 +75,37 @@ export default function ItemParams({ form, effect, code, employee, disabled, onC
       }
     }).catch(() => {})
   }
+  // tarifele pe tipuri de ore: la angajare — din tarifele-tip ale funcției (cât tabelul e gol)
+  const ratesFromOccupation = (force: boolean) => {
+    const occ = form.getFieldValue('occupation')
+    if (!occ) return
+    const current = form.getFieldValue('hour_rates') as HourRateRow[] | undefined
+    if (!force && current && current.length) return
+    api.get<{ hour_type: number; rate: string; guaranteed_hours: string | null }[]>('/worktime/occupation-hour-rates/', { params: { occupation: occ } })
+      .then((r) => {
+        const rows: HourRateRow[] = r.data.map((x) => ({ hour_type: x.hour_type, action: 'add', rate: x.rate, guaranteed_hours: x.guaranteed_hours,
+          date_from: null, date_to: null, document: '' }))
+        if (force || rows.length) {
+          form.setFieldValue('hour_rates', rows)
+          onChange?.()
+        }
+      }).catch(() => {})
+  }
   useEffect(() => {
     if (effect === 'hire' && payItems && !disabled && occupation) fromOccupation(false)
+    if (effect === 'hire' && !disabled && occupation) ratesFromOccupation(false)
   }, [occupation]) // eslint-disable-line react-hooks/exhaustive-deps
+  const combMode = Form.useWatch('mode', form) as string | undefined
+  const combAction = Form.useWatch('action', form) as string | undefined
+  const combPay = Form.useWatch('pay_mode', form) as string | undefined
+  const chosenJob = Form.useWatch('employment', form) as number | undefined
+  const allJobs = jobs ?? []
+  const baseJob = allJobs.find((j) => j.id === chosenJob) ?? allJobs.find((j) => j.status !== 'ended' && ['main', 'main_student'].includes(j.kind))
+    ?? allJobs.find((j) => j.status !== 'ended')
+  // modalitatea care decide dacă tarifele se plătesc: cea din ordin; la modificare, dacă nu se schimbă, — cea a raportului
+  const rateMode = (effect === 'hire' || (effect === 'substitution' && combMode === 'separate') ? combPay || 'salary'
+    : combPay || baseJob?.pay_mode) as PayMode | undefined
+  const showRates = hasHourRates(effect) && !(effect === 'substitution' && combMode !== 'separate')
   const [calc, setCalc] = useState<{ to: string; days: number; holidays: string[] } | null>(null)
 
   // concediul: zilele ↔ data de sfârșit, fără sărbători (calculat pe server)
@@ -131,7 +162,9 @@ export default function ItemParams({ form, effect, code, employee, disabled, onC
       <Col xs={24} md={12}>{rate}</Col>
       <Col xs={24} md={12}>{num('base_salary', t('org.sl.salary'))}</Col>
       <Col xs={24} md={12}>{num('allowance_pct', t('org.sl.allowance'), 500)}</Col>
-      <Col xs={24} md={12}>{num('combination_pct', t('staff.combinationPct'), 100)}</Col>
+      <Col xs={24} md={12}><Form.Item name="pay_mode" label={t('ht.payMode')} tooltip={t('ht.payModeHint')}>
+        <Select allowClear options={PAY_MODES.map((k) => ({ value: k, label: t(`ht.payModes.${k}`) }))} /></Form.Item></Col>
+      <Col xs={24} md={12}>{num('hourly_rate', t('ht.hourlyRate'))}</Col>
     </>
   )
 
@@ -153,15 +186,36 @@ export default function ItemParams({ form, effect, code, employee, disabled, onC
       {(code === 'change_terms' || code === 'hours_change') && <Col xs={24}><Form.Item name="text" label={t('ord.p.whatChanges')}><Input.TextArea rows={2} /></Form.Item></Col>}
     </Row>
   } else if (effect === 'substitution') {
+    const existing = allJobs.flatMap((j) => (j.combinations ?? []).map((c) => ({ ...c, job: j })))
     body = <Row gutter={24}>
-      <Col xs={24} md={12}><Form.Item name="kind" label={t('staff.kind')}><Select allowClear options={['substitute', 'internal'].map((k) => ({ value: k, label: t(`staff.kinds.${k}`) }))} /></Form.Item></Col>
-      <Col xs={24} md={12}><Form.Item name="subdivision" label={t('org.subdivision')}><SubdivisionSelect /></Form.Item></Col>
-      <Col xs={24}><Form.Item name="occupation" label={t('ord.p.postTaken')}><RefSelect spec="occupation" /></Form.Item></Col>
-      <Col xs={24} md={12}>{rate}</Col>
-      <Col xs={24} md={12}>{num('percent', t('staff.combinationPct'), 200)}</Col>
-      <Col xs={24} md={12}><Form.Item name="substituted_name" label={t('ord.p.substituted')}><Input /></Form.Item></Col>
-      <Col xs={24} md={12}>{date('date_from', t('staff.sen.from'), true)}</Col>
-      <Col xs={24} md={12}>{date('date_to', t('staff.sen.to'))}</Col>
+      <Col xs={24}><Form.Item name="mode" label={t('ht.comb.how')} extra={t(combMode === 'separate' ? 'ht.comb.separateHint' : 'ht.comb.onBaseHint')}>
+        <Select options={[{ value: 'on_base', label: t('ht.comb.modes.on_base') }, { value: 'separate', label: t('ht.comb.modes.separate') }]}
+          placeholder={t('ht.comb.modes.on_base')} /></Form.Item></Col>
+      {combMode !== 'separate' && <Col xs={24} md={12}><Form.Item name="action" label={t('ht.comb.action')}>
+        <Select options={[{ value: 'add', label: t('ht.comb.actions.add') }, { value: 'stop', label: t('ht.comb.actions.stop') }]}
+          placeholder={t('ht.comb.actions.add')} /></Form.Item></Col>}
+      {combMode !== 'separate' && <Col xs={24} md={12}>{job}</Col>}
+      {combMode !== 'separate' && combAction === 'stop' ? <>
+        <Col xs={24}><Form.Item name="combination" label={t('ht.comb.title')} rules={[{ required: true }]}>
+          <Select options={existing.filter((c) => !c.date_to || c.date_to >= dayjs().format('YYYY-MM-DD')).map((c) => ({ value: c.id,
+            label: `${c.kind_label}: ${c.occupation_name} — ${c.value_text} (${dayjs(c.date_from).format('DD.MM.YYYY')} – ${c.date_to ? dayjs(c.date_to).format('DD.MM.YYYY') : '…'})` }))} />
+        </Form.Item></Col>
+        <Col xs={24} md={12}>{date('date_to', t('ht.comb.lastDay'), true)}</Col>
+      </> : combMode !== 'separate' ? <>
+        <Col xs={24}><CombinationFields form={form} payMode={combPay} withKind={false} /></Col>
+      </> : <>
+        <Col xs={24} md={12}><Form.Item name="kind" label={t('staff.kind')}><Select allowClear options={['substitute', 'internal'].map((k) => ({ value: k, label: t(`staff.kinds.${k}`) }))} /></Form.Item></Col>
+        <Col xs={24} md={12}><Form.Item name="subdivision" label={t('org.subdivision')}><SubdivisionSelect /></Form.Item></Col>
+        <Col xs={24}><Form.Item name="occupation" label={t('ord.p.postTaken')}><RefSelect spec="occupation" /></Form.Item></Col>
+        <Col xs={24} md={12}>{rate}</Col>
+        <Col xs={24} md={12}>{num('base_salary', t('org.sl.salary'))}</Col>
+        <Col xs={24} md={12}><Form.Item name="pay_mode" label={t('ht.payMode')}>
+          <Select allowClear options={PAY_MODES.map((k) => ({ value: k, label: t(`ht.payModes.${k}`) }))} /></Form.Item></Col>
+        <Col xs={24} md={12}>{num('hourly_rate', t('ht.hourlyRate'))}</Col>
+        <Col xs={24} md={12}><Form.Item name="substituted_name" label={t('ord.p.substituted')}><Input /></Form.Item></Col>
+        <Col xs={24} md={12}>{date('date_from', t('staff.sen.from'), true)}</Col>
+        <Col xs={24} md={12}>{date('date_to', t('staff.sen.to'))}</Col>
+      </>}
     </Row>
   } else if (effect === 'suspend' || effect === 'resume') {
     body = <Row gutter={24}>
@@ -281,6 +335,10 @@ export default function ItemParams({ form, effect, code, employee, disabled, onC
   return (
     <>
       {body}
+      {showRates && <Form.Item name="hour_rates" label={t('ht.rates.title')}>
+        <HourRatesInput existing={effect === 'hire' || effect === 'substitution' ? [] : baseJob?.hour_rates ?? []} disabled={disabled}
+          mode={rateMode ?? null} onFromOccupation={effect === 'hire' ? () => ratesFromOccupation(true) : undefined} />
+      </Form.Item>}
       {payItems && <Form.Item name="pay_items" label={t('pay.pl.title')}>
         <PlannedRowsInput employee={employee} disabled={disabled} onFromOccupation={effect === 'hire' ? () => fromOccupation(true) : undefined} />
       </Form.Item>}

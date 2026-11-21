@@ -89,8 +89,60 @@ export interface HistoryRow {
   rate: string
   base_salary: string | null
   allowance_pct: string | null
+  pay_mode?: PayMode
+  hourly_rate?: string | null
   order: string
   note: string
+}
+
+/** Modalitatea de remunerare a raportului de muncă (pe funcție); tarifele pe tipuri de ore se plătesc la „hour_types” și „mixed”. */
+export const PAY_MODES = ['salary', 'hourly', 'hour_types', 'mixed'] as const
+export type PayMode = (typeof PAY_MODES)[number]
+export const RATE_MODES: PayMode[] = ['hour_types', 'mixed']
+
+export interface DocSource { kind: 'order' | 'change' | 'manual'; id: number | null; label: string; status: string }
+
+/** Tariful pe tipul de ore al raportului, cu orele garantate pe lună. */
+export interface JobHourRate {
+  id: number
+  employment: number
+  hour_type: number
+  hour_type_code: string
+  hour_type_name: string
+  rate: string
+  guaranteed_hours: string | null
+  date_from: string
+  date_to: string | null
+  document: string
+  source: DocSource
+}
+
+/** Cumularea funcțiilor / suplinirea / interimatul pe același contract (CM art. 156). */
+export const COMBINATION_KINDS = ['combination', 'substitution', 'acting'] as const
+export const COMBINATION_PAY = ['pct_own', 'pct_other', 'fixed', 'hourly'] as const
+export interface FunctionCombination {
+  id: number
+  employment: number
+  kind: (typeof COMBINATION_KINDS)[number]
+  kind_label: string
+  occupation: number
+  occupation_name: string
+  subdivision: number | null
+  subdivision_name: string
+  substitutes: number | null
+  substituted_name: string
+  pay_mode: (typeof COMBINATION_PAY)[number]
+  pay_mode_label: string
+  value: string
+  value_text: string
+  other_salary: string | null
+  hour_type: number | null
+  hour_type_code: string
+  date_from: string
+  date_to: string | null
+  order: string
+  note: string
+  source: DocSource
 }
 
 export interface Employment {
@@ -109,7 +161,11 @@ export interface Employment {
   rate: string
   base_salary: string | null
   allowance_pct: string | null
-  combination_pct: string | null
+  pay_mode: PayMode
+  pay_mode_label: string
+  hourly_rate: string | null
+  hour_rates: JobHourRate[] | null
+  combinations: FunctionCombination[] | null
   date_from: string
   date_to: string | null
   probation_until: string | null

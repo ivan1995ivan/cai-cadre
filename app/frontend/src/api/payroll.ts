@@ -113,7 +113,8 @@ export interface OccupationPayItem { id: number; occupation: number; pay_type: n
   amount: string | null; percent: string | null; quantity: string | null; sort: number }
 
 export interface FormulaVariable { name: string; ro: string; ru: string; en: string }
-export interface FormulaCatalog { variables: FormulaVariable[]; functions: FormulaVariable[]; constants: { code: string; name: string }[] }
+export interface FormulaCatalog { variables: FormulaVariable[]; functions: FormulaVariable[]; constants: { code: string; name: string }[]
+  hour_variables?: FormulaVariable[]; hour_types?: { code: string; name_ro: string; name_ru: string; name_en: string }[] }
 export interface FormulaCheck { ok: boolean; error?: string; position?: number; variables?: string[]; constants?: string[]; refs?: string[] }
 export interface TryTrace { code: string; name: string; expression: string; error: string; result: string | null; note: string;
   variables: { name: string; value: string; description: string }[]; negative?: boolean }
@@ -240,7 +241,7 @@ export const PAYROLL_STATUS_COLOR: Record<string, string> = { draft: 'gold', che
 export const FORMULAS = ['auto', 'fixed', 'pct_salary', 'pct_base', 'hourly', 'scale', 'expr']
 /** Formulele care se pot calcula și fără rândul angajatului („pentru toți angajații”). */
 export const GENERAL_FORMULAS = ['expr', 'scale', 'pct_salary', 'pct_base']
-export const AUTO_KEYS = ['none', 'salary', 'allowance', 'combination', 'night', 'holiday', 'overtime', 'leave', 'leave_comp', 'sick', 'sick_accident',
+export const AUTO_KEYS = ['none', 'salary', 'allowance', 'combination', 'hour_types', 'night', 'holiday', 'overtime', 'leave', 'leave_comp', 'sick', 'sick_accident',
   'min_wage', 'bonus', 'aid', 'income_tax', 'cnam', 'cas', 'cas_min']
 
 export const money = (v: string | number | null | undefined) =>

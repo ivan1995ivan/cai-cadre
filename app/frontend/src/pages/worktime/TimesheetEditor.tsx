@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Button, Card, Form, InputNumber, Modal, Popconfirm, Select, Space, Spin, Tag, Tooltip, Typography, message } from 'antd'
+import { Alert, Button, Card, Descriptions, Form, InputNumber, Modal, Popconfirm, Radio, Select, Space, Spin, Tag, Tooltip, Typography, message } from 'antd'
 import { ArrowLeftOutlined, LockOutlined, PrinterOutlined, ReloadOutlined, RollbackOutlined, SendOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 
@@ -10,8 +10,10 @@ import PrintDialog from '../../components/PrintDialog'
 import MarkButton, { MarkedBanner } from '../../components/MarkButton'
 import { api, errorText } from '../../api/client'
 import { useFetch } from '../../api/hooks'
-import { MONTH_STATUS_COLOR, fmtH, type DayHeader, type TimesheetCell, type TimesheetReport, type TimesheetRow } from '../../api/worktime'
-import { useApp } from '../../auth/AppContext'
+import { MONTH_STATUS_COLOR, fmtH, type DayHeader, type HourColumn, type TimesheetCell, type TimesheetReport, type TimesheetRow } from '../../api/worktime'
+import { useApp, useLocalName } from '../../auth/AppContext'
+import ExcelImport from '../../components/ExcelImport'
+import { combinationShort, payShort } from './HourRates'
 import { cellStyle, dayTitle, useDocActions } from './MonthDocs'
 import { useShifts } from './WorktimePage'
 import { useTabTitle } from '../../layout/tabs'
@@ -41,6 +43,10 @@ export default function TimesheetEditor() {
   const [printOpen, setPrintOpen] = useState(false)
   const [editing, setEditing] = useState<{ row: TimesheetRow; day: DayHeader } | null>(null)
   const [form] = Form.useForm()
+  const [typedEdit, setTypedEdit] = useState<{ row: TimesheetRow; col: HourColumn } | null>(null)
+  const [typedForm] = Form.useForm()
+  const typedMode = Form.useWatch('mode', typedForm) as 'day' | 'month' | undefined
+  const localName = useLocalName()
 
   if (!data) return <Card loading={loading}><Spin /></Card>
   const editable = hasPerm('worktime.edit') && !data.deletion_mark
@@ -69,6 +75,43 @@ export default function TimesheetEditor() {
       message.error(errorText(e))
     }
   }
+  const openTyped = (row: TimesheetRow, col: HourColumn) => {
+    if (!editable) return
+    const entry = row.typed[col.code]
+    const byDay = col.entry === 'day' && !(entry && entry.month !== null && entry.month !== undefined)
+    typedForm.resetFields()
+    typedForm.setFieldsValue({ mode: byDay ? 'day' : 'month', month: entry?.month ?? (entry ? Object.values(entry.days).reduce((a, b) => a + b, 0) : undefined),
+      ...Object.fromEntries(Object.entries(entry?.days ?? {}).map(([k, v]) => [`d${k}`, v])) })
+    setTypedEdit({ row, col })
+  }
+  const saveTyped = async (clear = false) => {
+    if (!typedEdit) return
+    const v = await typedForm.validateFields()
+    const days = Object.fromEntries(data.days.map((d) => [String(d.day), v[`d${d.day}`]]).filter(([, h]) => h !== null && h !== undefined && h !== 0))
+    const body = clear ? { days: null, month: null } : v.mode === 'month' ? { month: v.month ?? null } : { days }
+    try {
+      await api.post(`/worktime/timesheets/${id}/set-hours/`, { line: typedEdit.row.id, code: typedEdit.col.code, ...body })
+      setTypedEdit(null)
+      reload()
+    } catch (e) {
+      message.error(errorText(e))
+    }
+  }
+  const typedCell = (r: TimesheetRow, col: HourColumn) => {
+    const s = r.hour_types[col.code]
+    const node = !s ? <span style={{ color: 'var(--ant-color-text-quaternary)' }}>·</span> : <div style={{ lineHeight: 1.1 }}>
+      <div><b>{fmtH(s.hours) || '0'}</b></div>
+      {s.guaranteed !== null && <div style={{ fontSize: 10, color: 'var(--ant-color-text-tertiary)' }}>
+        {t('ht.ts.cellLine', { g: fmtH(s.guaranteed) || '0', p: fmtH(s.paid) || '0' })}</div>}
+    </div>
+    const tip = s ? <div>
+      <div>{t('ht.ts.summary', { hours: fmtH(s.hours) || '0', guaranteed: s.guaranteed === null ? '—' : fmtH(s.guaranteed) || '0',
+        available: s.available_days ?? '—', total: s.total_days, paid: fmtH(s.paid) || '0' })}</div>
+      {s.note && <div style={{ marginTop: 4 }}>{s.note}</div>}
+    </div> : localName(col)
+    return <Tooltip title={tip}><div style={{ cursor: editable ? 'pointer' : undefined, minHeight: 28 }}
+      onClick={editable ? () => openTyped(r, col) : undefined}>{node}</div></Tooltip>
+  }
   const title = t('wt.ts.heading', { month: dayjs().month(data.month - 1).format('MMMM'), year: data.year, subdivision: data.subdivision_name })
   const codeOf = (c: string) => data.codes[c] ?? c
 
@@ -87,6 +130,9 @@ export default function TimesheetEditor() {
           <Button icon={<LockOutlined />} type="primary">{t('wt.ts.close')}</Button></Popconfirm>}
         {data.status !== 'draft' && hasPerm('worktime.approve') && <Popconfirm title={t('wt.doc.reopenConfirm')} onConfirm={() => post('reopen')}>
           <Button icon={<RollbackOutlined />}>{t('wt.doc.reopen')}</Button></Popconfirm>}
+        {editable && <ExcelImport code="hours" url={`/worktime/timesheets/${id}/import/`} label={t('ht.ts.import')} onDone={reload}>
+          <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>{t('ht.ts.importHint')}</Typography.Paragraph>
+        </ExcelImport>}
         <Button icon={<PrinterOutlined />} onClick={() => setPrintOpen(true)}>{t('lv.print')}</Button>
         {data.status !== 'closed' && hasPerm('worktime.delete') && <MarkButton endpoint="/worktime/timesheets/" row={data} onDone={reload} text />}
       </Space>}
@@ -97,6 +143,10 @@ export default function TimesheetEditor() {
             <Space orientation="vertical" size={0}>
               <a onClick={() => navigate(`/employees/${r.employee}?tab=jobs`)}>{v}</a>
               <Typography.Text type="secondary" style={{ fontSize: 11 }}>{r.occupation}{r.kind !== 'main' ? ` · ${r.kind_label}` : ''} · {r.rate * 100}%</Typography.Text>
+              {r.kind !== 'contractor' && <Typography.Text type="secondary" style={{ fontSize: 11 }}>
+                {payShort(t, r.pay_mode)}{r.rate_codes.length ? `: ${r.rate_codes.join(', ')}` : ''}
+                {r.combinations.map((c) => `; ${combinationShort(t, c)}`).join('')}</Typography.Text>}
+              {r.hour_warnings.map((w) => <Typography.Text key={w} type="warning" style={{ fontSize: 11 }}>{w}</Typography.Text>)}
             </Space>) },
           ...data.days.map((d) => ({
             title: dayTitle(d, t), key: `d${d.day}`, width: 40, onCell: () => ({ style: cellStyle(d) }),
@@ -105,6 +155,11 @@ export default function TimesheetEditor() {
               const node = <Cell cell={cell} onClick={editable ? () => openCell(r, d) : undefined} />
               return cell?.c && !cell.h ? <Tooltip title={codeOf(cell.c)}>{node}</Tooltip> : node
             },
+          })),
+          ...data.hour_types.map((col) => ({
+            title: <Tooltip title={localName(col)}>{col.code}</Tooltip>, key: `ht-${col.code}`, width: 64, align: 'right' as const,
+            onCell: () => ({ style: { background: 'var(--ant-color-fill-quaternary)' } }),
+            render: (_: unknown, r: TimesheetRow) => typedCell(r, col),
           })),
           { title: t('wt.ts.days'), key: 'td', width: 50, align: 'right', fixed: 'right', render: (_: unknown, r) => r.totals.days || '' },
           { title: t('wt.ro.hours'), key: 'th', width: 60, align: 'right', fixed: 'right', render: (_: unknown, r) => <b>{fmtH(r.totals.hours)}</b> },
@@ -136,6 +191,41 @@ export default function TimesheetEditor() {
           </Space>
           <Typography.Text type="secondary">{t('wt.ts.cellHint')}</Typography.Text>
         </Form>
+      </Modal>
+      <Modal open={!!typedEdit} onCancel={() => setTypedEdit(null)} width={720}
+        title={typedEdit ? t('ht.ts.editTitle', { code: typedEdit.col.code, name: localName(typedEdit.col), who: typedEdit.row.name }) : ''}
+        footer={[
+          <Button key="clear" danger onClick={() => saveTyped(true)}>{t('ht.ts.clear')}</Button>,
+          <Button key="cancel" onClick={() => setTypedEdit(null)}>{t('common.cancel')}</Button>,
+          <Button key="ok" type="primary" onClick={() => saveTyped()}>{t('common.save')}</Button>,
+        ]}>
+        {typedEdit && (() => {
+          const s = typedEdit.row.hour_types[typedEdit.col.code]
+          return <>
+            {s && s.guaranteed !== null && <Descriptions size="small" column={4} style={{ marginBottom: 8 }} items={[
+              { key: 'g', label: t('ht.ts.guaranteed'), children: fmtH(s.guaranteed) || '0' },
+              { key: 'a', label: t('ht.ts.available'), children: `${s.available_days ?? '—'} / ${s.total_days}` },
+              { key: 'e', label: t('ht.ts.effective'), children: fmtH(s.hours) || '0' },
+              { key: 'p', label: t('ht.ts.paid'), children: <b>{fmtH(s.paid) || '0'}</b> },
+            ]} />}
+            {s?.note && <Alert type="info" showIcon style={{ marginBottom: 8 }} title={s.note} />}
+            <Form form={typedForm} layout="vertical">
+              <Form.Item name="mode" label={t('ht.ts.entry')}>
+                <Radio.Group options={[{ value: 'day', label: t('ht.ts.byDay'), disabled: typedEdit.col.entry === 'month' },
+                  { value: 'month', label: t('ht.ts.byMonth') }]} />
+              </Form.Item>
+              {typedMode === 'month' ? <Form.Item name="month" label={t('ht.ts.total')}><InputNumber min={0} max={744} step={0.5} /></Form.Item>
+                : <Space wrap size={[4, 4]}>
+                  {data.days.map((d) => (
+                    <Form.Item key={d.day} name={`d${d.day}`} label={dayTitle(d, t)} style={{ marginBottom: 4, width: 64 }}>
+                      <InputNumber min={0} max={24} step={0.5} size="small" style={{ width: 60 }} />
+                    </Form.Item>
+                  ))}
+                </Space>}
+            </Form>
+            <Typography.Text type="secondary">{t('ht.ts.editHint')}</Typography.Text>
+          </>
+        })()}
       </Modal>
       <PrintDialog open={printOpen} onClose={() => setPrintOpen(false)} docType="timesheet" url={`/worktime/timesheets/${id}/print/`}
         params={{}} optionKeys={[]} title={t('menu.timesheets')} />

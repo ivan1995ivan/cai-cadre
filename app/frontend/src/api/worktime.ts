@@ -131,9 +131,60 @@ export interface TimesheetTotals {
   holiday_over_norm?: number
 }
 
+/** Tipul de ore (instruire, examinare, zbor…): coloana din pontaj și `Ore.COD` în formule. */
+export interface HourType {
+  id: number
+  code: string
+  name_ro: string
+  name_ru: string
+  name_en: string
+  group: string
+  work_time: 'within' | 'added' | 'none'
+  entry: 'day' | 'month'
+  profile: string
+  in_all_timesheets: boolean
+  pay_type: number | null
+  sort: number
+  is_active: boolean
+  is_system: boolean
+}
+export const HOUR_GROUPS = ['worked', 'training', 'exam', 'flight', 'reserve', 'standby', 'driving', 'availability', 'other']
+export const HOUR_PROFILES = ['general', 'factory', 'aviation', 'transport']
+
+/** Orele unui tip pe linie: pe zile sau totalul pe lună. */
+export interface TypedEntry { days: Record<string, number>; month: number | null }
+
+/** Rezumatul orelor unui tip pe raport (apps.worktime.hour_types.summarize). */
+export interface HourSummary {
+  code: string
+  name: string
+  work_time: string
+  hours: number
+  by_day: boolean
+  paid: number
+  amount: number
+  guaranteed: number | null
+  guaranteed_full: number | null
+  available_days: number | null
+  total_days: number
+  rate: number | null
+  unrated_hours: number
+  note: string
+  rows: { id: number; rate: number; from: string; to: string | null; hours: number; guaranteed: number | null;
+    guaranteed_full: number | null; available_days: number | null; paid: number; amount: number }[]
+}
+
+export interface HourColumn { code: string; name_ro: string; name_ru: string; name_en: string; entry: 'day' | 'month'; work_time: string; is_active: boolean }
+
 export interface TimesheetRow extends LineLabel {
   days: Record<string, TimesheetCell>
   totals: TimesheetTotals
+  typed: Record<string, TypedEntry>
+  hour_types: Record<string, HourSummary>
+  hour_warnings: string[]
+  pay_mode: string
+  rate_codes: string[]
+  combinations: { kind: string; occupation: string; pay_mode: string; value: number; text: string }[]
 }
 
 export interface TimesheetReport extends MonthDoc {
@@ -141,6 +192,7 @@ export interface TimesheetReport extends MonthDoc {
   rows: TimesheetRow[]
   codes: Record<string, string>
   manual_codes: string[]
+  hour_types: HourColumn[]
 }
 
 export const MONTH_STATUS_COLOR: Record<string, string> = { draft: 'gold', submitted: 'blue', approved: 'green', closed: 'green' }

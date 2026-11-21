@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button, Card, Form, InputNumber, Select, Space, Table, Tag, TimePicker, Typography, message } from 'antd'
+import { Button, Card, Checkbox, Form, InputNumber, Select, Space, Table, Tag, TimePicker, Typography, message } from 'antd'
 import dayjs from 'dayjs'
 
 import CrudTable, { type CrudField } from '../../components/CrudTable'
 import { api, errorText } from '../../api/client'
 import { useFetch } from '../../api/hooks'
-import type { MonthNorm, ShiftType } from '../../api/worktime'
+import { HOUR_GROUPS, HOUR_PROFILES, type MonthNorm, type ShiftType } from '../../api/worktime'
 import { useApp } from '../../auth/AppContext'
 import { useEditGuard } from '../../components/UnsavedGuard'
 
@@ -52,7 +52,9 @@ function CycleInput({ value, onChange, shifts }: { value?: string[]; onChange?: 
   )
 }
 
-export type WorktimePart = 'schedules' | 'shifts' | 'calendar' | 'settings'
+export type WorktimePart = 'schedules' | 'shifts' | 'hourTypes' | 'calendar' | 'settings'
+
+const ABSENCE_KINDS = ['annual', 'extra', 'unpaid', 'maternity', 'paternity', 'childcare', 'childcare_unpaid', 'study', 'days_off', 'sick']
 
 /** O setare a timpului de muncă (Administrare → Setări): graficele de lucru, turele, calendarul de producție sau regulile. */
 export default function WorktimeSettingsPage({ part, title }: { part: WorktimePart; title: string }) {
@@ -88,6 +90,25 @@ export default function WorktimeSettingsPage({ part, title }: { part: WorktimePa
     { key: 'jobs_count', label: t('wt.sch.jobs'), type: 'number', width: 90, render: (v) => String(v ?? 0) },
   ]
 
+  const { data: hourPayTypes } = useFetch<{ id: number; code: string; name_ro: string; auto: string }[]>(part === 'hourTypes' ? '/payroll/types/' : null)
+  const hourFields: CrudField[] = [
+    { key: 'code', label: t('common.code'), required: true, width: 90, extra: t('ht.codeHint') },
+    { key: 'name_ro', label: t('org.nameRo'), required: true },
+    { key: 'name_ru', label: t('org.nameRu'), inTable: false },
+    { key: 'name_en', label: t('org.nameEn'), inTable: false },
+    { key: 'group', label: t('ht.group'), type: 'select', width: 130, options: HOUR_GROUPS.map((g) => ({ value: g, label: t(`ht.groups.${g}`) })),
+      render: (v) => t(`ht.groups.${v}`) },
+    { key: 'work_time', label: t('ht.workTime'), type: 'select', width: 190, extra: t('ht.workTimeHint'),
+      options: ['within', 'added', 'none'].map((g) => ({ value: g, label: t(`ht.workTimes.${g}`) })), render: (v) => t(`ht.workTimes.${v}`) },
+    { key: 'entry', label: t('ht.entry'), type: 'select', width: 150, options: ['day', 'month'].map((g) => ({ value: g, label: t(`ht.entries.${g}`) })),
+      render: (v) => t(`ht.entries.${v}`) },
+    { key: 'profile', label: t('ht.profile'), type: 'select', width: 110, options: HOUR_PROFILES.map((g) => ({ value: g, label: t(`ht.profiles.${g}`) })),
+      render: (v) => t(`ht.profiles.${v}`) },
+    { key: 'in_all_timesheets', label: t('ht.inAll'), type: 'bool', width: 110 },
+    { key: 'pay_type', label: t('ht.payType'), type: 'select', inTable: false, extra: t('ht.payTypeHint'),
+      options: (hourPayTypes ?? []).filter((x) => x.auto === 'hour_types').map((x) => ({ value: x.id, label: `${x.code} — ${x.name_ro}` })) },
+    { key: 'sort', label: t('org.sort'), type: 'number', inTable: false },
+  ]
   const parts: Record<WorktimePart, React.ReactNode> = {
     schedules: (
       <CrudTable endpoint="/worktime/schedules/" fields={scheduleFields} canEdit={canEdit}
@@ -97,6 +118,11 @@ export default function WorktimeSettingsPage({ part, title }: { part: WorktimePa
     shifts: (
       <CrudTable endpoint="/worktime/shifts/" fields={shiftFields} canEdit={canEdit} defaults={{ hours: 8, night_hours: 0 }}
         title={<Typography.Text type="secondary">{t('wt.shift.hint')}</Typography.Text>} />
+    ),
+    hourTypes: (
+      <CrudTable endpoint="/worktime/hour-types/" fields={hourFields} canEdit={canEdit}
+        defaults={{ group: 'other', work_time: 'within', entry: 'day', profile: 'general', in_all_timesheets: false, sort: 100 }}
+        title={<Typography.Text type="secondary">{t('ht.hint')}</Typography.Text>} />
     ),
     calendar: <CalendarTab canEdit={canEdit} />,
     settings: <SettingsTab />,
@@ -141,7 +167,8 @@ function CalendarTab({ canEdit }: { canEdit: boolean }) {
 function SettingsTab() {
   const { t } = useTranslation()
   const [form] = Form.useForm()
-  const { data } = useFetch<{ min_rest_hours: number; max_night_shifts: number }>('/worktime/settings/')
+  const { data } = useFetch<{ min_rest_hours: number; max_night_shifts: number; guarantee_absences: { kinds: string[]; suspension: boolean } }>(
+    '/worktime/settings/')
   useEffect(() => { if (data) form.setFieldsValue(data) }, [data, form])
   const { touch, clean } = useEditGuard(() => save())
   const save = async () => {
@@ -158,6 +185,9 @@ function SettingsTab() {
     <Form form={form} layout="vertical" style={{ maxWidth: 520 }} onValuesChange={touch}>
       <Form.Item name="min_rest_hours" label={t('wt.set.minRest')} extra={t('wt.set.minRestHint')}><InputNumber min={0} max={48} /></Form.Item>
       <Form.Item name="max_night_shifts" label={t('wt.set.maxNights')} extra={t('wt.set.maxNightsHint')}><InputNumber min={0} max={31} /></Form.Item>
+      <Form.Item name={['guarantee_absences', 'kinds']} label={t('ht.set.absences')} extra={t('ht.set.absencesHint')}>
+        <Select mode="multiple" options={ABSENCE_KINDS.map((k) => ({ value: k, label: t(`ht.set.kinds.${k}`) }))} /></Form.Item>
+      <Form.Item name={['guarantee_absences', 'suspension']} valuePropName="checked"><Checkbox>{t('ht.set.suspension')}</Checkbox></Form.Item>
       <Button type="primary" onClick={save}>{t('common.save')}</Button>
     </Form>
   )
