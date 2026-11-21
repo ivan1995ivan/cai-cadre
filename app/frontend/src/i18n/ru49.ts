@@ -7,7 +7,7 @@ export default {
   },
   peek: {
     error: 'Не удалось загрузить данные.', age: '{{count}} лет', since: 'с', until: 'до',
-    institution: 'Стаж в учреждении', total: 'Общий стаж', healthcare: 'В здравоохранении', category: 'Категория',
+    institution: 'Стаж на предприятии', total: 'Общий стаж', specialty: 'По специальности',
     leave: 'Доступный отпуск', leaveDays: '{{count}} дн.', contacts: 'Контакты', sizes: 'Размеры', clothing: 'одежда', shoes: 'обувь',
   },
 }

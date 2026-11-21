@@ -31,7 +31,7 @@ ZERO = Decimal("0")
 CENT = Decimal("0.01")
 
 # categoria persoanei asigurate (IPC21, tabelul 2, col. 7) după tipul raportului de muncă
-KIND_CATEGORY = {"main": "101", "main_student": "101", "resident": "101", "substitute": "101", "internal": "101",
+KIND_CATEGORY = {"main": "101", "main_student": "101", "substitute": "101", "internal": "101",
                  "external": "123", "contractor": "105"}
 # absențele declarate ca perioade separate (col. 5–7) — codul categoriei
 ABSENCE_CATEGORY = {"annual": "160", "extra": "16012", "study": "16011", "unpaid": "159", "childcare": "157",

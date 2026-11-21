@@ -45,7 +45,7 @@ class PayType(models.Model):
         ("pct_salary", "% din salariul de funcție"),
         ("pct_base", "% din baza de calcul (tipurile alese)"),
         ("hourly", "Tarif orar × ore lucrate"),
-        ("scale", "% după treapta de vechime / categoria de calificare"),
+        ("scale", "% după treapta de vechime totală în muncă"),
     ]
     # cheia motorului de calcul pentru formula „auto” (apps.payroll.engine)
     AUTO = [
@@ -67,7 +67,7 @@ class PayType(models.Model):
     auto = models.CharField("Calculul automat", max_length=16, choices=AUTO, default="none")
     percent = models.DecimalField("Procentul (la formulele cu %)", max_digits=7, decimal_places=3, default=ZERO)
     base_codes = models.JSONField("Baza de calcul (codurile tipurilor)", default=list, blank=True)
-    scale = models.JSONField("Treptele {de la (ani) / categoria: %}", default=list, blank=True)
+    scale = models.JSONField("Treptele [{de la (ani): %}]", default=list, blank=True)
     taxable = models.BooleanField("Se impozitează cu impozitul pe venit", default=True)
     cas = models.BooleanField("Intră în baza CAS", default=True)
     cnam = models.BooleanField("Intră în baza CNAM", default=True)

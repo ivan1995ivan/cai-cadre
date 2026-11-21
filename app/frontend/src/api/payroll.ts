@@ -23,7 +23,7 @@ export interface PayType {
   auto: string
   percent: string
   base_codes: string[]
-  scale: { from?: number; category?: string; pct: number }[]
+  scale: { from: number; pct: number }[]
   taxable: boolean
   cas: boolean
   cnam: boolean

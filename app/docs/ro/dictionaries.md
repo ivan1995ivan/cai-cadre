@@ -25,13 +25,12 @@ Fiecare clasificator este o setare separată în *Administrare → Setări* (că
   salariu și sporuri, premii, **rețineri** (CM art. 148), sancțiuni și ridicarea lor, formare profesională, examen medical,
   state de personal), cu registrul de numerotare, efectul asupra dosarului la semnare, temeiul implicit și dacă se
   raportează la CNAS (IRM19). Tipurile marcate „1C” existau în configurația 1C „Cadre”.
-- **Clasificatoarele mici**, fiecare cu setarea lui: categoriile de personal, categorii de calificare (goale — se
-  completează de întreprindere), grade și titluri științifice, nivelul și forma studiilor, tipuri de acte (cu termen de
-  valabilitate: buletin, pașaport, diplomă, certificat de calificare, certificat medical, permis de conducere, cazier
-  judiciar…), rudenie, stare familială, naționalitate, motive de încetare (cu articolul din Codul muncii), sancțiuni,
-  stimulări, tipul angajării, evidența militară (grupa, grade, centre militare), lista de verificare la angajare /
-  eliberare (actele cerute de CM art. 57, CIM în scris, instructajul SSM, informarea privind datele personale — Legea
-  195/2024, ce se predă la plecare) și vaccinurile.
+- **Clasificatoarele mici**, fiecare cu setarea lui: categoriile de personal, nivelul și forma studiilor, tipuri de acte
+  (cu termen de valabilitate: buletin, pașaport, diplomă, certificat de calificare, certificat medical, permis de
+  conducere, cazier judiciar…), rudenie, stare familială, naționalitate, motive de încetare (cu articolul din Codul
+  muncii), sancțiuni, stimulări, tipul angajării, evidența militară (grupa, grade, centre militare — doar cu modulul
+  pornit) și lista de verificare la angajare / eliberare (actele cerute de CM art. 57, CIM în scris, instructajul SSM,
+  informarea privind datele personale — Legea 195/2024, ce se predă la plecare).
 
 **Șterge** marchează elementul pentru ștergere (tăiat în listă, nu se mai alege în câmpuri); de tot se șterge în
 *Administrare → Ștergerea obiectelor marcate*, doar dacă nu e folosit nicăieri (în state, în ordine, în dosare).

@@ -122,7 +122,7 @@ export interface ScheduleGuest {
 }
 
 export interface ScheduleWarning {
-  kind: 'balance' | 'occupation' | 'physicians'
+  kind: 'balance' | 'occupation'
   name?: string
   label?: string
   days?: number

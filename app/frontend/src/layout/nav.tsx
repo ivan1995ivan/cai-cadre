@@ -67,8 +67,8 @@ export const ADMIN_NAV: NavItem[] = [
 
 /** Clasificatoarele mici (apps/org DictItem.KINDS), fiecare cu setarea lui; în adresă `_` devine `-`. */
 export const DICT_KINDS = [
-  'staff_category', 'qualification', 'degree', 'title', 'education', 'education_form', 'document', 'family', 'marital', 'nationality', 'termination',
-  'sanction', 'incentive', 'employment', 'military_group', 'military_rank', 'military_center', 'checklist', 'vaccine',
+  'staff_category', 'education', 'education_form', 'document', 'family', 'marital', 'nationality', 'termination',
+  'sanction', 'incentive', 'employment', 'military_group', 'military_rank', 'military_center', 'checklist',
 ]
 export const dictPath = (kind: string) => `/dictionaries/${kind.replace(/_/g, '-')}`
 
@@ -130,9 +130,9 @@ export const PANEL_FLOWS: [string, string][] = [
  *  la Clasificatoare, cu dreptul și bifa de rol ale setării. Setările-reguli (concediile, alertele, constantele) rămân doar
  *  la Administrare → Setări. */
 export const PANEL_CLASSIFIERS: Record<string, string[]> = {
-  staffList: ['occupations', 'specialties', 'dict:qualification'],
+  staffList: ['occupations', 'specialties'],
   occupancy: ['occupations'],
-  employees: ['dict:education', 'dict:education_form', 'dict:degree', 'dict:title', 'dict:document', 'dict:family',
+  employees: ['dict:education', 'dict:education_form', 'dict:document', 'dict:family',
     'dict:marital', 'dict:nationality', 'dict:checklist', 'localities', 'banks'],
   contracts: ['dict:employment', 'workSchedules'],
   orders: ['orderTypes', 'legalBases', 'dict:termination', 'dict:sanction', 'dict:incentive'],
@@ -143,8 +143,6 @@ export const PANEL_CLASSIFIERS: Record<string, string[]> = {
   timesheets: ['workSchedules', 'shiftTypes', 'productionCalendar'],
   payroll: ['payrollTypes'],
   payrollPayments: ['banks'],
-  training: ['dict:qualification'],
-  health: ['dict:vaccine'],
   military: ['dict:military_group', 'dict:military_rank', 'dict:military_center'],
 }
 
@@ -181,10 +179,10 @@ const report = (key: string, slug: string, perm = 'reports.view'): NavItem =>
 export const REPORT_NAV: NavItem[] = [
   report('repMovement', 'movement'), report('repStructure', 'structure'), report('repSeniority', 'seniority'),
   report('repBirthdays', 'birthdays'), report('repRetirements', 'retirements'), report('repVacancies', 'vacancies'),
-  report('repMedicalStaff', 'medical_staff'), report('repMunca1', 'munca1'),
+  report('repMunca1', 'munca1'),
   report('repLeavePeriod', 'leave_period'), report('repTimesheetSummary', 'timesheet_summary'),
   report('repOrdersPayroll', 'orders_payroll'), report('repOrdersByType', 'orders_by_type'),
-  report('repEmcCredits', 'emc_credits'), report('repTrainingPeriod', 'training_period'), report('repHealthDue', 'health_due'),
+  report('repTrainingPeriod', 'training_period'), report('repTrainingExpiry', 'training_expiry'), report('repHealthDue', 'health_due'),
   report('repMilitaryRegister', 'military_register', 'military.view'), report('repMilitaryMissing', 'military_missing', 'military.view'),
   report('repMilitaryChanges', 'military_changes', 'military.view'), report('repMilitaryRecruits', 'military_recruits', 'military.view'),
   report('repSalaryBook', 'salary_book', 'payroll.view'), report('repWorkwear', 'workwear_sizes'),

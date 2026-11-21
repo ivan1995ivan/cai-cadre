@@ -7,7 +7,7 @@ export default {
   },
   peek: {
     error: 'Nu s-au putut încărca datele.', age: '{{count}} ani', since: 'din', until: 'până la',
-    institution: 'Vechimea în instituție', total: 'Vechimea totală', healthcare: 'În sistemul sănătății', category: 'Categoria',
+    institution: 'Vechimea în întreprindere', total: 'Vechimea totală', specialty: 'În specialitate',
     leave: 'Concediu disponibil', leaveDays: '{{count}} zile', contacts: 'Contacte', sizes: 'Mărimile', clothing: 'haine', shoes: 'încălțăminte',
   },
 }

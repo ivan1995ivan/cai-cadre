@@ -14,9 +14,9 @@ from apps.leave import balance
 from apps.leave.models import (ORDER_ABSENCE, SUSPENDING, WITHOUT_HOLIDAYS, Absence, LeaveAdjustment, LeaveSchedule,
                                LeaveScheduleLine)
 from apps.org import calendar
-from apps.org.models import DictItem, Occupation, Specialty, StaffList, Subdivision
+from apps.org.models import DictItem, Occupation, StaffList, Subdivision
 from apps.staff import services as staff
-from apps.staff.models import Employment, EmploymentHistory, Qualification
+from apps.staff.models import Employment, EmploymentHistory
 
 from .models import Incentive, Sanction
 
@@ -470,23 +470,13 @@ def undo_sanction(item, result):
 
 
 def qualification(item, order, user):
-    """Conferirea categoriei → în dosar; perfecționarea → absență de tip „perfecționare”; atestarea — doar în ordin."""
-    code = order.order_type.code
-    if code == "training":
+    """Grupa „formare”: trimiterea la perfecționare → absență de tip „perfecționare”; celelalte — doar în ordin."""
+    if order.order_type.code == "training":
         return leave(item, order, user)
-    if code != "category_award":
-        return {}
-    category = p_obj(item, "category", DictItem, required=True, kind="qualification")
-    day = p_date(item, "date_from", required=False) or order.date
-    obj = Qualification.objects.create(
-        employee=item.employee, specialty=p_obj(item, "specialty", Specialty), category=category, awarded_on=day,
-        valid_until=p_date(item, "date_to", required=False) or day.replace(year=day.year + 5) - timedelta(days=1),
-        certificate_number=f"ordinul {order.reference()}")
-    return {"qualification": obj.id}
+    return {}
 
 
 def undo_qualification(item, result):
-    Qualification.objects.filter(pk=result.get("qualification")).delete()
     undo_leave(item, result)
 
 

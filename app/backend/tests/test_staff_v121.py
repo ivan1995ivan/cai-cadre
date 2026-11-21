@@ -28,7 +28,7 @@ def test_quick_card_has_age_seniority_and_is_not_logged(admin_client, org, make_
     hire(e, org)
     card = admin_client.get(f"/api/staff/employees/{e.id}/summary/").data
     assert card["full_name"] == "Popescu Ion" and card["age"] >= 46 and card["jobs"][0]["occupation"]
-    assert set(card["seniority"]) == {"total", "healthcare", "specialty", "institution"} and card["phone"] == "069000000"
+    assert set(card["seniority"]) == {"total", "specialty", "institution"} and card["phone"] == "069000000"
     assert not AccessLog.objects.filter(employee=e).exists()  # trecerea mouse-ului nu e deschiderea dosarului
     # cine nu vede contactele nu le vede nici în fișa scurtă
     clerk = make_user("clerk", ["hr_inspector"])

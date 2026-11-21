@@ -8,7 +8,7 @@ export default {
     leave: 'Отпуска', leaveSchedule: 'График отпусков', sickLeave: 'Больничные листы', worktime: 'Графики работы и смены',
     timesheets: 'Табели учёта времени',
     payroll: 'Расчёт зарплаты', payrollPayments: 'Выплата и перечисление', payrollSettings: 'Настройки зарплаты', taxReports: 'Отчётность (IPC21, IALS21, IRM19)',
-    training: 'Обучение и аттестация', health: 'Здоровье на работе', military: 'Воинский учёт',
+    training: 'Обучение персонала', health: 'Охрана здоровья и труда', military: 'Воинский учёт',
     reports: 'Отчёты',
     users: 'Пользователи', online: 'Кто сейчас работает', roles: 'Роли и права', constants: 'Константы (предприятие)',
     currencies: 'Валюты', numbering: 'Нумерация документов', printTemplates: 'Печатные формы', excelImport: 'Импорт из Excel',

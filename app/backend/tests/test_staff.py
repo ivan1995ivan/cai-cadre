@@ -11,7 +11,7 @@ from apps.org import services as org_services
 from apps.org.models import DictItem, Occupation, StaffList, StaffListLine, Subdivision
 from apps.staff import services
 from apps.staff.models import AccessLog, Employee, Employment, PriorExperience
-from .conftest import legacy_qualification, occupation
+from .conftest import occupation
 
 
 def xlsx(rows):
@@ -28,7 +28,6 @@ def xlsx(rows):
 
 @pytest.fixture
 def org(seeded):
-    legacy_qualification()
     tr1 = Subdivision.objects.create(code="TR1", name_ro="Secția traumatologie nr. 1", name_ru="Травматология № 1")
     ati = Subdivision.objects.create(code="ATI", name_ro="Secția ATI")
     bo = Subdivision.objects.create(code="BO", name_ro="Blocul operator", parent=ati)
@@ -140,7 +139,7 @@ def test_seniority_merges_overlaps_and_splits_kinds(org):
     PriorExperience.objects.create(employee=emp, organization="Spitalul A", date_from=date(2010, 1, 1), date_to=date(2014, 12, 31))
     PriorExperience.objects.create(employee=emp, organization="Cumul B", date_from=date(2014, 1, 1), date_to=date(2015, 6, 30))
     PriorExperience.objects.create(employee=emp, organization="Bancă", date_from=date(2016, 1, 1), date_to=date(2016, 12, 31),
-                                   in_specialty=False, in_healthcare=False)
+                                   in_specialty=False)
     hire(emp, org, date_from=date(2020, 1, 1))
     s = services.seniority(emp, date(2025, 12, 31))
     assert (s["total"]["years"], s["total"]["months"], s["total"]["days"]) == (12, 6, 0)  # 5a6l + 1a + 6a
@@ -220,19 +219,19 @@ def test_employees_fill_the_staff_list_occupancy(org):
 # --- importul din Excel -----------------------------------------------------------------------------
 def test_import_employees_with_cumul_then_family_and_experience(admin_client, org):
     rows = [["Nr. tabel", "Numele", "Prenumele", "IDNP", "Data nașterii", "Sexul (M/F)", "Subdiviziunea (cod sau denumire)",
-             "Funcția", "Tipul angajării", "Norma", "Data angajării", "Salariul de funcție", "Categoria de calificare"],
+             "Funcția", "Tipul angajării", "Norma", "Data angajării", "Salariul de funcție"],
             ["101", "Popescu", "Ion", "2001000123456", "15.03.1980", "M", "TR1", "Medic traumatolog-ortoped", "de bază", 1,
-             "01.09.2015", 14660, "Categoria superioară"],
+             "01.09.2015", 14660],
             ["101", "Popescu", "Ion", "2001000123456", "15.03.1980", "M", "ATI", "Medic anesteziolog-reanimatolog", "cumul intern",
-             0.25, "01.01.2020", 15200, ""],
-            ["", "Rusu", "Ana", "", "", "F", "TR1", "Asistent medical de secție", "", "", "01.02.2018", 9200, ""]]
+             0.25, "01.01.2020", 15200],
+            ["", "Rusu", "Ana", "", "", "F", "TR1", "Asistent medical de secție", "", "", "01.02.2018", 9200]]
     dry = admin_client.post("/api/staff/import/employees/", {"file": xlsx(rows), "dry_run": "1"}, format="multipart").data
     assert dry["ok"] and dry["created"] == 2 and dry["updated"] == 1, dry
     assert Employee.objects.count() == 0
     r = admin_client.post("/api/staff/import/employees/", {"file": xlsx(rows), "dry_run": "0"}, format="multipart").data
     assert r["saved"], r
     ion = Employee.objects.get(tab_number="101")
-    assert ion.employments.count() == 2 and ion.qualifications.first().category.code == "superior"
+    assert ion.employments.count() == 2
     ana = Employee.objects.get(last_name="Rusu")
     assert ana.tab_number == "102" and ana.employments.get().rate == Decimal("1")
     assert ion.employments.get(kind="main").history.get().event == "import"

@@ -19,8 +19,7 @@ export interface EmployeeSummary {
   phone: string | null
   email: string | null
   jobs: { kind: string; occupation: string; subdivision: string; rate: number; date_from: string; date_to: string | null; status: string }[]
-  seniority: { total: string; healthcare: string; specialty: string; institution: string }
-  qualification: { category: string; valid_until: string | null } | null
+  seniority: { total: string; specialty: string; institution: string }
   clothing_size: string
   shoe_size: string
   height: number | null
@@ -46,7 +45,6 @@ function Card({ id }: { id: number }) {
   }, [id])
   if (error) return <Typography.Text type="secondary">{t('peek.error')}</Typography.Text>
   if (!data) return <div style={{ width: 360, textAlign: 'center', padding: 24 }}><Spin /></div>
-  const expiring = data.qualification?.valid_until && dayjs(data.qualification.valid_until).diff(dayjs(), 'day') < 90
   const sizes = [data.clothing_size && `${t('peek.clothing')} ${data.clothing_size}`, data.shoe_size && `${t('peek.shoes')} ${data.shoe_size}`,
     data.height && `${data.height} cm`].filter(Boolean).join(' · ')
   return (
@@ -70,9 +68,7 @@ function Card({ id }: { id: number }) {
         bordered items={[
           { key: 'inst', label: t('peek.institution'), children: data.seniority.institution },
           { key: 'total', label: t('peek.total'), children: data.seniority.total },
-          { key: 'med', label: t('peek.healthcare'), children: data.seniority.healthcare },
-          ...(data.qualification ? [{ key: 'cat', label: t('peek.category'), children: <span>{data.qualification.category}
-            {data.qualification.valid_until && <Typography.Text type={expiring ? 'danger' : 'secondary'}> · {t('peek.until')} {d(data.qualification.valid_until)}</Typography.Text>}</span> }] : []),
+          { key: 'spec', label: t('peek.specialty'), children: data.seniority.specialty },
           ...(data.leave ? [{ key: 'leave', label: t('peek.leave'), children: t('peek.leaveDays', { count: Math.floor(data.leave.available) }) }] : []),
           ...(data.phone || data.email ? [{ key: 'contact', label: t('peek.contacts'), children: [data.phone, data.email].filter(Boolean).join(' · ') }] : []),
           ...(sizes ? [{ key: 'sizes', label: t('peek.sizes'), children: sizes }] : []),

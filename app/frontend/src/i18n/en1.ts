@@ -61,7 +61,7 @@ export default {
       substitution: 'Substitution / combining / acting', suspend: 'Contract suspension', resume: 'Return to work', terminate: 'Termination',
       leave: 'Leave', leave_recall: 'Leave recall / postponement', travel: 'Business travel', worktime: 'Working time', incentive: 'Reward',
       sanction: 'Disciplinary sanction', qualification: 'Vocational training', staff_list: 'Staff list', cancel: 'Cancelling an order' },
-    dictKinds: { staff_category: 'Staff categories (CORM groups)', qualification: 'Qualification categories', degree: 'Scientific degrees', title: 'Academic titles', education: 'Education level',
+    dictKinds: { staff_category: 'Staff categories (CORM groups)', education: 'Education level',
       education_form: 'Form of study', document: 'Document types', family: 'Family relation', marital: 'Marital status',
       nationality: 'Nationality', termination: 'Reasons for termination', sanction: 'Disciplinary sanctions', incentive: 'Reward types',
       employment: 'Employment type', military_group: 'Military records: group', military_rank: 'Military records: ranks',

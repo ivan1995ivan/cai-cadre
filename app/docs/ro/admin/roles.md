@@ -3,7 +3,7 @@
 Rolul spune **ce poate face** un utilizator și **ce vede**.
 
 ## Rolurile predefinite
-Administrator, Șef resurse umane, Inspector resurse umane, Director (conducătorul instituției), Șef de secție,
+Administrator, Șef resurse umane, Inspector resurse umane, Director / administrator, Șef de subdiviziune,
 Contabilitate (salarizare), Angajat (cabinetul personal).
 Le puteți modifica, dar nu le puteți șterge. Puteți crea și roluri noi (**Rol nou**): denumirea și un cod din litere mici
 latine, cifre, _ și -.
@@ -12,7 +12,8 @@ Comutatorul **Administrator** dă rolului toate drepturile; matricea nu mai treb
 
 ## Drepturi pe module
 Pentru fiecare modul (instituția și statele de personal, clasificatoarele, angajații, contractele, ordinele, concediile,
-certificatele medicale, timpul de muncă, formarea, sănătatea în muncă, evidența militară, salarizarea, raportările
+certificatele medicale, timpul de muncă, formarea profesională, sănătatea și securitatea în muncă, evidența militară (doar
+cu modulul pornit în Constante → Module), salarizarea, raportările
 fiscale, rapoartele, cabinetul angajatului, importul, utilizatorii, rolurile, constantele, jurnalul de audit) se bifează
 acțiunile: **Vizualizare, Creare, Editare, Ștergere, Aprobare / semnare, Export**. La angajați mai este
 **Date sensibile (IDNP, acte, sănătate)**.
@@ -23,9 +24,9 @@ Pentru angajați, contracte, ordine, concedii, certificate medicale, timpul de m
 rapoarte:
 - **Doar ale mele (subdiviziunea mea / eu)**: doar subdiviziunile legate de utilizator și datele lui;
 - **Subdiviziunile mele**: la fel, împreună cu subdiviziunile din subordinea lor;
-- **Toate**: toată instituția.
+- **Toate**: toată întreprinderea.
 
-Rolul „Șef de secție” are de la instalare „Doar ale mele”.
+Rolul „Șef de subdiviziune” are de la instalare „Doar ale mele”.
 
 ## Meniul principal
 Ce secțiuni și funcții din meniu vede rolul și, în grupa **Setări** de la sfârșit, ce setări vede în lista

@@ -1,7 +1,7 @@
 """Dosarul angajatului (fișa personală MR-2 electronică) — Etapa 2 din PLAN.md.
 
-Persoana (`Employee`) are mai multe raporturi de muncă (`Employment`): de bază, cumul intern / extern, rezident,
-suplinire. Fiecare raport are istoricul lui (`EmploymentHistory`): funcția, subdiviziunea, norma și salariul „din data”.
+Persoana (`Employee`) are mai multe raporturi de muncă (`Employment`): de bază, cumul intern / extern, suplinire,
+prestări servicii. Fiecare raport are istoricul lui (`EmploymentHistory`): funcția, subdiviziunea, norma și salariul „din data”.
 Ordinele (Etapa 3) vor scrie în istoric prin `services`; până atunci istoricul se completează la angajare și la import.
 """
 import re
@@ -87,7 +87,7 @@ class Employee(models.Model):
     def main_employment(self):
         active = [e for e in self.employments.all() if e.status != "ended"]
         pool = active or list(self.employments.all())
-        main = [e for e in pool if e.kind in ("main", "main_student", "resident")]
+        main = [e for e in pool if e.kind in MAIN_KINDS]
         return (main or pool or [None])[0]
 
 
@@ -153,23 +153,6 @@ class Education(models.Model):
         return f"{self.institution} ({self.year_to or ''})"
 
 
-class Qualification(models.Model):
-    """Categoria de calificare pe specialitate (Ordinul MS 386/2018): se conferă / confirmă la atestare."""
-
-    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="qualifications")
-    specialty = models.ForeignKey(Specialty, on_delete=models.PROTECT, null=True, blank=True, verbose_name="Specialitatea")
-    category = models.ForeignKey(**_dict("qualification"), verbose_name="Categoria")
-    certificate_number = models.CharField("Nr. certificatului / ordinului", max_length=60, blank=True)
-    awarded_on = models.DateField("Conferită la", null=True, blank=True)
-    valid_until = models.DateField("Valabilă până la", null=True, blank=True)
-    degree = models.ForeignKey(**_dict("degree"), verbose_name="Gradul științific")
-    title = models.ForeignKey(**_dict("title"), verbose_name="Titlul științifico-didactic")
-    note = models.CharField("Observații", max_length=200, blank=True)
-
-    class Meta:
-        ordering = ["-awarded_on", "id"]
-
-
 class PriorExperience(models.Model):
     """Stagiul de muncă anterior (din carnetul de muncă până în 2019, din certificate după)."""
 
@@ -178,8 +161,7 @@ class PriorExperience(models.Model):
     position = models.CharField("Funcția", max_length=200, blank=True)
     date_from = models.DateField("De la")
     date_to = models.DateField("Până la")
-    in_specialty = models.BooleanField("În specialitate (medicală)", default=True)
-    in_healthcare = models.BooleanField("În sistemul sănătății", default=True)
+    in_specialty = models.BooleanField("În specialitate", default=True)
     document = models.CharField("Documentul (carnet, certificat)", max_length=200, blank=True)
 
     class Meta:
@@ -216,13 +198,14 @@ EMPLOYMENT_KINDS = [
     ("main_student", "De bază (student)"),
     ("internal", "Cumul intern"),
     ("external", "Cumul extern"),
-    ("resident", "Rezident"),
     ("substitute", "Suplinire temporară"),
     ("contractor", "Contract de prestări servicii"),
 ]
 # care raporturi ocupă postul din statele de personal (suplinirea ocupă postul celui absent, nu unul nou;
 # contractul de prestări servicii e civil — nu ocupă post, nu dă concediu și nu intră în vechimea în muncă)
-OCCUPYING_KINDS = {"main", "main_student", "internal", "external", "resident"}
+OCCUPYING_KINDS = {"main", "main_student", "internal", "external"}
+# raporturile „de bază” (locul de muncă de bază al persoanei): scutirile, vechimea în întreprindere, rapoartele „doar de bază”
+MAIN_KINDS = ("main", "main_student")
 CIVIL_KINDS = {"contractor"}
 
 

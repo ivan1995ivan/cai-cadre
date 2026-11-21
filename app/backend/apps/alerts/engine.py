@@ -3,7 +3,7 @@
 
 Fiecare alertă are: tipul, nivelul, data-termen, angajatul și subdiviziunile lui, textul, legătura și **cui i se adresează**:
 „hr” (cadrele: drept de editare a angajaților), „accounting” (contabilitatea: drept de salarizare), „head” (utilizatorii
-subdiviziunii — șeful de secție, asistentul superior).
+subdiviziunii — șeful subdiviziunii).
 """
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -20,14 +20,12 @@ KINDS = {
     "probation_end": (True, 10, ("hr", "head")),
     "contract_end": (True, 30, ("hr", "head")),
     "document_expiry": (True, 30, ("hr",)),
-    "qualification_expiry": (True, 180, ("hr", "head")),
     "childcare_end": (True, 30, ("hr", "accounting")),
     "maternity_end": (True, 14, ("hr", "accounting")),
     "leave_unused": (True, 0, ("hr", "head")),
     "sanction_expiry": (True, 7, ("hr",)),
     "retirement": (True, 180, ("hr",)),
     "birthday": (True, 7, ("hr", "head")),
-    "seniority_step": (True, 30, ("hr", "accounting")),
     "order_unacknowledged": (True, 3, ("hr",)),
     "payroll_orders": (True, 7, ("accounting",)),
     "leave_requests": (True, 0, ("head", "hr")),
@@ -159,29 +157,6 @@ def _document_expiry(today, days, cfg):
     return out
 
 
-def _qualification_expiry(today, days, cfg):
-    from apps.staff.models import Qualification
-
-    out, seen = [], set()
-    qs = (Qualification.objects.filter(valid_until__lte=today + timedelta(days=days), valid_until__gte=today - timedelta(days=30),
-                                       employee__status__in=("active", "suspended"))
-          .select_related("employee", "category", "specialty").prefetch_related("employee__employments").order_by("-valid_until"))
-    for q in qs:
-        if (q.employee_id, q.specialty_id) in seen:
-            continue
-        seen.add((q.employee_id, q.specialty_id))
-        newer = Qualification.objects.filter(employee_id=q.employee_id, specialty_id=q.specialty_id, awarded_on__gt=q.awarded_on or date.min)
-        if newer.exists():
-            continue  # categoria a fost deja confirmată
-        cat = q.category.name_ro.lower() if q.category_id else "categoria"
-        spec = f" ({q.specialty.name_ro})" if q.specialty_id else ""
-        out.append(Alert("qualification_expiry", f"qual:{q.pk}:{q.valid_until}", "Atestarea: expiră categoria de calificare",
-                         f"{q.employee.full_name()} — {cat}{spec} valabilă până la {_d(q.valid_until)}", q.valid_until,
-                         "warning" if q.valid_until < today + timedelta(days=60) else "info", q.employee_id,
-                         q.employee.full_name(), _subs(q.employee), f"/employees/{q.employee_id}?tab=education"))
-    return out
-
-
 # --- concedii ------------------------------------------------------------------------------------------------------
 def _absence_end(today, days, kinds, kind, title):
     from apps.leave.models import Absence
@@ -301,30 +276,6 @@ def _birthday(today, days, cfg):
     return out
 
 
-def _seniority_step(today, days, cfg):
-    """Vechimea în sistemul sănătății atinge o treaptă nouă a sporului de vechime (tipul de calcul cu trepte pe ani)."""
-    from apps.payroll.models import PayType
-    from apps.staff import services as staff
-    from apps.staff.models import Employee
-
-    steps = set()
-    for t in PayType.objects.filter(formula="scale", is_active=True):
-        steps |= {int(s["from"]) for s in t.scale or [] if "from" in s}
-    if not steps:
-        return []
-    out = []
-    horizon = today + timedelta(days=days)
-    for e in Employee.objects.filter(status="active").prefetch_related("employments__occupation", "experience"):
-        now = staff.seniority(e, today)["healthcare"]["years"]
-        later = staff.seniority(e, horizon)["healthcare"]["years"]
-        reached = sorted(s for s in steps if now < s <= later)
-        if reached:
-            out.append(Alert("seniority_step", f"senior:{e.pk}:{reached[-1]}", "Vechime: treaptă nouă a sporului",
-                             f"{e.full_name()} — împlinește {reached[-1]} ani de vechime în sistemul sănătății până la "
-                             f"{_d(horizon)}", horizon, "info", e.pk, e.full_name(), _subs(e), f"/employees/{e.pk}?tab=seniority"))
-    return out
-
-
 # --- ordine, grafice, raportări ------------------------------------------------------------------------------------------
 def _order_unacknowledged(today, days, cfg):
     from apps.orders.models import OrderItem
@@ -402,7 +353,7 @@ def audiences_of(user) -> set:
 
 
 def for_user(user, alerts: list) -> list:
-    """Alertele care privesc utilizatorul: după rolul lui (cadre / contabilitate) și, la șeful de secție, după secțiile lui."""
+    """Alertele care privesc utilizatorul: după rolul lui (cadre / contabilitate) și, la șeful de subdiviziune, după subdiviziunile lui."""
     from apps.staff import services as staff
 
     aud = audiences_of(user)
@@ -465,7 +416,7 @@ def counts_by_kind(alerts: list) -> dict:
 
 
 def employment_filter_for(user):
-    """Filtrul pe angajați pentru indicatorii panoului (șeful de secție — doar secțiile lui)."""
+    """Filtrul pe angajați pentru indicatorii panoului (șeful de subdiviziune — doar subdiviziunile lui)."""
     from apps.staff import services as staff
 
     ids = staff.visible_subdivision_ids(user, "employees")

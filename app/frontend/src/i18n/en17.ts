@@ -3,10 +3,11 @@ export default {
   menu: {
     repMovement: 'Staff turnover', repStructure: 'Staff structure', repSeniority: 'Seniority',
     repBirthdays: 'Birthdays and jubilees', repRetirements: 'Retirements', repVacancies: 'Vacant positions',
-    repMedicalStaff: 'Medical staff (MoH no. 17)', repMunca1: 'Labour 1 (NBS)',
+    repMunca1: 'Labour 1 (NBS)',
     repLeavePeriod: 'Leave and absences by period', repTimesheetSummary: 'Consolidated timesheet',
     repOrdersPayroll: 'Orders extract for accounting', repOrdersByType: 'Orders by type',
-    repEmcCredits: 'CME credits', repTrainingPeriod: 'Training by period', repHealthDue: 'Occupational health deadlines',
+    repTrainingPeriod: 'Training by period', repTrainingExpiry: 'Expiring training certificates',
+    repHealthDue: 'Occupational health and safety deadlines',
     repMilitaryRegister: 'Military record register', repMilitaryMissing: 'Without military record',
     repMilitaryChanges: 'Monthly changes for the military centre', repMilitaryRecruits: 'List of recruits',
   },

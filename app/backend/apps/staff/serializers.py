@@ -5,7 +5,7 @@ from apps.org.serializers import user_lang
 
 from . import services
 from .models import (AccessLog, Education, Employee, EmployeeDocument, Employment, EmploymentHistory, FamilyMember,
-                     MilitaryRecord, PriorExperience, Qualification)
+                     MilitaryRecord, PriorExperience)
 
 # câmpurile sensibile (users.registry.SENSITIVE_FIELDS) → ce se ascunde din fișă
 SENSITIVE = {
@@ -105,34 +105,10 @@ class EducationSerializer(RequiredFieldsMixin, serializers.ModelSerializer):
         return _name(obj.form, user_lang(self))
 
 
-class QualificationSerializer(serializers.ModelSerializer):
-    specialty_name = serializers.SerializerMethodField()
-    category_name = serializers.SerializerMethodField()
-    degree_name = serializers.SerializerMethodField()
-    title_name = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Qualification
-        fields = ["id", "employee", "specialty", "specialty_name", "category", "category_name", "certificate_number",
-                  "awarded_on", "valid_until", "degree", "degree_name", "title", "title_name", "note"]
-
-    def get_specialty_name(self, obj):
-        return _name(obj.specialty, user_lang(self))
-
-    def get_category_name(self, obj):
-        return _name(obj.category, user_lang(self))
-
-    def get_degree_name(self, obj):
-        return _name(obj.degree, user_lang(self))
-
-    def get_title_name(self, obj):
-        return _name(obj.title, user_lang(self))
-
-
 class PriorExperienceSerializer(serializers.ModelSerializer):
     class Meta:
         model = PriorExperience
-        fields = ["id", "employee", "organization", "position", "date_from", "date_to", "in_specialty", "in_healthcare", "document"]
+        fields = ["id", "employee", "organization", "position", "date_from", "date_to", "in_specialty", "document"]
 
     def validate(self, attrs):
         start = attrs.get("date_from", getattr(self.instance, "date_from", None))

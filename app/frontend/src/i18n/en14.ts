@@ -11,7 +11,7 @@ export default {
     leaveRequests: 'Leave requests', newLeave: 'Leave request', otherRequests: 'Certificates and other requests', newOther: 'New request',
     status: 'Status', note: 'Notes', order: 'order', text: 'Content', answer: 'Answer', withdraw: 'Withdraw', withdrawConfirm: 'Withdraw the request?',
     send: 'Send', sent: 'The request was sent.', reason: 'Reason / notes',
-    leaveHint: 'The request goes to the head of department, then to HR for the order. You are notified at each step.',
+    leaveHint: 'The request goes to the head of unit, then to HR for the order. You are notified at each step.',
     whatChanges: 'What changed (name, address, phone…)', forWhom: 'For which institution / notes', copies: 'Copies',
     kinds: { certificate_work: 'Employment certificate', certificate_seniority: 'Seniority certificate', certificate_salary: 'Salary certificate',
       data_change: 'Personal data change', other: 'Other request' },

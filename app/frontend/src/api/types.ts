@@ -83,6 +83,7 @@ export interface Branding {
   version: string
   name_en?: string
   payroll_enabled?: boolean
+  military_enabled?: boolean
   function_panel?: boolean
   languages?: Lang[]
 }
@@ -127,6 +128,7 @@ export interface Company {
   primary_color: string
   bank_accounts: BankAccount[]
   payroll_enabled: boolean
+  military_enabled: boolean
   function_panel: boolean
   languages: Lang[]
 }

@@ -8,7 +8,7 @@ export default {
     payrollConstants: 'Constantele salarizării', taxSettings: 'Raportări fiscale: datele plătitorului',
     alertSettings: 'Termene și alerte: ce se urmărește', smtpSettings: 'Poșta (e-mail) pentru notificări și fluturași',
   },
-  org: { dictKinds: { checklist: 'Lista de verificare la angajare / eliberare', vaccine: 'Vaccinuri (sănătatea în muncă)' } },
+  org: { dictKinds: { checklist: 'Lista de verificare la angajare / eliberare' } },
   settingsPage: {
     hint: 'Toate setările programului, în ordine alfabetică. Scrieți o parte din denumire ca s-o găsiți; Enter deschide setarea când a rămas una singură.',
     search: 'Caută setarea după denumire', none: 'Nicio setare cu această denumire.',

@@ -13,10 +13,10 @@ from apps.org.models import DictItem
 
 from . import printing, services
 from .models import (AccessLog, Education, Employee, EmployeeDocument, Employment, FamilyMember, MilitaryRecord,
-                     PriorExperience, Qualification)
+                     PriorExperience)
 from .serializers import (AccessLogSerializer, ContractRowSerializer, EducationSerializer, EmployeeDocumentSerializer, EmployeeListSerializer,
                           EmployeeSerializer, EmploymentSerializer, FamilyMemberSerializer, MilitaryRecordSerializer,
-                          PriorExperienceSerializer, QualificationSerializer)
+                          PriorExperienceSerializer)
 
 
 def _date(value, field="date"):
@@ -111,7 +111,7 @@ class EmployeeViewSet(DeletionMarkMixin, viewsets.ModelViewSet):
     @action(detail=True, methods=["get"])
     def summary(self, request, pk=None):
         """Fișa scurtă pentru lista angajaților (la trecerea mouse-ului): fotografia, vârsta, vechimea, raporturile de muncă,
-        categoria, absența de azi, concediul disponibil, mărimile. Nu se scrie în jurnalul accesului (nu e deschiderea
+        absența de azi, concediul disponibil, mărimile. Nu se scrie în jurnalul accesului (nu e deschiderea
         dosarului); câmpurile sensibile se ascund după aceleași reguli ca în dosar."""
         from .serializers import hidden_for
 
@@ -127,12 +127,9 @@ class EmployeeViewSet(DeletionMarkMixin, viewsets.ModelViewSet):
                 for j in e.employments.select_related("occupation", "subdivision").exclude(status="ended").order_by("date_from")]
         sen = services.seniority(e)
         seniority = {k: services.seniority_text(v, lang) for k, v in sen.items() if k != "on_date"}
-        q = e.qualifications.select_related("category").order_by("-awarded_on", "-id").first()
-        qualification = ({"category": q.category.local_name(lang) if q.category_id else "", "valid_until": q.valid_until}
-                         if q else None)
         out = {"id": e.pk, "full_name": e.full_name(), "tab_number": e.tab_number, "photo": e.photo.url if e.photo else None,
                "sex": e.sex, "birth_date": e.birth_date, "age": age, "status": e.get_status_display(), "phone": e.phone,
-               "email": e.email, "jobs": jobs, "seniority": seniority, "qualification": qualification,
+               "email": e.email, "jobs": jobs, "seniority": seniority,
                "clothing_size": e.clothing_size, "shoe_size": e.shoe_size, "height": e.height, "absence": None, "leave": None}
         if request.user.has_crm_perm("leave.view"):
             from apps.leave import balance
@@ -244,20 +241,24 @@ class EducationViewSet(EmployeeChildViewSet):
     serializer_class = EducationSerializer
 
 
-class QualificationViewSet(EmployeeChildViewSet):
-    model = Qualification
-    serializer_class = QualificationSerializer
-
-
 class ExperienceViewSet(EmployeeChildViewSet):
     model = PriorExperience
     serializer_class = PriorExperienceSerializer
 
 
 class MilitaryViewSet(EmployeeChildViewSet):
+    """Fișa de evidență militară — doar cu modulul opțional „Evidența militară” pornit (Constante → Module)."""
+
     perm_module = ("employees", "military")
     model = MilitaryRecord
     serializer_class = MilitaryRecordSerializer
+
+    def initial(self, request, *args, **kwargs):
+        from apps.core.models import Company
+
+        super().initial(request, *args, **kwargs)  # întâi autentificarea și drepturile
+        if not Company.get().military_enabled:
+            raise NotFound("Modulul „Evidența militară” este oprit.")
 
     def perform_create(self, serializer):
         self._check_employee(serializer.validated_data["employee"])

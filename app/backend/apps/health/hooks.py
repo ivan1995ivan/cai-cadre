@@ -1,7 +1,6 @@
-"""Alertele sănătății în muncă și raportul din catalog."""
+"""Alertele sănătății și securității în muncă și raportul din catalog."""
 
-TITLES = {"exam": ("medical_exam_due", "Examenul medical periodic"), "briefing": ("briefing_due", "Instructajul SSM"),
-          "vaccine": ("vaccination_due", "Vaccinarea")}
+TITLES = {"exam": ("medical_exam_due", "Examenul medical periodic"), "briefing": ("briefing_due", "Instructajul SSM")}
 
 
 def _alerts(what):
@@ -14,7 +13,7 @@ def _alerts(what):
         out = []
         for r in services.due_rows(today, what=what, horizon=days):
             if r["status"] == "missing":
-                continue  # lipsa totală se vede în pagina „Sănătatea în muncă”, nu umple alertele zilnic
+                continue  # lipsa totală se vede în pagina „Sănătatea și securitatea în muncă”, nu umple alertele zilnic
             due = r["due"] or today
             when = f"termenul {_d(r['due'])}" if r["due"] else "nu este înregistrat"
             out.append(Alert(kind, f"{kind}:{r['employee']}:{r['label']}:{r['due']}", title,
@@ -31,5 +30,4 @@ def register():
 
     engine.register("medical_exam_due", True, 30, ("hr", "head"), _alerts("exam"))
     engine.register("briefing_due", True, 14, ("hr", "head"), _alerts("briefing"))
-    engine.register("vaccination_due", True, 30, ("hr",), _alerts("vaccine"))
 

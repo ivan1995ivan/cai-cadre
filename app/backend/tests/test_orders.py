@@ -11,12 +11,11 @@ from apps.org.models import DictItem, Occupation, OrderType, StaffList, StaffLis
 from apps.orders.models import Order, Sanction
 from apps.staff import services as staff
 from apps.staff.models import Employee
-from .conftest import legacy_qualification, occupation
+from .conftest import occupation
 
 
 @pytest.fixture
 def org(seeded):
-    legacy_qualification()
     tr1 = Subdivision.objects.create(code="TR1", name_ro="Secția traumatologie nr. 1")
     ati = Subdivision.objects.create(code="ATI", name_ro="Secția ATI")
     return {"tr1": tr1, "ati": ati,
@@ -190,7 +189,7 @@ def test_terminate_order_and_cancel(admin_client, org):
     assert a.status == "active" and a.employments.get().end_date is None
 
 
-def test_sanction_lift_and_category_award(admin_client, org):
+def test_sanction_and_its_lift(admin_client, org):
     a = hired(org)
     kind = DictItem.objects.get(kind="sanction", code="reprimand")
     order = make_order(admin_client, "sanction", [a])
@@ -204,12 +203,6 @@ def test_sanction_lift_and_category_award(admin_client, org):
     sign(admin_client, lift)
     sanction.refresh_from_db()
     assert sanction.lifted_on == date(2026, 9, 1)
-    cat = DictItem.objects.get(kind="qualification", code="superior")
-    award = make_order(admin_client, "category_award", [a])
-    set_params(admin_client, award, {"category": cat.id, "date_from": "2026-03-01"})
-    sign(admin_client, award)
-    q = a.qualifications.get()
-    assert q.category == cat and q.valid_until == date(2031, 2, 28)
     assert len(admin_client.get("/api/orders/sanctions/", {"employee": a.id}).data) == 1
 
 

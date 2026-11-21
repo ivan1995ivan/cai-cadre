@@ -105,8 +105,7 @@ export default function ScheduleEditor() {
   const warningText = (w: ScheduleWarning) => {
     if (w.kind === 'balance') return t('lv.sch.warnBalance', { name: w.name, days: w.days, available: fmtDays(w.available) })
     const period = `${d(w.from)} – ${d(w.to)}`
-    return w.kind === 'physicians' ? t('lv.sch.warnPhysicians', { period, count: w.count })
-      : t('lv.sch.warnOccupation', { period, label: w.label, count: w.count })
+    return t('lv.sch.warnOccupation', { period, label: w.label, count: w.count })
   }
 
   return (

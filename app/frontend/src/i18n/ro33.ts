@@ -49,7 +49,6 @@ export default {
       approveHint: 'De obicei graficul se aprobă prin ordinul „Aprobarea graficului concediilor”; aici — dacă a fost aprobat pe hârtie.',
       reopen: 'Redeschide', reopenConfirm: 'Graficul revine la ciornă. Continuați?',
       warnings: 'De verificat', warnBalance: '{{name}}: planificate {{days}} zile, de planificat doar {{available}}.',
-      warnPhysicians: '{{period}}: lipsesc toți medicii secției ({{count}}).',
       warnOccupation: '{{period}}: lipsesc toți „{{label}}” ({{count}}).',
       ordersFor: 'Ordinul de concediu pentru cei care pleacă în', makeOrders: 'Fă ordinul (ciornă)',
       guests: 'Lucrează în secție prin cumul (concediul — după graficul secției de bază)', home: 'Secția de bază',

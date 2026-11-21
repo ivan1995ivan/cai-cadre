@@ -16,12 +16,11 @@ from decimal import ROUND_HALF_UP, Decimal
 from django.utils import timezone
 
 from apps.core.models import SystemSetting
-from apps.staff.models import CIVIL_KINDS
+from apps.staff.models import CIVIL_KINDS, MAIN_KINDS
 
 KEY = "leave_settings"
 DEFAULTS = {"start_date": None, "not_counted": ["childcare", "childcare_unpaid"]}
 USED_KINDS = {"annual", "extra"}
-MAIN_KINDS = ("main", "main_student", "resident")
 ZERO = Decimal("0")
 CENT = Decimal("0.01")
 

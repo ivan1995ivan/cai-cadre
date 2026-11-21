@@ -17,7 +17,7 @@ de muncă în curs). Dublu clic pe rând deschide fila „Concedii” din fișa 
   zilele din sold.
 
 **Cererile de concediu:** le depune angajatul din [cabinetul personal](help:portal) sau le
-înregistrează cadrele ori șeful de secție. Șeful de secție **aprobă** sau **respinge** (cu motiv). Din cererile aprobate, cadrele bifează rândurile și apasă
+înregistrează cadrele ori șeful subdiviziunii. Șeful subdiviziunii **aprobă** sau **respinge** (cu motiv). Din cererile aprobate, cadrele bifează rândurile și apasă
 **„Fă ordinele”**: se face câte un ordin colectiv pe tipul concediului (ciornă, cu cererile ca temei), care se semnează ca
 oricare ordin.
 

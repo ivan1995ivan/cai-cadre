@@ -15,7 +15,7 @@ export default {
     leave: 'Leave', leaveSchedule: 'Leave schedule', sickLeave: 'Sick leave', worktime: 'Work schedules and shifts',
     timesheets: 'Timesheets',
     payroll: 'Payroll calculation', payrollPayments: 'Payment and payout', payrollSettings: 'Payroll settings', taxReports: 'Tax reports (IPC21, IALS21, IRM19)',
-    training: 'Training and attestation', health: 'Occupational health', military: 'Military records',
+    training: 'Staff training', health: 'Occupational health and safety', military: 'Military records',
     reports: 'Reports',
     users: 'Users', online: 'Who is online', roles: 'Roles and permissions', constants: 'Constants (company)',
     currencies: 'Currencies', numbering: 'Document numbering', printTemplates: 'Print forms', excelImport: 'Import from Excel',

@@ -1,5 +1,24 @@
 # Ce e nou
 
+## Etapa S1 (CAI CADRE pentru întreprinderi): fără funcțiile de spital — formarea, sănătatea, evidența militară, vechimea
+- **Formarea profesională** în locul EMC și al atestării: registrul cursurilor și instruirilor cu orele, certificatul și
+  **termenul lui de valabilitate**; alerta și raportul *Certificatele de formare care expiră*; planul anual se completează
+  din certificatele care expiră în anul lui. Creditele EMC, normele lor, calendarul atestării și ordinul de conferire a
+  categoriei au ieșit.
+- **Sănătatea și securitatea în muncă**: periodicitatea examenului medical periodic **pe funcție / subdiviziune** (fila
+  *Periodicitatea examenului*; 0 luni — fără examen periodic). Vaccinările și clasificatorul *Vaccinuri* au ieșit.
+- **Evidența militară** e modul opțional, **oprit implicit** (Legea 112/2023): se pornește în *Constante → Module*. Oprit —
+  pagina, fila din dosar, rapoartele și clasificatoarele militare nu apar.
+- **Vechimea**: totală, în specialitate (stagiul bifat și munca de aici, orice funcție) și în întreprindere — fără „în
+  sistemul sănătății”. Felul angajării „rezident” și **categoria de calificare medicală** (fila din dosar, importul, alerta,
+  sporul) au ieșit.
+- **Salarizarea**: tipurile predefinite VECH și CATEG (HG 837/2016) și GARDA nu se mai preîncarcă (cele nefolosite se șterg,
+  cele folosite se dezactivează); NOCIV rămâne (Codul muncii, art. 139). Formula „pe trepte” rămâne, pe **vechimea totală**,
+  pentru sporul de vechime din contractul colectiv al firmei.
+- Graficul concediilor avertizează când pleacă deodată toți cei de aceeași funcție (fără avertismentul „toți medicii”).
+- Rapoartele: au ieșit *Cadrele medicale (MS nr. 17)* și gruparea pe categoria de calificare din *Structura personalului*.
+- Rolurile: **Șef de subdiviziune** (fost „Șef de secție”) și **Director / administrator**.
+
 ## Versiunea 1.6.0: Panoul funcțiilor, ca în 1C
 - **Panoul funcțiilor** — se pornește în *Constante (instituția) → Module*. Secțiunile meniului stau **sus, ca file**, iar
   clic pe o secțiune deschide panoul ei: **Schema de lucru** (documentele secțiunii ca iconițe mari, cu săgeată de la

@@ -81,7 +81,7 @@ def test_seed_is_for_a_private_company(seeded):
     assert cats == [str(i) for i in range(1, 10)]
     assert not OrderType.objects.filter(code__in=("attestation", "category_award", "on_call")).exists()
     assert not LegalBasis.objects.filter(code__in=("HG-837", "OMS-386", "OMS-100")).exists()
-    assert not DictItem.objects.filter(kind="qualification").exists()
+    assert not DictItem.objects.filter(kind__in=("qualification", "degree", "title", "vaccine")).exists()
     assert not DictItem.objects.filter(kind="employment", code="resident").exists()
     assert not DictItem.objects.filter(kind="document", code__in=("residency_cert", "category_cert", "cme_cert")).exists()
     assert not Specialty.objects.exists()
@@ -90,7 +90,6 @@ def test_seed_is_for_a_private_company(seeded):
     for occupation in Occupation.objects.exclude(code=""):  # codul CORM: 6 cifre, categoria — după prima cifră
         assert len(occupation.code) == 6 and occupation.code.isdigit() and occupation.category.code == occupation.code[0]
     assert not Occupation.objects.filter(category__isnull=True).exists()
-    assert DictItem.objects.get(kind="degree", code="dr").name_ro == "Doctor"
     checklist = " ".join(DictItem.objects.filter(kind="checklist").values_list("name_ro", flat=True))
     assert "SIA AMP" not in checklist and "halat" not in checklist and "art. 57" in checklist
     # temeiurile: articolele din Codul muncii completate, cu alineatul și litera

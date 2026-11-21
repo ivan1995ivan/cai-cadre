@@ -4,10 +4,11 @@ export default {
   menu: {
     repMovement: 'Mișcarea cadrelor', repStructure: 'Structura personalului', repSeniority: 'Vechimea în muncă',
     repBirthdays: 'Zile de naștere și jubilee', repRetirements: 'Pensionări', repVacancies: 'Posturi vacante',
-    repMedicalStaff: 'Cadrele medicale (MS, nr. 17)', repMunca1: 'Munca 1 (BNS)',
+    repMunca1: 'Munca 1 (BNS)',
     repLeavePeriod: 'Concediile și absențele pe perioadă', repTimesheetSummary: 'Pontajul consolidat',
     repOrdersPayroll: 'Extrasul din ordine pentru contabilitate', repOrdersByType: 'Ordinele pe tipuri',
-    repEmcCredits: 'Creditele EMC', repTrainingPeriod: 'Formarea pe perioadă', repHealthDue: 'Termenele sănătății în muncă',
+    repTrainingPeriod: 'Formarea pe perioadă', repTrainingExpiry: 'Certificatele de formare care expiră',
+    repHealthDue: 'Termenele sănătății și securității în muncă',
     repMilitaryRegister: 'Registrul evidenței militare', repMilitaryMissing: 'Fără fișă de evidență militară',
     repMilitaryChanges: 'Modificările lunii pentru centrul militar', repMilitaryRecruits: 'Lista recruților',
   },

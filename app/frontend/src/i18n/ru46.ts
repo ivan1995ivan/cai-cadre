@@ -3,10 +3,11 @@ export default {
   menu: {
     repMovement: 'Движение кадров', repStructure: 'Структура персонала', repSeniority: 'Трудовой стаж',
     repBirthdays: 'Дни рождения и юбилеи', repRetirements: 'Выход на пенсию', repVacancies: 'Вакантные должности',
-    repMedicalStaff: 'Медицинские кадры (МЗ, № 17)', repMunca1: 'Труд 1 (НБС)',
+    repMunca1: 'Труд 1 (НБС)',
     repLeavePeriod: 'Отпуска и отсутствия за период', repTimesheetSummary: 'Сводный табель',
     repOrdersPayroll: 'Выписка из приказов для бухгалтерии', repOrdersByType: 'Приказы по видам',
-    repEmcCredits: 'Кредиты НМО', repTrainingPeriod: 'Обучение за период', repHealthDue: 'Сроки охраны здоровья',
+    repTrainingPeriod: 'Обучение за период', repTrainingExpiry: 'Истекающие сертификаты обучения',
+    repHealthDue: 'Сроки охраны здоровья и труда',
     repMilitaryRegister: 'Реестр воинского учёта', repMilitaryMissing: 'Без карточки воинского учёта',
     repMilitaryChanges: 'Изменения за месяц для военкомата', repMilitaryRecruits: 'Список призывников',
   },

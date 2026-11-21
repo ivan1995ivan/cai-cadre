@@ -31,16 +31,7 @@
   </tbody>
 </table>
 
-<h2 class="group">II. Categoria de calificare, grade și titluri</h2>
-<table class="grid">
-  <thead><tr><th>Specialitatea</th><th>Categoria</th><th>Nr. certificat / ordin</th><th>Conferită</th><th>Valabilă până la</th><th>Grad / titlu</th></tr></thead>
-  <tbody>
-  {% for q in qualifications %}<tr><td>{{ q.specialty }}</td><td>{{ q.category }}</td><td>{{ q.number }}</td><td>{{ q.awarded_on }}</td><td>{{ q.valid_until }}</td><td>{{ q.degree }} {{ q.title }}</td></tr>
-  {% empty %}<tr><td colspan="6" class="muted">—</td></tr>{% endfor %}
-  </tbody>
-</table>
-
-<h2 class="group">III. Activitatea de muncă</h2>
+<h2 class="group">II. Activitatea de muncă</h2>
 <table class="grid">
   <thead><tr><th>De la</th><th>Până la</th><th>Unitatea</th><th>Funcția</th></tr></thead>
   <tbody>
@@ -50,7 +41,7 @@
 </table>
 <p style="margin:4px 0">Vechimea totală: <b>{{ seniority.total }}</b> · în specialitate: <b>{{ seniority.specialty }}</b> · în întreprindere: <b>{{ seniority.institution }}</b></p>
 
-<h2 class="group">IV. Angajări, transferuri, modificări în întreprindere</h2>
+<h2 class="group">III. Angajări, transferuri, modificări în întreprindere</h2>
 <table class="grid">
   <thead><tr><th style="width:22mm">Data</th><th>Mențiunea</th><th>Subdiviziunea</th><th>Funcția</th><th style="width:14mm">Norma</th>{% if options.show_salary %}<th>Salariul</th>{% endif %}<th>Temeiul (ordinul)</th></tr></thead>
   <tbody>
@@ -63,7 +54,7 @@
 </table>
 
 {% if options.show_family %}
-<h2 class="group">V. Componența familiei</h2>
+<h2 class="group">IV. Componența familiei</h2>
 <table class="grid">
   <thead><tr><th>Gradul de rudenie</th><th>Numele, prenumele</th><th>Data nașterii</th><th>IDNP</th></tr></thead>
   <tbody>
@@ -74,7 +65,7 @@
 {% endif %}
 
 {% if options.show_military and military %}
-<h2 class="group">VI. Evidența militară</h2>
+<h2 class="group">V. Evidența militară</h2>
 <table class="grid">
   <tr><th style="text-align:left; width:42mm">Starea</th><td>{{ military.status }}</td><th style="text-align:left; width:36mm">Categoria / grupa</th><td>{{ military.category }} {{ military.group }}</td></tr>
   <tr><th style="text-align:left">Componența / gradul</th><td>{{ military.composition }} {{ military.rank }}</td><th style="text-align:left">Specialitatea militară</th><td>{{ military.specialty }}</td></tr>

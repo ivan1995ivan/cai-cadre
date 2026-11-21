@@ -10,7 +10,7 @@ from apps.staff import services as staff
 from apps.training.views import _date, _sub_ids, _visible
 
 from . import services
-from .models import MedicalExam, SafetyBriefing, Vaccination
+from .models import ExamRule, MedicalExam, SafetyBriefing
 
 
 class _Base(serializers.ModelSerializer):
@@ -41,23 +41,6 @@ class ExamSerializer(_Base):
                   "conclusion_label", "restrictions", "next_date", "document", "note"]
 
 
-class VaccinationSerializer(_Base):
-    vaccine_name = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Vaccination
-        fields = ["id", "employee", "employee_name", "tab_number", "vaccine", "vaccine_name", "dose", "date", "series", "next_date",
-                  "refused", "note"]
-
-    def get_vaccine_name(self, obj):
-        return obj.vaccine.local_name(user_lang(self))
-
-    def validate_vaccine(self, value):
-        if value.kind != "vaccine":
-            raise serializers.ValidationError("Alegeți vaccinul din clasificator.")
-        return value
-
-
 class BriefingSerializer(_Base):
     kind_label = serializers.CharField(source="get_kind_display", read_only=True)
 
@@ -68,7 +51,7 @@ class BriefingSerializer(_Base):
 
 
 class _HealthViewSet(DeletionMarkMixin, viewsets.ModelViewSet):
-    """Examenele / vaccinările / instructajele angajaților vizibili; termenul următor se completează singur."""
+    """Examenele / instructajele angajaților vizibili; termenul următor se completează singur."""
 
     perm_module = "health"
     model = None
@@ -108,21 +91,13 @@ class ExamViewSet(_HealthViewSet):
     serializer_class = ExamSerializer
 
 
-class VaccinationViewSet(_HealthViewSet):
-    model = Vaccination
-    serializer_class = VaccinationSerializer
-
-    def get_queryset(self):
-        return super().get_queryset().select_related("vaccine")
-
-
 class BriefingViewSet(_HealthViewSet):
     model = SafetyBriefing
     serializer_class = BriefingSerializer
 
 
 class DueView(APIView):
-    """Termenele: examenul medical, instructajul SSM, vaccinurile — depășite, lipsă sau în următoarele zile."""
+    """Termenele: examenul medical, instructajul SSM — depășite, lipsă sau în următoarele zile."""
 
     perm_module = "health"
 
@@ -133,8 +108,8 @@ class DueView(APIView):
         except ValueError as exc:
             raise ValidationError({"horizon": "Număr de zile."}) from exc
         what = request.query_params.get("what") or None
-        if what not in (None, "exam", "briefing", "vaccine"):
-            raise ValidationError({"what": "exam, briefing sau vaccine."})
+        if what not in (None, "exam", "briefing"):
+            raise ValidationError({"what": "exam sau briefing."})
         from django.utils import timezone
 
         return services.due_rows(_date(request, "on_date", timezone.localdate()), _sub_ids(request), what,
@@ -147,7 +122,7 @@ class DueView(APIView):
             from apps.reports import output
 
             data = {"title": "LISTA NOMINALĂ A ANGAJAȚILOR CARE URMEAZĂ SĂ FIE TRIMIȘI",
-                    "subtitle": "la examenul medical / instructajul SSM / vaccinare",
+                    "subtitle": "la examenul medical / instructajul SSM",
                     "columns": [{"key": "name", "title": "Numele, prenumele", "type": "text"},
                                 {"key": "occupation", "title": "Funcția", "type": "text"},
                                 {"key": "subdivision", "title": "Subdiviziunea", "type": "text"},
@@ -167,6 +142,49 @@ class DueView(APIView):
         people = list(_visible(request.user).filter(pk__in=ids))
         order = services.make_exam_order(people, request.user)
         return Response({"order": order.id})
+
+
+class ExamRuleSerializer(serializers.ModelSerializer):
+    occupation_name = serializers.SerializerMethodField()
+    subdivision_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ExamRule
+        fields = ["id", "occupation", "occupation_name", "subdivision", "subdivision_name", "months", "note"]
+
+    def get_occupation_name(self, obj):
+        return obj.occupation.local_name(user_lang(self)) if obj.occupation_id else ""
+
+    def get_subdivision_name(self, obj):
+        return obj.subdivision.local_name(user_lang(self)) if obj.subdivision_id else ""
+
+    def validate_months(self, value):
+        if value > 60:
+            raise serializers.ValidationError("Cel mult 60 de luni.")
+        return value
+
+    def validate(self, attrs):
+        occ = attrs.get("occupation", getattr(self.instance, "occupation", None))
+        sub = attrs.get("subdivision", getattr(self.instance, "subdivision", None))
+        if occ is None and sub is None:
+            raise serializers.ValidationError({"occupation": "Alegeți funcția, subdiviziunea sau amândouă."})
+        same = ExamRule.objects.filter(occupation=occ, subdivision=sub)
+        if self.instance:
+            same = same.exclude(pk=self.instance.pk)
+        if same.exists():
+            raise serializers.ValidationError({"occupation": "Pentru această funcție și subdiviziune regula există deja."})
+        return attrs
+
+
+class ExamRuleViewSet(viewsets.ModelViewSet):
+    """Periodicitatea examenului medical periodic pe funcție / subdiviziune (o schimbare se aplică examenelor noi)."""
+
+    perm_module = "health"
+    serializer_class = ExamRuleSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        return ExamRule.objects.select_related("occupation", "subdivision")
 
 
 class SettingsView(APIView):

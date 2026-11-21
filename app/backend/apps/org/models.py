@@ -76,13 +76,10 @@ class Specialty(Named):
 
 
 class DictItem(Named):
-    """Clasificatoarele mici, după tip: categoriile de personal, grade științifice, studii, tipuri de acte etc."""
+    """Clasificatoarele mici, după tip: categoriile de personal, studii, tipuri de acte, rudenia, motivele încetării etc."""
 
     KINDS = [
         (STAFF_CATEGORY, "Categoriile de personal (grupele CORM)"),
-        ("qualification", "Categorii de calificare"),
-        ("degree", "Grade științifice"),
-        ("title", "Titluri științifico-didactice"),
         ("education", "Nivelul studiilor"),
         ("education_form", "Forma de învățământ"),
         ("document", "Tipuri de acte (identitate, diplome, certificate)"),
@@ -97,7 +94,6 @@ class DictItem(Named):
         ("military_rank", "Evidența militară: grade"),
         ("military_center", "Centre militare teritoriale"),
         ("checklist", "Lista de verificare la angajare / eliberare"),
-        ("vaccine", "Vaccinuri (sănătatea în muncă)"),
     ]
     kind = models.CharField(max_length=20, choices=KINDS, db_index=True)
     extra = models.JSONField(default=dict, blank=True)  # de ex. {"has_expiry": true} la tipurile de acte

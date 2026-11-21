@@ -60,7 +60,7 @@ export default {
       substitution: 'Suplinire / cumul / interimat', suspend: 'Suspendarea CIM', resume: 'Reluarea activității', terminate: 'Încetarea CIM',
       leave: 'Concediu', leave_recall: 'Rechemare / amânare concediu', travel: 'Delegare', worktime: 'Timp de muncă', incentive: 'Stimulare',
       sanction: 'Sancțiune disciplinară', qualification: 'Formare profesională', staff_list: 'Statele de personal', cancel: 'Anularea unui ordin' },
-    dictKinds: { staff_category: 'Categoriile de personal (grupele CORM)', qualification: 'Categorii de calificare', degree: 'Grade științifice', title: 'Titluri științifico-didactice', education: 'Nivelul studiilor',
+    dictKinds: { staff_category: 'Categoriile de personal (grupele CORM)', education: 'Nivelul studiilor',
       education_form: 'Forma de învățământ', document: 'Tipuri de acte', family: 'Gradul de rudenie', marital: 'Starea familială',
       nationality: 'Naționalitatea', termination: 'Motivele încetării CIM', sanction: 'Sancțiuni disciplinare', incentive: 'Tipuri de stimulare',
       employment: 'Tipul angajării', military_group: 'Evidența militară: grupa', military_rank: 'Evidența militară: grade',

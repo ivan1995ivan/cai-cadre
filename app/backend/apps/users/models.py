@@ -111,6 +111,10 @@ class User(AbstractUser):
 
         enabled = license.enabled_modules()
         codes = {c for c in codes if license.PERMISSION_MODULES.get(c.split(".")[0], "") in ("", *enabled)}
+        from apps.core.models import Company
+
+        if not Company.get().military_enabled:  # modulul opțional „Evidența militară” oprit din Constante → Module
+            codes = {c for c in codes if not c.startswith("military.")}
         self._codes_cached = codes
         return codes
 

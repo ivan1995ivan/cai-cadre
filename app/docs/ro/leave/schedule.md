@@ -7,8 +7,8 @@ adaugă singuri, fiecare cu zilele cuvenite. Din octombrie se propune anul urmă
 Pentru concediul împărțit în două părți, angajatul se adaugă încă o dată de jos. Coloana „De planificat” arată soldul
 angajatului; dacă se planifică mai mult, apare un avertisment.
 
-**Verificarea suprapunerilor:** sus apar perioadele în care lipsesc **toți medicii secției** sau toți angajații de aceeași
-funcție (dacă sunt cel puțin doi) — ca secția să nu rămână fără medic de gardă.
+**Verificarea suprapunerilor:** sus apar perioadele în care lipsesc **toți angajații de aceeași funcție** (dacă sunt cel
+puțin doi) — ca subdiviziunea să nu rămână fără nimeni pe acea funcție.
 
 **Fluxul:** șeful de secție completează ciorna și o **transmite la resurse umane**; după transmitere o schimbă doar cadrele.
 Graficul se aprobă prin ordinul **„Aprobarea graficului concediilor”** (în ordin se aleg graficele transmise sau, gol, toate

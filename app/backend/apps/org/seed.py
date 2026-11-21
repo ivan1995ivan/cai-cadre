@@ -104,14 +104,6 @@ SPECIALTIES: list = []
 # tip: [(cod, RO, RU, EN, extra)]
 DICTS = {
     STAFF_CATEGORY: [(code, ro, ru, en, {"corm_group": code}) for code, ro, ru, en in STAFF_CATEGORIES],
-    "degree": [
-        ("dr", "Doctor", "Доктор наук", "Doctor (PhD)", {}),
-        ("dr_hab", "Doctor habilitat", "Доктор хабилитат", "Habilitated doctor", {}),
-    ],
-    "title": [
-        ("conf", "Conferențiar universitar", "Доцент", "Associate professor", {}),
-        ("prof", "Profesor universitar", "Профессор", "Professor", {}),
-    ],
     "education": [  # din enumerarea 1C „Studii”
         ("primary", "Primare", "Начальное", "Primary", {}),
         ("secondary", "Medii", "Среднее", "Secondary", {}),
@@ -194,14 +186,6 @@ DICTS = {
         ("thanks", "Mulțumire", "Благодарность", "Letter of thanks", {}),
         ("diploma", "Diplomă de onoare", "Почётная грамота", "Certificate of honour", {}),
         ("aid", "Ajutor material", "Материальная помощь", "Financial aid", {}),
-    ],
-    "vaccine": [  # extra: months — revaccinarea (0 = fără), required — obligatoriu pentru personalul medical
-        ("hepatitis_b", "Hepatita virală B", "Вирусный гепатит B", "Hepatitis B", {"months": 0, "required": True}),
-        ("influenza", "Gripa sezonieră", "Сезонный грипп", "Seasonal influenza", {"months": 12}),
-        ("covid19", "COVID-19", "COVID-19", "COVID-19", {"months": 12}),
-        ("dt", "Difterie-tetanos (dT)", "Дифтерия-столбняк (АДС-м)", "Diphtheria-tetanus (dT)", {"months": 120}),
-        ("mmr", "Rujeolă-oreion-rubeolă (ROR)", "Корь-паротит-краснуха (КПК)", "Measles-mumps-rubella (MMR)", {"months": 0}),
-        ("other", "Alt vaccin", "Другая вакцина", "Other vaccine", {"months": 0}),
     ],
     "employment": [  # din enumerarea 1C „TipAngajare”, completată cu suplinirea
         ("main", "De bază", "Основное место работы", "Main job", {}),

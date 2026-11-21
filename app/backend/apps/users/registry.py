@@ -29,11 +29,13 @@ MODULES = {
     "leave": ("Concedii (solduri, grafic, cereri)", "Отпуска (остатки, график, заявления)",
               ["view", "create", "edit", "delete", "approve", "export"], True),
     "sick_leave": ("Certificate de concediu medical", "Листки нетрудоспособности", ["view", "create", "edit", "delete"], True),
-    "worktime": ("Timp de muncă (grafice, gărzi, pontaj)", "Рабочее время (графики, дежурства, табель)",
+    "worktime": ("Timp de muncă (grafice, pontaj)", "Рабочее время (графики, табель)",
                  ["view", "create", "edit", "delete", "approve", "export"], True),
-    "training": ("Formare, atestare, EMC", "Обучение, аттестация, НМО", ["view", "create", "edit", "delete", "export"], True),
-    "health": ("Sănătatea în muncă (examene medicale, vaccinări)", "Медосмотры, вакцинация", ["view", "create", "edit", "delete"], True),
-    "military": ("Evidența militară", "Воинский учёт", ["view", "create", "edit", "delete", "export"], False),
+    "training": ("Formarea profesională", "Обучение персонала", ["view", "create", "edit", "delete", "export"], True),
+    "health": ("Sănătatea și securitatea în muncă (examene medicale, instructaj SSM)", "Охрана здоровья и труда (медосмотры, инструктажи)",
+               ["view", "create", "edit", "delete"], True),
+    "military": ("Evidența militară (modul opțional)", "Воинский учёт (дополнительный модуль)", ["view", "create", "edit", "delete", "export"],
+                 False),
     "payroll": ("Salarizare (calcul, plată, achitare)", "Зарплата (расчёт, выплата, перечисление)",
                 ["view", "create", "edit", "delete", "approve", "export"], True),
     "payroll_settings": ("Setările salariului (constante, tipuri de calcul)", "Настройки зарплаты (константы, виды расчёта)",
@@ -53,7 +55,7 @@ MODULES = {
 SENSITIVE_FIELDS = {
     "salary": ("Salariul de funcție și sporurile", "Оклад и надбавки"),
     "idnp": ("IDNP și actele de identitate", "IDNP и документы"),
-    "health": ("Datele de sănătate (examene, vaccinări)", "Данные о здоровье"),
+    "health": ("Datele de sănătate (examene medicale)", "Данные о здоровье (медосмотры)"),
     "contacts": ("Telefon, e-mail, adresa angajatului", "Телефон, e-mail, адрес сотрудника"),
     "family": ("Familia (soț / soție, copii)", "Семья (супруг(а), дети)"),
 }
@@ -116,7 +118,7 @@ DEFAULT_ROLES = {
         "hidden_fields": ["salary"],
     },
     "director": {
-        "name": ("Director (conducătorul instituției)", "Директор (руководитель учреждения)"),
+        "name": ("Director / administrator", "Директор / администратор"),
         "permissions": _perms({
             "org": ["view", "approve"], "dictionaries": ["view"], "employees": ["view", "export"], "contracts": ["view"],
             "orders": ["view", "approve", "export"], "leave": ["view", "approve"], "worktime": ["view", "approve"],
@@ -127,7 +129,7 @@ DEFAULT_ROLES = {
         "hidden_fields": [],
     },
     "department_head": {
-        "name": ("Șef de secție", "Заведующий отделением"),
+        "name": ("Șef de subdiviziune", "Руководитель подразделения"),
         "permissions": _perms({
             "employees": ["view"], "orders": ["view"], "leave": ["view", "create", "edit", "approve"],
             "sick_leave": ["view"], "worktime": ["view", "create", "edit"], "training": ["view"], "reports": ["view"],

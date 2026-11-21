@@ -56,10 +56,10 @@ export const DEFAULT_SECTIONS: MenuSection[] = [
     ['repSalaryBook', 'taxReports', 'repMunca1']),
   section('formare', 'training',
     ['training', 'health', 'military'],
-    ['repEmcCredits', 'repTrainingPeriod', 'repHealthDue', 'repMilitaryRegister', 'repMilitaryMissing', 'repMilitaryChanges', 'repMilitaryRecruits']),
+    ['repTrainingPeriod', 'repTrainingExpiry', 'repHealthDue', 'repMilitaryRegister', 'repMilitaryMissing', 'repMilitaryChanges', 'repMilitaryRecruits']),
   section('rapoarte', 'reports',
     ['reports'],
-    ['repMedicalStaff', 'repMunca1', 'taxReports']),
+    ['repMunca1', 'taxReports']),
   section('administrare', 'admin',
     ['settings', 'online', 'audit', 'excelImport', 'maintenance', 'markedObjects', 'license']),
 ]
@@ -71,6 +71,15 @@ export const ROUTE_ITEMS: NavItem[] = [...ALL_ITEMS, ...SETTINGS_NAV]
 
 /** Ce ține de modulul Salarizare: dispare din meniu și din Setări când instituția e livrată fără salariu (Constante → Module). */
 export const PAYROLL_ITEMS = new Set(['payroll', 'payrollPayments', 'payrollTypes', 'payrollConstants', 'taxSettings', 'taxReports', 'repSalaryBook'])
+/** Ce ține de modulul opțional „Evidența militară” (oprit implicit, Constante → Module): registrul și rapoartele lui dispar
+ *  singure (serverul nu dă drepturile `military.*`), clasificatoarele lui se ascund aici. */
+export const MILITARY_ITEMS = new Set(['military', 'repMilitaryRegister', 'repMilitaryMissing', 'repMilitaryChanges', 'repMilitaryRecruits',
+  'dict:military_group', 'dict:military_rank', 'dict:military_center'])
+
+/** Funcția / setarea ține de un modul oprit din Constante → Module (Salarizarea, Evidența militară). */
+export function moduleOff(branding: { payroll_enabled?: boolean; military_enabled?: boolean } | null | undefined, key: string): boolean {
+  return (branding?.payroll_enabled === false && PAYROLL_ITEMS.has(key)) || (branding?.military_enabled !== true && MILITARY_ITEMS.has(key))
+}
 const BY_KEY = Object.fromEntries(ALL_ITEMS.map((i) => [i.key, i]))
 
 /** Setarea (sau funcția) cu adresa cea mai lungă care se potrivește cu pagina deschisă. */
@@ -85,8 +94,7 @@ function useVisibleSettings(): NavItem[] {
   const { me, hasPerm, branding } = useApp()
   return useMemo(() => {
     const hidden = new Set(me?.menu_hidden ?? [])
-    return SETTINGS_NAV.filter((i) => (!i.perm || hasPerm(i.perm)) && !hidden.has(i.key)
-      && !(branding?.payroll_enabled === false && PAYROLL_ITEMS.has(i.key)))
+    return SETTINGS_NAV.filter((i) => (!i.perm || hasPerm(i.perm)) && !hidden.has(i.key) && !moduleOff(branding, i.key))
   }, [me, hasPerm, branding])
 }
 
@@ -177,7 +185,7 @@ export function useMainMenuState(): { sections: MenuSectionView[]; ready: boolea
     // cine are doar cabinetul (rolul „Angajat”) nu are panou de start și termene — totul e în „Cabinetul meu”
     if (!me?.is_admin && hasPerm('portal.view') && !hasPerm('employees.view')) ['dashboard', 'alerts'].forEach((k) => hidden.add(k))
     const visible = (keys: string[]) => keys.map((k) => BY_KEY[k]).filter((i) => i && !hidden.has(i.key) && (!i.perm || hasPerm(i.perm))
-      && !(branding?.payroll_enabled === false && PAYROLL_ITEMS.has(i.key)))
+      && !moduleOff(branding, i.key))
     return completeSections(data?.sections)
       .filter((s) => !hidden.has(`s:${s.key}`))
       .map((s) => {

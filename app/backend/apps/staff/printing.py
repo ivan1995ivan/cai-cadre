@@ -1,7 +1,7 @@
 """Tiparul dosarului: fișa personală (MR-2), adeverința de la locul de muncă, adeverința de vechime, lista angajaților."""
 from django.utils import timezone
 
-from apps.core.models import NumberSeries
+from apps.core.models import Company, NumberSeries
 from apps.printing.renderer import company_context
 from apps.printing.views import print_document
 
@@ -77,6 +77,8 @@ def employee_context(request, emp: Employee, lang: str, options: dict, doc: str)
     show_idnp = "idnp" not in hidden
     identity = emp.documents.filter(is_identity=True).select_related("doc_type").first()
     military = getattr(emp, "military", None)
+    if not Company.get().military_enabled:  # modulul „Evidența militară” e oprit: secțiunea nu apare pe fișă
+        options, military = {**options, "show_military": False}, None
     return {
         "company": company, "lang": lang, "options": options, "today": _d(timezone.localdate()),
         "emp": {
@@ -102,10 +104,6 @@ def employee_context(request, emp: Employee, lang: str, options: dict, doc: str)
                        "form": _name(e.form, lang), "year_to": e.year_to or "",
                        "diploma": " ".join(x for x in (e.diploma_series, e.diploma_number) if x), "diploma_date": _d(e.diploma_date)}
                       for e in emp.education.select_related("level", "specialty", "form")],
-        "qualifications": [{"specialty": _name(q.specialty, lang), "category": _name(q.category, lang),
-                            "number": q.certificate_number, "awarded_on": _d(q.awarded_on), "valid_until": _d(q.valid_until),
-                            "degree": _name(q.degree, lang), "title": _name(q.title, lang)}
-                           for q in emp.qualifications.select_related("specialty", "category", "degree", "title")],
         "family": ([] if "family" in request.user.hidden_fields() else
                    [{"relation": _name(f.relation, lang), "name": f.full_name, "birth_date": _d(f.birth_date),
                      "idnp": f.idnp if show_idnp else "", "dependent": f.dependent} for f in emp.family.select_related("relation")]),

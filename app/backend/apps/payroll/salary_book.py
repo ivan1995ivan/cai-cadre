@@ -9,6 +9,7 @@ from decimal import Decimal
 from rest_framework.exceptions import ValidationError
 
 from apps.reports.registry import GROUPS, col, report, subtitle_parts
+from apps.staff.models import MAIN_KINDS
 
 ZERO = Decimal("0")
 GROUPS.setdefault("payroll", ("Salarizare", "Зарплата", "Payroll"))
@@ -58,7 +59,7 @@ def salary_book(p):
         used[t.code] = t
         data[ln.employee_id][(ln.payroll.year, ln.payroll.month)][t.code] += it.amount
         people[ln.employee_id] = ln.employee
-        if ln.employee_id not in jobs or ln.employment.kind in ("main", "main_student", "resident"):
+        if ln.employee_id not in jobs or ln.employment.kind in MAIN_KINDS:
             jobs[ln.employee_id] = ln.employment
     # CNAM și impozitul pe venit: reținute la plată, pe luna pentru care s-a plătit
     taxes = {t.auto: t for t in PayType.objects.filter(auto__in=("cnam", "income_tax")).order_by("id")}
