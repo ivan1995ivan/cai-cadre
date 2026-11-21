@@ -21,7 +21,7 @@ ABSENCE_KINDS = [
     ("study", "Concediu de studii"),
     ("days_off", "Zile libere plătite"),
     ("travel", "Deplasare în interes de serviciu"),
-    ("training", "Perfecționare / EMC"),
+    ("training", "Formare profesională"),
     ("sick", "Concediu medical"),
 ]
 
@@ -114,7 +114,7 @@ class LeaveAdjustment(models.Model):
 
 
 class LeaveSchedule(models.Model):
-    """Graficul anual al concediilor de odihnă pe subdiviziune: planificat de șeful de secție, aprobat prin ordin."""
+    """Graficul anual al concediilor de odihnă pe subdiviziune: planificat de șeful subdiviziunii, aprobat prin ordin."""
 
     STATUSES = [("draft", "Ciornă"), ("submitted", "Transmis la resurse umane"), ("approved", "Aprobat")]
     year = models.PositiveSmallIntegerField("Anul")

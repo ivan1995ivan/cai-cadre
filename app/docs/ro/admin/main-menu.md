@@ -1,11 +1,11 @@
 # Meniul principal
 
 Secțiunile meniului și, în fiecare, grupele **Registre** și **Rapoarte**, ca în 1C. Așezarea e una pentru toată
-instituția; cine ce vede se hotărăște la fiecare rol. Setările nu stau în secțiuni: toate sunt la
+întreprinderea; cine ce vede se hotărăște la fiecare rol. Setările nu stau în secțiuni: toate sunt la
 [Administrare → Setări](help:settings).
 
 ## Așezarea implicită
-**Principal**, **Instituția**, **Angajați**, **Ordine**, **Concedii și timp de muncă**, **Salarizare**,
+**Principal**, **Întreprinderea**, **Angajați**, **Ordine**, **Concedii și timp de muncă**, **Salarizare**,
 **Formare și evidențe**, **Rapoarte**, **Administrare**. În fiecare secțiune:
 - **Registre** — documentele secțiunii (angajații, ordinele, concediile, pontajul...);
 - **Rapoarte** — rapoartele secțiunii, care se deschid direct (de ex. la Angajați: mișcarea cadrelor, vechimea, pensionările).
@@ -16,7 +16,7 @@ marcate, licența.
 Aceeași funcție poate sta în mai multe locuri (MUNCA-1 — la Salarizare și la Rapoarte). Funcțiile noi, apărute în
 program după ce ați salvat meniul, intră singure în grupa lor din secțiunea implicită.
 
-Dacă instituția lucrează fără salarizare (*Constante → Module*), funcțiile din **Salarizare** nu apar.
+Dacă întreprinderea lucrează fără salarizare (*Constante → Module*), funcțiile din **Salarizare** nu apar.
 
 ## Mutarea
 În arbore trageți cu mouse-ul:

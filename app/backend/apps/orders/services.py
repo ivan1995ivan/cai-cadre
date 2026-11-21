@@ -11,7 +11,7 @@ from apps.staff import services as staff_services
 from . import effects, texts
 from .models import Order, OrderItem
 
-# Sufixele numerelor pe registre (ca în practica instituțiilor: 125-p, 38-c); se pot schimba în setări („order_suffixes”)
+# Sufixele numerelor pe registre (ca în practica obișnuită: 125-p, 38-c); se pot schimba în setări („order_suffixes”)
 DEFAULT_SUFFIXES = {"order_personnel": "-p", "order_leave": "-c", "order_travel": "-d", "order_general": ""}
 
 
@@ -33,7 +33,8 @@ def format_number(seq: int, register: str) -> str:
 
 
 def new_order(order_type, *, user=None, date=None) -> Order:
-    """Ordin nou (ciornă) cu valorile tipului: registrul, titlul, temeiurile legale, preambulul, semnatarul."""
+    """Ordin nou (ciornă) cu valorile tipului: registrul, titlul, temeiurile legale, preambulul, semnatarul (numele și
+    funcția conducătorului din Constante, în română — limba ordinelor)."""
     from apps.org.models import LegalBasis
 
     date = date or timezone.localdate()
@@ -42,7 +43,7 @@ def new_order(order_type, *, user=None, date=None) -> Order:
     order = Order.objects.create(
         order_type=order_type, register=order_type.register, year=date.year, date=date,
         title=order_type.title_ro or order_type.name_ro, preamble=LegalBasis.preamble(bases),
-        signer_name=company.director, signer_position="Director", created_by=user)
+        signer_name=company.director, signer_position=company.position("director"), created_by=user)
     order.legal_bases.set(bases)
     return order
 
@@ -125,7 +126,7 @@ def undo_order(target: Order, cancelled_by: Order):
 
 
 def visible_orders(qs, user):
-    """Șeful de secție vede ordinele cu angajații subdiviziunilor lui; ceilalți — după rol (toate)."""
+    """Șeful subdiviziunii vede ordinele cu angajații subdiviziunilor lui; ceilalți — după rol (toate)."""
     ids = staff_services.visible_subdivision_ids(user, "orders")
     if ids is None:
         return qs

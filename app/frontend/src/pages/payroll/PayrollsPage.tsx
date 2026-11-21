@@ -15,7 +15,7 @@ import { useApp } from '../../auth/AppContext'
 import { MonthPicker } from '../worktime/MonthDocs'
 import SubdivisionSelect from '../../components/SubdivisionSelect'
 
-/** Calculele salariului pe luni (toată instituția sau pe subdiviziuni): acumulările, reținerile, CAS. Impozitul și CNAM
+/** Calculele salariului pe luni (toată întreprinderea sau pe subdiviziuni): acumulările, reținerile, CAS. Impozitul și CNAM
  *  se rețin la plată — în îndreptarea spre plată făcută din calculul aprobat. */
 export default function PayrollsPage() {
   const { t } = useTranslation()

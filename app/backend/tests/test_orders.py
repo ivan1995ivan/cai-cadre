@@ -224,7 +224,14 @@ def test_print_order_extract_and_register_with_gaps(admin_client, org):
     company.director = "Ion Director"
     company.save()
     a, b = hired(org), hired(org, "Rusu", "Ana")
+    # semnatarul: funcția conducătorului din Constante; nescrisă — „Director”
+    draft = make_order(admin_client, "leave_unpaid", [a])
+    assert draft["signer_position"] == "Director"
+    Order.objects.filter(pk=draft["id"]).delete()
+    company.director_position_ro, company.director_position_ru = "Administrator", "Администратор"
+    company.save()
     order = make_order(admin_client, "leave_annual", [a, b])
+    assert order["signer_position"] == "Administrator"
     for idx in (0, 1):
         set_params(admin_client, order, {"date_from": "2026-07-01", "days": 14}, idx=idx)
     admin_client.patch(f"/api/orders/orders/{order['id']}/", {"basis": "Cererile salariaților", "approvals": [
@@ -233,6 +240,7 @@ def test_print_order_extract_and_register_with_gaps(admin_client, org):
     html = admin_client.get(f"/api/orders/orders/{order['id']}/print/").content.decode()
     assert "ORDIN" in html and "ORDON:" in html and f"<b>{signed['number']}</b>" in html
     assert "Popescu Ion" in html and "Rusu Ana" in html and "Am luat cunoștință" in html and "Ion Director" in html
+    assert "<div>Administrator</div>" in html
     assert 'class="company-header"' in html and "REPUBLICA MOLDOVA" not in html and "data:image/svg+xml" not in html
     extract = admin_client.get(f"/api/orders/orders/{order['id']}/print/", {"item": signed["items"][1]["id"]}).content.decode()
     assert "EXTRAS" in extract and "Rusu Ana" in extract and "Popescu Ion" not in extract

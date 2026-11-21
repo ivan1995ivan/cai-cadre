@@ -17,7 +17,7 @@ export default {
     cancelledBy: 'Ordinul este anulat prin {{label}}; efectele lui au fost întoarse.',
     appliedHint: 'Ordinul este semnat: efectele sunt aplicate în dosare. Pentru schimbări se emite un ordin de anulare / modificare.',
     seq: 'Nr. în registru', seqHint: 'Gol = următorul număr la semnare', preamble: 'Preambulul (în temeiul …)', basis: 'Temei',
-    basisHint: 'Cererea salariatului nr. …, demersul șefului de secție, certificatul medical …', footer: 'Puncte finale',
+    basisHint: 'Cererea salariatului nr. …, demersul șefului subdiviziunii, certificatul medical …', footer: 'Puncte finale',
     footerHint: 'de ex. Controlul executării prezentului ordin îl asum.', signerPosition: 'Funcția', signerName: 'Numele',
     approvals: 'Coordonat cu (vize)', addApproval: 'Adaugă viză', points: 'ORDON: (punctele ordinului)', regenerate: 'Refă textele',
     noPoints: 'Ordinul nu are încă puncte: adăugați angajatul mai jos.', addPoint: 'Adaugă punctul', addEmployee: 'Adaugă angajatul (nume, nr. tabel, IDNP)',

@@ -39,7 +39,7 @@ luni** (până la ultima lună cu calcul aprobat — dacă luna trecută nu e ap
 salariu) sau **un interval de luni** ales. Lunile fără calcul aprobat nu apar în tabel.
 
 Datele sensibile (IDNP, acte, sănătate) le văd doar rolurile cu dreptul „Date sensibile”; salariul îl ascund rolurile
-care au câmpul „Salariul” ascuns. Șeful de subdiviziune vede doar angajații subdiviziunilor lui (Instituția → subdiviziunea →
+care au câmpul „Salariul” ascuns. Șeful de subdiviziune vede doar angajații subdiviziunilor lui (Întreprinderea → subdiviziunea →
 utilizatorii ei).
 
 **Mai multe raporturi de muncă:** un angajat poate lucra în mai multe secții și pe mai multe funcții deodată — de bază,

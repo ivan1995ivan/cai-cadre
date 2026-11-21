@@ -2,7 +2,7 @@
 
 Cererile depuse de angajați din **Cabinetul meu**, care nu sunt concedii: adeverințe (de la locul de muncă, privind
 vechimea, despre salariu), modificarea datelor personale, alte cereri. Cererile de concediu sunt în *Concedii → Cererile
-de concediu* (le aprobă șeful de secție, ordinul îl face secția resurse umane).
+de concediu* (le aprobă șeful subdiviziunii, ordinul îl face secția resurse umane).
 
 - La o cerere nouă, cadrele primesc notificare (și e-mail).
 - **Rezolvă** (sau dublu clic): **În lucru**, **Gata** sau **Respinge**, cu un răspuns scurt („Ridicați adeverința la

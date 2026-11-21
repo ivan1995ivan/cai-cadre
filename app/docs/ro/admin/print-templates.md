@@ -2,7 +2,7 @@
 
 Aici administratorul modifică aspectul documentelor tipărite: ordinul și extrasul din ordin, registrul ordinelor, statele
 de personal, fișa personală (MR-2), adeverințele, lista angajaților, graficul concediilor, tabelul de pontaj, graficul
-lunar de lucru, statele de calcul și de plată, fișa de calcul, lista pentru bancă, fișa anuală a veniturilor,
+de ture, statele de calcul și de plată, fișa de calcul, lista pentru bancă, fișa anuală a veniturilor,
 rapoartele.
 
 ## Cum se lucrează

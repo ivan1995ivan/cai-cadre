@@ -32,7 +32,7 @@ export default {
       rejectTitle: 'Отклонить заявление?', reject: 'Отклонить', rejectNote: 'Причина (видна в заявлении)', approve: 'Согласовать',
       ordersMade: 'Создано приказов: {{count}}.', open: 'К рассмотрению (поданные и согласованные)', makeOrders: 'Сделать приказы ({{count}})',
       withdraw: 'Отозвать', withdrawConfirm: 'Отозвать заявление?',
-      statuses: { new: 'Подано', approved: 'Согласовано заведующим', rejected: 'Отклонено', ordered: 'Приказ издан', withdrawn: 'Отозвано' },
+      statuses: { new: 'Подано', approved: 'Согласовано руководителем', rejected: 'Отклонено', ordered: 'Приказ издан', withdrawn: 'Отозвано' },
     },
     set: {
       startDate: 'Дата начала учёта отпусков',

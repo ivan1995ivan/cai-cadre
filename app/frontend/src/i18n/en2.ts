@@ -56,7 +56,7 @@ export default {
   },
   imports: {
     intro: 'Starting a new database from Excel. Go in order: each file relies on the previous ones. For each: download the template, fill it in, upload — a trial run comes first, then “Import”.',
-    staffListHint: 'Staff list rows are imported from the staff list itself (Institution → Staff list → Import rows from Excel).',
+    staffListHint: 'Staff list rows are imported from the staff list itself (Company → Staff list → Import rows from Excel).',
     steps: {
       occupations: { title: 'Positions (CORM 006-21)', hint: 'Code and name; staff category and hours per week.' },
       specialties: { title: 'Specialties', hint: 'Medical, pharmacy, nursing — for education and categories.' },

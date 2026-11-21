@@ -24,7 +24,7 @@ ABSENCE_T = {
     "study": ("Concediu de studii", "Учебный отпуск", "Study leave"),
     "days_off": ("Zile libere plătite", "Оплачиваемые выходные дни", "Paid days off"),
     "travel": ("Deplasare în interes de serviciu", "Командировка", "Business trip"),
-    "training": ("Perfecționare / EMC", "Повышение квалификации", "Training"),
+    "training": ("Formare profesională", "Профессиональное обучение", "Vocational training"),
     "sick": ("Concediu medical", "Больничный", "Sick leave"),
 }
 CHILDCARE = ("maternity", "childcare", "childcare_unpaid")

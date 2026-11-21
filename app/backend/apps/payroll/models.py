@@ -148,7 +148,7 @@ class ExemptionRequest(models.Model):
 
 
 class Payroll(models.Model):
-    """Calculul salariului pe lună (toată instituția sau o subdiviziune): acumulările, reținerile și CAS al angajatorului.
+    """Calculul salariului pe lună (toată întreprinderea sau o subdiviziune): acumulările, reținerile și CAS al angajatorului.
     Impozitul pe venit și CNAM nu sunt aici — se rețin la plată, în îndreptarea spre plată (Payment) făcută în baza lui."""
 
     STATUSES = [("draft", "Ciornă"), ("checked", "Verificat"), ("approved", "Aprobat")]
@@ -157,7 +157,7 @@ class Payroll(models.Model):
     year = models.PositiveSmallIntegerField("Anul")
     month = models.PositiveSmallIntegerField("Luna")
     subdivision = models.ForeignKey(Subdivision, on_delete=models.PROTECT, null=True, blank=True, related_name="payrolls",
-                                    verbose_name="Subdiviziunea (gol = toată instituția)")
+                                    verbose_name="Subdiviziunea (gol = toată întreprinderea)")
     status = models.CharField(max_length=10, choices=STATUSES, default="draft", db_index=True)
     totals = models.JSONField(default=dict, blank=True)
     note = models.TextField("Observații", blank=True)

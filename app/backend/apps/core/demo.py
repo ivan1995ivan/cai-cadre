@@ -229,7 +229,7 @@ def _activity(people, subs, rnd, today):
     first_this = today.replace(day=1)
     last_prev = first_this - timedelta(days=1)
     first_prev = last_prev.replace(day=1)
-    # evidența concediilor pornește de la 1 ianuarie anul trecut (ca la o instituție nouă în program)
+    # evidența concediilor pornește de la 1 ianuarie anul trecut (ca la o întreprindere nouă în program)
     from apps.leave import balance
 
     balance.save_settings({"start_date": date(today.year - 1, 1, 1).isoformat()})

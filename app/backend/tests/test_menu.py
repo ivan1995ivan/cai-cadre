@@ -68,8 +68,9 @@ def test_upgrade_moves_saved_menu_roles_and_favorites(admin_user, make_user):
     assert all("settings" not in s for s in layout["sections"])
     role.refresh_from_db()
     assert role.menu_hidden[:4] == ["occupations", "specialties", "legalBases", "orderTypes"]
-    assert {"dict:vaccine", "dict:education_form", "leave", "leaveSettings", "users", "s:salarii"} <= set(role.menu_hidden)
-    assert len(role.menu_hidden) == len(set(role.menu_hidden)) == 4 + 18 + 4
+    assert {"dict:staff_category", "dict:education_form", "leave", "leaveSettings", "users", "s:salarii"} <= set(role.menu_hidden)
+    assert not {"dict:vaccine", "dict:qualification", "dict:degree", "dict:title"} & set(role.menu_hidden)  # scoase (S1)
+    assert len(role.menu_hidden) == len(set(role.menu_hidden)) == 4 + len(DictItem.KINDS) + 4
     admin_user.refresh_from_db()
     assert admin_user.favorites == [
         {"path": "/payroll/settings/types", "key": "payrollTypes", "title": ""},

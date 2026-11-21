@@ -11,7 +11,7 @@ latine, cifre, _ și -.
 Comutatorul **Administrator** dă rolului toate drepturile; matricea nu mai trebuie bifată.
 
 ## Drepturi pe module
-Pentru fiecare modul (instituția și statele de personal, clasificatoarele, angajații, contractele, ordinele, concediile,
+Pentru fiecare modul (întreprinderea și statele de personal, clasificatoarele, angajații, contractele, ordinele, concediile,
 certificatele medicale, timpul de muncă, formarea profesională, sănătatea și securitatea în muncă, evidența militară (doar
 cu modulul pornit în Constante → Module), salarizarea, raportările
 fiscale, rapoartele, cabinetul angajatului, importul, utilizatorii, rolurile, constantele, jurnalul de audit) se bifează

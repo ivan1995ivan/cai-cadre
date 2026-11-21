@@ -1,4 +1,4 @@
-"""Trimiterea pe e-mail (serverul SMTP al instituției, din Setări): rezumatul zilnic al alertelor și proba conexiunii."""
+"""Trimiterea pe e-mail (serverul SMTP al întreprinderii, din Setări): rezumatul zilnic al alertelor și proba conexiunii."""
 from django.core.mail import EmailMultiAlternatives, get_connection
 from django.utils.html import escape
 

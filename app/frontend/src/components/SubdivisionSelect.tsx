@@ -52,7 +52,7 @@ function filterTree(nodes: Node[], q: string): Node[] {
 
 /**
  * Alegerea subdiviziunii, ca în 1C: lista derulantă ca arbore (cu căutare după denumire) + butonul „…”, care deschide
- * structura instituției pe toată fereastra; clic pe subdiviziune o pune în câmp. `exclude` — subdiviziunile care nu se pot
+ * structura întreprinderii pe toată fereastra; clic pe subdiviziune o pune în câmp. `exclude` — subdiviziunile care nu se pot
  * alege aici (de ex. cele care au deja un document în luna aleasă).
  */
 export default function SubdivisionSelect({ value, onChange, mode, allowClear = true, disabled, placeholder, style, exclude }: {

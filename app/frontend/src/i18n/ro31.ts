@@ -55,7 +55,7 @@ export default {
   },
   imports: {
     intro: 'Pornirea unei baze noi din Excel. Mergeți în ordine: fiecare fișier se sprijină pe cele de dinainte. La fiecare: descărcați șablonul, completați, încărcați — întâi se face o încercare, apoi „Importă”.',
-    staffListHint: 'Rândurile statelor de personal se importă din fișa statelor (Instituția → State de personal → Import rânduri din Excel).',
+    staffListHint: 'Rândurile statelor de personal se importă din fișa statelor (Întreprinderea → State de personal → Import rânduri din Excel).',
     steps: {
       occupations: { title: 'Funcțiile (CORM 006-21)', hint: 'Codul și denumirea; categoria de personal și orele pe săptămână.' },
       specialties: { title: 'Specialitățile', hint: 'Medicale, farmaceutice, nursing — pentru studii și categorii.' },

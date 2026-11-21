@@ -25,7 +25,7 @@ export const navLabel = (t: (key: string) => string, item: NavItem) => t(item.la
 export const NAV: NavItem[] = [
   { path: '/', key: 'dashboard', icon: <DashboardOutlined /> },
   { path: '/alerts', key: 'alerts', icon: <BellOutlined /> },
-  // Etapa 1: instituția, subdiviziunile, statele de personal
+  // Etapa 1: întreprinderea, subdiviziunile, statele de personal
   { path: '/org', key: 'org', icon: <ApartmentOutlined />, perm: 'org.view' },
   { path: '/staff-list', key: 'staffList', icon: <TableOutlined />, perm: 'org.view' },
   { path: '/staff-list/occupancy', key: 'occupancy', icon: <TeamOutlined />, perm: 'org.view' },

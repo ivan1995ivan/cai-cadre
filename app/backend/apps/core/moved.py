@@ -7,16 +7,11 @@ migrația users 0004. Aceleași funcții trec și prin cererile care le scriu: o
 
 import re
 
-# clasificatoarele mici (DictItem.KINDS la 1.4.0); fiecare e setarea `dict:<tip>`
-DICT_KINDS = (
-    "qualification", "degree", "title", "education", "education_form", "document", "family", "marital", "nationality",
-    "termination", "sanction", "incentive", "employment", "military_group", "military_rank", "military_center", "checklist",
-    "vaccine",
-)
-
-# funcțiile de meniu de până la 1.4.0 desfăcute în setări separate
+# funcțiile de meniu de până la 1.4.0 desfăcute în setări separate; „Clasificatoare” ascunde și fiecare clasificator mic
+# de acum (setarea `dict:<tip>`, vezi `_split`) — tipurile scoase între timp (categoriile de calificare, gradele și
+# titlurile științifice, vaccinurile — S1) nu mai au setare
 SPLIT = {
-    "dictionaries": ("occupations", "specialties", "legalBases", "orderTypes", *(f"dict:{k}" for k in DICT_KINDS)),
+    "dictionaries": ("occupations", "specialties", "legalBases", "orderTypes"),
     "worktime": ("workSchedules", "shiftTypes", "productionCalendar", "worktimeSettings"),
     "payrollSettings": ("payrollTypes", "payrollConstants"),
 }
@@ -46,12 +41,20 @@ SETTING_PATHS = {
 _REPORT = re.compile(r"^rep[A-Z]|^taxReports$")
 
 
+def _split(key) -> tuple:
+    if key == "dictionaries":
+        from apps.org.models import DictItem
+
+        return SPLIT[key] + tuple(f"dict:{kind}" for kind, _ in DictItem.KINDS)
+    return SPLIT.get(key, (key,))
+
+
 def hidden_keys(keys, tabs=False):
     """Bifele de meniu ale rolului pe cheile de acum: funcția desfăcută ascunde toate setările ei. `tabs` (doar migrația):
     registrul ascuns ascunde și setările care erau fila lui — după 1.4.0 se bifează separat, deci nu la fiecare salvare."""
     out = []
     for key in keys:
-        for new in SPLIT.get(key, (key,)) + (TAB_SETTINGS.get(key, ()) if tabs else ()):
+        for new in _split(key) + (TAB_SETTINGS.get(key, ()) if tabs else ()):
             if new not in out:
                 out.append(new)
     return out

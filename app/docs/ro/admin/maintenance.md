@@ -33,4 +33,4 @@ Dacă furnizorul v-a dat o **adresă de actualizări**, scrieți-o aici: **Verif
 
 Dacă sistemul rulează în Docker, se actualizează cu imaginea nouă (`docker compose pull && docker compose up -d`).
 
-Datele instituției (baza, configurația, fișierele încărcate) nu se ating la actualizare.
+Datele întreprinderii (baza, configurația, fișierele încărcate) nu se ating la actualizare.

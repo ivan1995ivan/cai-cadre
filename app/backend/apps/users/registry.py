@@ -18,7 +18,7 @@ ACTIONS = {
 
 # cod modul: (denumire RO, denumire RU, acțiuni, are filtru pe rânduri „doar subdiviziunea mea / ale mele”)
 MODULES = {
-    "org": ("Instituția, subdiviziunile, statele de personal", "Учреждение, подразделения, штатное расписание",
+    "org": ("Întreprinderea, subdiviziunile, statele de personal", "Предприятие, подразделения, штатное расписание",
             ["view", "create", "edit", "delete", "approve", "export"], False),
     "dictionaries": ("Clasificatoare (funcții CORM, specialități, temeiuri legale...)", "Классификаторы (должности CORM, специальности, основания...)",
                      ["view", "create", "edit", "delete", "export"], False),

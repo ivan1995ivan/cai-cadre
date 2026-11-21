@@ -13,4 +13,4 @@ Angajații: un rând = o persoană și un raport de muncă. Pentru cumul intern 
 existent se recunoaște după IDNP, apoi după numărul de tabel, deci fișierul corectat se poate importa din nou.
 Bifa **Creează în clasificator funcțiile care lipsesc (după denumire)** adaugă funcțiile negăsite în clasificator.
 
-Rândurile statelor de personal se importă din fișa statelor (*Instituția → State de personal → Import rânduri din Excel*).
+Rândurile statelor de personal se importă din fișa statelor (*Întreprinderea → State de personal → Import rânduri din Excel*).

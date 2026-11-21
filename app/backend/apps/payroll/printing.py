@@ -31,7 +31,7 @@ def _lang(request):
 
 def _doc(payroll: Payroll) -> dict:
     return {"number": payroll.number, "date": _d(payroll.date), "month": MONTHS[payroll.month], "year": payroll.year,
-            "subdivision": payroll.subdivision.name_ro if payroll.subdivision_id else "toată instituția",
+            "subdivision": payroll.subdivision.name_ro if payroll.subdivision_id else "toată întreprinderea",
             "status": payroll.get_status_display(), "totals": {k: _money(v) for k, v in (payroll.totals or {}).items()}}
 
 

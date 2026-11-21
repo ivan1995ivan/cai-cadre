@@ -40,7 +40,7 @@ def salary_book(p):
     from .payments import debts
 
     if not license.module_enabled("payroll"):
-        raise ValidationError({"detail": "Instituția lucrează fără modulul de salarizare."})
+        raise ValidationError({"detail": "Întreprinderea lucrează fără modulul de salarizare."})
     months = _months(p)
     keys = {y * 100 + m for y, m in months}
     items = (PayrollItem.objects.filter(line__payroll__status="approved", line__payroll__year__gte=months[0][0],

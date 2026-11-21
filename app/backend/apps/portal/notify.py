@@ -21,7 +21,7 @@ def send(users, title: str, message: str = "", link: str = "", kind: str = "port
 
 
 def hr_users():
-    """Cadrele: cine editează angajații în toată instituția."""
+    """Cadrele: cine editează angajații în toată întreprinderea."""
     from apps.users.models import User
 
     return [u for u in User.objects.filter(is_active=True) if not u.is_crm_admin and u.has_crm_perm("employees.edit")

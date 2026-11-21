@@ -181,7 +181,7 @@ def movement(p):
 # --- structura personalului ----------------------------------------------------------------------------------------------
 AGE_GROUPS = [(0, 29, "< 30"), (30, 39, "30–39"), (40, 49, "40–49"), (50, 59, "50–59"), (60, 64, "60–64"), (65, 200, "65 +")]
 SENIORITY_GROUPS = [(0, 2, "< 3"), (3, 4, "3–5"), (5, 9, "5–10"), (10, 19, "10–20"), (20, 29, "20–30"), (30, 200, "30 +")]
-EDU_ORDER = ["primary", "secondary", "vocational", "higher", "residency", "postgraduate", "doctorate"]
+EDU_ORDER = ["primary", "secondary", "vocational", "higher", "postgraduate", "doctorate"]
 
 
 def age_on(birth, day):

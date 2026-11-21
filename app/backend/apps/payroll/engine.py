@@ -106,7 +106,7 @@ class Month:
         self.avg_salary = self.const("avg_salary")
 
     def jobs(self):
-        """Raporturile de muncă din lună (toată instituția sau subdiviziunea), cu zilele lor din worktime."""
+        """Raporturile de muncă din lună (toată întreprinderea sau subdiviziunea), cu zilele lor din worktime."""
         if self.payroll.subdivision_id:
             return self.ctx.jobs(self.payroll.subdivision)
         from apps.org.models import Subdivision

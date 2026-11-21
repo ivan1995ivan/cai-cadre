@@ -26,7 +26,7 @@ def next_tab_number() -> str:
     return str(best + 1)
 
 
-# --- vizibilitatea (șeful de secție vede doar subdiviziunile lui) ---------------------
+# --- vizibilitatea (șeful subdiviziunii vede doar subdiviziunile lui) ---------------------
 def visible_subdivision_ids(user, module="employees"):
     """None = toate; altfel id-urile subdiviziunilor: „own” = ale lui, „team” = ale lui cu sub-subdiviziunile."""
     scope = user.data_scope(module)

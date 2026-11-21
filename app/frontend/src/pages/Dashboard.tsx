@@ -24,7 +24,7 @@ interface Stats {
   alerts: { total: number; month: number; urgent: number; top: AlertRow[] }
 }
 
-/** Panoul de start: indicatorii instituției (sau ai secțiilor șefului) și termenele cele mai apropiate. */
+/** Panoul de start: indicatorii întreprinderii (sau ai subdiviziunilor șefului) și termenele cele mai apropiate. */
 export default function Dashboard() {
   const { t } = useTranslation()
   const navigate = useNavigate()

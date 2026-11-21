@@ -4,7 +4,7 @@ from django.apps import AppConfig
 class OrgConfig(AppConfig):
     name = "apps.org"
     label = "org"
-    verbose_name = "Instituția și statele de personal"
+    verbose_name = "Întreprinderea și statele de personal"
 
     def ready(self):
         from apps.core.audit import register

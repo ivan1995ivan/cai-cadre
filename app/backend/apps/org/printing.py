@@ -12,17 +12,15 @@ OPTIONS = {"show_salary": True, "show_fund": False, "show_categories": True}
 LABELS = {
     "ro": {"effective_from": "în vigoare de la", "approved_by": "Aprobat prin", "code": "Codul funcției (CORM)",
            "occupation": "Denumirea funcției", "units": "Unități", "salary": "Salariul de funcție, lei",
-           "fund": "Fondul lunar, lei", "total": "Total", "grand_total": "Total pe întreprindere", "category": "Categoria de personal",
-           "director": "Director", "hr_head": "Șef resurse umane", "chief_accountant": "Contabil-șef"},
+           "fund": "Fondul lunar, lei", "total": "Total", "grand_total": "Total pe întreprindere", "category": "Categoria de personal"},
     "ru": {"effective_from": "действует с", "approved_by": "Утверждено", "code": "Код должности (CORM)",
            "occupation": "Наименование должности", "units": "Единиц", "salary": "Должностной оклад, лей",
-           "fund": "Месячный фонд, лей", "total": "Итого", "grand_total": "Итого по предприятию", "category": "Категория персонала",
-           "director": "Директор", "hr_head": "Начальник отдела кадров", "chief_accountant": "Главный бухгалтер"},
+           "fund": "Месячный фонд, лей", "total": "Итого", "grand_total": "Итого по предприятию", "category": "Категория персонала"},
     "en": {"effective_from": "effective from", "approved_by": "Approved by", "code": "Occupation code (CORM)",
            "occupation": "Position", "units": "Units", "salary": "Base salary, MDL", "fund": "Monthly fund, MDL",
-           "total": "Total", "grand_total": "Company total", "category": "Staff category", "director": "Director",
-           "hr_head": "Head of HR", "chief_accountant": "Chief accountant"},
+           "total": "Total", "grand_total": "Company total", "category": "Staff category"},
 }
+
 
 def _fmt(value, lang="ro") -> str:
     """1 / 6,50 / 1 023 322 — virgula zecimală în RO și RU (ca în actele din Moldova), punctul în EN."""
@@ -84,5 +82,5 @@ def sample(request, lang, options):
     """Previzualizarea în editorul de forme: statele în vigoare (sau ultimele create)."""
     staff_list = services.current() or StaffList.objects.first()
     if staff_list is None:
-        raise ValueError("Nu există încă state de personal — creați-le în Instituția → State de personal.")
+        raise ValueError("Nu există încă state de personal — creați-le în Întreprinderea → State de personal.")
     return context(request, staff_list, lang, {**OPTIONS, **options})

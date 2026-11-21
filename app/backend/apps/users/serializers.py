@@ -61,7 +61,7 @@ def _subdivisions():
 
 class UserSerializer(serializers.ModelSerializer):
     roles = serializers.PrimaryKeyRelatedField(many=True, queryset=Role.objects.all(), required=False)
-    # secțiile utilizatorului (șeful de secție, asistentul superior): după ele se vede „doar ale mele / subdiviziunile mele”
+    # secțiile utilizatorului (șeful subdiviziunii, adjunctul lui): după ele se vede „doar ale mele / subdiviziunile mele”
     subdivisions = serializers.PrimaryKeyRelatedField(many=True, queryset=_subdivisions(), required=False)
     password = serializers.CharField(write_only=True, required=False, allow_blank=True, trim_whitespace=False)
     full_name = serializers.SerializerMethodField()

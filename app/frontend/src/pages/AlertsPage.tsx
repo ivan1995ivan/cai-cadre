@@ -34,7 +34,7 @@ export function DaysTag({ days }: { days: number }) {
   return <Tag color={days <= 7 ? 'orange' : 'default'}>{t('al.in', { count: days })}</Tag>
 }
 
-/** Termene și alerte: lista „de făcut” a cadrelor, contabilității și șefilor de secție (setările notificărilor și poșta sunt
+/** Termene și alerte: lista „de făcut” a cadrelor, contabilității și șefilor de subdiviziuni (setările notificărilor și poșta sunt
  *  la Administrare → Setări). */
 export default function AlertsPage() {
   const { t } = useTranslation()

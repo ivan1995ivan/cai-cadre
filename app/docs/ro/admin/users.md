@@ -13,11 +13,11 @@ Lista persoanelor care lucrează în sistem. Căutare după nume și filtru dup�
 
 La editare, câmpul **Parolă nouă** se lasă gol ca parola să rămână aceeași.
 
-## Subdiviziunile utilizatorului (șeful de secție)
-Câmpul **Subdiviziunile lui** leagă utilizatorul de secțiile pe care le conduce (șeful de secție, asistentul medical
-superior). Rolurile cu vizibilitatea „doar ale mele” văd angajații, concediile, graficele, pontajul și rapoartele doar din
-aceste subdiviziuni; cu „subdiviziunile mele” — și din sub-subdiviziunile lor. Fără subdiviziuni, un șef de secție nu vede
-niciun angajat. Lista arată în coloana **Subdiviziunile lui** cine de ce secție răspunde.
+## Subdiviziunile utilizatorului (șeful subdiviziunii)
+Câmpul **Subdiviziunile lui** leagă utilizatorul de subdiviziunile pe care le conduce (șeful subdiviziunii, adjunctul
+lui). Rolurile cu vizibilitatea „doar ale mele” văd angajații, concediile, graficele, pontajul și rapoartele doar din
+aceste subdiviziuni; cu „subdiviziunile mele” — și din sub-subdiviziunile lor. Fără subdiviziuni, un șef de subdiviziune nu
+vede niciun angajat. Lista arată în coloana **Subdiviziunile lui** cine de ce subdiviziune răspunde.
 
 ## Contul pentru cabinetul angajatului
 Angajații care intră doar în [Cabinetul meu](help:portal) primesc contul din fișa angajatului: butonul **Cabinet**

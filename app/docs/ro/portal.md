@@ -13,10 +13,10 @@ Ordinele semnate în care sunteți. Clic pe ordin îl deschide; **Am luat cunoș
 (data). Când se semnează un ordin nou, primiți notificare (și e-mail, dacă aveți adresa în profil).
 
 ## Cererile mele
-- **Cerere de concediu**: tipul, data de început, zilele. Cererea merge la **șeful de secție** (aprobă sau respinge), apoi
+- **Cerere de concediu**: tipul, data de început, zilele. Cererea merge la **șeful subdiviziunii** (aprobă sau respinge), apoi
   la **secția resurse umane**, care face ordinul. La fiecare pas primiți notificare. Cererea neaprobată se poate retrage.
 - **Adeverințe și alte cereri**: adeverință de la locul de muncă, privind vechimea, despre salariu, modificarea datelor
   personale, altă cerere. Cadrele răspund (de exemplu „Ridicați adeverința la cabinetul 12”); răspunsul apare aici.
 
 ## Fișele de calcul
-Fișele de calcul ale salariului din calculele aprobate (dacă instituția folosește modulul Salarizare), cu tipar.
+Fișele de calcul ale salariului din calculele aprobate (dacă întreprinderea folosește modulul Salarizare), cu tipar.

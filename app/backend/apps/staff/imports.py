@@ -210,7 +210,7 @@ EMPLOYEES = Spec(
     notes=["Un rând = un angajat și un raport de muncă. Pentru cumul intern / extern repetați persoana pe alt rând.",
            "Angajatul existent se recunoaște după IDNP, apoi după nr. de tabel; datele lui se actualizează.",
            "Fără nr. de tabel sistemul dă următorul număr liber.", KINDS_HINT,
-           "Subdiviziunile (Instituția) și funcțiile (Administrare → Setări → Funcții CORM) trebuie să existe sau bifați „Creează funcțiile lipsă”."],
+           "Subdiviziunile (Întreprinderea și subdiviziunile) și funcțiile (Administrare → Setări → Funcții CORM) trebuie să existe sau bifați „Creează funcțiile lipsă”."],
 )
 
 

@@ -37,7 +37,7 @@ def _employee(request, pk, module="leave"):
 
 
 def _visible_subdivisions(user, module="leave"):
-    """None = toate; altfel id-urile subdiviziunilor utilizatorului (șeful de secție)."""
+    """None = toate; altfel id-urile subdiviziunilor utilizatorului (șeful subdiviziunii)."""
     return staff.visible_subdivision_ids(user, module)
 
 
@@ -254,7 +254,7 @@ class LeaveScheduleViewSet(DeletionMarkMixin, viewsets.ModelViewSet):
 
 
 def _editable(schedule, user):
-    """Șeful de secție schimbă graficul cât e ciornă; resursele umane (drept de aprobare) — până la aprobare."""
+    """Șeful subdiviziunii schimbă graficul cât e ciornă; resursele umane (drept de aprobare) — până la aprobare."""
     ensure_not_marked(schedule)
     if schedule.status == "approved":
         raise ValidationError({"detail": "Graficul este aprobat. Schimbările se fac prin ordinul de amânare."})

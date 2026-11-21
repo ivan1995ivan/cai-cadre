@@ -69,7 +69,7 @@ export const ALL_ITEMS: NavItem[] = [...NAV, ...ADMIN_NAV, ...REPORT_NAV]
 /** Tot ce are pagină: funcțiile de meniu și setările (pentru titlul filei, favorite, fișa de ajutor). */
 export const ROUTE_ITEMS: NavItem[] = [...ALL_ITEMS, ...SETTINGS_NAV]
 
-/** Ce ține de modulul Salarizare: dispare din meniu și din Setări când instituția e livrată fără salariu (Constante → Module). */
+/** Ce ține de modulul Salarizare: dispare din meniu și din Setări când întreprinderea e livrată fără salariu (Constante → Module). */
 export const PAYROLL_ITEMS = new Set(['payroll', 'payrollPayments', 'payrollTypes', 'payrollConstants', 'taxSettings', 'taxReports', 'repSalaryBook'])
 /** Ce ține de modulul opțional „Evidența militară” (oprit implicit, Constante → Module): registrul și rapoartele lui dispar
  *  singure (serverul nu dă drepturile `military.*`), clasificatoarele lui se ascund aici. */

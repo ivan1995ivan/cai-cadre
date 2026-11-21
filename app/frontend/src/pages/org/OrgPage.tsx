@@ -21,7 +21,7 @@ function toTreeSelect(nodes: Subdivision[], exclude?: number): TreeNode[] {
   }))
 }
 
-/** Subdiviziunile instituției (secții, laboratoare, servicii), ierarhic. */
+/** Subdiviziunile întreprinderii (departamente, secții, ateliere, filiale), ierarhic. */
 export default function OrgPage() {
   const { t } = useTranslation()
   const { hasPerm, companyName, languages } = useApp()

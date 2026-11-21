@@ -1,7 +1,7 @@
 # Bănci
 
 Clasificatorul băncilor din Moldova și România, cu **BIC / SWIFT**, codul din IBAN, IDNO / CUI, adresa și telefonul.
-Din el se alege banca la conturile bancare ale instituției (*Constante → Conturi bancare*).
+Din el se alege banca la conturile bancare ale întreprinderii (*Constante → Conturi bancare*).
 
 ## Listele oficiale
 Băncile se încarcă singure la instalare:
