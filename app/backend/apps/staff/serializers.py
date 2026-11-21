@@ -172,7 +172,8 @@ class EmploymentSerializer(MaskMixin, serializers.ModelSerializer):
     subdivision_name = serializers.SerializerMethodField()
     occupation_name = serializers.SerializerMethodField()
     occupation_code = serializers.CharField(source="occupation.code", read_only=True)
-    category = serializers.CharField(source="occupation.category", read_only=True)
+    category = serializers.IntegerField(source="occupation.category_id", read_only=True, allow_null=True)
+    category_name = serializers.SerializerMethodField()
     termination_reason_name = serializers.SerializerMethodField()
     employee_name = serializers.CharField(source="employee.full_name", read_only=True)
     employee_tab = serializers.CharField(source="employee.tab_number", read_only=True)
@@ -181,7 +182,7 @@ class EmploymentSerializer(MaskMixin, serializers.ModelSerializer):
     class Meta:
         model = Employment
         fields = ["id", "employee", "employee_name", "employee_tab", "kind", "kind_label", "subdivision", "subdivision_name", "occupation", "occupation_name",
-                  "occupation_code", "category", "rate", "base_salary", "allowance_pct", "combination_pct", "date_from", "date_to",
+                  "occupation_code", "category", "category_name", "rate", "base_salary", "allowance_pct", "combination_pct", "date_from", "date_to",
                   "probation_until", "contract_number", "contract_date", "substitutes", "status", "status_label",
                   "suspended_from", "suspension_reason", "end_date", "termination_reason", "termination_reason_name",
                   "hire_order", "end_order", "note", "history"]
@@ -196,6 +197,9 @@ class EmploymentSerializer(MaskMixin, serializers.ModelSerializer):
     def get_termination_reason_name(self, obj):
         return _name(obj.termination_reason, user_lang(self))
 
+    def get_category_name(self, obj):
+        return _name(obj.occupation.category, user_lang(self)) if obj.occupation.category_id else ""
+
 
 class EmployeeListSerializer(MaskMixin, serializers.ModelSerializer):
     """Rândul din lista angajaților: datele persoanei și raportul de bază (secția, funcția, norma)."""
@@ -205,6 +209,7 @@ class EmployeeListSerializer(MaskMixin, serializers.ModelSerializer):
     subdivision = serializers.SerializerMethodField()
     occupation = serializers.SerializerMethodField()
     category = serializers.SerializerMethodField()
+    category_name = serializers.SerializerMethodField()
     kind = serializers.SerializerMethodField()
     rate = serializers.SerializerMethodField()
     date_from = serializers.SerializerMethodField()
@@ -213,8 +218,8 @@ class EmployeeListSerializer(MaskMixin, serializers.ModelSerializer):
     class Meta:
         model = Employee
         fields = ["id", "tab_number", "full_name", "last_name", "first_name", "patronymic", "idnp", "birth_date", "sex",
-                  "phone", "email", "status", "status_label", "is_archived", "subdivision", "occupation", "category", "kind",
-                  "rate", "date_from", "jobs"]
+                  "phone", "email", "status", "status_label", "is_archived", "subdivision", "occupation", "category",
+                  "category_name", "kind", "rate", "date_from", "jobs"]
 
     def _main(self, obj):
         if not hasattr(obj, "_main_cache"):
@@ -231,7 +236,11 @@ class EmployeeListSerializer(MaskMixin, serializers.ModelSerializer):
 
     def get_category(self, obj):
         m = self._main(obj)
-        return m.occupation.category if m else ""
+        return m.occupation.category_id if m else None
+
+    def get_category_name(self, obj):
+        m = self._main(obj)
+        return _name(m.occupation.category, user_lang(self)) if m and m.occupation.category_id else ""
 
     def get_kind(self, obj):
         m = self._main(obj)

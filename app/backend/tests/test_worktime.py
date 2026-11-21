@@ -1,4 +1,4 @@
-"""Etapa 4 (partea 2): timpul de muncă — calendarul și norma, graficele de lucru, graficul lunar (gărzi), pontajul, exportul."""
+"""Etapa 4 (partea 2): timpul de muncă — calendarul și norma, graficele de lucru, graficul de ture, pontajul, exportul."""
 from datetime import date
 from decimal import Decimal
 
@@ -10,6 +10,7 @@ from apps.staff import services as staff
 from apps.staff.models import Employee
 from apps.worktime import services
 from apps.worktime.models import JobSchedule, Roster, ShiftType, Timesheet, WorkSchedule
+from .conftest import occupation
 
 
 @pytest.fixture
@@ -17,9 +18,9 @@ def org(seeded):
     tr1 = Subdivision.objects.create(code="TR1", name_ro="Secția traumatologie nr. 1")
     ati = Subdivision.objects.create(code="ATI", name_ro="Secția ATI")
     return {"tr1": tr1, "ati": ati,
-            "doctor": Occupation.objects.get(name_ro="Medic traumatolog-ortoped"),
-            "anest": Occupation.objects.get(name_ro="Medic anesteziolog-reanimatolog"),
-            "nurse": Occupation.objects.get(name_ro="Asistent medical de secție")}
+            "doctor": occupation("Medic traumatolog-ortoped"),
+            "anest": occupation("Medic anesteziolog-reanimatolog"),
+            "nurse": occupation("Asistent medical de secție")}
 
 
 def person(org, last="Popescu", first="Ion", sub="tr1", occ="doctor", rate="1", hired=date(2024, 3, 1), **extra):
@@ -76,29 +77,39 @@ def test_without_schedule_uses_occupation_hours_and_reduced_day(org):
     assert ctx.planned(jd, date(2026, 3, 2)) == "6" and ctx.norm(jd) == Decimal("132")
 
 
-# --- graficul lunar (gărzi) ------------------------------------------------------------------------------------
+# --- graficul de ture ---------------------------------------------------------------------------------------
 def test_roster_fill_warnings_and_approval(admin_client, org, make_user, client_for):
     a, job_a = person(org)
     b, job_b = person(org, "Rusu", "Ana")
-    JobSchedule.objects.create(employment=job_b, schedule=schedule("G24"), date_from=date(2026, 3, 1))
+    JobSchedule.objects.create(employment=job_b, schedule=schedule("ZN"), date_from=date(2026, 3, 1))
     Absence.objects.create(employee=a, kind="annual", date_from=date(2026, 3, 9), date_to=date(2026, 3, 15), days=7)
     r = admin_client.post("/api/worktime/rosters/", {"subdivision": org["tr1"].id, "year": 2026, "month": 3}, format="json")
     assert r.status_code == 201, r.data
     rid = r.data["id"]
     report = admin_client.get(f"/api/worktime/rosters/{rid}/report/").data
     rows = {row["name"]: row for row in report["rows"]}
-    assert rows["Popescu Ion"]["days"]["2"] == "7" and rows["Popescu Ion"]["absences"]["9"] == "CO"  # medicii: 35 h → 7 pe zi
-    assert rows["Rusu Ana"]["days"]["1"] == "G24" and rows["Rusu Ana"]["days"]["5"] == "G24" and "2" not in rows["Rusu Ana"]["days"]
-    assert rows["Rusu Ana"]["duties"] == 8 and rows["Rusu Ana"]["hours"] == 192 and rows["Rusu Ana"]["norm"] == 176
+    assert rows["Popescu Ion"]["days"]["2"] == "7" and rows["Popescu Ion"]["absences"]["9"] == "C"  # funcția: 35 h → 7 pe zi
+    ana = rows["Rusu Ana"]
+    assert (ana["days"]["1"], ana["days"]["2"], ana["days"]["5"]) == ("Z12", "N12", "Z12") and "3" not in ana["days"]
+    assert ana["nights"] == 8 and ana["hours"] == 192 and ana["norm"] == 176
     assert any(w["kind"] == "norm" and w["name"] == "Rusu A." for w in report["warnings"])
-    # gardă a doua zi după gardă → odihnă 0 h; tură într-o zi de concediu
+    # ciclul zi – noapte – 2 libere respectă CM art. 101 (odihna = dublul turei): fără avertismente de odihnă
+    assert not [w for w in report["warnings"] if w["name"] == "Rusu A." and w["kind"] in ("rest", "consecutive")]
+    # noaptea pe 9, ziua pe 10 → două ture la rând; ziua de 7 ore pe 11 → 12 h de odihnă după tura de 12 h (trebuie 24);
+    # tură într-o zi de concediu
     line = admin_client.get("/api/worktime/roster-lines/", {"roster": rid}).data
     ion = next(ln for ln in line if ln["employment"] == job_a.id)
-    days = {**ion["days"], "9": "G24", "10": "G24"}
+    days = {**ion["days"], "9": "N12", "10": "Z12"}
     assert admin_client.patch(f"/api/worktime/roster-lines/{ion['id']}/", {"days": days}, format="json").status_code == 200
     warnings = admin_client.get(f"/api/worktime/rosters/{rid}/report/").data["warnings"]
-    kinds = {(w["kind"], w.get("day")) for w in warnings if w["name"] == "Popescu I."}
-    assert ("rest", 10) in kinds and ("absence", 9) in kinds
+    mine = {(w["kind"], w.get("day")): w for w in warnings if w["name"] == "Popescu I."}
+    assert ("consecutive", 10) in mine and ("absence", 9) in mine
+    assert mine[("rest", 11)]["rest"] == 12 and mine[("rest", 11)]["need"] == 24
+    assert ("rest", 12) not in mine  # între două zile de 7 ore (cifre, nu ture) — doar minimul din setări (12 h)
+    # prea multe ture de noapte (setarea; implicit fără limită)
+    admin_client.put("/api/worktime/settings/", {"max_night_shifts": 4}, format="json")
+    nights = [w for w in admin_client.get(f"/api/worktime/rosters/{rid}/report/").data["warnings"] if w["kind"] == "nights"]
+    assert [(w["name"], w["nights"], w["max"]) for w in nights] == [("Rusu A.", 8, 4)]
     # șeful de secție: își vede graficul, îl transmite, apoi nu-l mai schimbă
     head = make_user("sef", ["department_head"])
     org["tr1"].users.add(head)
@@ -109,7 +120,7 @@ def test_roster_fill_warnings_and_approval(admin_client, org, make_user, client_
     assert api.patch(f"/api/worktime/roster-lines/{ion['id']}/", {"note": "x"}, format="json").status_code == 400
     assert admin_client.post(f"/api/worktime/rosters/{rid}/approve/").data["status"] == "approved"
     html = admin_client.get(f"/api/worktime/rosters/{rid}/print/").content.decode()
-    assert "GRAFICUL DE LUCRU" in html and "Rusu Ana" in html and "G24" in html
+    assert "GRAFICUL DE TURE" in html and "Rusu Ana" in html and "N12" in html and "Gărzi" not in html
 
 
 # --- tabela de pontaj -------------------------------------------------------------------------------------------
@@ -132,10 +143,12 @@ def test_timesheet_from_roster_absences_manual_cells_and_export(admin_client, or
     rows = {row["name"]: row for row in report["rows"]}
     ion, ana = rows["Popescu Ion"], rows["Rusu Ana"]
     assert len(report["rows"]) == 2 and ion["rate"] == 1.0  # cumulul de la ATI nu e aici
-    assert ion["days"]["2"] == {"c": "7", "h": 7.0, "n": 0.0} and ion["days"]["16"] == {"c": "CM"} and "7" not in ion["days"]
+    assert ion["days"]["2"] == {"c": "7", "h": 7.0, "n": 0.0} and ion["days"]["16"] == {"c": "Cm"}
+    assert ion["days"]["7"] == {"c": "R"} and ion["days"]["8"] == {"c": "Sn"}  # sâmbătă — repaus; 8 martie — sărbătoare
     assert ion["totals"]["days"] == 17 and ion["totals"]["hours"] == 119 and ion["totals"]["norm"] == 154
-    assert ion["totals"]["missing"] == 35 and ion["totals"]["codes"] == {"CM": 5}
-    assert ana["days"]["3"] == {"c": "N12", "h": 12.0, "n": 8.0} and ana["days"]["23"] == {"c": "CO"} and ana["days"]["30"] == {"c": "S"}
+    assert ion["totals"]["missing"] == 35 and ion["totals"]["codes"] == {"Cm": 5, "R": 8, "Sn": 1}
+    assert ana["days"]["3"] == {"c": "N12", "h": 12.0, "n": 8.0} and ana["days"]["23"] == {"c": "C"} and ana["days"]["30"] == {"c": "Sp"}
+    assert ana["days"]["4"] == {"c": "R"}  # ziua liberă din ciclul de ture
     assert ana["totals"]["night"] == 8 * 5  # nopțile 3, 7, 11, 15, 19; cele din concediu și după suspendare nu
     # corectare de mână: 31 martie Ion a lipsit nemotivat; 2 martie a lucrat 10 ore
     r = admin_client.post(f"/api/worktime/timesheets/{tid}/set-cell/", {"line": ion["id"], "day": 31, "code": "A"}, format="json")
@@ -145,7 +158,7 @@ def test_timesheet_from_roster_absences_manual_cells_and_export(admin_client, or
     assert r.data["days"]["2"]["h"] == 10 and r.data["totals"]["hours"] == 115 and r.data["totals"]["overtime"] == 0
     admin_client.post(f"/api/worktime/timesheets/{tid}/fill/", format="json")  # recalcularea păstrează celulele de mână
     ion2 = {row["name"]: row for row in admin_client.get(f"/api/worktime/timesheets/{tid}/report/").data["rows"]}["Popescu Ion"]
-    assert ion2["days"]["31"]["c"] == "A" and ion2["days"]["2"]["h"] == 10 and ion2["totals"]["codes"] == {"A": 1, "CM": 5}
+    assert ion2["days"]["31"]["c"] == "A" and ion2["days"]["2"]["h"] == 10 and ion2["totals"]["codes"] == {"A": 1, "Cm": 5, "R": 8, "Sn": 1}
     # tabela ATI: cumulul lui Ion pe 0,25 (fără grafic lunar: din orele funcției, 35 h × 0,25)
     ati = admin_client.post("/api/worktime/timesheets/", {"subdivision": org["ati"].id, "year": 2026, "month": 3}, format="json").data
     row = admin_client.get(f"/api/worktime/timesheets/{ati['id']}/report/").data["rows"][0]
@@ -165,13 +178,14 @@ def test_timesheet_from_roster_absences_manual_cells_and_export(admin_client, or
     assert names == ["Popescu Ion", "Popescu Ion", "Rusu Ana"]  # întâi ATI (cumulul), apoi traumatologia
     assert wb["Zile"].cell(row=3, column=5 + 30).value == "A"  # ziua 31 a lui Ion la traumatologie
     html = admin_client.get(f"/api/worktime/timesheets/{tid}/print/").content.decode()
-    assert "TABELA DE PONTAJ" in html and "CM" in html and "Rusu Ana" in html
+    assert "TABELA DE PONTAJ" in html and "Concediu medical" in html and "Rusu Ana" in html
     month = admin_client.get(f"/api/worktime/employee-month/{a.id}/", {"year": 2026, "month": 3}).data
     assert [r["rate"] for r in month["rows"]] == [1.0, 0.25]
 
 
 def test_shift_and_schedule_dictionaries_validate(admin_client, seeded):
-    assert ShiftType.objects.filter(code="G24", is_duty=True).exists()
+    assert set(ShiftType.objects.values_list("code", flat=True)) == {"8", "7", "6", "Z12", "N12"}  # fără gărzi
+    assert not WorkSchedule.objects.filter(code="G24").exists()
     bad = admin_client.post("/api/worktime/shifts/", {"code": "X", "name": "x", "hours": "8", "night_hours": "9"}, format="json")
     assert bad.status_code == 400
     bad = admin_client.post("/api/worktime/schedules/", {"name": "g", "kind": "week", "weekly_hours": "40", "week": ["8", "8"]},
@@ -180,4 +194,7 @@ def test_shift_and_schedule_dictionaries_validate(admin_client, seeded):
     ok = admin_client.post("/api/worktime/schedules/", {"name": "4 zile", "kind": "week", "weekly_hours": "40",
                                                         "week": ["10", "10", "10", "10", "", "", ""]}, format="json")
     assert ok.status_code == 201
-    assert admin_client.put("/api/worktime/settings/", {"min_rest_hours": 11, "max_duties": 8}, format="json").data["max_duties"] == 8
+    saved = admin_client.put("/api/worktime/settings/", {"min_rest_hours": 11, "max_night_shifts": 8}, format="json").data
+    assert saved["max_night_shifts"] == 8 and saved["min_rest_hours"] == 11 and "max_duties" not in saved
+    codes = services.CODE_LABELS  # notațiile Convenției colective nr. 17/2020
+    assert {"R", "Sn", "Ls", "C", "Cn", "Cs", "Cm", "Cc", "D", "Sp", "Șt", "St", "Dt", "A"} <= set(codes)

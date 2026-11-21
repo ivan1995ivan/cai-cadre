@@ -68,7 +68,6 @@ export default function WorktimeSettingsPage({ part, title }: { part: WorktimePa
     { key: 'night_hours', label: t('wt.shift.night'), type: 'number', width: 90 },
     { key: 'start', label: t('wt.shift.start'), width: 90, input: () => <TimePicker format="HH:mm" minuteStep={30} style={{ width: '100%' }} />,
       render: (v) => (v ? String(v).slice(0, 5) : '') },
-    { key: 'is_duty', label: t('wt.shift.duty'), type: 'bool', width: 70 },
     { key: 'color', label: t('wt.shift.color'), type: 'color', width: 90 },
     { key: 'sort', label: t('org.sort'), type: 'number', inTable: false },
   ]
@@ -96,7 +95,7 @@ export default function WorktimeSettingsPage({ part, title }: { part: WorktimePa
         title={<Typography.Text type="secondary">{t('wt.sch.hint')}</Typography.Text>} />
     ),
     shifts: (
-      <CrudTable endpoint="/worktime/shifts/" fields={shiftFields} canEdit={canEdit} defaults={{ hours: 8, night_hours: 0, is_duty: false }}
+      <CrudTable endpoint="/worktime/shifts/" fields={shiftFields} canEdit={canEdit} defaults={{ hours: 8, night_hours: 0 }}
         title={<Typography.Text type="secondary">{t('wt.shift.hint')}</Typography.Text>} />
     ),
     calendar: <CalendarTab canEdit={canEdit} />,
@@ -142,7 +141,7 @@ function CalendarTab({ canEdit }: { canEdit: boolean }) {
 function SettingsTab() {
   const { t } = useTranslation()
   const [form] = Form.useForm()
-  const { data } = useFetch<{ min_rest_hours: number; max_duties: number }>('/worktime/settings/')
+  const { data } = useFetch<{ min_rest_hours: number; max_night_shifts: number }>('/worktime/settings/')
   useEffect(() => { if (data) form.setFieldsValue(data) }, [data, form])
   const { touch, clean } = useEditGuard(() => save())
   const save = async () => {
@@ -158,7 +157,7 @@ function SettingsTab() {
   return (
     <Form form={form} layout="vertical" style={{ maxWidth: 520 }} onValuesChange={touch}>
       <Form.Item name="min_rest_hours" label={t('wt.set.minRest')} extra={t('wt.set.minRestHint')}><InputNumber min={0} max={48} /></Form.Item>
-      <Form.Item name="max_duties" label={t('wt.set.maxDuties')} extra={t('wt.set.maxDutiesHint')}><InputNumber min={0} max={31} /></Form.Item>
+      <Form.Item name="max_night_shifts" label={t('wt.set.maxNights')} extra={t('wt.set.maxNightsHint')}><InputNumber min={0} max={31} /></Form.Item>
       <Button type="primary" onClick={save}>{t('common.save')}</Button>
     </Form>
   )

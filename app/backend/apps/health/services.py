@@ -13,7 +13,8 @@ from .models import MedicalExam, SafetyBriefing, Vaccination
 
 SETTINGS_KEY = "health_settings"
 DEFAULTS = {"exam_months": 12, "briefing_months": 6, "horizon_days": 30}
-MEDICAL = {"physicians", "pharmacists", "nurses", "junior"}
+# codurile categoriilor (clasificatorul „Categoriile de personal”) în care au trecut fostele categorii medicale (S1)
+MEDICAL = {"2", "3", "5"}
 
 
 def get_settings() -> dict:
@@ -58,7 +59,7 @@ def fill_next_date(obj):
 def staff_on(day, sub_ids=None):
     """Angajații în funcție la data dată: {employee_id: primul raport (cel de bază, dacă există)}."""
     qs = (Employment.objects.filter(date_from__lte=day).filter(Q(end_date__isnull=True) | Q(end_date__gte=day))
-          .exclude(kind__in=CIVIL_KINDS).select_related("employee", "subdivision", "occupation"))
+          .exclude(kind__in=CIVIL_KINDS).select_related("employee", "subdivision", "occupation__category"))
     if sub_ids is not None:
         qs = qs.filter(subdivision_id__in=sub_ids)
     out = {}
@@ -115,7 +116,7 @@ def due_rows(day=None, sub_ids=None, what=None, lang="ro", horizon=None) -> list
         for v in Vaccination.objects.filter(employee_id__in=jobs, date__lte=day, deletion_mark=False).select_related("vaccine").order_by("date", "id"):
             doses[(v.employee_id, v.vaccine_id)] = v
         for emp_id, job in jobs.items():
-            if job.occupation.category in MEDICAL:
+            if job.occupation.category_id and job.occupation.category.code in MEDICAL:
                 for vac in required:
                     if (emp_id, vac.pk) not in doses:
                         rows.append(_row(job, "vaccine", vac.local_name(lang), None, None, day, lang))

@@ -35,7 +35,7 @@ export default function OrgPage() {
   const [form] = Form.useForm()
 
   const open = (row?: Partial<Subdivision>) => {
-    const value = row ?? { kind: 'clinical', is_active: true, beds: 0, extra_leave_days: 0, sort: 0 }
+    const value = row ?? { kind: 'section', is_active: true, extra_leave_days: 0, sort: 0 }
     setEditing(value)
     form.resetFields()
     form.setFieldsValue(value)
@@ -75,7 +75,6 @@ export default function OrgPage() {
             </Space>) },
           { title: t('common.code'), dataIndex: 'code', width: 90 },
           { title: t('org.kind'), dataIndex: 'kind', width: 190, render: (v: string) => t(`org.subKind.${v}`) },
-          { title: t('org.beds'), dataIndex: 'beds', width: 80, align: 'right', render: (v: number) => v || '' },
           { title: t('org.harmful'), dataIndex: 'harmful', width: 150,
             render: (v: boolean, r) => v ? <Tag color="volcano">{t('org.harmfulShort', { days: r.extra_leave_days })}</Tag> : null },
           { title: t('org.head'), dataIndex: 'head_name', width: 200 },
@@ -97,8 +96,7 @@ export default function OrgPage() {
               </Form.Item>
             </Col>
             <Col span={12}><Form.Item name="kind" label={t('org.kind')}><Select options={opts('org.subKind', meta?.subdivision_kinds)} /></Form.Item></Col>
-            <Col span={6}><Form.Item name="beds" label={t('org.beds')}><InputNumber min={0} style={{ width: '100%' }} /></Form.Item></Col>
-            <Col span={6}><Form.Item name="harmful" label={t('org.harmful')} valuePropName="checked"><Switch /></Form.Item></Col>
+            <Col span={12}><Form.Item name="harmful" label={t('org.harmful')} valuePropName="checked"><Switch /></Form.Item></Col>
             <Col span={6}><Form.Item name="extra_leave_days" label={t('org.extraLeave')}><InputNumber min={0} style={{ width: '100%' }} /></Form.Item></Col>
             <Col span={6}><Form.Item name="reduced_hours" label={t('org.reducedHours')}><InputNumber min={0} max={40} style={{ width: '100%' }} /></Form.Item></Col>
             <Col span={12}><Form.Item name="head_name" label={t('org.head')}><Input /></Form.Item></Col>

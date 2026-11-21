@@ -7,17 +7,16 @@ import { useFetch } from '../api/hooks'
 import { useApp, useLocalName } from '../auth/AppContext'
 import CrudTable, { type CrudField } from './CrudTable'
 
-/** Ce clasificator: un tip din „Alte clasificatoare” (`{ dict: 'qualification' }`), funcțiile (CORM) sau specialitățile. */
+/** Ce clasificator: un tip din „Alte clasificatoare” (`{ dict: 'sanction' }`), funcțiile (CORM) sau specialitățile. */
 export type RefSpec = { dict: string } | 'occupation' | 'specialty'
 
 type Item = Record<string, unknown> & { id: number; code?: string; name_ro: string; name_ru?: string; name_en?: string; is_active?: boolean; deletion_mark?: boolean }
 
-const CATEGORIES = ['leadership', 'physicians', 'pharmacists', 'nurses', 'junior', 'admin', 'other']
-const SPEC_KINDS = ['medical', 'pharmacy', 'nursing', 'other']
+const SPEC_KINDS = ['higher', 'postsecondary', 'secondary', 'other']
 
 function endpointOf(spec: RefSpec) {
-  if (spec === 'occupation') return { endpoint: '/org/occupations/', params: {}, defaults: { category: 'other', weekly_hours: 40, base_leave_days: 28, extra_leave_days: 0 } }
-  if (spec === 'specialty') return { endpoint: '/org/specialties/', params: {}, defaults: { kind: 'medical' } }
+  if (spec === 'occupation') return { endpoint: '/org/occupations/', params: {}, defaults: { category: null, weekly_hours: 40, base_leave_days: 28, extra_leave_days: 0 } }
+  if (spec === 'specialty') return { endpoint: '/org/specialties/', params: {}, defaults: { kind: 'other' } }
   return { endpoint: '/org/dict-items/', params: { kind: spec.dict }, defaults: { kind: spec.dict } }
 }
 
@@ -53,7 +52,7 @@ export default function RefSelect({ spec, value, onChange, allowClear = true, di
   ]
   const fields: CrudField[] = spec === 'occupation' ? [
     { key: 'code', label: t('org.corm'), width: 110 }, ...names,
-    { key: 'category', label: t('org.category'), type: 'select', options: CATEGORIES.map((c) => ({ value: c, label: t(`org.cat.${c}`) })), width: 220 },
+    { key: 'category', label: t('org.category'), ref: { dict: 'staff_category' }, width: 220, render: (_v, r) => String(r.category_name ?? '') },
     { key: 'weekly_hours', label: t('org.weeklyHours'), type: 'number', inTable: false },
     { key: 'base_leave_days', label: t('org.baseLeave'), type: 'number', inTable: false },
     { key: 'is_active', label: t('common.active'), type: 'bool', width: 80 },

@@ -24,7 +24,8 @@ export interface EmployeeRow {
   is_archived: boolean
   subdivision: string
   occupation: string
-  category: string
+  category: number | null
+  category_name: string
   kind: EmploymentKind | ''
   rate: string
   date_from: string | null
@@ -102,7 +103,8 @@ export interface Employment {
   occupation: number
   occupation_name: string
   occupation_code: string
-  category: string
+  category: number | null
+  category_name: string
   rate: string
   base_salary: string | null
   allowance_pct: string | null

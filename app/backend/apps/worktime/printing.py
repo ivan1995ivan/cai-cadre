@@ -1,4 +1,4 @@
-"""Tiparul tabelei de pontaj și al graficului lunar (gărzile) al secției."""
+"""Tiparul tabelei de pontaj și al graficului de ture al subdiviziunii."""
 from django.utils import timezone
 
 from apps.printing.renderer import company_context
@@ -55,7 +55,7 @@ def roster_context(request, roster: Roster, lang="ro") -> dict:
     numbers = range(1, len(report["days"]) + 1)
     rows = [{"no": n, "name": r["name"], "occupation": r["occupation"], "rate": f"{r['rate'] * 100:g}%",
              "cells": [r["days"].get(str(d)) or r["absences"].get(str(d), "") for d in numbers],
-             "hours": _n(r["hours"]), "duties": r["duties"] or "", "norm": _n(r["norm"])}
+             "hours": _n(r["hours"]), "nights": r["nights"] or "", "norm": _n(r["norm"])}
             for n, r in enumerate(report["rows"], start=1)]
     return {"company": company_context(request, lang), "lang": lang, "options": {}, "rows": rows, "days": report["days"],
             "shifts": [{"code": s.code, "name": s.name} for s in ShiftType.objects.filter(is_active=True)],

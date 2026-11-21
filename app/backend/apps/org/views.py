@@ -15,7 +15,7 @@ from apps.users.permissions import require
 
 from . import printing, services
 from .imports import SPECS
-from .models import (ORDER_EFFECTS, ORDER_GROUPS, ORDER_REGISTERS, STAFF_CATEGORIES, DictItem, LegalBasis, Occupation,
+from .models import (ORDER_EFFECTS, ORDER_GROUPS, ORDER_REGISTERS, DictItem, LegalBasis, Occupation,
                      OrderType, Specialty, StaffList, StaffListLine, Subdivision)
 from .serializers import (DictItemSerializer, LegalBasisSerializer, OccupationSerializer, OrderTypeSerializer,
                           SpecialtySerializer, StaffListLineSerializer, StaffListSerializer, SubdivisionSerializer)
@@ -42,9 +42,12 @@ class OccupationViewSet(DeletionMarkMixin, SearchMixin, viewsets.ModelViewSet):
     pagination_class = None
 
     def get_queryset(self):
-        qs = self.filter_search(Occupation.objects.all())
-        if self.request.query_params.get("category"):
-            qs = qs.filter(category=self.request.query_params["category"])
+        qs = self.filter_search(Occupation.objects.select_related("category"))
+        category = self.request.query_params.get("category")
+        if category == "none":
+            qs = qs.filter(category__isnull=True)
+        elif category and category.isdigit():
+            qs = qs.filter(category_id=category)
         if self.request.query_params.get("no_code") == "1":
             qs = qs.filter(code="")
         return qs
@@ -183,7 +186,7 @@ class StaffListViewSet(DeletionMarkMixin, viewsets.ModelViewSet):
 
     @action(detail=True, methods=["get"])
     def totals(self, request, pk=None):
-        return Response(services.totals(self.get_object()))
+        return Response(services.totals(self.get_object(), lang=request.user.language or "ro"))
 
     @action(detail=True, methods=["get"])
     def print(self, request, pk=None):
@@ -196,7 +199,7 @@ class StaffListLineViewSet(viewsets.ModelViewSet):
     pagination_class = None
 
     def get_queryset(self):
-        qs = StaffListLine.objects.select_related("subdivision", "occupation", "staff_list")
+        qs = StaffListLine.objects.select_related("subdivision", "occupation", "staff_list", "category", "occupation__category")
         sl = self.request.query_params.get("staff_list")
         if sl:
             qs = qs.filter(staff_list_id=sl)
@@ -246,7 +249,6 @@ class MetaView(APIView):
 
     def get(self, request):
         return Response({
-            "categories": [c for c, _ in STAFF_CATEGORIES],
             "order_groups": [c for c, _ in ORDER_GROUPS],
             "order_registers": [c for c, _ in ORDER_REGISTERS],
             "order_effects": [c for c, _ in ORDER_EFFECTS],

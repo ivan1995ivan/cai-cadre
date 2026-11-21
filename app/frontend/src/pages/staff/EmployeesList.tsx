@@ -11,8 +11,8 @@ import EmployeePeek from '../../components/EmployeePeek'
 import PrintDialog from '../../components/PrintDialog'
 import { useFetch } from '../../api/hooks'
 import type { Paged } from '../../api/client'
-import type { OrgMeta, Subdivision } from '../../api/org'
-import { EMPLOYMENT_KINDS, type EmployeeRow } from '../../api/staff'
+import type { Subdivision } from '../../api/org'
+import { EMPLOYMENT_KINDS, useDict, type EmployeeRow } from '../../api/staff'
 import { useApp } from '../../auth/AppContext'
 import { useEnumOptions } from '../org/DictionariesPage'
 import { BulkAccessButton } from '../portal/PortalAccess'
@@ -37,7 +37,7 @@ export default function EmployeesList() {
   const [printOpen, setPrintOpen] = useState(false)
   const params = { ...filters, page, page_size: pageSize }
   const { data, loading } = useFetch<Paged<EmployeeRow>>('/staff/employees/', params)
-  const { data: meta } = useFetch<OrgMeta>('/org/meta/')
+  const staffCategories = useDict('staff_category')
   const set = (k: string, v: string | number | undefined) => { setFilters((f) => ({ ...f, [k]: v })); setPage(1) }
 
   return (
@@ -54,7 +54,8 @@ export default function EmployeesList() {
         <SubdivisionSelect style={{ width: 300 }} placeholder={t('org.subdivision')}
           value={filters.subdivision as number | undefined} onChange={(v) => set('subdivision', typeof v === 'number' ? v : undefined)} />
         <Select allowClear style={{ width: 230 }} placeholder={t('org.category')} value={filters.category as string | undefined}
-          onChange={(v) => set('category', v)} options={opts('org.cat', meta?.categories)} />
+          onChange={(v) => set('category', v)}
+          options={[...staffCategories.map((c) => ({ value: String(c.value), label: c.label })), { value: 'none', label: t('org.noCategory') }]} />
         <Select allowClear style={{ width: 190 }} placeholder={t('staff.kind')} value={filters.kind as string | undefined}
           onChange={(v) => set('kind', v)} options={opts('staff.kinds', EMPLOYMENT_KINDS)} />
       </Space>

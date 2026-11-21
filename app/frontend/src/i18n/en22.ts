@@ -4,7 +4,7 @@ export default {
   menu: {
     settings: 'Settings', occupations: 'Positions (CORM)', specialties: 'Specialties', legalBases: 'Legal grounds',
     orderTypes: 'Order types', workSchedules: 'Work schedules', shiftTypes: 'Shifts', productionCalendar: 'Production calendar',
-    worktimeSettings: 'Rest between shifts and duties per month', leaveSettings: 'Leave records', payrollTypes: 'Calculation types',
+    worktimeSettings: 'Rest between shifts and night shifts per month', leaveSettings: 'Leave records', payrollTypes: 'Calculation types',
     payrollConstants: 'Payroll constants', taxSettings: 'Tax reports: payer details',
     alertSettings: 'Deadlines and alerts: what is tracked', smtpSettings: 'Mail (e-mail) for notifications and payslips',
   },

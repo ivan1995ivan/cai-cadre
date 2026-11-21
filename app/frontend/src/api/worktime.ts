@@ -1,4 +1,4 @@
-// Timpul de muncă (Etapa 4, partea 2): turele, graficele de lucru, graficul lunar (gărzi), tabela de pontaj.
+// Timpul de muncă (Etapa 4, partea 2): turele, graficele de lucru, graficul de ture, tabela de pontaj.
 
 export interface ShiftType {
   id: number
@@ -7,7 +7,6 @@ export interface ShiftType {
   hours: string
   night_hours: string
   start: string | null
-  is_duty: boolean
   color: string
   sort: number
   is_active: boolean
@@ -84,21 +83,22 @@ export interface RosterRow extends LineLabel {
   absences: Record<string, string>
   hours: number
   night: number
-  duties: number
+  nights: number
   norm: number
   diff: number
 }
 
 export interface RosterWarning {
-  kind: 'rest' | 'absence' | 'norm' | 'duties'
+  kind: 'rest' | 'consecutive' | 'absence' | 'norm' | 'nights'
   employment: number
   name: string
   day?: number
   rest?: number
+  need?: number
   code?: string
   hours?: number
   norm?: number
-  duties?: number
+  nights?: number
   max?: number
 }
 

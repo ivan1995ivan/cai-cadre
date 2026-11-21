@@ -6,7 +6,7 @@ from .models import CalendarDay, JobSchedule, Roster, RosterLine, ShiftType, Tim
 class ShiftTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShiftType
-        fields = ["id", "code", "name", "hours", "night_hours", "start", "is_duty", "color", "sort", "is_active"]
+        fields = ["id", "code", "name", "hours", "night_hours", "start", "color", "sort", "is_active"]
 
     def validate(self, attrs):
         hours = attrs.get("hours", getattr(self.instance, "hours", None))

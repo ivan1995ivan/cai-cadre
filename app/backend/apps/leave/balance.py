@@ -70,7 +70,7 @@ class Calculator:
         cfg = get_settings()
         self.start_date = date.fromisoformat(cfg["start_date"]) if cfg.get("start_date") else None
         self.not_counted = set(cfg.get("not_counted") or [])
-        self.occupations = {o.pk: o for o in Occupation.objects.all()}
+        self.occupations = {o.pk: o for o in Occupation.objects.select_related("category")}
         self.subdivisions = {s.pk: s for s in Subdivision.objects.all()}
 
     # --- raportul de muncă care dă vechimea pentru concediu ----------------------------------

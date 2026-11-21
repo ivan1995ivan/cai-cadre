@@ -1,35 +1,28 @@
-"""Tiparul statelor de personal (anexa la decizia de aprobare: structura + efectivul-limită pe categorii)."""
+"""Tiparul statelor de personal (anexa la ordinul de aprobare: structura + efectivul-limită pe categorii)."""
+from decimal import Decimal
+
 from apps.printing.renderer import company_context
 from apps.printing.views import print_document
 
 from . import services
-from .models import STAFF_CATEGORIES, StaffList
+from .models import StaffList
 
 OPTIONS = {"show_salary": True, "show_fund": False, "show_categories": True}
 
 LABELS = {
     "ro": {"effective_from": "în vigoare de la", "approved_by": "Aprobat prin", "code": "Codul funcției (CORM)",
            "occupation": "Denumirea funcției", "units": "Unități", "salary": "Salariul de funcție, lei",
-           "fund": "Fondul lunar, lei", "total": "Total", "grand_total": "Total pe instituție", "category": "Categoria de personal",
+           "fund": "Fondul lunar, lei", "total": "Total", "grand_total": "Total pe întreprindere", "category": "Categoria de personal",
            "director": "Director", "hr_head": "Șef resurse umane", "chief_accountant": "Contabil-șef"},
     "ru": {"effective_from": "действует с", "approved_by": "Утверждено", "code": "Код должности (CORM)",
            "occupation": "Наименование должности", "units": "Единиц", "salary": "Должностной оклад, лей",
-           "fund": "Месячный фонд, лей", "total": "Итого", "grand_total": "Итого по учреждению", "category": "Категория персонала",
+           "fund": "Месячный фонд, лей", "total": "Итого", "grand_total": "Итого по предприятию", "category": "Категория персонала",
            "director": "Директор", "hr_head": "Начальник отдела кадров", "chief_accountant": "Главный бухгалтер"},
     "en": {"effective_from": "effective from", "approved_by": "Approved by", "code": "Occupation code (CORM)",
            "occupation": "Position", "units": "Units", "salary": "Base salary, MDL", "fund": "Monthly fund, MDL",
-           "total": "Total", "grand_total": "Institution total", "category": "Staff category", "director": "Director",
+           "total": "Total", "grand_total": "Company total", "category": "Staff category", "director": "Director",
            "hr_head": "Head of HR", "chief_accountant": "Chief accountant"},
 }
-
-CATEGORY_LABELS = {
-    "ru": {"leadership": "Руководящий персонал", "physicians": "Врачи (высшее образование)", "pharmacists": "Фармацевты",
-           "nurses": "Средний медицинский персонал", "junior": "Младший медицинский персонал",
-           "admin": "Административно-хозяйственный персонал", "other": "Прочий персонал"},
-    "en": {"leadership": "Management", "physicians": "Physicians", "pharmacists": "Pharmacists", "nurses": "Nursing staff",
-           "junior": "Junior medical staff", "admin": "Administrative and support staff", "other": "Other staff"},
-}
-
 
 def _fmt(value, lang="ro") -> str:
     """1 / 6,50 / 1 023 322 — virgula zecimală în RO și RU (ca în actele din Moldova), punctul în EN."""
@@ -50,19 +43,16 @@ def context(request, staff_list: StaffList, lang: str, options: dict) -> dict:
         fund = line.monthly_fund()
         group = groups[-1]
         group["lines"].append({"no": no, "code": line.occupation.code, "occupation": line.occupation.local_name(lang),
-                               "effort_note": line.effort_note, "units": _fmt(line.units, lang), "salary": _fmt(line.base_salary, lang),
+                               "units": _fmt(line.units, lang), "salary": _fmt(line.base_salary, lang),
                                "fund": _fmt(fund, lang)})
         group["units"] += line.units
         group["fund"] += fund
     for group in groups:
         group["units"], group["fund"] = _fmt(group["units"], lang), _fmt(group["fund"], lang)
-    totals = services.totals(staff_list)
-    names = CATEGORY_LABELS.get(lang, dict(STAFF_CATEGORIES))
-    from decimal import Decimal
-
+    totals = services.totals(staff_list, lang)
     totals = {
         "units": _fmt(Decimal(totals["units"]), lang), "fund": _fmt(Decimal(totals["fund"]), lang),
-        "categories": [{"name": names.get(c["code"], c["name"]), "units": _fmt(Decimal(c["units"]), lang)} for c in totals["categories"]],
+        "categories": [{"name": c["name"], "units": _fmt(Decimal(c["units"]), lang)} for c in totals["categories"]],
     }
     colspan = 4 + int(bool(options.get("show_salary"))) + int(bool(options.get("show_fund")))
     return {

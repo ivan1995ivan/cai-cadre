@@ -7,7 +7,7 @@ meniul e cel obișnuit, în stânga.
 ## Ce are panoul unei secțiuni
 - **Schema de lucru** — documentele secțiunii, ca iconițe mari: statele de personal, contractele, ordinele, concediile,
   graficele, pontajul, calculul salariului, îndreptările spre plată. **Săgeata** dintre două iconițe arată că al doilea
-  document se face din primul: graficul concediilor → concediul, graficul lunar (gărzile) → pontajul, calculul salariului
+  document se face din primul: graficul concediilor → concediul, graficul de ture → pontajul, calculul salariului
   → îndreptarea spre plată.
 - **Registre** — listele de consultat ale secțiunii: angajații, registrul ordinelor, ocuparea posturilor, formarea,
   sănătatea în muncă, evidența militară.

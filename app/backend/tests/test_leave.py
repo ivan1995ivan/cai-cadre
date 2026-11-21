@@ -11,6 +11,7 @@ from apps.staff import services as staff
 from apps.staff.models import Employee, FamilyMember
 
 from .test_orders import cancel, make_order, set_params, sign
+from .conftest import occupation
 
 
 @pytest.fixture
@@ -18,9 +19,9 @@ def org(seeded):
     tr1 = Subdivision.objects.create(code="TR1", name_ro="Secția traumatologie nr. 1")
     ati = Subdivision.objects.create(code="ATI", name_ro="Secția ATI", extra_leave_days=7, harmful=True)
     return {"tr1": tr1, "ati": ati,
-            "doctor": Occupation.objects.get(name_ro="Medic traumatolog-ortoped"),
-            "anest": Occupation.objects.get(name_ro="Medic anesteziolog-reanimatolog"),
-            "nurse": Occupation.objects.get(name_ro="Asistent medical de secție")}
+            "doctor": occupation("Medic traumatolog-ortoped"),
+            "anest": occupation("Medic anesteziolog-reanimatolog"),
+            "nurse": occupation("Asistent medical de secție")}
 
 
 def person(org, last="Popescu", first="Ion", sub="tr1", occ="doctor", hired=date(2024, 3, 1), **extra):

@@ -19,7 +19,7 @@ SYSTEM_TEMPLATES: list = [
     ("payment_sheet", "standard", "Stat de plată (cu semnături pentru numerar)", "portrait", {}),
     ("bank_list", "standard", "Lista pentru bancă", "portrait", {}),
     ("annual_card", "standard", "Fișa personală de evidență a veniturilor (anexa 8)", "landscape", {}),
-    ("roster", "standard", "Graficul lunar al secției (ture, gărzi)", "landscape", {}),
+    ("roster", "standard", "Graficul de ture", "landscape", {}),
     ("leave_schedule", "standard", "Graficul concediilor de odihnă anuale", "landscape", {"show_signature": True}),
     ("employee_list", "standard", "Lista angajaților", "landscape",
      {"group_by_subdivision": True, "show_idnp": False, "show_phone": False, "show_rate": True}),

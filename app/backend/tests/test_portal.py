@@ -12,6 +12,7 @@ from apps.portal.models import EmployeeRequest
 from apps.staff import services as staff
 from apps.staff.models import Employee
 from apps.users.models import User
+from .conftest import occupation
 
 TODAY = timezone.localdate()
 
@@ -19,7 +20,7 @@ TODAY = timezone.localdate()
 @pytest.fixture
 def org(seeded):
     tr1 = Subdivision.objects.create(code="TR1", name_ro="Secția traumatologie nr. 1")
-    return {"tr1": tr1, "doctor": Occupation.objects.get(name_ro="Medic traumatolog-ortoped")}
+    return {"tr1": tr1, "doctor": occupation("Medic traumatolog-ortoped")}
 
 
 def person(org, last, first, **extra):

@@ -25,8 +25,8 @@ grupa **Setări** de la sfârșit. Setarea debifată nu apare în lista rolului;
   Gradul de rudenie, Starea familială, Naționalitatea, Motivele încetării CIM, Sancțiuni disciplinare, Tipuri de stimulare,
   Tipul angajării, Evidența militară (grupa, grade, centre militare), Lista de verificare la angajare / eliberare,
   Vaccinuri. Cum se lucrează cu ele — [Clasificatoare](help:dictionaries).
-- **Timpul de muncă**: Grafice de lucru, Ture, Calendarul de producție, Odihna între ture și gărzile pe lună — vezi
-  [Grafice de lucru și gărzi](help:worktime).
+- **Timpul de muncă**: Grafice de lucru, Ture, Calendarul de producție, Odihna între ture și turele de noapte pe lună — vezi
+  [Grafice de lucru și ture](help:worktime).
 - **Concediile**: Evidența concediilor (data pornirii evidenței, perioadele care nu dau dreptul la concediu) — vezi
   [Concedii](help:leave).
 - **Salarizarea**: Tipuri de calcul, Constantele salarizării, Raportări fiscale: datele plătitorului — vezi

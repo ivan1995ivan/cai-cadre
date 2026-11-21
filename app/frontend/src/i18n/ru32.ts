@@ -2,7 +2,7 @@
 export default {
   org: {
     pointTemplate: 'Текст пункта «ПРИКАЗЫВАЮ:» (пусто = поставляемый текст)',
-    pointTemplateHint: 'Поля: {angajat} {tab} {functia} {sectia} {norma} {salariul} {sporuri} {din} {pana} {zile} {an_de} {an_pana} {motivul} {destinatia} {suma} {procent} {categoria} {sanctiunea} {abaterea} {text}',
+    pointTemplateHint: 'Поля: {angajat} {tab} {functia} {sectia} {norma} {salariul} {sporuri} {din} {pana} {zile} {an_de} {an_pana} {motivul} {destinatia} {suma} {suma_text} {procent} {sanctiunea} {abaterea} {text}',
   },
   staff: { tabs: { orders: 'Приказы и отсутствия' } },
   ord: {
@@ -32,6 +32,7 @@ export default {
       purpose: 'Цель', note: 'Отметка', calc: '{{days}} дн., последний день {{to}} (исключено праздников: {{holidays}})', absence: 'Отпуск',
       returnDate: 'Выходит на работу с', amount: 'Сумма (лей)', forWhat: 'За что', sanctionRecord: 'Снимаемое взыскание', sanction: 'Взыскание',
       misconduct: 'Дисциплинарный проступок', until: 'До', staffListHint: 'Черновик штатного расписания, утверждаемый приказом.',
+      deductionPercent: 'Процент от зарплаты (%)', fromDate: 'Начиная с', deductionBasis: 'Основание удержания', deductionHint: 'Например, исполнительный документ № … или заявление работника. Не более 20 % зарплаты (ТК ст. 148–149); сумма или процент.',
       cancels: 'Отменяется', hours: 'Часы', text: 'Текст пункта',
     },
     tab: {

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
-  Alert, Button, Card, Col, DatePicker, Descriptions, Form, Input, InputNumber, Modal, Popconfirm, Row, Select, Space, Spin,
+  Alert, Button, Card, Col, DatePicker, Descriptions, Form, Input, InputNumber, Modal, Popconfirm, Row, Space, Spin,
   Statistic, Table as AntTable, Tabs, Tag, Typography, message,
 } from 'antd'
 import {
@@ -14,10 +14,8 @@ import Table from '../../components/AppTable'
 import ExcelImport from '../../components/ExcelImport'
 import PrintDialog from '../../components/PrintDialog'
 import { api, errorText, fieldErrors } from '../../api/client'
-import { useFetch } from '../../api/hooks'
-import type { DiffRow, OrgMeta, StaffList, StaffListLine, Totals } from '../../api/org'
+import type { DiffRow, StaffList, StaffListLine, Totals } from '../../api/org'
 import { useApp } from '../../auth/AppContext'
-import { useEnumOptions } from './DictionariesPage'
 import { STATUS_COLOR } from './StaffListsPage'
 import RefSelect from '../../components/RefSelect'
 import SubdivisionSelect from '../../components/SubdivisionSelect'
@@ -33,7 +31,6 @@ export default function StaffListEditor() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { hasPerm } = useApp()
-  const opts = useEnumOptions()
   const [doc, setDoc] = useState<StaffList | null>(null)
   const [lines, setLines] = useState<StaffListLine[]>([])
   const [totals, setTotals] = useState<Totals | null>(null)
@@ -44,7 +41,6 @@ export default function StaffListEditor() {
   const [versionOpen, setVersionOpen] = useState(false)
   const [versionDate, setVersionDate] = useState(dayjs())
   const [printOpen, setPrintOpen] = useState(false)
-  const { data: meta } = useFetch<OrgMeta>('/org/meta/')
 
   const draft = doc?.status === 'draft' && !doc.deletion_mark  // statele marcate pentru ștergere nu se mai schimbă
   const canEdit = draft && hasPerm('org.edit')
@@ -202,13 +198,13 @@ export default function StaffListEditor() {
                     if (row.children) return <b>{String(row.subdivision)}</b>
                     return <Space size={4} wrap>
                       {canEdit ? <a onClick={() => openLine(row)}>{row.occupation_name}</a> : row.occupation_name}
-                      {row.effort_note && <Typography.Text type="secondary">({row.effort_note})</Typography.Text>}
+                      {row.note && <Typography.Text type="secondary">({row.note})</Typography.Text>}
                     </Space>
                   } },
                   { title: t('org.corm'), key: 'code', width: 110, render: (_: unknown, r: never) => (r as StaffListLine).occupation_code },
                   { title: t('org.category'), key: 'cat', width: 210, render: (_: unknown, r: never) => {
                     const row = r as StaffListLine
-                    return row.effective_category ? t(`org.cat.${row.effective_category}`) : ''
+                    return row.effective_category_name ?? ''
                   } },
                   { title: t('org.sl.units'), key: 'units', width: 90, align: 'right' as const,
                     render: (_: unknown, r: never) => <b style={{ fontWeight: 'children' in (r as object) ? 700 : 400 }}>{num((r as StaffListLine).units)}</b> },
@@ -235,7 +231,7 @@ export default function StaffListEditor() {
               </Col>
               <Col xs={24} md={16}>
                 <Descriptions bordered size="small" column={1} title={t('org.sl.byCategory')}
-                  items={totals.categories.map((c) => ({ key: c.code, label: t(`org.cat.${c.code}`), children: num(c.units) }))} />
+                  items={totals.categories.map((c) => ({ key: String(c.id ?? 'none'), label: c.name, children: num(c.units) }))} />
               </Col>
             </Row>
           ) },
@@ -273,9 +269,8 @@ export default function StaffListEditor() {
               <InputNumber min={0} max={500} style={{ width: '100%' }} /></Form.Item></Col>
           </Row>
           <Form.Item name="category" label={t('org.sl.categoryOverride')} extra={t('org.sl.categoryOverrideHint')}>
-            <Select allowClear options={opts('org.cat', meta?.categories)} />
+            <RefSelect spec={{ dict: 'staff_category' }} />
           </Form.Item>
-          <Form.Item name="effort_note" label={t('org.sl.effortNote')}><Input /></Form.Item>
           <Form.Item name="note" label={t('org.notes')}><Input /></Form.Item></FormLayout>
         </Form>
       </Modal>

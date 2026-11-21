@@ -91,13 +91,13 @@ FIELDS: dict = {
     "timesheet": [
         ("title", "Titlul", "TABELA DE PONTAJ", "ТАБЕЛЬ УЧЁТА РАБОЧЕГО ВРЕМЕНИ", False),
         ("head_label", "Semnătura: șeful subdiviziunii", "Șeful subdiviziunii", "Заведующий подразделением", False),
-        ("made_by", "Semnătura: a întocmit", "A întocmit (asistentul medical superior)", "Составил (старшая медсестра)", False),
+        ("made_by", "Semnătura: a întocmit", "A întocmit", "Составил", False),
         ("footer", "Text la sfârșit", "", "", True),
     ],
     "roster": [
         ("approve", "Mențiunea „Aprob” (dreapta sus)", "APROB\nȘeful subdiviziunii ______________",
          "УТВЕРЖДАЮ\nЗаведующий ______________", True),
-        ("title", "Titlul", "GRAFICUL DE LUCRU (TURE, GĂRZI)", "ГРАФИК РАБОТЫ (СМЕНЫ, ДЕЖУРСТВА)", False),
+        ("title", "Titlul", "GRAFICUL DE TURE", "ГРАФИК СМЕН", False),
         ("head_label", "Semnătura: șeful subdiviziunii", "Șeful subdiviziunii", "Заведующий подразделением", False),
         ("hr_label", "Semnătura: resurse umane", "Șef resurse umane", "Начальник отдела кадров", False),
         ("footer", "Text la sfârșit", "", "", True),

@@ -25,7 +25,7 @@
         <tr>
           <td class="num">{{ line.no }}</td>
           <td>{{ line.code }}</td>
-          <td>{{ line.occupation }}{% if line.effort_note %} <span class="muted">({{ line.effort_note }})</span>{% endif %}</td>
+          <td>{{ line.occupation }}</td>
           <td class="num">{{ line.units }}</td>
           {% if options.show_salary %}<td class="num">{{ line.salary }}</td>{% endif %}
           {% if options.show_fund %}<td class="num">{{ line.fund }}</td>{% endif %}

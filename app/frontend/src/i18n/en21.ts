@@ -7,7 +7,7 @@ export default {
       org_OrderType: 'Order type', org_Subdivision: 'Subdivision', org_StaffList: 'Staff list',
       staff_Employee: 'Employee', leave_LeaveSchedule: 'Leave schedule', leave_LeaveRequest: 'Leave request',
       leave_SickLeave: 'Sick leave certificate', orders_Order: 'Order', worktime_ShiftType: 'Shift',
-      worktime_WorkSchedule: 'Work schedule', worktime_Roster: 'Duty roster', worktime_Timesheet: 'Timesheet',
+      worktime_WorkSchedule: 'Work schedule', worktime_Roster: 'Shift schedule', worktime_Timesheet: 'Timesheet',
       payroll_PayType: 'Pay type', payroll_Payroll: 'Payroll', payroll_Payment: 'Salary payment',
       training_TrainingRecord: 'Training activity (CME)', training_TrainingPlan: 'Annual training plan',
       training_Attestation: 'Attestation', health_MedicalExam: 'Medical exam', health_Vaccination: 'Vaccination',

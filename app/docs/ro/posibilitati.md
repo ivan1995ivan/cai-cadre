@@ -5,9 +5,9 @@ dosarele angajaților, ordinele, concediile, timpul de muncă, salariul, formare
 rapoartele și cabinetul angajatului — în limbile alese (română, rusă, engleză), pe calculator și pe telefon.
 
 ## Instituția și statele de personal
-- **Subdiviziunile** (secții clinice, paraclinice, administrative) cu paturile, condițiile vătămătoare și zilele de concediu suplimentar.
-- **Statele de personal** cu versiuni, data intrării în vigoare, aprobare, funcțiile cu **cod CORM 006-21**, unități
-  fracționate, efectivul-limită pe categorii; tipar cu Stema de Stat.
+- **Subdiviziunile** (departamente, secții, ateliere, filiale, depozite) cu condițiile vătămătoare și zilele de concediu suplimentar.
+- **Statele de personal** cu versiuni, data intrării în vigoare, aprobare, funcțiile cu **cod CORM 006-2021**, unități
+  fracționate, efectivul-limită pe categoriile de personal (grupele CORM, clasificator editabil); tipar cu Stema de Stat.
 - **Ocuparea posturilor**: unități aprobate / ocupate / temporar vacante / vacante.
 - **Clasificatoarele**: funcții, specialități, temeiuri legale, tipuri de ordine, categorii de calificare, acte, vaccinuri și
   altele; la fiecare câmp — butonul **„…”** care deschide clasificatorul.
@@ -28,8 +28,8 @@ rapoartele și cabinetul angajatului — în limbile alese (română, rusă, eng
 ## Concedii și timp de muncă
 - **Soldul concediilor** pe anii de muncă (de bază + suplimentar), **graficul anual**, **cererile de concediu**
   (aprobate de șeful de secție, transformate în ordine), concediile sociale, **foile de boală** cu zilele angajatorului.
-- **Graficele de lucru** și gărzile, **graficul lunar** al secției, **tabela de pontaj** cu noaptea, sărbătorile și
-  suplimentarele; calendarul de producție.
+- **Graficele de lucru** și turele, **graficul de ture** cu verificările din CM art. 101, **tabela de pontaj** după modelul
+  Convenției colective nr. 17/2020, cu noaptea, sărbătorile și suplimentarele; calendarul de producție.
 
 ## Salarizarea (modul opțional)
 - Constantele cu istoric, **tipurile de calcul** flexibile, cererea de scutire, **calculul lunar** pe fiecare raport de muncă

@@ -15,6 +15,7 @@ import PeriodPicker, { periodParams, type Period } from '../../components/Period
 import PrintDialog from '../../components/PrintDialog'
 import { api, errorText, fieldErrors, type Paged } from '../../api/client'
 import { useFetch } from '../../api/hooks'
+import { useDict } from '../../api/staff'
 import {
   ATT_STATUSES, ATT_STATUS_COLOR, CREDIT_STATUS_COLOR, TRAINING_KINDS, type Attestation, type CreditRow, type TrainingPlan,
   type TrainingRecord,
@@ -206,6 +207,7 @@ function NormsModal({ open, onClose, onSaved }: { open: boolean; onClose: () => 
   const { t } = useTranslation()
   const [form] = Form.useForm()
   const { data } = useFetch<{ period_years: number; warn_months: number; credits: Record<string, number> }>(open ? '/training/settings/' : null)
+  const categories = useDict('staff_category')
   useEffect(() => { if (data) form.setFieldsValue(data) }, [data, form])
   const save = async () => {
     try {
@@ -224,8 +226,8 @@ function NormsModal({ open, onClose, onSaved }: { open: boolean; onClose: () => 
         <Row gutter={12}>
           <Col span={12}><Form.Item name="period_years" label={t('tr.periodYears')}><InputNumber min={1} max={10} /></Form.Item></Col>
           <Col span={12}><Form.Item name="warn_months" label={t('tr.warnMonths')}><InputNumber min={1} max={36} /></Form.Item></Col>
-          {['physicians', 'pharmacists', 'nurses', 'junior'].map((c) => <Col span={12} key={c}>
-            <Form.Item name={['credits', c]} label={t(`org.cat.${c}`)}><InputNumber min={0} max={2000} /></Form.Item></Col>)}
+          {categories.map((c) => <Col span={12} key={c.code}>
+            <Form.Item name={['credits', c.code]} label={c.label}><InputNumber min={0} max={2000} /></Form.Item></Col>)}
         </Row>
       </Form>
     </Modal>

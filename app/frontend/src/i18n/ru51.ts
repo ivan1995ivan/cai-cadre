@@ -4,7 +4,7 @@ export default {
   menu: {
     settings: 'Настройки', occupations: 'Должности (CORM)', specialties: 'Специальности', legalBases: 'Правовые основания',
     orderTypes: 'Виды приказов', workSchedules: 'Графики работы', shiftTypes: 'Смены', productionCalendar: 'Производственный календарь',
-    worktimeSettings: 'Отдых между сменами и дежурства в месяц', leaveSettings: 'Учёт отпусков', payrollTypes: 'Виды расчёта',
+    worktimeSettings: 'Отдых между сменами и ночные смены в месяц', leaveSettings: 'Учёт отпусков', payrollTypes: 'Виды расчёта',
     payrollConstants: 'Константы зарплаты', taxSettings: 'Налоговая отчётность: данные плательщика',
     alertSettings: 'Сроки и оповещения: что отслеживается', smtpSettings: 'Почта (e-mail) для уведомлений и расчётных листков',
   },

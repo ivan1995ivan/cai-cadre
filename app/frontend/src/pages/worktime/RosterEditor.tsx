@@ -15,7 +15,7 @@ import { useApp } from '../../auth/AppContext'
 import { cellStyle, dayTitle, useDocActions } from './MonthDocs'
 import { shiftOptions, useShifts } from './WorktimePage'
 
-/** Graficul lunar al secției: turele și gărzile fiecărui raport de muncă pe zilele lunii. */
+/** Graficul de ture al subdiviziunii: turele fiecărui raport de muncă pe zilele lunii (verificările din CM art. 101). */
 export default function RosterEditor() {
   const { t } = useTranslation()
   const { id } = useParams()
@@ -39,9 +39,10 @@ export default function RosterEditor() {
     run(() => api.patch(`/worktime/roster-lines/${row.id}/`, { days }))
   }
   const warnText = (w: RosterWarning) => {
-    if (w.kind === 'rest') return t('wt.ro.warnRest', { name: w.name, day: w.day, rest: w.rest })
+    if (w.kind === 'rest') return t('wt.ro.warnRest', { name: w.name, day: w.day, rest: w.rest, need: w.need })
+    if (w.kind === 'consecutive') return t('wt.ro.warnConsecutive', { name: w.name, day: w.day })
     if (w.kind === 'absence') return t('wt.ro.warnAbsence', { name: w.name, day: w.day, code: w.code })
-    if (w.kind === 'duties') return t('wt.ro.warnDuties', { name: w.name, duties: w.duties, max: w.max })
+    if (w.kind === 'nights') return t('wt.ro.warnNights', { name: w.name, nights: w.nights, max: w.max })
     return t('wt.ro.warnNorm', { name: w.name, hours: fmtH(w.hours), norm: fmtH(w.norm) })
   }
   const title = t('wt.ro.heading', { month: dayjs().month(data.month - 1).format('MMMM'), year: data.year, subdivision: data.subdivision_name })
@@ -90,7 +91,7 @@ export default function RosterEditor() {
             <Typography.Text type={v > r.norm && r.norm ? 'danger' : undefined} strong>{fmtH(v)}</Typography.Text> },
           { title: t('wt.ro.norm'), dataIndex: 'norm', width: 60, align: 'right', fixed: 'right', render: fmtH },
           { title: t('wt.ro.night'), dataIndex: 'night', width: 60, align: 'right', fixed: 'right', render: fmtH },
-          { title: t('wt.ro.duties'), dataIndex: 'duties', width: 55, align: 'right', fixed: 'right', render: (v: number) => v || '' },
+          { title: t('wt.ro.nights'), dataIndex: 'nights', width: 55, align: 'right', fixed: 'right', render: (v: number) => v || '' },
         ]} />
       <Typography.Paragraph type="secondary" style={{ marginTop: 12 }}>
         {shifts.map((s) => <span key={s.code} style={{ marginRight: 12 }}><b style={{ color: s.color || undefined }}>{s.code}</b> — {s.name}</span>)}

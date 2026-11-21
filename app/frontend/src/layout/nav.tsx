@@ -67,7 +67,7 @@ export const ADMIN_NAV: NavItem[] = [
 
 /** Clasificatoarele mici (apps/org DictItem.KINDS), fiecare cu setarea lui; în adresă `_` devine `-`. */
 export const DICT_KINDS = [
-  'qualification', 'degree', 'title', 'education', 'education_form', 'document', 'family', 'marital', 'nationality', 'termination',
+  'staff_category', 'qualification', 'degree', 'title', 'education', 'education_form', 'document', 'family', 'marital', 'nationality', 'termination',
   'sanction', 'incentive', 'employment', 'military_group', 'military_rank', 'military_center', 'checklist', 'vaccine',
 ]
 export const dictPath = (kind: string) => `/dictionaries/${kind.replace(/_/g, '-')}`

@@ -5,7 +5,7 @@ export default {
     org: 'Instituția și subdiviziunile', staffList: 'State de personal', dictionaries: 'Clasificatoare',
     employees: 'Angajați', contracts: 'Contracte de muncă',
     orders: 'Ordine', ordersRegister: 'Registrul ordinelor',
-    leave: 'Concedii', leaveSchedule: 'Graficul concediilor', sickLeave: 'Concedii medicale', worktime: 'Grafice de lucru și gărzi',
+    leave: 'Concedii', leaveSchedule: 'Graficul concediilor', sickLeave: 'Concedii medicale', worktime: 'Grafice de lucru și ture',
     timesheets: 'Tabele de pontaj',
     payroll: 'Calculul salariului', payrollPayments: 'Plata și achitarea', payrollSettings: 'Setările salariului', taxReports: 'Raportări (IPC21, IALS21, IRM19)',
     training: 'Formare și atestare', health: 'Sănătatea în muncă', military: 'Evidența militară',

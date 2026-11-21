@@ -54,7 +54,7 @@ def leave_period(p):
         if job is None:
             continue
         snap = snapshot(job, max(a.date_from, p.date_from))
-        if not p.allowed(snap["subdivision_id"]) or (p.category and look.category(snap["occupation_id"]) != p.category):
+        if not p.allowed(snap["subdivision_id"]) or not look.in_category(snap["occupation_id"], p.category):
             continue
         inside = _overlap(a.date_from, a.date_to, p.date_from, p.date_to)
         by_kind[a.kind] += inside

@@ -5,7 +5,7 @@ export default {
     org: 'Учреждение и подразделения', staffList: 'Штатное расписание', dictionaries: 'Классификаторы',
     employees: 'Сотрудники', contracts: 'Трудовые договоры',
     orders: 'Приказы', ordersRegister: 'Журнал приказов',
-    leave: 'Отпуска', leaveSchedule: 'График отпусков', sickLeave: 'Больничные листы', worktime: 'Графики работы и дежурства',
+    leave: 'Отпуска', leaveSchedule: 'График отпусков', sickLeave: 'Больничные листы', worktime: 'Графики работы и смены',
     timesheets: 'Табели учёта времени',
     payroll: 'Расчёт зарплаты', payrollPayments: 'Выплата и перечисление', payrollSettings: 'Настройки зарплаты', taxReports: 'Отчётность (IPC21, IALS21, IRM19)',
     training: 'Обучение и аттестация', health: 'Здоровье на работе', military: 'Воинский учёт',

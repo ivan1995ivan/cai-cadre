@@ -14,7 +14,7 @@ from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
-from .demo import DemoError, MEN, SURNAMES, WOMEN, _idnp
+from .demo import MEN, SURNAMES, WOMEN, DemoError, _idnp, kind_of
 
 ONE = Decimal("1")
 SHIFT_SUBDIVISIONS = ("TR1", "TR2", "ATI", "BLO")  # secțiile cu ture de 12 ore și gărzi (graficul lunar)
@@ -148,17 +148,17 @@ class Year:
 
         worktime_seed.run()
         zn = WorkSchedule.objects.filter(code="ZN").first()
-        g24 = WorkSchedule.objects.filter(code="G24").first()
-        if zn is None or g24 is None:
+        g24 = WorkSchedule.objects.filter(code="G24", deletion_mark=False).first()  # gărzile nu se mai livrează (S1)
+        if zn is None:
             return
         for i, job in enumerate(self.main_jobs(self.today)):
             if job.subdivision.code not in SHIFT_SUBDIVISIONS or JobSchedule.objects.filter(employment=job).exists():
                 continue
-            cat = job.occupation.category
+            cat = kind_of(job.occupation)
             if cat in ("nurses", "junior") and i % 3:  # o parte rămân pe program de zi
                 JobSchedule.objects.create(employment=job, schedule=zn, date_from=job.date_from, cycle_offset=i % 4)
                 self.count("grafice ZN")
-            elif cat == "physicians" and job.subdivision.code == "ATI" and "Șef" not in job.occupation.name_ro:
+            elif g24 and cat == "physicians" and job.subdivision.code == "ATI" and "Șef" not in job.occupation.name_ro:
                 JobSchedule.objects.create(employment=job, schedule=g24, date_from=job.date_from, cycle_offset=i % 4)
                 self.count("grafice G24")
 
@@ -298,7 +298,7 @@ class Year:
 
     def travel_orders(self, y: int, m: int):
         rnd = self.rnd
-        doctors = [j for j in self.main_jobs(date(y, m, 1)) if j.occupation.category == "physicians"]
+        doctors = [j for j in self.main_jobs(date(y, m, 1)) if kind_of(j.occupation) == "physicians"]
         if not doctors:
             return
         day = _weekday(date(y, m, rnd.randint(3, 18)))
@@ -317,7 +317,7 @@ class Year:
         from apps.training.models import TrainingRecord
 
         rnd = self.rnd
-        staff = [j for j in self.main_jobs(date(y, m, 1)) if j.occupation.category in ("physicians", "nurses")]
+        staff = [j for j in self.main_jobs(date(y, m, 1)) if kind_of(j.occupation) in ("physicians", "nurses")]
         if not staff:
             return
         start = _weekday(date(y, m, rnd.randint(2, 14)))
@@ -331,7 +331,7 @@ class Year:
             if leave_services.overlapping(job.employee, start, end).exists():
                 continue
             n += 1
-            title, provider, hours, credits = rnd.choice(COURSES[:4] if job.occupation.category == "physicians" else COURSES[4:])
+            title, provider, hours, credits = rnd.choice(COURSES[:4] if kind_of(job.occupation) == "physicians" else COURSES[4:])
             self._item(order, job.employee, {"date_from": start.isoformat(), "date_to": end.isoformat(), "destination": provider,
                                              "purpose": f"participării la cursul „{title}”"}, n)
             chosen.append((job, title, provider, hours, credits))
@@ -357,7 +357,7 @@ class Year:
             order = self._order("bonus", day, basis="Demersurile șefilor de subdiviziuni, decizia comisiei de premiere")
             if order is not None:
                 for n, job in enumerate(rnd.sample(jobs, min(len(jobs), rnd.randint(8, 14))), start=1):
-                    amount = rnd.choice([1000, 1500, 2000, 2500, 3000]) if job.occupation.category != "physicians" else rnd.choice([2500, 3000, 4000, 5000])
+                    amount = rnd.choice([1000, 1500, 2000, 2500, 3000]) if kind_of(job.occupation) != "physicians" else rnd.choice([2500, 3000, 4000, 5000])
                     self._item(order, job.employee, {"amount": str(amount), "note": BONUS_NOTES[m]}, n)
                 if self._sign(order, f"premiere {m:02d}.{y}"):
                     self.count("premii")
@@ -393,7 +393,7 @@ class Year:
         if (y, m) != (self.year, 4):
             return
         rnd = self.rnd
-        jobs = [j for j in self.main_jobs(date(y, m, 1)) if j.occupation.category in ("physicians", "nurses")]
+        jobs = [j for j in self.main_jobs(date(y, m, 1)) if kind_of(j.occupation) in ("physicians", "nurses")]
         order = self._order("salary_set", _weekday(date(y, m, 1)), basis="Demersul șefului de secție, decizia consiliului de administrație")
         if order is None:
             return
@@ -613,9 +613,9 @@ class Year:
             "number": "1", "date": date(self.year - 1, 12, 20), "status": "approved", "created_by": self.cadre})
         if not created:
             return
-        staff = [j for j in self.main_jobs(date(self.year, 1, 1)) if j.occupation.category in ("physicians", "nurses", "pharmacists")]
+        staff = [j for j in self.main_jobs(date(self.year, 1, 1)) if kind_of(j.occupation) in ("physicians", "nurses", "pharmacists")]
         for n, job in enumerate(rnd.sample(staff, min(len(staff), 24)), start=1):
-            title, provider, hours, credits = rnd.choice(COURSES[:4] if job.occupation.category == "physicians" else COURSES[4:])
+            title, provider, hours, credits = rnd.choice(COURSES[:4] if kind_of(job.occupation) == "physicians" else COURSES[4:])
             month = rnd.randint(2, 11)
             record = TrainingRecord.objects.filter(employee=job.employee, date_from__year=self.year, title=title).first()
             TrainingPlanLine.objects.create(plan=plan, employee=job.employee, kind="course", title=title, provider=provider, month=month,
