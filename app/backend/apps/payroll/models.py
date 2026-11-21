@@ -4,6 +4,7 @@ reținerile / sporurile personale și calculul lunar al salariului (angajat × r
 Totul se calculează pe **raportul de muncă** (de bază, cumul, suplinire, contract de prestări servicii — fiecare cu
 norma și salariul lui); scutirea de impozit se acordă o singură dată pe persoană, la raportul de bază.
 """
+from datetime import timedelta
 from decimal import Decimal
 
 from django.conf import settings
@@ -53,10 +54,13 @@ class PayType(models.Model):
         ("combination", "Plata pentru cumul (% din salariul de funcție)"), ("night", "Munca de noapte (+ % la tariful orar)"),
         ("holiday", "Munca în zile de sărbătoare (+ % la tariful orar)"), ("overtime", "Ore suplimentare (+ % la tariful orar)"),
         ("leave", "Indemnizația de concediu de odihnă (media × zile)"), ("leave_comp", "Compensarea concediului nefolosit"),
-        ("sick", "Incapacitate temporară: zilele plătite de angajator"), ("bonus", "Premii din ordine"),
+        ("sick", "Incapacitate temporară: zilele plătite de angajator"),
+        ("sick_accident", "Accident de muncă / boală profesională: zilele plătite de angajator"),
+        ("min_wage", "Completare până la salariul minim"), ("bonus", "Premii din ordine"),
         ("aid", "Ajutor material din ordine"), ("advance", "Avansul plătit (se ia din plăți, pe fluturaș)"),
         ("income_tax", "Impozitul pe venit (se reține la plată)"), ("cnam", "Prima de asigurare medicală (se reține la plată)"),
-        ("cas", "Contribuția de asigurări sociale (angajator)"), ("none", "—"),
+        ("cas", "Contribuția de asigurări sociale (angajator)"),
+        ("cas_min", "CAS pe diferența până la baza minimă (salariul minim)"), ("none", "—"),
     ]
     code = models.CharField("Codul", max_length=24, unique=True)
     name_ro = models.CharField("Denumire (RO)", max_length=200)
@@ -111,40 +115,138 @@ class EmployeePayItem(models.Model):
         verbose_name = "Sporul / reținerea angajatului"
 
 
+def next_month(day):
+    """Prima zi a lunii următoare."""
+    return (day.replace(day=1) + timedelta(days=32)).replace(day=1)
+
+
+# Codul fiscal, art. 33 alin. (2) lit. a)–f): categoriile cu scutire majorată (M) — textul literei e în Codul fiscal
+MAJOR_CATEGORIES = [(c, f"art. 33 alin. (2) lit. {c})") for c in "abcdef"]
+
+
 class ExemptionRequest(models.Model):
-    """Cererea de scutire la impozitul pe venit (Codul fiscal, art. 33–35): pe an, cu persoanele întreținute."""
+    """Cererea angajatului privind acordarea scutirilor la impozitul pe venit (Codul fiscal, art. 33–35; anexa 6 la
+    Regulamentul aprobat prin HG 697/2014). Nu se reînnoiește anual: e valabilă de la / până la și se înlocuiește cu o cerere
+    nouă la orice schimbare (pct. 22 din Regulament — în 10 zile); se aplică din luna următoare depunerii. Persoanele
+    întreținute sunt rânduri (`ExemptionDependent`), fiecare cu perioada dreptului ei."""
 
     KINDS = [("none", "Fără scutire personală"), ("personal", "Scutirea personală (P)"), ("major", "Scutirea personală majorată (M)")]
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="exemptions")
-    year = models.PositiveSmallIntegerField("Anul")
+    number = models.CharField("Numărul de înregistrare", max_length=30, blank=True)
     date = models.DateField("Data depunerii", default=timezone.localdate)
+    date_from = models.DateField("Se aplică din (gol = luna următoare depunerii)", null=True, blank=True)
+    date_to = models.DateField("Valabilă până la (gol = până la o cerere nouă)", null=True, blank=True)
     kind = models.CharField("Scutirea personală", max_length=10, choices=KINDS, default="personal")
-    spouse = models.BooleanField("Scutirea pentru soț / soție (S)", default=False)
-    spouse_name = models.CharField("Soțul / soția (numele, IDNP)", max_length=200, blank=True)
-    spouse_idnp = models.CharField("IDNP-ul soțului / soției (IALS21, col. 4)", max_length=13, blank=True)
-    dependents = models.JSONField("Persoanele întreținute [{name, idnp, disabled}]", default=list, blank=True)
-    documents = models.CharField("Documentele anexate", max_length=300, blank=True)
-    date_from = models.DateField("Se aplică din", null=True, blank=True)
-    is_active = models.BooleanField("Activă", default=True)
+    major_category = models.CharField("Categoria scutirii majorate (CF art. 33 alin. (2))", max_length=1, choices=MAJOR_CATEGORIES,
+                                      blank=True)
+    major_document = models.CharField("Documentul pentru scutirea majorată", max_length=200, blank=True)
+    spouse_major = models.BooleanField("Scutirea pentru soț / soție (Sm, CF art. 34 alin. (2))", default=False)
+    spouse_name = models.CharField("Soțul / soția (numele, prenumele)", max_length=200, blank=True)
+    spouse_idnp = models.CharField("Codul fiscal (IDNP) al soțului / soției (IALS21, col. 4)", max_length=13, blank=True)
+    spouse_category = models.CharField("Categoria soțului / soției (CF art. 33 alin. (2))", max_length=1, choices=MAJOR_CATEGORIES,
+                                       blank=True)
+    spouse_document = models.CharField("Documentul soțului / soției", max_length=200, blank=True)
+    waiver_date = models.DateField("Renunțarea la P / M (venitul anual peste plafon): data cererii", null=True, blank=True)
+    documents = models.CharField("Alte documente anexate", max_length=300, blank=True)
+    needs_review = models.BooleanField("De verificat", default=False)
+    review_note = models.CharField("Ce trebuie verificat", max_length=300, blank=True)
+    is_active = models.BooleanField("Activă (necontestată / neanulată)", default=True)
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
-        ordering = ["-year", "-date"]
+        ordering = ["-date", "-id"]
         verbose_name = "Cerere de scutire"
-        constraints = [models.UniqueConstraint(fields=["employee", "year"], name="uniq_exemption_year")]
 
-    def code(self) -> str:
-        """Codul scutirii din cerere: P / M + S + N (întreținuți) + H (întreținut cu dizabilitate)."""
-        parts = [{"personal": "P", "major": "M"}.get(self.kind, "")]
-        if self.spouse:
-            parts.append("S")
-        normal = [d for d in self.dependents if not d.get("disabled")]
-        disabled = [d for d in self.dependents if d.get("disabled")]
+    def __str__(self):
+        return f"Cererea de scutire {self.code()} din {self.date:%d.%m.%Y}"
+
+    def save(self, *args, **kwargs):
+        if self.date_from is None and self.date:
+            self.date_from = next_month(self.date)  # se aplică din luna următoare depunerii
+        super().save(*args, **kwargs)
+
+    def replace_previous(self):
+        """Cererea nouă o înlocuiește pe cea în vigoare (pct. 22 din Regulament): cea veche se închide în ajunul cererii noi;
+        una care ar începe abia după cererea nouă se anulează."""
+        start = self.date_from or next_month(self.date)
+        for old in ExemptionRequest.objects.filter(employee_id=self.employee_id, is_active=True).exclude(pk=self.pk):
+            if old.date_to is not None and old.date_to < start:
+                continue
+            if (old.date_from or next_month(old.date)) >= start:
+                old.is_active = False
+                old.save(update_fields=["is_active"])
+            else:
+                old.date_to = start - timedelta(days=1)
+                old.save(update_fields=["date_to"])
+
+    def valid_in(self, first) -> bool:
+        """Cererea e în vigoare în luna care începe la `first`."""
+        start = (self.date_from or next_month(self.date)).replace(day=1)
+        return self.is_active and start <= first and (self.date_to is None or self.date_to >= first)
+
+    def personal_in(self, first) -> str:
+        """P / M în luna dată: din luna următoare renunțării nu se mai acordă (fără recalcularea lunilor trecute)."""
+        if self.kind == "none" or (self.waiver_date and first >= next_month(self.waiver_date)):
+            return ""
+        return {"personal": "P", "major": "M"}[self.kind]
+
+    def dependents_in(self, first) -> list:
+        return [d for d in self.dependents.all() if d.valid_in(first)]
+
+    def code(self, first=None) -> str:
+        """Codul scutirilor din cerere (pe lună, dacă se dă `first`): P / M, Sm, Nx (întreținuți), Hx (cu dizabilitate)."""
+        deps = self.dependents_in(first) if first else [d for d in self.dependents.all() if d.income_ok]
+        parts = [self.personal_in(first) if first else {"personal": "P", "major": "M"}.get(self.kind, "")]
+        if self.spouse_major:
+            parts.append("Sm")
+        normal = sum(1 for d in deps if d.code == "N")
+        disabled = sum(1 for d in deps if d.code == "H")
         if normal:
-            parts.append(f"N{len(normal)}")
+            parts.append(f"N{normal}")
         if disabled:
-            parts.append(f"H{len(disabled)}")
+            parts.append(f"H{disabled}")
         return "".join(parts) or "—"
+
+
+class ExemptionDependent(models.Model):
+    """Persoana întreținută din cererea de scutire (CF art. 35): N, sau H dacă are dizabilitate din copilărie, severă sau
+    accentuată. Scutirea se aplică din luna următoare lunii apariției dreptului (art. 35 alin. (4)) — `date_from`; până la
+    `date_to` inclusiv (luna încetării dreptului). Venitul anual al persoanei nu trebuie să depășească plafonul (12 400 lei)."""
+
+    RELATIONS = [("child", "Copil"), ("parent", "Părinte"), ("sibling", "Frate / soră (doar cu dizabilitate)"),
+                 ("other", "Altă persoană întreținută")]
+    DISABILITIES = [("", "Fără dizabilitate"), ("childhood", "Dizabilitate din copilărie"), ("severe", "Dizabilitate severă"),
+                    ("accentuated", "Dizabilitate accentuată"), ("medium", "Dizabilitate medie")]
+    H_DISABILITIES = {"childhood", "severe", "accentuated"}
+    request = models.ForeignKey(ExemptionRequest, on_delete=models.CASCADE, related_name="dependents")
+    family_member = models.ForeignKey("staff.FamilyMember", on_delete=models.SET_NULL, null=True, blank=True, related_name="+",
+                                      verbose_name="Membrul familiei din dosar")
+    name = models.CharField("Numele, prenumele", max_length=160)
+    idnp = models.CharField("Codul fiscal (IDNP)", max_length=13, blank=True)
+    birth_date = models.DateField("Data nașterii", null=True, blank=True)
+    relation = models.CharField("Rudenia", max_length=10, choices=RELATIONS, default="child")
+    disability = models.CharField("Dizabilitatea", max_length=12, choices=DISABILITIES, blank=True)
+    date_from = models.DateField("Dreptul a apărut la (gol = de la cerere)", null=True, blank=True)
+    date_to = models.DateField("Dreptul încetează la", null=True, blank=True)
+    document = models.CharField("Documentul (certificatul de naștere, de dizabilitate...)", max_length=200, blank=True)
+    income_ok = models.BooleanField("Venitul anual al persoanei nu depășește plafonul (CF art. 35)", default=True)
+    note = models.CharField("Observații", max_length=200, blank=True)
+    sort = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ["sort", "id"]
+        verbose_name = "Persoana întreținută"
+
+    @property
+    def code(self) -> str:
+        return "H" if self.disability in self.H_DISABILITIES else "N"
+
+    def valid_in(self, first) -> bool:
+        if not self.income_ok:
+            return False
+        if self.date_from and next_month(self.date_from) > first:
+            return False
+        return self.date_to is None or self.date_to >= first
 
 
 class Payroll(models.Model):

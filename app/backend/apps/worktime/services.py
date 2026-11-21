@@ -360,23 +360,76 @@ def _cell(ctx: Context, jd: JobDays, day: date, roster_days) -> dict | None:
     return cell
 
 
-def line_totals(ctx: Context, jd: JobDays, days: dict) -> dict:
-    worked = hours = night = holiday = Decimal("0")
+def planned_hours(ctx: Context, jd: JobDays, day: date, roster_days=None) -> Decimal:
+    """Orele planificate ale zilei (norma zilei): tura din graficul lunar al subdiviziunii, dacă există, altfel din graficul
+    de lucru al raportului. 0 — zi de repaus după grafic."""
+    code = roster_days.get(str(day.day), "") if roster_days is not None else ctx.planned(jd, day)
+    info = ctx.shift(code)
+    return info[0] if info else Decimal("0")
+
+
+def overtime_first_hours(on_day: date) -> Decimal:
+    """Câte ore suplimentare pe zi se plătesc cu tariful întâi (CM art. 157: primele două ore) — constanta salariului."""
+    from apps.payroll.models import PayConstant
+
+    c = PayConstant.objects.filter(code="overtime_first_hours", date_from__lte=on_day).order_by("-date_from").first()
+    return c.value if c else Decimal("2")
+
+
+def split_overtime(hours: Decimal, first: Decimal) -> tuple:
+    """Orele suplimentare ale unei perioade (o zi; la evidența globală — perioada de calcul) → (primele `first` ore, restul)."""
+    hours = max(hours, Decimal("0"))
+    head = min(hours, first)
+    return head, hours - head
+
+
+def line_totals(ctx: Context, jd: JobDays, days: dict, roster_days=None) -> dict:
+    """Totalurile rândului din pontaj. Pe fiecare zi (CM art. 157, 158):
+    - sărbătoarea nelucrătoare și ziua de repaus după grafic (fără tură planificată) — orele merg la „holiday” / „rest_work”;
+    - ziua lucrătoare — orele peste tura planificată sunt suplimentare, împărțite în primele 2 ore și restul
+      (`overtime_days` = {zi: [primele, restul]}), celelalte sunt ore obișnuite („regular”).
+    Orele obișnuite peste norma lunii (graficul pe ture planificat peste normă) sunt suplimentare pe perioadă
+    (`overtime_period`, împărțite la fel); evidența globală pe o perioadă mai lungă (CM art. 99) se adaugă aici.
+    Orele de sărbătoare / repaus se împart în „în limita normei lunare” și „peste normă” (pentru salariul lunar):
+    în limită — cât mai lipsește orelor obișnuite până la normă."""
+    worked = hours = night = holiday = rest_work = regular = Decimal("0")
     codes = defaultdict(int)
-    for cell in days.values():
+    first = overtime_first_hours(ctx.days[-1])
+    ot_days, ot_first, ot_next = {}, Decimal("0"), Decimal("0")
+    for key, cell in days.items():
         h = Decimal(str(cell.get("h") or 0))
         if h > 0:
             worked += 1
             hours += h
             night += Decimal(str(cell.get("n") or 0))
-            if cell.get("hol"):
+            day = ctx.days[int(key) - 1] if key.isdigit() and 1 <= int(key) <= len(ctx.days) else None
+            if cell.get("hol") or (day is not None and ctx.cal.is_holiday(day)):
                 holiday += h
+                continue
+            plan = planned_hours(ctx, jd, day, roster_days) if day is not None else h
+            if plan <= 0:
+                rest_work += h
+                continue
+            over = max(h - plan, Decimal("0"))
+            regular += h - over
+            if over:
+                a, b = split_overtime(over, first)
+                ot_days[key] = [_q(a), _q(b)]
+                ot_first, ot_next = ot_first + a, ot_next + b
         elif cell.get("c"):
             codes[cell["c"]] += 1
     norm = ctx.norm(jd) if jd.days else Decimal("0")
-    return {"days": int(worked), "hours": _q(hours), "night": _q(night), "holiday": _q(holiday), "norm": _q(norm),
-            "overtime": _q(max(hours - norm, Decimal("0"))), "missing": _q(max(norm - hours, Decimal("0"))),
-            "codes": dict(sorted(codes.items()))}
+    period = max(regular - norm, Decimal("0"))
+    if period:
+        a, b = split_overtime(period, first)
+        ot_first, ot_next, regular = ot_first + a, ot_next + b, regular - period
+    special = holiday + rest_work
+    in_norm = min(special, max(norm - regular, Decimal("0")))
+    return {"days": int(worked), "hours": _q(hours), "night": _q(night), "holiday": _q(holiday), "rest_work": _q(rest_work),
+            "regular": _q(regular), "norm": _q(norm), "overtime": _q(ot_first + ot_next), "overtime_2": _q(ot_first),
+            "overtime_over": _q(ot_next), "overtime_period": _q(period), "overtime_days": dict(sorted(ot_days.items(), key=lambda kv: int(kv[0]))),
+            "holiday_in_norm": _q(in_norm), "holiday_over_norm": _q(special - in_norm),
+            "missing": _q(max(norm - regular - in_norm, Decimal("0"))), "codes": dict(sorted(codes.items()))}
 
 
 @transaction.atomic
@@ -404,7 +457,7 @@ def fill_timesheet(ts: Timesheet, keep_manual=True) -> int:
             cell = _cell(ctx, jd, day, rosters.get(jd.job.pk))
             if cell:
                 days[key] = cell
-        ln.days, ln.totals = days, line_totals(ctx, jd, days)
+        ln.days, ln.totals = days, line_totals(ctx, jd, days, rosters.get(jd.job.pk))
         ln.save()
     for ln in lines.values():  # raporturi care nu mai sunt în secție în luna aceasta (de ex. transfer anulat)
         if not any(c.get("m") for c in (ln.days or {}).values()):
@@ -444,7 +497,9 @@ def set_cell(line: TimesheetLine, day: int, code: str, hours=None, night=None) -
         date_from__lte=ctx.days[-1], date_to__gte=ctx.days[0])))
     ids = ts.subdivision.descendant_ids()
     jd.days = {x for x in ctx.days if jd.active(x) and jd.values_on(x)[0] in ids}
-    line.totals = line_totals(ctx, jd, days)
+    roster = RosterLine.objects.filter(roster__subdivision=ts.subdivision, roster__year=ts.year, roster__month=ts.month,
+                                       employment=line.employment).first()
+    line.totals = line_totals(ctx, jd, days, roster.days or {} if roster else None)
     line.save(update_fields=["days", "totals"])
     return line
 

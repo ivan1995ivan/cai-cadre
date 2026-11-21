@@ -2,17 +2,44 @@
 
 **Calcul nou**: luna, data și (opțional) subdiviziunea — gol înseamnă toată întreprinderea. Calculul se completează singur, câte
 un rând pe fiecare **raport de muncă** (de bază, cumul, suplinire, contract de prestări servicii), din:
-- **tabela de pontaj** a secției (orele lucrate, de noapte, de sărbători, suplimentare); fără tabelă — norma întreagă a lunii
-  (zilele apar cu portocaliu);
+- **tabela de pontaj** a secției (orele lucrate, de noapte, de sărbători și de repaus, suplimentare pe zile); fără tabelă —
+  norma întreagă a lunii (zilele apar cu portocaliu);
 - **raportul de muncă**: salariul de funcție × norma, sporurile fixe (%), plata pentru cumul (%);
 - **concediile** din ordine (media zilnică × zilele, HG 426/2004) și compensarea concediului nefolosit;
-- **foile de boală**: primele 5 zile, 75 % din media zilnică (Legea 289/2004);
+- **foile de boală**: zilele angajatorului (vezi mai jos);
 - **premiile și ajutorul material** din ordine;
 - **sporurile pe trepte de vechime** (formula „pe trepte”, pe vechimea totală în muncă) — de exemplu sporul pentru vechime
   din contractul colectiv; nu se preîncarcă, îl adăugați la tipurile de
   calcul dacă firma îl are;
 - **sporurile și reținerile personale** din fișa angajatului (fila „Salariu”): spor individual, plata la contract, sindicat,
   pensie alimentară, împrumut.
+
+**Regulile 2026** (cifrele — în *Constantele salarizării*, cu temeiul; vezi *Setările salariului*):
+- **Orele suplimentare** (CM art. 157): pe fiecare zi lucrătoare, orele peste tura planificată — **primele 2 ore × 150 %,
+  următoarele × 200 %** din salariul pe oră (salariul de funcție × norma / norma lunii în ore). Exemplu: 100 lei/oră,
+  3 ore peste tură într-o zi → 2 × 150 + 1 × 200 = 500 lei. Orele suplimentare nu intră în salariul lunii (se plătesc întregi).
+  Graficul pe ture planificat peste norma lunii: orele peste normă — tot suplimentare (primele 2 × 150 %, restul × 200 %).
+- **Sărbătorile și zilele de repaus** (art. 158): la salariul lunar, peste salariu **+100 %** pe oră pentru orele în limita
+  normei lunare și **+200 %** pentru cele peste normă (în limită — cât lipsește orelor obișnuite până la normă). La tariful pe
+  oră (rândul „tarif orar × ore” din fila „Salariu”) — **dublu** (încă 100 % peste ora simplă); suplimentarele — sporul 50 / 100 %.
+- **Completarea până la salariul minim** (CM art. 131: sporurile, premiile, plățile de stimulare și compensare nu intră în
+  salariul minim): dacă salariul de funcție al lunii e sub **salariul minim × norma × partea lucrată**, rândul automat
+  „Completare până la salariul minim” adaugă diferența (impozabilă, cu CAS și CNAM). Exemplu: salariul 5 000, normă întreagă,
+  147 din 154 de ore → minimul 6 300 × 147 / 154 = 6 013,64; salariul 4 772,73; completarea 1 240,91. La angajare, în ordinul
+  de salariu și în *Termene și alerte* apare avertismentul „sub salariul minim”.
+- **Baza minimă CAS** (Legea 489/1999, art. 22 alin. (1)): pe angajat (toate raporturile lui de muncă din calcul, fără
+  contractele de prestări servicii), baza CAS e cel puțin **salariul minim × timpul lucrat** (norma × partea lucrată din lună);
+  la timp parțial (norma totală sub 1) CAS e cel puțin **25 % din CAS-ul pe salariul minim**. Diferența e rândul „CAS pe
+  diferența până la baza minimă” pe raportul de bază, cu **baza reală, baza minimă** în explicație. Fără timp lucrat în lună
+  (concediu neplătit, de îngrijire a copilului, boală plătită de CNAS toată luna) nu se aplică; zilele nelucrate micșorează
+  minimul proporțional. CAS scris de mână pe un raport oprește calculul bazei minime pentru angajat.
+- **Boala** (Legea 289/2004): angajatorul plătește **primele 5 zile** ale fiecărui certificat (cu continuările lui), dar **cel mult
+  15 zile pe an calendaristic**, numărate din toate certificatele anului, în ordine — certificatul care trece de plafon primește
+  doar restul (explicația o spune). **Accidentul de muncă / boala profesională**: primele **20 de zile**, 100 % (rândul separat,
+  în afara plafonului de 15; IPC21 — categoria 15321). Venitul mediu (art. 7): acumulările din baza CAS din ultimele 12 luni
+  aprobate / numărul lunilor, cel mult **5 salarii medii** pe lună; pe zi — media lunară / zilele calendaristice ale lunii plătite.
+  Fără istoric — salariul lunii.
+- **Scutirile** se iau din cererea de scutire (vezi *Cererea de scutire*), la plată.
 
 **Salariul se face în două documente.** **Calculul** are acumulările, celelalte rețineri (sindicat, pensie alimentară,
 împrumut) și **CAS 24 %** al angajatorului (nu se reține). **CNAM 9 %, scutirea și impozitul pe venit 12 % nu sunt în
@@ -43,7 +70,8 @@ tabel, funcția, salariul, anul angajării, datoria la început, câte o coloan�
 totalurile și suma de plată; pe mai multe luni — și rândul fiecărei luni. Excel și tipar, cu semnăturile contabilului-șef
 și ale conducătorului.
 
-**Setările salariului** (*Administrare → Setări*: *Constantele salarizării* și *Tipuri de calcul*): **constantele** (impozitul, scutirile, CNAM, CAS, salariul mediu, procentele pentru noapte /
-sărbători / suplimentare, zilele de boală ale angajatorului) cu „în vigoare din” — la schimbarea legii se adaugă un rând nou;
+**Setările salariului** (*Administrare → Setări*: *Constantele salarizării* și *Tipuri de calcul*; vezi *Setările salariului*):
+**constantele** (impozitul, scutirile, CNAM, CAS, salariul minim și mediu, procentele pentru noapte / sărbători / suplimentare,
+zilele de boală ale angajatorului) cu „în vigoare din” — la schimbarea legii se adaugă un rând nou;
 **tipurile de calcul** — formula (automat, sumă fixă, % din salariu, % din bază, tarif orar, trepte), impozabil, CAS, CNAM,
 plafoanele, intră în medie, codul pentru IPC21 / IALS21.

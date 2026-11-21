@@ -155,7 +155,10 @@ def test_timesheet_from_roster_absences_manual_cells_and_export(admin_client, or
     assert r.status_code == 200 and r.data["days"]["31"] == {"c": "A", "m": 1}
     r = admin_client.post(f"/api/worktime/timesheets/{tid}/set-cell/", {"line": ion["id"], "day": 2, "hours": "10", "night": "2"},
                           format="json")
-    assert r.data["days"]["2"]["h"] == 10 and r.data["totals"]["hours"] == 115 and r.data["totals"]["overtime"] == 0
+    # pe zi (CM art. 157): tura planificată 7 ore, lucrate 10 → 3 ore suplimentare: primele 2 și încă 1, chiar dacă luna e sub normă
+    t = r.data["totals"]
+    assert r.data["days"]["2"]["h"] == 10 and t["hours"] == 115 and t["overtime"] == 3
+    assert (t["overtime_2"], t["overtime_over"], t["overtime_days"]) == (2, 1, {"2": [2, 1]}) and t["regular"] == 112
     admin_client.post(f"/api/worktime/timesheets/{tid}/fill/", format="json")  # recalcularea păstrează celulele de mână
     ion2 = {row["name"]: row for row in admin_client.get(f"/api/worktime/timesheets/{tid}/report/").data["rows"]}["Popescu Ion"]
     assert ion2["days"]["31"]["c"] == "A" and ion2["days"]["2"]["h"] == 10 and ion2["totals"]["codes"] == {"A": 1, "Cm": 5, "R": 8, "Sn": 1}

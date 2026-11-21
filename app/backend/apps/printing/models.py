@@ -21,6 +21,7 @@ DOC_TYPES = [
     ("payment_sheet", "Stat de plată"),
     ("bank_list", "Lista pentru bancă"),
     ("annual_card", "Fișa personală anuală a veniturilor"),
+    ("exemption_request", "Cererea privind acordarea scutirilor (anexa 6, HG 697/2014)"),
     ("report", "Raport (din catalogul de rapoarte)"),
 ]
 

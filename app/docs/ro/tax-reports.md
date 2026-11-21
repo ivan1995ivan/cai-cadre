@@ -18,12 +18,16 @@ din [Constante](help:admin/constants).
   concediu de studii, **16012** concediu suplimentar, **159** concediu neplătit, **157 / 158** îngrijirea copilului,
   **165** concediu paternal, **15311** indemnizația de boală plătită de angajator; perioada, tariful (24 %), codul funcției
   (CORM — obligatoriu), baza de calcul, indemnizația, CAS;
-- rândul 1.1 b) „conform tarifului de 24 %” (instituțiile medico-sanitare).
+- rândul 1.1 b) „conform tarifului de 24 %” (angajatorii din sectorul privat).
 
 **IALS21** (anual, până la 25 ianuarie): pe persoane — IDNP, IDNP-ul soțului / soției (dacă are scutirea Sm), codul sursei
 (SAL), venitul achitat în an (din îndreptările achitate), scutirile pe coduri **P** (personală), **M** (majorată), **Sm** (pentru soț / soție), **N**
 (întreținuți), **H** (întreținuți cu dizabilități), CNAM și impozitul; suma de control = totalul impozitului; anexa cu IDNP-urile
-persoanelor întreținute. Scutirile se împart pe coduri după cererea de scutire a angajatului (fila „Salariu”).
+persoanelor întreținute. Scutirile se împart pe coduri după cererea de scutire a angajatului (fila „Salariu”): scutirea
+fiecărei plăți — după scutirile valabile în luna pentru care s-a plătit (P sau M până la renunțare, Sm, fiecare întreținut
+din luna următoare apariției dreptului). Anexa are codul fiscal al fiecărui întreținut la N sau la H; codul fiscal al soțului
+(col. 4) — doar cu Sm. **IPC21**: baza minimă CAS (diferența până la salariul minim) intră în baza de calcul CAS a persoanei
+(col. 9); indemnizația pentru accident de muncă din zilele angajatorului — categoria 15321.
 
 **IRM19** (în 10 zile lucrătoare de la ordin): col. 8 — **01** angajare pe durată nedeterminată, **05** pe durată determinată,
 **02** încetare, **03** suspendare, **04** ridicarea suspendării; col. 9 — motivul eliberării (**114** demisie, **113**

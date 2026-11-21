@@ -23,6 +23,9 @@ scurtă nu se scrie în jurnalul accesului; datele sensibile se ascund după ace
   certificatele cu termen), **Vechimea** (stagiul anterior + vechimea calculată: totală, în specialitate — stagiul bifat „În
   specialitate” și munca de aici —, în întreprindere), **Sănătate și SSM**, **Evidența militară** (doar cu modulul pornit,
   [Evidența militară](help:military)).
+- **Salariu** (cine vede salarizarea) — [cererea de scutire](help:payroll/exemptions) cu persoanele întreținute, sporurile și
+  reținerile personale, fișa personală anuală (anexa 8). Raportul de muncă cu salariul de funcție sub salariul minim pe țară
+  arată avertismentul „sub salariul minim” (la calcul se adaugă completarea până la minim).
 - **Angajare / eliberare** — lista de verificare: ce s-a semnat și primit la angajare, ce s-a predat la plecare.
 - **Jurnalul accesului** — cine a deschis, tipărit sau exportat dosarul.
 

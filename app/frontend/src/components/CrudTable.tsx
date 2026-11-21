@@ -28,7 +28,7 @@ export interface CrudField {
 }
 
 /** Tabel simplu cu adăugare / editare / marcare pentru ștergere, pentru nomenclatoarele mici. */
-export default function CrudTable({ endpoint, fields, canEdit, defaults = {}, extra, title, params, rowActions, onChanged, onPick, search }: {
+export default function CrudTable({ endpoint, fields, canEdit, defaults = {}, extra, title, params, rowActions, onChanged, onPick, search, modalWidth }: {
   endpoint: string
   params?: Record<string, unknown>
   fields: CrudField[]
@@ -40,6 +40,7 @@ export default function CrudTable({ endpoint, fields, canEdit, defaults = {}, ex
   onChanged?: () => void // după adăugare / modificare / ștergere (de ex. soldul calculat din rânduri)
   onPick?: (row: Record<string, unknown>) => void // forma de alegere (butonul „…”): dublu clic sau „Alege” întoarce rândul
   search?: boolean // căutare în rânduri (după toate câmpurile text)
+  modalWidth?: number // forma mai lată (de ex. cu un tabel de rânduri în ea)
 }) {
   const { t } = useTranslation()
   const { data, loading, reload } = useFetch<Record<string, unknown>[] | { results: Record<string, unknown>[] }>(
@@ -130,7 +131,7 @@ export default function CrudTable({ endpoint, fields, canEdit, defaults = {}, ex
           }] : []),
         ]}
       />
-      <Modal open={!!editing} onOk={save} onCancel={() => setEditing(null)} title={editing?.id ? t('common.edit') : t('common.add')}>
+      <Modal open={!!editing} onOk={save} onCancel={() => setEditing(null)} title={editing?.id ? t('common.edit') : t('common.add')} width={modalWidth}>
         <Form form={form} layout="vertical">
           {/* aranjarea câmpurilor e a fiecărui utilizator (butonul din dreapta sus); câmpurile tehnice rămân ascunse */}
           {fields.filter((f) => f.hidden).map((f) => (

@@ -55,22 +55,46 @@ export interface EmployeePayItem {
   note: string
 }
 
-export interface Dependent { name: string; idnp: string; disabled: boolean }
+export interface Dependent {
+  id?: number
+  family_member: number | null
+  name: string
+  idnp: string
+  birth_date: string | null
+  relation: 'child' | 'parent' | 'sibling' | 'other'
+  disability: '' | 'childhood' | 'severe' | 'accentuated' | 'medium'
+  date_from: string | null
+  date_to: string | null
+  document: string
+  income_ok: boolean
+  note?: string
+  code?: 'N' | 'H'
+}
 
 export interface ExemptionRequest {
   id: number
   employee: number
-  year: number
+  number: string
   date: string
+  date_from: string | null
+  date_to: string | null
   kind: 'none' | 'personal' | 'major'
-  spouse: boolean
+  major_category: string
+  major_document: string
+  spouse_major: boolean
   spouse_name: string
   spouse_idnp: string
-  dependents: Dependent[]
+  spouse_category: string
+  spouse_document: string
+  waiver_date: string | null
   documents: string
-  date_from: string | null
+  needs_review: boolean
+  review_note: string
   is_active: boolean
+  dependents: Dependent[]
   code: string
+  code_now: string
+  warnings: string[]
 }
 
 export interface PayrollItem {
@@ -142,8 +166,8 @@ export const AT_PAYMENT_AUTOS = ['advance', 'income_tax', 'cnam']
 
 export const PAYROLL_STATUS_COLOR: Record<string, string> = { draft: 'gold', checked: 'blue', approved: 'green' }
 export const FORMULAS = ['auto', 'fixed', 'pct_salary', 'pct_base', 'hourly', 'scale']
-export const AUTO_KEYS = ['none', 'salary', 'allowance', 'combination', 'night', 'holiday', 'overtime', 'leave', 'leave_comp', 'sick', 'bonus', 'aid',
-  'income_tax', 'cnam', 'cas']
+export const AUTO_KEYS = ['none', 'salary', 'allowance', 'combination', 'night', 'holiday', 'overtime', 'leave', 'leave_comp', 'sick', 'sick_accident',
+  'min_wage', 'bonus', 'aid', 'income_tax', 'cnam', 'cas', 'cas_min']
 
 export const money = (v: string | number | null | undefined) =>
   v === null || v === undefined || v === '' || Number(v) === 0 ? '' : Number(v).toLocaleString('ro-MD', { minimumFractionDigits: 2, maximumFractionDigits: 2 })

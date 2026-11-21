@@ -56,7 +56,7 @@ def test_constants_history_and_type_validation(admin_client, seeded):
     assert bad.status_code == 400
     # sporurile HG 837/2016 (vechimea, categoria) și gărzile nu se mai preîncarcă; NOCIV rămâne (Codul muncii, art. 139)
     assert not PayType.objects.filter(code__in=("VECH", "CATEG", "GARDA")).exists() and PayType.objects.filter(code="NOCIV").exists()
-    assert PayType.objects.get(code="SINDICAT").base_codes == ["SAL", "SPOR", "CUMUL", "NOCIV", "NOAPTE", "SARB", "SUPL", "CO", "PREMIU"]
+    assert PayType.objects.get(code="SINDICAT").base_codes == ["SAL", "MINIM", "SPOR", "CUMUL", "NOCIV", "NOAPTE", "SARB", "SUPL", "CO", "PREMIU"]
     ok = admin_client.post("/api/payroll/types/", {"code": "TRANSP", "name_ro": "Compensație transport", "formula": "fixed",
                                                    "taxable": False, "cas": False, "cnam": False}, format="json")
     assert ok.status_code == 201 and PayType.objects.get(code="TRANSP").is_system is False
@@ -70,7 +70,8 @@ def test_monthly_calculation_tax_exemption_scales_and_approval(admin_client, org
                            base_codes=["SAL"], scale=[{"from": 3, "pct": 5}, {"from": 10, "pct": 10}, {"from": 20, "pct": 15}], sort=40)
     PriorExperience.objects.create(employee=ion, organization="„Alfa” SRL", date_from=date(2014, 1, 1), date_to=date(2019, 12, 31),
                                    in_specialty=False)  # 6 ani înainte + 6 ani aici = 12 ani → 10 %
-    ExemptionRequest.objects.create(employee=ion, year=2026, kind="personal", dependents=[{"name": "Popescu Maria", "idnp": "", "disabled": False}])
+    req = ExemptionRequest.objects.create(employee=ion, date=date(2025, 12, 20), kind="personal")  # se aplică din ianuarie
+    req.dependents.create(name="Popescu Maria")
     r = admin_client.post("/api/payroll/payrolls/", {"year": 2026, "month": 3, "date": "2026-04-02"}, format="json")
     assert r.status_code == 201, r.data
     doc = Payroll.objects.get(pk=r.data["id"])
@@ -142,7 +143,8 @@ def test_timesheet_sick_bonus_union_cumul_and_contract(admin_client, org):
     it = items_of(main)
     # 8 zile lucrătoare de boală din 22: 14 zile × 7 ore = 98 ore din norma 154
     assert it["SAL"].quantity == Decimal("98") and it["SAL"].amount == Decimal("5854.55")
-    assert it["BOALA"].quantity == 5 and it["BOALA"].percent == 75 and it["BOALA"].amount == Decimal("1150.01")  # 9 200 / 30 zile × 5 × 75 %
+    # Legea 289/2004, art. 7 alin. (16): media lunară (fără istoric — salariul) / zilele calendaristice ale lunii: 9 200 / 31 × 5 × 75 %
+    assert it["BOALA"].quantity == 5 and it["BOALA"].percent == 75 and it["BOALA"].amount == Decimal("1112.89")
     assert it["PREMIU"].amount == Decimal("500") and "pentru martie" in it["PREMIU"].note
     assert it["SINDICAT"].percent == 1 and it["SINDICAT"].amount == engine.q((it["SAL"].amount + it["PREMIU"].amount) / 100)
     assert main.deductions == it["SINDICAT"].amount and main.net == main.gross - main.deductions
@@ -180,6 +182,9 @@ def test_department_head_cannot_see_whole_institution_payroll(org, admin_client,
     acc = make_user("contabil", ["accountant"])
     api = client_for(acc)
     assert api.get("/api/payroll/payrolls/").data["count"] == 1
-    r = api.post("/api/payroll/exemptions/", {"employee": Employee.objects.get().id, "year": 2026, "kind": "major", "spouse": True,
-                                              "dependents": [{"name": "A", "disabled": True}]}, format="json")
-    assert r.status_code == 201 and r.data["code"] == "MSH1"
+    r = api.post("/api/payroll/exemptions/", {"employee": Employee.objects.get().id, "date": "2026-01-10", "kind": "major",
+                                              "major_category": "b", "spouse_major": True, "spouse_name": "Popescu Ana",
+                                              "spouse_idnp": "2002000111222", "spouse_category": "a",
+                                              "dependents": [{"name": "A", "disability": "severe"}]}, format="json")
+    assert r.status_code == 201, r.data
+    assert r.data["code"] == "MSmH1" and r.data["date_from"] == "2026-02-01"

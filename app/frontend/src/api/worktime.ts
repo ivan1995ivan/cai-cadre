@@ -120,6 +120,15 @@ export interface TimesheetTotals {
   overtime: number
   missing: number
   codes: Record<string, number>
+  // pe zile (CM art. 157, 158): suplimentarele — primele 2 ore / restul; sărbătorile și zilele de repaus — în limita normei / peste
+  rest_work?: number
+  regular?: number
+  overtime_2?: number
+  overtime_over?: number
+  overtime_period?: number
+  overtime_days?: Record<string, [number, number]>
+  holiday_in_norm?: number
+  holiday_over_norm?: number
 }
 
 export interface TimesheetRow extends LineLabel {

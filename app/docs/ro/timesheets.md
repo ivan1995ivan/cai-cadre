@@ -13,8 +13,16 @@ A absențe. Formarea profesională cu menținerea salariului nu are notație în
 mână). Celulele scrise de mână rămân la „Recalculează” (sunt subliniate); „Recalculează tot” le șterge.
 
 **Totalurile** pe rând: zile și ore lucrate, ore de noapte, ore în zile de sărbătoare, norma lunii pentru raport (zilele
-lucrătoare × orele pe zi × norma), orele peste normă (+) sau nelucrate (−), zilele pe notații (repaus, sărbători,
+lucrătoare × orele pe zi × norma), orele suplimentare (+) sau nelucrate (−), zilele pe notații (repaus, sărbători,
 concedii, absențe…) — ca în coloanele modelului.
+
+**Orele suplimentare se socotesc pe fiecare zi** (CM art. 157): într-o zi lucrătoare, orele peste tura planificată (din
+graficul de ture sau din graficul de lucru) sunt suplimentare și se împart în **primele 2 ore** și **restul** — salarizarea le
+plătește cu 150 % și 200 %. Exemplu: tura de 7 ore, lucrate 10 → 3 ore: 2 + 1, chiar dacă luna rămâne sub normă. Orele lucrate
+într-o **zi de repaus** (fără tură în grafic) sau de **sărbătoare** nu sunt suplimentare: se împart în „în limita normei
+lunare” și „peste normă” (art. 158). Dacă graficul pe ture e planificat peste norma lunii, orele peste normă sunt și ele
+suplimentare. Treceți cu mouse-ul peste coloana „±” — se vede împărțirea. Evidența globală pe o perioadă mai lungă decât luna
+(CM art. 99) — într-o etapă următoare.
 
 **Fluxul**: ciornă (subdiviziunea) → transmis la resurse umane → **închis** (nu se mai schimbă; pleacă la salarizare).
 Închiderea și redeschiderea le face cine are dreptul „Timp de muncă → aprobare”.

@@ -1,0 +1,92 @@
+{% company_header %}
+
+<div class="annex">{{ texts.annex|linebreaksbr }}</div>
+<div class="doc-title" style="font-size:11.5pt">{{ texts.title }}</div>
+<div class="doc-subtitle">pe anul {{ req.year }}{% if req.number %} · nr. {{ req.number }}{% endif %}</div>
+
+<p style="margin:8px 0 4px"><b>PARTEA I</b> (se completează de angajat)</p>
+<table class="grid" style="font-size:9.5pt">
+  <tr><td style="width:60mm">Numele, prenumele</td><td><b>{{ req.employee.name }}</b></td></tr>
+  <tr><td>Codul fiscal (IDNP)</td><td>{{ req.employee.idnp }}</td></tr>
+  <tr><td>Domiciliul</td><td>{{ req.employee.address }}</td></tr>
+</table>
+
+<p style="margin:8px 0 4px"><b>SOLICIT URMĂTOARELE SCUTIRI</b> <span class="muted">(se pune semnul „V”)</span></p>
+<table class="grid" style="font-size:9.5pt; text-align:center">
+  <tr><th>P</th><th>M</th><th>Sm</th><th>Nx</th><th>Hx</th></tr>
+  <tr>
+    <td>{% if req.P %}V{% endif %}</td><td>{% if req.M %}V{% endif %}{% if req.major_category %}<br><span class="muted">{{ req.major_category }}</span>{% endif %}</td>
+    <td>{% if req.Sm %}V{% endif %}</td>
+    <td>{% if req.N %}V<br><span class="muted">persoane întreținute: {{ req.N }}</span>{% endif %}</td>
+    <td>{% if req.H %}V<br><span class="muted">persoane întreținute: {{ req.H }}</span>{% endif %}</td>
+  </tr>
+</table>
+
+{% if req.Sm %}
+<p style="margin:8px 0 4px"><b>Soțul (soția)</b></p>
+<table class="grid" style="font-size:9.5pt">
+  <tr><td style="width:60mm">Numele, prenumele</td><td>{{ req.spouse.name }}</td></tr>
+  <tr><td>Codul fiscal (IDNP)</td><td>{{ req.spouse.idnp }}</td></tr>
+  <tr><td>Categoria</td><td>{{ req.spouse.category }}</td></tr>
+</table>
+{% endif %}
+
+<p style="margin:8px 0 4px"><b>Persoanele întreținute</b></p>
+<table class="grid" style="font-size:9pt">
+  <thead><tr><th style="width:8mm">Nr.</th><th>Numele, prenumele</th><th style="width:30mm">Codul fiscal</th><th style="width:22mm">Data nașterii</th>
+    <th style="width:28mm">Rudenia</th><th style="width:12mm">Codul</th><th style="width:34mm">Dreptul de la / până la</th></tr></thead>
+  <tbody>
+  {% for d in req.dependents %}
+    <tr><td>{{ forloop.counter }}</td><td>{{ d.name }}</td><td>{{ d.idnp }}</td><td>{{ d.birth_date }}</td><td>{{ d.relation }}</td>
+      <td style="text-align:center">{{ d.code }}</td><td>{{ d.date_from }}{% if d.date_to %} – {{ d.date_to }}{% endif %}</td></tr>
+  {% empty %}<tr><td colspan="7" class="muted">—</td></tr>{% endfor %}
+  </tbody>
+</table>
+
+<p style="margin:8px 0 4px"><b>Documentele care confirmă dreptul la scutiri</b></p>
+<table class="grid" style="font-size:9pt">
+  <thead><tr><th style="width:8mm">Nr.</th><th>Denumirea documentului (organizația care l-a eliberat, seria, numărul și data)</th><th style="width:60mm">Pentru</th></tr></thead>
+  <tbody>
+  {% for x in req.documents %}<tr><td>{{ forloop.counter }}</td><td>{{ x.title }}</td><td>{{ x.for }}</td></tr>
+  {% empty %}<tr><td colspan="3" class="muted">—</td></tr>{% endfor %}
+  </tbody>
+</table>
+
+<p style="font-size:9pt; margin-top:6px">{{ texts.declaration|linebreaksbr }}</p>
+
+<div class="signatures">
+  <div>Data depunerii<div class="line"></div><div class="who">{{ req.date }}</div></div>
+  <div>Semnătura angajatului<div class="line"></div><div class="who">{{ req.employee.name }}</div></div>
+</div>
+
+<p style="margin:14px 0 4px"><b>PARTEA II</b> (se completează de angajator)</p>
+<table class="grid" style="font-size:9.5pt">
+  <tr><td style="width:60mm">Denumirea angajatorului</td><td>{{ company.full_name }}</td></tr>
+  <tr><td>Codul fiscal (IDNO)</td><td>{{ company.idno }}</td></tr>
+  <tr><td>Nr. în registrul cererilor</td><td>{{ req.number }}</td></tr>
+  <tr><td>Scutirile se aplică</td><td>din {{ req.date_from }}{% if req.date_to %} până la {{ req.date_to }}{% endif %} · codul <b>{{ req.code }}</b></td></tr>
+</table>
+<table class="grid" style="font-size:9.5pt; margin-top:4px">
+  <thead><tr><th>Categoria scutirii</th><th style="width:40mm">Suma anuală, lei</th></tr></thead>
+  <tbody>
+  {% for x in req.sums %}<tr><td>{{ x.label }}</td><td class="num">{{ x.amount }}</td></tr>{% endfor %}
+  <tr class="total"><td>Total</td><td class="num">{{ req.total }}</td></tr>
+  </tbody>
+</table>
+<p style="font-size:9pt; margin-top:4px">{{ texts.employer_note|linebreaksbr }}</p>
+<div class="signatures">
+  <div>{{ texts.accountant_label }}<div class="line"></div><div class="who">{{ company.chief_accountant }}</div></div>
+  <div>Data<div class="line"></div><div class="who">{{ today }}</div></div>
+</div>
+
+<div style="border-top:1px dashed #555; margin-top:16px; padding-top:8px; font-size:9pt">
+  <b>Confirmarea primirii cererii</b> (se înmânează angajatului)<br>
+  {{ company.full_name }}, codul fiscal {{ company.idno }}, a primit cererea angajatului <b>{{ req.employee.name }}</b>
+  (codul fiscal {{ req.employee.idnp }}) privind acordarea scutirilor pe anul {{ req.year }}.<br>
+  Suma totală a scutirilor cerute: {{ req.total }} lei ({{ req.total_words }}). Categoria scutirii acordate: <b>{{ req.code }}</b>.
+  <div class="signatures" style="margin-top:8px">
+    <div>Data<div class="line"></div><div class="who">{{ today }}</div></div>
+    <div>Semnătura<div class="line"></div><div class="who">{{ company.chief_accountant }}</div></div>
+  </div>
+</div>
+{% if texts.footer %}<div class="doc-footer">{{ texts.footer|linebreaksbr }}</div>{% endif %}

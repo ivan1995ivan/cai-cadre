@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { Button, Card, Input, Select, Space, Typography } from 'antd'
+import { Button, Card, Input, Select, Space, Tag, Typography } from 'antd'
 import { WalletOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 
@@ -48,7 +48,11 @@ export default function PayrollSettingsPage({ part, title }: { part: 'types' | '
     { key: 'value', label: t('pay.const.value'), type: 'number', required: true, width: 120, render: (v, r) => `${Number(v).toLocaleString('ro-MD')} ${r.unit ?? ''}` },
     { key: 'unit', label: t('pay.const.unit'), width: 70, inTable: false },
     { key: 'date_from', label: t('pay.const.dateFrom'), type: 'date', required: true, width: 120 },
-    { key: 'source', label: t('pay.const.source'), width: 260 },
+    { key: 'source', label: t('pay.const.source'), width: 260, render: (v) => {
+      const text = String(v ?? '')
+      // temeiul neconfirmat încă din textul oficial („— de verificat”): se arată ca atare, valoarea se poate corecta
+      return /de verificat/i.test(text) ? <Space size={4}>{text.replace(/\s*—\s*de verificat/i, '')}<Tag color="warning">{t('pay.const.check')}</Tag></Space> : text
+    } },
   ]
   const typeFields: CrudField[] = [
     { key: 'code', label: t('common.code'), required: true, width: 90 },

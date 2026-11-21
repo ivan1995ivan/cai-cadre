@@ -108,7 +108,7 @@ def test_annual_card_ipc21_ials21_and_irm19(admin_client, org):  # noqa: F811
     ion, _ = person(org, "Popescu", "Ion")
     ion.idnp = "2001000123456"
     ion.save()
-    ExemptionRequest.objects.create(employee=ion, year=2026, kind="personal")
+    ExemptionRequest.objects.create(employee=ion, date=date(2025, 12, 20), kind="personal")
     approved_payroll(3)
     approved_payroll(4)
     paid_salary(admin_client, 3, "2026-04-05")
@@ -174,8 +174,9 @@ def test_xml_declarations_follow_the_sfs_schemas(admin_client, org):  # noqa: F8
     ana, _ = person(org, "Rusu", "Ana", occ="nurse", salary="9200")
     ana.idnp = "2001000654321"
     ana.save()
-    ExemptionRequest.objects.create(employee=ion, year=2026, kind="personal", spouse=True, spouse_idnp="2002000111222",
-                                    dependents=[{"name": "Copil", "idnp": "2015000123456", "disabled": False}])
+    req = ExemptionRequest.objects.create(employee=ion, date=date(2025, 12, 20), kind="personal", spouse_major=True,
+                                          spouse_name="Popescu Ana", spouse_idnp="2002000111222", spouse_category="b")
+    req.dependents.create(name="Copil", idnp="2015000123456")
     approved_payroll(3)
     paid_salary(admin_client, 3, "2026-03-31")  # tabelul 1: venitul achitat în lună
     r = admin_client.get("/api/payroll/tax-reports/ipc21/", {"year": 2026, "month": 3, "export": "xml"})
