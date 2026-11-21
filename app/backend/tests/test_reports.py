@@ -9,6 +9,7 @@ from apps.leave.models import Absence
 from apps.org.models import DictItem, Occupation, Subdivision
 from apps.staff import services as staff
 from apps.staff.models import Employee, Qualification
+from .conftest import legacy_qualification, occupation
 
 TODAY = timezone.localdate()
 MONTH_START = TODAY.replace(day=1)
@@ -16,9 +17,10 @@ MONTH_START = TODAY.replace(day=1)
 
 @pytest.fixture
 def org(seeded):
+    legacy_qualification()
     tr1 = Subdivision.objects.create(code="TR1", name_ro="Secția traumatologie nr. 1")
     ati = Subdivision.objects.create(code="ATI", name_ro="Secția ATI")
-    return {"tr1": tr1, "ati": ati, "doctor": Occupation.objects.get(name_ro="Medic traumatolog-ortoped")}
+    return {"tr1": tr1, "ati": ati, "doctor": occupation("Medic traumatolog-ortoped")}
 
 
 def person(org, last, first, sub="tr1", hired=None, kind="main", rate="1", **extra):
@@ -75,7 +77,8 @@ def test_structure_by_sex_age_and_category(org, admin_client):
     by = {(r["label"]): r for r in rows_of(data)}
     assert by["Femei"]["total"] == 1 and by["Bărbați"]["total"] == 1
     assert by["< 30"]["total"] == 1 and by["40–49"]["total"] == 1
-    assert by["Categoria superioară"]["total"] == 1 and by["Medici"]["total"] == 2 and by["Medici"]["women"] == 1
+    assert by["Categoria superioară"]["total"] == 1 and by["Specialiști în diverse domenii de activitate"]["total"] == 2
+    assert by["Specialiști în diverse domenii de activitate"]["women"] == 1
     assert by["Normă parțială"]["total"] == 1
     every = admin_client.get("/api/reports/structure/?kinds=all").data
     assert {s["label"]: s["value"] for s in every["summary"]}["Total persoane"] == 3

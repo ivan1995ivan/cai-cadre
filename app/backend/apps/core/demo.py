@@ -25,24 +25,56 @@ SURNAMES = ["Popescu", "Rusu", "Ceban", "Lungu", "Moraru", "Ciobanu", "Rotaru", 
 
 # subdiviziunea: (cod, denumirea, tipul, paturi, condiții vătămătoare, [(funcția, unități aprobate, salariul)])
 STRUCTURE = [
-    ("ADM", "Administrația", "admin", 0, False, [("Director", 1, 32000), ("Director adjunct medical", 1, 28000),
+    ("ADM", "Administrația", "department", 0, False, [("Director", 1, 32000), ("Director adjunct medical", 1, 28000),
                                                 ("Contabil-șef", 1, 22000), ("Contabil", 2, 13500), ("Specialist resurse umane", 2, 12500),
                                                 ("Economist", 1, 13000), ("Jurist", 1, 13000)]),
-    ("TR1", "Secția traumatologie nr. 1", "clinical", 40, False, [("Șef secție — medic", 1, 24000), ("Medic traumatolog-ortoped", 5, 17500),
+    ("TR1", "Secția traumatologie nr. 1", "section", 40, False, [("Șef secție — medic", 1, 24000), ("Medic traumatolog-ortoped", 5, 17500),
                                                                 ("Asistent medical de secție", 8, 10500), ("Infermieră", 4, 7200)]),
-    ("TR2", "Secția traumatologie nr. 2 (copii)", "clinical", 30, False, [("Șef secție — medic", 1, 24000),
+    ("TR2", "Secția traumatologie nr. 2 (copii)", "section", 30, False, [("Șef secție — medic", 1, 24000),
                                                                         ("Medic traumatolog-ortoped", 4, 17500),
                                                                         ("Asistent medical de secție", 6, 10500), ("Infermieră", 3, 7200)]),
-    ("ATI", "Secția anestezie și terapie intensivă", "clinical", 12, True, [("Șef secție — medic", 1, 25000),
+    ("ATI", "Secția anestezie și terapie intensivă", "section", 12, True, [("Șef secție — medic", 1, 25000),
                                                                            ("Medic anesteziolog-reanimatolog", 5, 19000),
                                                                            ("Asistent medical anestezist", 8, 11500), ("Infermieră", 3, 7600)]),
-    ("BLO", "Blocul operator", "clinical", 0, False, [("Asistent medical de operație", 6, 11500), ("Infermieră de operație", 3, 7600)]),
-    ("RAD", "Secția radiologie", "paraclinical", 0, True, [("Medic radiolog-imagist", 2, 18500), ("Laborant radiolog", 4, 10500)]),
-    ("LAB", "Laboratorul clinic", "paraclinical", 0, False, [("Medic de laborator", 1, 17500), ("Laborant", 3, 9800)]),
-    ("FAR", "Farmacia", "admin", 0, False, [("Farmacist", 2, 14500)]),
-    ("GOS", "Serviciul gospodăresc", "admin", 0, False, [("Inginer", 1, 12000), ("Conducător auto", 2, 8500),
+    ("BLO", "Blocul operator", "section", 0, False, [("Asistent medical de operație", 6, 11500), ("Infermieră de operație", 3, 7600)]),
+    ("RAD", "Secția radiologie", "section", 0, True, [("Medic radiolog-imagist", 2, 18500), ("Laborant radiolog", 4, 10500)]),
+    ("LAB", "Laboratorul clinic", "section", 0, False, [("Medic de laborator", 1, 17500), ("Laborant", 3, 9800)]),
+    ("FAR", "Farmacia", "department", 0, False, [("Farmacist", 2, 14500)]),
+    ("GOS", "Serviciul gospodăresc", "department", 0, False, [("Inginer", 1, 12000), ("Conducător auto", 2, 8500),
                                                            ("Bucătar", 2, 7500), ("Îngrijitor încăperi", 4, 6800)]),
 ]
+# Funcțiile demo care nu mai sunt în clasificatorul livrat (S1 — fără funcții de spital): felul vechi al personalului (pentru
+# datele demo) și grupa CORM (categoria de personal). Datele demo se refac pentru un SRL după unirea ramurilor S1.
+DEMO_OCCUPATIONS = {
+    "Director": ("leadership", "1"), "Director adjunct medical": ("leadership", "1"), "Contabil-șef": ("leadership", "1"),
+    "Șef secție — medic": ("physicians", "2"), "Medic traumatolog-ortoped": ("physicians", "2"),
+    "Medic anesteziolog-reanimatolog": ("physicians", "2"), "Medic radiolog-imagist": ("physicians", "2"),
+    "Medic de laborator": ("physicians", "2"), "Medic de gardă": ("physicians", "2"), "Farmacist": ("pharmacists", "2"),
+    "Asistent medical de secție": ("nurses", "3"), "Asistent medical anestezist": ("nurses", "3"),
+    "Asistent medical de operație": ("nurses", "3"), "Laborant radiolog": ("nurses", "3"), "Laborant": ("nurses", "3"),
+    "Infermieră": ("junior", "5"), "Infermieră de operație": ("junior", "5"),
+}
+
+
+def kind_of(occupation) -> str:
+    """Felul vechi al personalului unei funcții demo (medici, asistenți...); celelalte — „admin”."""
+    return DEMO_OCCUPATIONS.get(occupation.name_ro, ("admin", ""))[0]
+
+
+def demo_occupations() -> dict:
+    """Funcțiile din STRUCTURE, după denumire; cele care lipsesc din clasificator se adaugă."""
+    from apps.org.models import STAFF_CATEGORY, DictItem, Occupation
+
+    groups = {c.code: c for c in DictItem.objects.filter(kind=STAFF_CATEGORY)}
+    found = {o.name_ro: o for o in Occupation.objects.all()}
+    names = [name for *_rest, jobs in STRUCTURE for name, _units, _salary in jobs] + list(DEMO_OCCUPATIONS)
+    for name in names:
+        if name not in found:
+            group = DEMO_OCCUPATIONS.get(name, ("admin", "2"))[1]
+            found[name] = Occupation.objects.create(name_ro=name, category=groups.get(group), weekly_hours=35)
+    return found
+
+
 # câți oameni se angajează pe fiecare funcție (restul unităților rămân vacante)
 FILL = 0.8
 
@@ -90,8 +122,12 @@ def run(force=False):
             setattr(company, field, value)
     company.save()
 
-    occupations = {o.name_ro: o for o in Occupation.objects.all()}
-    specialties = list(Specialty.objects.filter(kind="medical")[:10]) or list(Specialty.objects.all()[:10])
+    occupations = demo_occupations()
+    specialties = list(Specialty.objects.all()[:10]) or [Specialty.objects.create(name_ro=n) for n in (
+        "Ortopedie și traumatologie", "Anesteziologie și reanimatologie", "Asistent medical generalist")]
+    for i, (code, name) in enumerate([("second", "Categoria a doua"), ("first", "Categoria întâi"),
+                                      ("superior", "Categoria superioară")], start=1):
+        DictItem.objects.get_or_create(kind="qualification", code=code, defaults={"name_ro": name, "sort": i * 10})
     cat = {c.code: c for c in DictItem.objects.filter(kind="qualification")}
     edu = {c.code: c for c in DictItem.objects.filter(kind="education")}
     family = {c.code: c for c in DictItem.objects.filter(kind="family")}
@@ -102,7 +138,7 @@ def run(force=False):
 
     subs, lines = {}, []
     for i, (code, name, kind, beds, harmful, _jobs) in enumerate(STRUCTURE):
-        subs[code] = Subdivision.objects.create(code=code, name_ro=name, kind=kind, beds=beds, harmful=harmful,
+        subs[code] = Subdivision.objects.create(code=code, name_ro=name, kind=kind, harmful=harmful,
                                                 extra_leave_days=7 if harmful else 0, sort=(i + 1) * 10)
     sl = StaffList.objects.create(number="1", date=today.replace(month=1, day=1), effective_from=today.replace(month=1, day=1),
                                   approved_by="Ordinul Ministerului Sănătății (demo)", status="approved")
@@ -127,7 +163,7 @@ def run(force=False):
             occ = occupations[occ_name]
             for _ in range(max(1, round(units * FILL))):
                 tab += 1
-                female = rnd.random() < (0.85 if occ.category in ("nurses", "junior") else 0.5)
+                female = rnd.random() < (0.85 if kind_of(occ) in ("nurses", "junior") else 0.5)
                 sex = "F" if female else "M"
                 last, first = name(sex)
                 birth = _years_ago(rnd, today, 24, 62)
@@ -142,9 +178,9 @@ def run(force=False):
                                  base_salary=Decimal(salary), date_from=hired, contract_number=f"{tab}/{hired.year}", contract_date=hired,
                                  probation_until=hired + timedelta(days=90) if (today - hired).days < 80 else None)
                 people.append((emp, job))
-                medical = occ.category in ("physicians", "nurses", "pharmacists")
-                level = "higher" if occ.category in ("physicians", "pharmacists", "leadership") else (
-                    "vocational" if occ.category == "nurses" else "secondary")
+                medical = kind_of(occ) in ("physicians", "nurses", "pharmacists")
+                level = "higher" if kind_of(occ) in ("physicians", "pharmacists", "leadership") else (
+                    "vocational" if kind_of(occ) == "nurses" else "secondary")
                 Education.objects.create(employee=emp, level=edu.get(level), institution=(
                     "USMF „Nicolae Testemițanu”" if level == "higher" else "Colegiul de Medicină din Chișinău" if level == "vocational"
                     else "Liceul teoretic"), year_to=min(hired.year, birth.year + 23), specialty=rnd.choice(specialties) if medical else None)
@@ -170,12 +206,12 @@ def _cumul(people, subs, occupations, staff, rnd, today):
     """Câteva cumuluri interne (50 % / 25 %) și un contract de prestări servicii."""
     from apps.staff.models import Employee
 
-    doctors = [e for e, j in people if j.occupation.category == "physicians" and j.subdivision.code in ("TR1", "TR2")]
+    doctors = [e for e, j in people if kind_of(j.occupation) == "physicians" and j.subdivision.code in ("TR1", "TR2")]
     for emp in doctors[:3]:
         staff.hire(emp, kind="internal", subdivision=subs["ATI" if rnd.random() < 0.5 else "RAD"],
                    occupation=occupations["Medic de gardă"], rate=Decimal("0.5"), base_salary=Decimal("17500"),
                    combination_pct=Decimal("0"), date_from=today.replace(day=1) - timedelta(days=200))
-    nurses = [e for e, j in people if j.occupation.category == "nurses"]
+    nurses = [e for e, j in people if kind_of(j.occupation) == "nurses"]
     for emp in nurses[:2]:
         staff.hire(emp, kind="internal", subdivision=subs["BLO"], occupation=occupations["Asistent medical de operație"],
                    rate=Decimal("0.25"), base_salary=Decimal("11500"), date_from=today.replace(day=1) - timedelta(days=120))
@@ -208,7 +244,7 @@ def _activity(people, subs, rnd, today):
     hep = DictItem.objects.filter(kind="vaccine", code="hepatitis_b").first()
     flu = DictItem.objects.filter(kind="vaccine", code="influenza").first()
     for i, (emp, job) in enumerate(people):
-        medical = job.occupation.category in ("physicians", "nurses", "pharmacists", "junior")
+        medical = kind_of(job.occupation) in ("physicians", "nurses", "pharmacists", "junior")
         if i % 6 != 5:
             done = today - timedelta(days=rnd.randint(30, 380))
             MedicalExam.objects.create(employee=emp, kind="periodic", date=done, next_date=done + timedelta(days=365),
@@ -220,7 +256,7 @@ def _activity(people, subs, rnd, today):
         if medical and flu and i % 2 == 0:
             Vaccination.objects.create(employee=emp, vaccine=flu, date=today - timedelta(days=rnd.randint(200, 360)),
                                        next_date=today + timedelta(days=rnd.randint(5, 160)))
-        if job.occupation.category in ("physicians", "nurses", "pharmacists"):
+        if kind_of(job.occupation) in ("physicians", "nurses", "pharmacists"):
             for _ in range(rnd.randint(1, 4)):
                 start = today - timedelta(days=rnd.randint(20, 1500))
                 TrainingRecord.objects.create(employee=emp, kind=rnd.choice(["course", "conference", "seminar", "online"]),
@@ -274,7 +310,7 @@ def _users(people, subs, Role, User):
         if User.objects.filter(username=username).exists():
             continue
         if role == "employee":
-            emp = next(e for e, j in people if j.subdivision.code == "TR1" and j.occupation.category == "physicians" and e.user_id is None)
+            emp = next(e for e, j in people if j.subdivision.code == "TR1" and kind_of(j.occupation) == "physicians" and e.user_id is None)
             first, last = emp.first_name, emp.last_name
         user = User.objects.create_user(username=username, password=DEMO_PASSWORD, first_name=first, last_name=last,
                                         email=f"{username}@demo.md")

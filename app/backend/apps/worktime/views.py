@@ -73,7 +73,7 @@ class SettingsView(APIView):
         from apps.core.models import SystemSetting
 
         cfg = services.get_settings()
-        for key in ("min_rest_hours", "max_duties"):
+        for key in ("min_rest_hours", "max_night_shifts"):
             if key in request.data:
                 try:
                     cfg[key] = max(0, int(request.data.get(key) or 0))

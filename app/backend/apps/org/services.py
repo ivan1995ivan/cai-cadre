@@ -8,7 +8,7 @@ from rest_framework.exceptions import ValidationError
 
 from apps.core.deletion import ensure_not_marked
 
-from .models import STAFF_CATEGORIES, StaffList, StaffListLine
+from .models import STAFF_CATEGORY, DictItem, StaffList, StaffListLine
 
 ZERO = Decimal("0")
 
@@ -70,8 +70,8 @@ def new_version(source: StaffList, effective_from, user=None) -> StaffList:
     )
     StaffListLine.objects.bulk_create([
         StaffListLine(staff_list=copy, subdivision_id=line.subdivision_id, occupation_id=line.occupation_id,
-                      category=line.category, units=line.units, base_salary=line.base_salary,
-                      allowance_pct=line.allowance_pct, effort_note=line.effort_note, note=line.note, sort=line.sort)
+                      category_id=line.category_id, units=line.units, base_salary=line.base_salary,
+                      allowance_pct=line.allowance_pct, note=line.note, sort=line.sort)
         for line in source.lines.all()
     ])
     return copy
@@ -116,14 +116,24 @@ def diff(staff_list: StaffList, base: StaffList | None = None, lang: str = "ro")
     return out
 
 
-def totals(staff_list: StaffList) -> dict:
-    """Totalurile pe subdiviziuni și pe categorii de personal (anexa „efectivul-limită”)."""
-    by_cat = {code: {"code": code, "name": name, "units": ZERO, "fund": ZERO} for code, name in STAFF_CATEGORIES}
+def category_label(category, lang: str = "ro") -> str:
+    """Denumirea categoriei de personal (fără categorie — „Fără categorie”)."""
+    if category is None:
+        return {"ru": "Без категории", "en": "No category"}.get(lang, "Fără categorie")
+    return category.local_name(lang)
+
+
+def totals(staff_list: StaffList, lang: str = "ro") -> dict:
+    """Totalurile pe subdiviziuni și pe categorii de personal (efectivul-limită), în ordinea clasificatorului."""
+    by_cat = {c.pk: {"id": c.pk, "code": c.code, "name": c.local_name(lang), "units": ZERO, "fund": ZERO}
+              for c in DictItem.objects.filter(kind=STAFF_CATEGORY)}
+    none = {"id": None, "code": "", "name": category_label(None, lang), "units": ZERO, "fund": ZERO}
     by_sub = {}
     total_units, total_fund = ZERO, ZERO
-    for line in staff_list.lines.select_related("subdivision", "occupation"):
+    for line in staff_list.lines.select_related("subdivision", "occupation", "category", "occupation__category"):
         fund = line.monthly_fund()
-        cat = by_cat[line.effective_category()]
+        category = line.effective_category()
+        cat = by_cat.get(category.pk, none) if category is not None else none
         cat["units"] += line.units
         cat["fund"] += fund
         sub = by_sub.setdefault(line.subdivision_id, {"id": line.subdivision_id, "name": line.subdivision.name_ro,
@@ -137,7 +147,7 @@ def totals(staff_list: StaffList) -> dict:
         return {**d, "units": str(d["units"]), "fund": str(d["fund"])}
 
     return {
-        "categories": [fmt(c) for c in by_cat.values() if c["units"]],
+        "categories": [fmt(c) for c in [*by_cat.values(), none] if c["units"]],
         "subdivisions": [fmt(s) for s in sorted(by_sub.values(), key=lambda s: (s["sort"], s["name"]))],
         "units": str(total_units), "fund": str(total_fund),
     }
@@ -157,13 +167,14 @@ def occupancy(staff_list: StaffList | None = None, on_date=None, lang: str = "ro
             cur["temporary"] += Decimal(v.get("temporary", 0))
             cur["holders"] += v.get("holders", [])
     grouped = {}
-    for line in staff_list.lines.select_related("subdivision", "occupation"):
+    for line in staff_list.lines.select_related("subdivision", "occupation", "category", "occupation__category"):
         k = _key(line)
+        category = line.effective_category()
         row = grouped.setdefault(k, {
             "subdivision_id": line.subdivision_id, "subdivision": line.subdivision.local_name(lang),
             "subdivision_sort": line.subdivision.sort, "occupation_id": line.occupation_id,
             "occupation_code": line.occupation.code, "occupation": line.occupation.local_name(lang),
-            "category": line.effective_category(), "approved": ZERO,
+            "category": category.pk if category else None, "category_name": category_label(category, lang), "approved": ZERO,
         })
         row["approved"] += line.units
     rows, t_app, t_occ, t_tmp = [], ZERO, ZERO, ZERO

@@ -6,23 +6,14 @@ from decimal import Decimal
 
 from django.db.models import Q
 
-from apps.org.models import STAFF_CATEGORIES, DictItem, Occupation, Subdivision
+from apps.org.models import STAFF_CATEGORY, DictItem, Occupation, Subdivision
 from apps.staff import services as staff
 from apps.staff.models import CIVIL_KINDS, EMPLOYMENT_KINDS, Employee, Employment, EmploymentHistory
 
 from .registry import col, report, subtitle_parts
 
 MAIN_KINDS = {"main", "main_student", "resident"}
-CATEGORY = dict(STAFF_CATEGORIES)
-CATEGORY_T = {
-    "leadership": ("Personal de conducere", "Руководящий персонал", "Management"),
-    "physicians": ("Medici", "Врачи", "Physicians"),
-    "pharmacists": ("Farmaciști", "Фармацевты", "Pharmacists"),
-    "nurses": ("Personal medical cu studii medii", "Средний медицинский персонал", "Nurses and mid-level staff"),
-    "junior": ("Personal medical inferior", "Младший медицинский персонал", "Junior medical staff"),
-    "admin": ("Personal administrativ-gospodăresc", "Административно-хозяйственный персонал", "Administrative staff"),
-    "other": ("Alt personal", "Прочий персонал", "Other staff"),
-}
+NO_CATEGORY = ("Fără categorie", "Без категории", "No category")
 KIND_T = {
     "main": ("De bază", "Основная", "Main"), "main_student": ("De bază (student)", "Основная (студент)", "Main (student)"),
     "internal": ("Cumul intern", "Внутреннее совместительство", "Internal part-time"),
@@ -45,7 +36,7 @@ class Lookup:
     def __init__(self, lang):
         self.lang = lang
         self.subs = {s.pk: s for s in Subdivision.objects.all()}
-        self.occs = {o.pk: o for o in Occupation.objects.all()}
+        self.occs = {o.pk: o for o in Occupation.objects.select_related("category")}
 
     def sub(self, pk):
         s = self.subs.get(pk)
@@ -56,8 +47,29 @@ class Lookup:
         return o.local_name(self.lang) if o else ""
 
     def category(self, occ_pk):
+        """Id-ul categoriei de personal a funcției (clasificatorul „Categoriile de personal”), None — fără categorie."""
         o = self.occs.get(occ_pk)
-        return o.category if o else "other"
+        return o.category_id if o else None
+
+    def category_code(self, occ_pk) -> str:
+        o = self.occs.get(occ_pk)
+        return o.category.code if o and o.category_id else ""
+
+    def category_name(self, occ_pk, t) -> str:
+        o = self.occs.get(occ_pk)
+        return o.category.local_name(self.lang) if o and o.category_id else t(NO_CATEGORY)
+
+    def in_category(self, occ_pk, wanted: str) -> bool:
+        """Filtrul raportului: `wanted` e id-ul categoriei (text din adresă), „none” — fără categorie, gol — toate."""
+        if not wanted:
+            return True
+        cat = self.category(occ_pk)
+        return cat is None if wanted == "none" else str(cat or "") == wanted
+
+
+def category_order(lang) -> list:
+    """Denumirile categoriilor în ordinea clasificatorului (pentru secțiunile rapoartelor)."""
+    return [c.local_name(lang) for c in DictItem.objects.filter(kind=STAFF_CATEGORY)]
 
 
 def snapshot(emp: Employment, day) -> dict:
@@ -87,7 +99,7 @@ def jobs_on(p, day, look: Lookup, kinds=None, preloaded=None):
         snap = snapshot(e, day)
         if not p.allowed(snap["subdivision_id"]):
             continue
-        if p.category and look.category(snap["occupation_id"]) != p.category:
+        if not look.in_category(snap["occupation_id"], p.category):
             continue
         out.append((e, snap))
     return out
@@ -116,7 +128,7 @@ def movement(p):
         jobs = jobs.filter(kind__in=MAIN_KINDS)
 
     def keep(snap):
-        return p.allowed(snap["subdivision_id"]) and (not p.category or look.category(snap["occupation_id"]) == p.category)
+        return p.allowed(snap["subdivision_id"]) and look.in_category(snap["occupation_id"], p.category)
 
     def row(e, snap, day, detail, order=""):
         return {"date": _d(day), "tab": e.employee.tab_number, "name": e.employee.full_name(), "sub": look.sub(snap["subdivision_id"]),
@@ -223,7 +235,7 @@ def structure(p):
         emp = employees[pk]
         main = next((x for x in js if x[0].kind in MAIN_KINDS), js[0])
         values = {
-            "category": p.t(CATEGORY_T.get(look.category(main[1]["occupation_id"]), ("—",))),
+            "category": look.category_name(main[1]["occupation_id"], p.t),
             "sex": p.t(SEX_T.get(emp.sex, SEX_T[""])),
             "age": _group(age_on(emp.birth_date, p.on_date), AGE_GROUPS) if emp.birth_date else "—",
         }
@@ -249,7 +261,7 @@ def structure(p):
               ("seniority", ("Pe vechimea totală (ani)", "По общему стажу (лет)", "By total seniority (years)")),
               ("rate", ("Pe normă", "По ставке", "By rate"))]
     order = {"age": [g[2] for g in AGE_GROUPS] + ["—"], "seniority": [g[2] for g in SENIORITY_GROUPS],
-             "category": [p.t(CATEGORY_T[c]) for c, _ in STAFF_CATEGORIES]}
+             "category": [*category_order(p.lang), p.t(NO_CATEGORY)]}
     rows = []
     for key, title in titles:
         rows.append({"_section": p.t(title)})
@@ -392,7 +404,12 @@ def _occupancy(p):
     from apps.org import services as org_services
 
     occ = org_services.occupancy(on_date=p.on_date, lang=p.lang)
-    return [r for r in occ["rows"] if p.allowed(r["subdivision_id"]) and (not p.category or r["category"] == p.category)]
+    wanted = p.category
+
+    def in_category(r):
+        return not wanted or (r["category"] is None if wanted == "none" else str(r["category"] or "") == wanted)
+
+    return [r for r in occ["rows"] if p.allowed(r["subdivision_id"]) and in_category(r)]
 
 
 @report("vacancies", "personnel", ("Posturi vacante", "Вакантные должности", "Vacant positions"),
@@ -406,7 +423,7 @@ def vacancies(p):
         vacant = Decimal(r["vacant"])
         if vacant <= 0:
             continue
-        rows.append({"sub": r["subdivision"], "occ": r["occupation"], "category": p.t(CATEGORY_T.get(r["category"], ("—",))),
+        rows.append({"sub": r["subdivision"], "occ": r["occupation"], "category": r["category_name"],
                      "approved": float(r["approved"]), "occupied": float(r["occupied"]), "vacant": float(vacant)})
         for k in totals:
             totals[k] += Decimal(r[k]) if k != "vacant" else vacant
@@ -458,9 +475,7 @@ def medical_staff(p):
             s["external"] += 1
     by_cat = defaultdict(list)
     for occ_id in set(units) | set(stats):
-        cat = look.category(occ_id)
-        if cat not in ("physicians", "pharmacists", "nurses", "junior"):
-            continue
+        cat = look.category_name(occ_id, p.t)
         s = stats[occ_id]
         by_cat[cat].append({"occ": look.occ(occ_id), "code": look.occs[occ_id].code if occ_id in look.occs else "",
                             "approved": float(units[occ_id][0]), "occupied": float(units[occ_id][1]), "main": s["main"],
@@ -468,7 +483,7 @@ def medical_staff(p):
                             "first": s["first"], "second": s["second"], "pension": s["pension"]})
     rows, totals = [], Counter()
     nums = ("approved", "occupied", "main", "internal", "external", "women", "superior", "first", "second", "pension")
-    for cat in ("physicians", "pharmacists", "nurses", "junior"):
+    for cat in [*category_order(p.lang), p.t(NO_CATEGORY)]:
         if not by_cat[cat]:
             continue
         part = sorted(by_cat[cat], key=lambda r: r["occ"])
@@ -476,7 +491,7 @@ def medical_staff(p):
         for r in part:
             for k in nums:
                 sub[k] += r[k]
-        rows.append({"_section": p.t(CATEGORY_T[cat])})
+        rows.append({"_section": cat})
         rows += part
         rows.append({"occ": p.t(("Total", "Итого", "Subtotal")), "_subtotal": True, **{k: sub[k] for k in nums}})
         totals.update(sub)

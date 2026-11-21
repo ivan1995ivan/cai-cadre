@@ -75,8 +75,10 @@ class EmployeeViewSet(DeletionMarkMixin, viewsets.ModelViewSet):
             qs = qs.filter(active_jobs, employments__subdivision_id__in=ids)
         if p.get("occupation"):
             qs = qs.filter(active_jobs, employments__occupation_id=p["occupation"])
-        if p.get("category"):
-            qs = qs.filter(active_jobs, employments__occupation__category=p["category"])
+        if p.get("category") == "none":
+            qs = qs.filter(active_jobs, employments__occupation__category__isnull=True)
+        elif str(p.get("category") or "").isdigit():
+            qs = qs.filter(active_jobs, employments__occupation__category_id=p["category"])
         if p.get("kind"):
             qs = qs.filter(active_jobs, employments__kind=p["kind"])
         if p.get("sex") in ("M", "F"):

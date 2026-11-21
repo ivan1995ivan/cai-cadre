@@ -9,17 +9,20 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from apps.core.models import SystemSetting
-from apps.org.models import STAFF_CATEGORIES
+from apps.org.models import STAFF_CATEGORY, DictItem
 from apps.staff.models import Employment, Qualification
 
 from .models import Attestation, TrainingPlan, TrainingPlanLine, TrainingRecord
 
 SETTINGS_KEY = "training_settings"
 MAIN_KINDS = ("main", "main_student", "resident")
-# Creditele cerute pe perioada de atestare, pe categorii de personal (se schimbă din setări după regulamentul în vigoare).
-DEFAULTS = {"period_years": 5, "warn_months": 12,
-            "credits": {"physicians": 250, "pharmacists": 250, "nurses": 150, "junior": 0, "leadership": 0, "admin": 0, "other": 0}}
-CATEGORY_NAMES = dict(STAFF_CATEGORIES)
+# Creditele cerute pe perioada de atestare, pe categorii de personal — după codul din clasificatorul „Categoriile de
+# personal” (grupa CORM: 2 — specialiști, 3 — tehnicieni); se schimbă din setări.
+DEFAULTS = {"period_years": 5, "warn_months": 12, "credits": {"2": 250, "3": 150}}
+
+
+def _category_code(occupation) -> str:
+    return occupation.category.code if occupation.category_id else ""
 
 
 def get_settings() -> dict:
@@ -34,7 +37,7 @@ def save_settings(data: dict) -> dict:
     if "warn_months" in data:
         cfg["warn_months"] = max(1, min(int(data["warn_months"] or 12), 36))
     for k, v in (data.get("credits") or {}).items():
-        if k in CATEGORY_NAMES:
+        if DictItem.objects.filter(kind=STAFF_CATEGORY, code=k).exists():
             cfg["credits"][k] = max(0, min(int(v or 0), 2000))
     SystemSetting.write(SETTINGS_KEY, cfg)
     return cfg
@@ -65,11 +68,11 @@ def staff_on(day, sub_ids=None, category=""):
     """Angajații cu raport de bază în vigoare: {employee_id: raportul}."""
     qs = (Employment.objects.filter(kind__in=MAIN_KINDS, date_from__lte=day)
           .filter(Q(end_date__isnull=True) | Q(end_date__gte=day))
-          .select_related("employee", "subdivision", "occupation"))
+          .select_related("employee", "subdivision", "occupation__category"))
     if sub_ids is not None:
         qs = qs.filter(subdivision_id__in=sub_ids)
-    if category:
-        qs = qs.filter(occupation__category=category)
+    if category and str(category).isdigit():
+        qs = qs.filter(occupation__category_id=category)
     out = {}
     for job in qs.order_by("date_from"):
         out.setdefault(job.employee_id, job)
@@ -91,7 +94,7 @@ def credits_rows(day=None, sub_ids=None, category="", lang="ro", with_zero=False
     warn = day + timedelta(days=30 * cfg["warn_months"])
     rows = []
     for emp_id, job in jobs.items():
-        cat = job.occupation.category
+        cat = _category_code(job.occupation)
         required = Decimal(cfg["credits"].get(cat, 0))
         if not required and not with_zero:
             continue

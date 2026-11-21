@@ -1,4 +1,4 @@
-// Instituția, clasificatoarele și statele de personal (Etapa 1).
+// Întreprinderea, clasificatoarele și statele de personal (Etapa 1).
 
 export interface NamedItem {
   id: number
@@ -12,7 +12,9 @@ export interface NamedItem {
 }
 
 export interface Occupation extends NamedItem {
-  category: string
+  /** Categoria de personal (clasificatorul „Categoriile de personal”, grupele CORM); null — fără categorie. */
+  category: number | null
+  category_name: string
   isco_code: string
   weekly_hours: string
   base_leave_days: number
@@ -30,7 +32,6 @@ export interface Subdivision extends NamedItem {
   parent: number | null
   parent_name: string
   kind: string
-  beds: number
   harmful: boolean
   extra_leave_days: number
   reduced_hours: string | null
@@ -64,19 +65,19 @@ export interface StaffListLine {
   occupation: number
   occupation_code: string
   occupation_name: string
-  category: string
-  effective_category: string
+  category: number | null
+  effective_category: number | null
+  effective_category_name: string
   units: string
   base_salary: string
   allowance_pct: string
-  effort_note: string
   note: string
   sort: number
   monthly_fund: string
 }
 
 export interface Totals {
-  categories: { code: string; name: string; units: string; fund: string }[]
+  categories: { id: number | null; code: string; name: string; units: string; fund: string }[]
   subdivisions: { id: number; name: string; units: string; fund: string }[]
   units: string
   fund: string
@@ -99,7 +100,8 @@ export interface OccupancyRow {
   occupation_id: number
   occupation_code: string
   occupation: string
-  category: string
+  category: number | null
+  category_name: string
   approved: string
   occupied: string
   temporary: string
@@ -117,7 +119,6 @@ export interface Occupancy {
 }
 
 export interface OrgMeta {
-  categories: string[]
   order_groups: string[]
   order_registers: string[]
   order_effects: string[]

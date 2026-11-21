@@ -2,7 +2,7 @@
 export default {
   org: {
     pointTemplate: 'Textul punctului „ORDON:” (gol = textul livrat)',
-    pointTemplateHint: 'Câmpuri: {angajat} {tab} {functia} {sectia} {norma} {salariul} {sporuri} {din} {pana} {zile} {an_de} {an_pana} {motivul} {destinatia} {suma} {procent} {categoria} {sanctiunea} {abaterea} {text}',
+    pointTemplateHint: 'Câmpuri: {angajat} {tab} {functia} {sectia} {norma} {salariul} {sporuri} {din} {pana} {zile} {an_de} {an_pana} {motivul} {destinatia} {suma} {suma_text} {procent} {sanctiunea} {abaterea} {text}',
   },
   staff: { tabs: { orders: 'Ordine și absențe' } },
   ord: {
@@ -32,6 +32,7 @@ export default {
       purpose: 'Scopul', note: 'Mențiune', calc: '{{days}} zile, ultima zi {{to}} (sărbători excluse: {{holidays}})', absence: 'Concediul',
       returnDate: 'Revine la muncă din', amount: 'Suma (lei)', forWhat: 'Pentru ce', sanctionRecord: 'Sancțiunea ridicată', sanction: 'Sancțiunea',
       misconduct: 'Abaterea disciplinară', until: 'Până la', staffListHint: 'Ciorna statelor de personal care se aprobă prin ordin.',
+      deductionPercent: 'Procentul din salariu (%)', fromDate: 'Începând cu', deductionBasis: 'Temeiul reținerii', deductionHint: 'De ex. titlul executoriu nr. … sau cererea angajatului. Cel mult 20 % din salariu (CM art. 148–149); suma sau procentul.',
       cancels: 'Se anulează', hours: 'Ore', text: 'Textul punctului',
     },
     tab: {

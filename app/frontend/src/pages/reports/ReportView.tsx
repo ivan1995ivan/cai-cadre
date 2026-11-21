@@ -8,6 +8,7 @@ import dayjs, { type Dayjs } from 'dayjs'
 import PeriodPicker, { type Period } from '../../components/PeriodPicker'
 import PrintDialog from '../../components/PrintDialog'
 import { errorText } from '../../api/client'
+import { useDict } from '../../api/staff'
 import { useFetch } from '../../api/hooks'
 import { downloadFile } from '../../api/payroll'
 import { useApp } from '../../auth/AppContext'
@@ -26,7 +27,6 @@ interface ReportData {
   summary: { label: string; value: number | string }[]
 }
 
-const CATEGORIES = ['leadership', 'physicians', 'pharmacists', 'nurses', 'junior', 'admin', 'other']
 const ABSENCES = ['annual', 'extra', 'unpaid', 'maternity', 'paternity', 'childcare', 'childcare_unpaid', 'study', 'days_off', 'travel',
   'training', 'sick']
 
@@ -59,6 +59,7 @@ export default function ReportView({ reportKey, embedded }: { reportKey?: string
   const [year, setYear] = useState<number>(now.year())
   const [subdivision, setSubdivision] = useState<number | undefined>()
   const [category, setCategory] = useState<string | undefined>()
+  const staffCategories = useDict('staff_category')
   const [kinds, setKinds] = useState<'main' | 'all'>('main')
   const [absence, setAbsence] = useState<string | undefined>()
   const [printOpen, setPrintOpen] = useState(false)
@@ -110,7 +111,7 @@ export default function ReportView({ reportKey, embedded }: { reportKey?: string
         {has('subdivision') && <SubdivisionSelect style={{ width: 300 }} placeholder={t('org.subdivision')}
           value={subdivision} onChange={(v) => setSubdivision(typeof v === 'number' ? v : undefined)} />}
         {has('category') && <Select allowClear style={{ width: 240 }} placeholder={t('rep.category')} value={category} onChange={setCategory}
-          options={CATEGORIES.map((c) => ({ value: c, label: t(`org.cat.${c}`) }))} />}
+          options={[...staffCategories.map((c) => ({ value: String(c.value), label: c.label })), { value: 'none', label: t('org.noCategory') }]} />}
         {has('kinds') && <Select style={{ width: 230 }} value={kinds} onChange={setKinds}
           options={[{ value: 'main', label: t('rep.kindsMain') }, { value: 'all', label: t('rep.kindsAll') }]} />}
         {has('absence_kind') && <Select allowClear style={{ width: 260 }} placeholder={t('rep.allAbsences')} value={absence} onChange={setAbsence}

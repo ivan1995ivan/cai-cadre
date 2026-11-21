@@ -6,12 +6,13 @@ from apps.org.models import Occupation, Subdivision
 from apps.staff import services as staff
 from apps.staff.models import Employee
 from apps.users.models import Role, User
+from .conftest import occupation
 
 
 def test_head_sees_only_assigned_subdivisions(seeded, admin_client, client_for):
     tr1 = Subdivision.objects.create(code="TR1", name_ro="Traumatologie")
     ati = Subdivision.objects.create(code="ATI", name_ro="ATI")
-    occ = Occupation.objects.get(name_ro="Medic traumatolog-ortoped")
+    occ = occupation("Medic traumatolog-ortoped")
     for i, (name, sub) in enumerate((("Popescu", tr1), ("Rusu", ati)), start=1):
         e = Employee.objects.create(tab_number=str(i), last_name=name, first_name="X")
         staff.hire(e, kind="main", subdivision=sub, occupation=occ, rate=Decimal("1"), base_salary=Decimal("1"), date_from=date(2024, 1, 1))

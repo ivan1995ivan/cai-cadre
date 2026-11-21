@@ -6,6 +6,7 @@ import CrudTable, { type CrudField } from '../../components/CrudTable'
 import ExcelImport from '../../components/ExcelImport'
 import { useFetch, invalidateCache } from '../../api/hooks'
 import type { OrgMeta } from '../../api/org'
+import { useDict } from '../../api/staff'
 import { useApp } from '../../auth/AppContext'
 
 /** Câmpurile de denumire, comune tuturor clasificatoarelor (RO / RU / EN). */
@@ -32,8 +33,9 @@ export default function DictionaryPage({ dict, title }: { dict: string; title: s
   const { t } = useTranslation()
   const { hasPerm, languages } = useApp()
   const canEdit = hasPerm('dictionaries.edit')
-  // listele de alegere (categoriile CORM, tipurile specialităților, grupele ordinelor) — doar la clasificatoarele care le au
-  const { data: meta } = useFetch<OrgMeta>(['occupations', 'specialties', 'order-types'].includes(dict) ? '/org/meta/' : null)
+  // listele de alegere (tipurile specialităților, grupele ordinelor) — doar la clasificatoarele care le au
+  const { data: meta } = useFetch<OrgMeta>(['specialties', 'order-types'].includes(dict) ? '/org/meta/' : null)
+  const staffCategories = useDict('staff_category')
   const names = useNameFields()
   const opts = useEnumOptions()
   const [reload, setReload] = useState(0)
@@ -48,7 +50,8 @@ export default function DictionaryPage({ dict, title }: { dict: string; title: s
     { key: 'code', label: t('org.corm'), width: 110,
       render: (v) => v ? String(v) : <Tag color="orange">{t('org.noCode')}</Tag> },
     ...names,
-    { key: 'category', label: t('org.category'), type: 'select', options: opts('org.cat', meta?.categories), required: true, width: 220 },
+    { key: 'category', label: t('org.category'), type: 'select', options: staffCategories, ref: { dict: 'staff_category' }, width: 240,
+      render: (_v, r) => String(r.category_name ?? ''), extra: <Typography.Text type="secondary">{t('org.categoryAuto')}</Typography.Text> },
     { key: 'isco_code', label: 'ISCO-08', inTable: false },
     { key: 'weekly_hours', label: t('org.weeklyHours'), type: 'number', width: 90 },
     { key: 'base_leave_days', label: t('org.baseLeave'), type: 'number', inTable: false },
@@ -111,12 +114,12 @@ export default function DictionaryPage({ dict, title }: { dict: string; title: s
   const tables: Record<string, React.ReactNode> = {
     occupations: (
       <CrudTable key={`occ${reload}`} endpoint="/org/occupations/" fields={occupations} canEdit={canEdit}
-        defaults={{ category: 'other', weekly_hours: 40, base_leave_days: 28, extra_leave_days: 0 }}
+        defaults={{ category: null, weekly_hours: 40, base_leave_days: 28, extra_leave_days: 0 }}
         title={<Typography.Text type="secondary">{t('org.occupationsHint')}</Typography.Text>}
         extra={canEdit && <ExcelImport code="occupations" label={t('org.importCorm')} onDone={refresh('/org/occupations/')} />} />
     ),
     specialties: (
-      <CrudTable key={`spec${reload}`} endpoint="/org/specialties/" fields={specialties} canEdit={canEdit} defaults={{ kind: 'medical' }}
+      <CrudTable key={`spec${reload}`} endpoint="/org/specialties/" fields={specialties} canEdit={canEdit} defaults={{ kind: 'other' }}
         extra={canEdit && <ExcelImport code="specialties" onDone={refresh('/org/specialties/')} />} />
     ),
     legal: (

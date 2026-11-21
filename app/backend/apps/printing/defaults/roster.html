@@ -11,7 +11,7 @@
       <th style="width:42mm">Numele, prenumele · funcția · norma</th>
       {% for d in days %}<th style="width:5.2mm{% if not d.working %};background:#eee{% endif %}">{{ d.day }}</th>{% endfor %}
       <th style="width:10mm">Ore</th>
-      <th style="width:9mm">Gărzi</th>
+      <th style="width:9mm">Nopți</th>
       <th style="width:10mm">Norma</th>
     </tr>
   </thead>
@@ -21,7 +21,7 @@
       <td class="num">{{ r.no }}</td>
       <td>{{ r.name }}<br><span class="muted">{{ r.occupation }} · {{ r.rate }}</span></td>
       {% for c in r.cells %}<td style="text-align:center">{{ c }}</td>{% endfor %}
-      <td class="num">{{ r.hours }}</td><td class="num">{{ r.duties }}</td><td class="num">{{ r.norm }}</td>
+      <td class="num">{{ r.hours }}</td><td class="num">{{ r.nights }}</td><td class="num">{{ r.norm }}</td>
     </tr>
   {% empty %}<tr><td colspan="40" class="muted">—</td></tr>{% endfor %}
   </tbody>

@@ -1,14 +1,34 @@
 from rest_framework import serializers
 
-from .models import DictItem, LegalBasis, Occupation, OrderType, Specialty, StaffList, StaffListLine, Subdivision
+from .models import STAFF_CATEGORY, DictItem, LegalBasis, Occupation, OrderType, Specialty, StaffList, StaffListLine, Subdivision
 
 NAMED = ["id", "code", "name_ro", "name_ru", "name_en", "sort", "is_active"]
 
 
+def user_lang(serializer) -> str:
+    request = serializer.context.get("request")
+    return getattr(getattr(request, "user", None), "language", "") or "ro"
+
+
+def validate_staff_category(value):
+    if value is not None and value.kind != STAFF_CATEGORY:
+        raise serializers.ValidationError("Alegeți o categorie din clasificatorul „Categoriile de personal”.")
+    return value
+
+
 class OccupationSerializer(serializers.ModelSerializer):
+    category_name = serializers.SerializerMethodField()
+
     class Meta:
         model = Occupation
-        fields = NAMED + ["category", "isco_code", "weekly_hours", "base_leave_days", "extra_leave_days", "harmful", "notes"]
+        fields = NAMED + ["category", "category_name", "isco_code", "weekly_hours", "base_leave_days", "extra_leave_days",
+                          "harmful", "notes"]
+
+    def get_category_name(self, obj):
+        return obj.category.local_name(user_lang(self)) if obj.category_id else ""
+
+    def validate_category(self, value):
+        return validate_staff_category(value)
 
     def validate_code(self, value):
         value = (value or "").strip()
@@ -78,7 +98,7 @@ class SubdivisionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Subdivision
-        fields = NAMED + ["parent", "parent_name", "kind", "beds", "harmful", "extra_leave_days", "reduced_hours", "head_name",
+        fields = NAMED + ["parent", "parent_name", "kind", "harmful", "extra_leave_days", "reduced_hours", "head_name",
                           "users"]
 
     def validate_parent(self, parent):
@@ -90,26 +110,30 @@ class SubdivisionSerializer(serializers.ModelSerializer):
         return parent
 
 
-def user_lang(serializer) -> str:
-    request = serializer.context.get("request")
-    return getattr(getattr(request, "user", None), "language", "") or "ro"
-
-
 class StaffListLineSerializer(serializers.ModelSerializer):
     subdivision_name = serializers.SerializerMethodField()
     occupation_code = serializers.CharField(source="occupation.code", read_only=True)
     occupation_name = serializers.SerializerMethodField()
     effective_category = serializers.SerializerMethodField()
+    effective_category_name = serializers.SerializerMethodField()
     monthly_fund = serializers.SerializerMethodField()
 
     class Meta:
         model = StaffListLine
         fields = ["id", "staff_list", "subdivision", "subdivision_name", "occupation", "occupation_code", "occupation_name",
-                  "category", "effective_category", "units", "base_salary", "allowance_pct", "effort_note", "note", "sort",
-                  "monthly_fund"]
+                  "category", "effective_category", "effective_category_name", "units", "base_salary", "allowance_pct", "note",
+                  "sort", "monthly_fund"]
 
     def get_effective_category(self, obj):
-        return obj.effective_category()
+        category = obj.effective_category()
+        return category.pk if category else None
+
+    def get_effective_category_name(self, obj):
+        category = obj.effective_category()
+        return category.local_name(user_lang(self)) if category else ""
+
+    def validate_category(self, value):
+        return validate_staff_category(value)
 
     def get_subdivision_name(self, obj):
         return obj.subdivision.local_name(user_lang(self))

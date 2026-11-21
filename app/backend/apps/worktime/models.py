@@ -1,4 +1,4 @@
-"""Timpul de muncă (Etapa 4, partea 2): turele, graficele de lucru, graficul lunar pe secție (gărzi) și tabela de pontaj.
+"""Timpul de muncă (Etapa 4, partea 2): turele, graficele de lucru, graficul de ture al subdiviziunii și tabela de pontaj.
 
 Totul se ține pe **raportul de muncă** (`Employment`), nu pe persoană: angajatul cu funcția de bază într-o secție și cumul
 în alta are câte un rând în fiecare grafic și în fiecare tabelă, cu norma lui.
@@ -14,14 +14,13 @@ from apps.staff.models import Employment
 
 
 class ShiftType(models.Model):
-    """Codul turei din grafic și din pontaj: „8” (zi de 8 ore), „Z12” (zi 08–20), „N12” (noapte 20–08), „G24” (gardă)."""
+    """Codul turei din grafic și din pontaj: „8” (zi de 8 ore), „Z12” (tură de zi 08–20), „N12” (tură de noapte 20–08)."""
 
     code = models.CharField("Codul", max_length=8, unique=True)
     name = models.CharField("Denumirea", max_length=120)
     hours = models.DecimalField("Ore", max_digits=4, decimal_places=1)
     night_hours = models.DecimalField("Din ele noaptea (22–06)", max_digits=4, decimal_places=1, default=Decimal("0"))
     start = models.TimeField("Începe la", null=True, blank=True)
-    is_duty = models.BooleanField("Gardă", default=False)
     color = models.CharField("Culoarea", max_length=9, blank=True)
     sort = models.IntegerField(default=0)
     is_active = models.BooleanField(default=True)
@@ -90,7 +89,7 @@ MONTH_STATUSES = [("draft", "Ciornă"), ("submitted", "Transmis"), ("approved", 
 
 
 class Roster(models.Model):
-    """Graficul lunar al secției (turele și gărzile): un rând pe raport de muncă, codul turei pe fiecare zi."""
+    """Graficul de ture al subdiviziunii pe o lună: un rând pe raport de muncă, codul turei pe fiecare zi."""
 
     subdivision = models.ForeignKey(Subdivision, on_delete=models.PROTECT, related_name="rosters", verbose_name="Subdiviziunea")
     year = models.PositiveSmallIntegerField("Anul")
@@ -105,7 +104,7 @@ class Roster(models.Model):
 
     class Meta:
         ordering = ["-year", "-month", "subdivision__sort", "subdivision__name_ro"]
-        verbose_name = "Graficul lunar (gărzi)"
+        verbose_name = "Graficul de ture"
         constraints = [models.UniqueConstraint(fields=["subdivision", "year", "month"], name="uniq_roster")]
 
     def __str__(self):

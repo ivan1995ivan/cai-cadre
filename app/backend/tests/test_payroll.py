@@ -15,15 +15,17 @@ from apps.worktime import services as worktime
 from apps.worktime.models import Timesheet
 
 from .test_orders import make_order, set_params, sign
+from .conftest import legacy_qualification, occupation
 
 
 @pytest.fixture
 def org(seeded):
+    legacy_qualification()
     tr1 = Subdivision.objects.create(code="TR1", name_ro="Secția traumatologie nr. 1")
     ati = Subdivision.objects.create(code="ATI", name_ro="Secția ATI")
-    return {"tr1": tr1, "ati": ati, "doctor": Occupation.objects.get(name_ro="Medic traumatolog-ortoped"),
-            "anest": Occupation.objects.get(name_ro="Medic anesteziolog-reanimatolog"),
-            "nurse": Occupation.objects.get(name_ro="Asistent medical de secție")}
+    return {"tr1": tr1, "ati": ati, "doctor": occupation("Medic traumatolog-ortoped"),
+            "anest": occupation("Medic anesteziolog-reanimatolog"),
+            "nurse": occupation("Asistent medical de secție")}
 
 
 def person(org, last, first, occ="doctor", sub="tr1", salary="14660", hired=date(2020, 1, 1), **extra):

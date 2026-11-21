@@ -11,17 +11,19 @@ from apps.org.models import DictItem, Occupation, Specialty, Subdivision
 from apps.staff import services as staff
 from apps.staff.models import Employee, Qualification
 from apps.training.models import Attestation, TrainingPlan, TrainingRecord
+from .conftest import legacy_qualification, occupation
 
 TODAY = timezone.localdate()
 
 
 @pytest.fixture
 def org(seeded):
+    legacy_qualification()
     tr1 = Subdivision.objects.create(code="TR1", name_ro="Secția traumatologie nr. 1")
     ati = Subdivision.objects.create(code="ATI", name_ro="Secția ATI")
-    doctor = Occupation.objects.get(name_ro="Medic traumatolog-ortoped")
-    assert doctor.category == "physicians"
-    return {"tr1": tr1, "ati": ati, "doctor": doctor, "spec": Specialty.objects.first(),
+    doctor = occupation("Medic traumatolog-ortoped")
+    assert doctor.category.code == "2"
+    return {"tr1": tr1, "ati": ati, "doctor": doctor, "spec": Specialty.objects.get_or_create(name_ro="Ortopedie și traumatologie")[0],
             "first": DictItem.objects.get(kind="qualification", code="first"),
             "superior": DictItem.objects.get(kind="qualification", code="superior")}
 
@@ -54,10 +56,10 @@ def test_credits_in_attestation_period(org, admin_client):
     assert by["Rusu Ana"]["status"] == "ok"  # 30 de credite în 200 de zile — peste cât se cere pro-rata
     assert data["counts"]["risk"] == 1
     # norma se schimbă din setări
-    admin_client.put("/api/training/settings/", {"credits": {"physicians": 100}}, format="json")
+    admin_client.put("/api/training/settings/", {"credits": {"2": 100}}, format="json")
     assert {x["name"]: x["status"] for x in admin_client.get("/api/training/credits/").data["rows"]}["Popescu Ion"] == "done"
     # alerta „credite insuficiente” vine cu un an înainte de expirare
-    admin_client.put("/api/training/settings/", {"credits": {"physicians": 250}}, format="json")
+    admin_client.put("/api/training/settings/", {"credits": {"2": 250}}, format="json")
     alerts = [x for x in engine.collect(TODAY, ["credits_missing"])]
     assert [x.employee for x in alerts] == [a.pk]
 

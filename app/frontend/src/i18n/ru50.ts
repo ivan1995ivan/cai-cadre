@@ -7,7 +7,7 @@ export default {
       org_OrderType: 'Вид приказа', org_Subdivision: 'Подразделение', org_StaffList: 'Штатное расписание',
       staff_Employee: 'Сотрудник', leave_LeaveSchedule: 'График отпусков', leave_LeaveRequest: 'Заявление на отпуск',
       leave_SickLeave: 'Больничный лист', orders_Order: 'Приказ', worktime_ShiftType: 'Смена',
-      worktime_WorkSchedule: 'График работы', worktime_Roster: 'График дежурств', worktime_Timesheet: 'Табель',
+      worktime_WorkSchedule: 'График работы', worktime_Roster: 'График смен', worktime_Timesheet: 'Табель',
       payroll_PayType: 'Вид расчёта', payroll_Payroll: 'Расчёт зарплаты', payroll_Payment: 'Выплата зарплаты',
       training_TrainingRecord: 'Обучение (НМО)', training_TrainingPlan: 'Годовой план обучения',
       training_Attestation: 'Аттестация', health_MedicalExam: 'Медосмотр', health_Vaccination: 'Вакцинация',

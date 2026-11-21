@@ -2,7 +2,7 @@
 
 Textul se poate schimba în Administrare → Setări → Tipuri de ordine (câmpul „Textul punctului”) sau direct în ordin. Câmpurile
 din acolade: {angajat}, {tab}, {functia}, {sectia}, {norma}, {salariul}, {sporuri}, {din}, {pana}, {zile}, {an_de},
-{an_pana}, {motivul}, {destinatia}, {scopul}, {suma}, {procent}, {categoria}, {specialitatea}, {sanctiunea}, {abaterea},
+{an_pana}, {motivul}, {destinatia}, {scopul}, {suma}, {suma_text}, {procent}, {sanctiunea}, {abaterea},
 {fel}, {proba}, {termen}, {data}, {ore}, {suplinit}, {ordin_anulat}, {text}.
 """
 from collections import defaultdict
@@ -63,7 +63,6 @@ DEFAULT_POINTS = {
     "overtime": "Se antrenează la muncă suplimentară {angajat}, {functia}, {sectia}, la {din}, {ore} ore, cu plata conform "
                 "legislației.",
     "hours_change": "Se stabilește {angajat} (nr. de tabel {tab}), {functia}, {sectia}, începând cu {din}: {text}.",
-    "on_call": "Se aprobă graficul gărzilor {text}.",
     "salary_set": "Se stabilește {angajat} (nr. de tabel {tab}), {functia}, {sectia}, salariul de funcție de {salariul} "
                   "lei{sporuri}, începând cu {din}.",
     "allowance": "Se stabilește {angajat} (nr. de tabel {tab}), {functia}, {sectia}, spor la salariu de {procent}%, "
@@ -71,16 +70,14 @@ DEFAULT_POINTS = {
     "bonus": "Se acordă premiu {angajat}, {functia}, {sectia}, {suma_text}{motiv}.",
     "material_aid": "Se acordă ajutor material {angajat}, {functia}, {sectia}, în sumă de {suma} lei{motiv}.",
     "indexation": "Se majorează salariul de funcție al {angajat}, {functia}, până la {salariul} lei, începând cu {din}.",
+    "deduction": "Se reține din salariul {angajat} (nr. de tabel {tab}), {functia}, {sectia}, {suma_text}, începând cu "
+                 "{din}{motiv}.",
     "sanction": "Pentru {abaterea}, se aplică {angajat} (nr. de tabel {tab}), {functia}, {sectia}, sancțiunea "
                 "disciplinară „{sanctiunea}”.",
     "sanction_lift": "Se ridică înainte de termen sancțiunea disciplinară aplicată {angajat}, {functia}, {sectia}{motiv}.",
-    "training": "Se trimite {angajat}, {functia}, {sectia}, la cursuri de perfecționare la {destinatia}, pe perioada "
+    "training": "Se trimite {angajat}, {functia}, {sectia}, la formare profesională la {destinatia}, pe perioada "
                 "{din} – {pana}{scop}, cu menținerea salariului mediu.",
-    "attestation": "Se trimite la atestare {angajat}, {functia}, {sectia}, pentru {categoria} la specialitatea "
-                   "{specialitatea}.",
-    "category_award": "Se conferă {angajat}, {functia}, {sectia}, {categoria} la specialitatea {specialitatea}, "
-                      "începând cu {din}.",
-    "medical_exam": "Se trimite la examenul medical periodic {angajat}, {functia}, {sectia}, până la {pana}.",
+    "medical_exam": "Se trimite la examenul medical {angajat}, {functia}, {sectia}, până la {pana}{motiv}.",
     "staff_list": "Se aprobă statele de personal în vigoare de la {din}{text}.",
     "leave_schedule": "Se aprobă graficul concediilor de odihnă anuale {text}.",
     "appoint_responsible": "Se desemnează {angajat}, {functia}, {text}.",
@@ -88,7 +85,7 @@ DEFAULT_POINTS = {
 }
 
 KIND_TEXT = {"main": "funcție de bază", "main_student": "funcție de bază (student)", "internal": "prin cumul intern",
-             "external": "prin cumul extern", "resident": "în calitate de medic rezident", "substitute": "pentru suplinire",
+             "external": "prin cumul extern", "substitute": "pentru suplinire",
              "contractor": "prin contract de prestări servicii"}
 
 

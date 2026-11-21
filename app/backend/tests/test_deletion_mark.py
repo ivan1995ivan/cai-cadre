@@ -103,6 +103,7 @@ def test_marked_objects_tool_needs_settings_rights(org, make_user, client_for):
 
 @pytest.mark.parametrize("url", ["/api/org/occupations/", "/api/org/specialties/"])
 def test_unmark_needs_delete_right(org, make_user, client_for, url, admin_client):
+    Specialty.objects.get_or_create(name_ro="Contabilitate")  # specialitățile nu se mai livrează
     row = admin_client.get(url).data[0]
     admin_client.delete(f"{url}{row['id']}/")
     viewer = client_for(make_user("insp", ["hr_inspector"]))

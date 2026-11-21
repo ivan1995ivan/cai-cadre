@@ -8,7 +8,7 @@ de muncă în curs). Dublu clic pe rând deschide fila „Concedii” din fișa 
 - anul de muncă începe la data angajării (raportul de bază) și ține un an; concediile pentru îngrijirea copilului (sau
   alte perioade alese în setarea *Evidența concediilor*) îl prelungesc cu numărul lor de zile;
 - zilele pe an = zilele de bază ale funcției (implicit 28) + zilele pentru condiții de muncă (cel mai mare număr dintre
-  funcție și subdiviziune — HG 1223/2004) + **drepturile personale** din fișa angajatului (copii, dizabilitate, contractul
+  funcție și subdiviziune — condițiile vătămătoare, CM art. 121) + **drepturile personale** din fișa angajatului (copii, dizabilitate, contractul
   colectiv, vechime);
 - anul în curs se acumulează proporțional; la eliberare — tot proporțional, până la data eliberării;
 - folositul vine din ordinele de concediu de odihnă și suplimentar: cu anul de muncă scris în ordin — pe acel an; fără el —

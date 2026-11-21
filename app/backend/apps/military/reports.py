@@ -10,7 +10,8 @@ from apps.reports.registry import GROUPS, col, report, subtitle_parts
 from apps.staff.models import Employment, EmploymentHistory, MilitaryRecord
 
 GROUPS.setdefault("health", ("Sănătate și evidență militară", "Здоровье и воинский учёт", "Health and military records"))
-MEDICAL = {"physicians", "pharmacists", "nurses", "junior"}
+# codurile categoriilor (clasificatorul „Categoriile de personal”) în care au trecut fostele categorii medicale
+MEDICAL = {"2", "3", "5"}
 STATUS = dict(MilitaryRecord.STATUSES)
 COMPOSITION = dict(MilitaryRecord.COMPOSITIONS)
 # datele care se comunică centrului militar când se schimbă
@@ -89,7 +90,7 @@ def military_missing(p):
             continue
         age = age_on(emp.birth_date, p.on_date)
         man = emp.sex == "M" and 16 <= age <= 60
-        woman = emp.sex == "F" and 18 <= age <= 50 and look.category(snap["occupation_id"]) in MEDICAL
+        woman = emp.sex == "F" and 18 <= age <= 50 and look.category_code(snap["occupation_id"]) in MEDICAL
         if man or woman:
             rows.append({"tab": emp.tab_number, "name": emp.full_name(), "birth": _d(emp.birth_date), "age": age,
                          "sub": look.sub(snap["subdivision_id"]), "occ": look.occ(snap["occupation_id"])})

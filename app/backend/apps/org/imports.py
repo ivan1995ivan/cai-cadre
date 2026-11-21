@@ -3,24 +3,30 @@ from decimal import Decimal
 
 from apps.core.excel_import import Column, RowError, Spec
 
-from .models import STAFF_CATEGORIES, Occupation, Specialty, StaffListLine, Subdivision
+from .models import STAFF_CATEGORY, DictItem, Occupation, Specialty, StaffListLine, Subdivision
 
-CATEGORY_CODES = {code for code, _ in STAFF_CATEGORIES}
-CATEGORY_NAMES = {name.lower(): code for code, name in STAFF_CATEGORIES}
-CATEGORY_HINT = "Categoria: " + ", ".join(f"{code} = {name}" for code, name in STAFF_CATEGORIES)
+CATEGORY_HINT = ("Categoria de personal: codul (cifra grupei CORM, de ex. 2) sau denumirea din clasificatorul „Categoriile "
+                 "de personal”; goală — după prima cifră a codului CORM al funcției.")
 
 
-def _category(value) -> str:
-    if not value:
-        return ""
+def _category(value):
+    """Categoria de personal după cod sau denumire (RO / RU / EN, întreagă sau începutul ei)."""
+    if value in (None, ""):
+        return None
     v = str(value).strip().lower()
-    if v in CATEGORY_CODES:
-        return v
-    if v in CATEGORY_NAMES:
-        return CATEGORY_NAMES[v]
-    for name, code in CATEGORY_NAMES.items():
-        if v and v in name:
-            return code
+    if v.endswith(".0"):  # Excel dă cifra ca număr: 2 → „2.0”
+        v = v[:-2]
+    items = list(DictItem.objects.filter(kind=STAFF_CATEGORY, deletion_mark=False))
+    for item in items:
+        if item.code.lower() == v:
+            return item
+    names = [(n.lower(), item) for item in items for n in (item.name_ro, item.name_ru, item.name_en) if n]
+    for name, item in names:
+        if name == v:
+            return item
+    for name, item in names:
+        if name.startswith(v):
+            return item
     raise RowError(f"Categoria „{value}” nu există. {CATEGORY_HINT}")
 
 
@@ -30,7 +36,7 @@ def _names(values, obj):
             setattr(obj, f, values[f])
 
 
-# --- funcțiile (CORM 006-21) -------------------------------------------------
+# --- funcțiile (CORM 006-2021) -----------------------------------------------
 def _save_occupation(values, ctx):
     code, name = values.get("code", ""), values["name_ro"]
     obj = Occupation.objects.filter(code=code).first() if code else Occupation.objects.filter(name_ro__iexact=name).first()
@@ -56,16 +62,16 @@ def _save_occupation(values, ctx):
 
 
 OCCUPATIONS = Spec(
-    code="occupations", title="Funcțiile (Clasificatorul ocupațiilor CORM 006-21)", sheet_title="Functii",
+    code="occupations", title="Funcțiile (Clasificatorul ocupațiilor CORM 006-2021)", sheet_title="Functii",
     columns=[
-        Column("code", "Cod CORM", example="221104", aliases=("cod", "код", "cod ocupatie")),
-        Column("name_ro", "Denumirea (RO)", required=True, example="Medic de familie",
+        Column("code", "Cod CORM", example="241106", aliases=("cod", "код", "cod ocupatie")),
+        Column("name_ro", "Denumirea (RO)", required=True, example="Contabil",
                aliases=("denumirea", "denumire", "ocupatia", "functia")),
-        Column("name_ru", "Denumirea (RU)", example="Семейный врач", aliases=("наименование",)),
-        Column("name_en", "Denumirea (EN)", example="Family physician"),
-        Column("category", "Categoria de personal", example="physicians"),
-        Column("isco_code", "Cod ISCO-08", example="2211"),
-        Column("weekly_hours", "Ore pe săptămână", kind="decimal", example=35),
+        Column("name_ru", "Denumirea (RU)", example="Бухгалтер", aliases=("наименование",)),
+        Column("name_en", "Denumirea (EN)", example="Accountant"),
+        Column("category", "Categoria de personal", example="2"),
+        Column("isco_code", "Cod ISCO-08", example="2411"),
+        Column("weekly_hours", "Ore pe săptămână", kind="decimal", example=40),
         Column("base_leave_days", "Concediu de bază (zile)", kind="int", example=28),
         Column("extra_leave_days", "Concediu suplimentar (zile)", kind="int", example=0),
         Column("harmful", "Condiții vătămătoare (da/nu)", kind="bool", example="nu"),
@@ -73,8 +79,8 @@ OCCUPATIONS = Spec(
     ],
     save_row=_save_occupation,
     notes=["Rândul cu același cod CORM se actualizează; fără cod — după denumire.", CATEGORY_HINT,
-           "Clasificatorul complet CORM 006-21 se poate lua de pe site-ul Ministerului Muncii și Protecției Sociale "
-           "și lipi aici (codul și denumirea sunt suficiente)."],
+           "Clasificatorul complet CORM 006-2021 (Ordinul MMPS nr. 11/2021, cu modificările ulterioare) se poate lipi aici "
+           "(codul și denumirea sunt suficiente; categoria se pune după prima cifră a codului)."],
 )
 
 
@@ -102,12 +108,12 @@ def _save_specialty(values, ctx):
 SPECIALTIES = Spec(
     code="specialties", title="Specialitățile", sheet_title="Specialitati",
     columns=[
-        Column("code", "Cod", example="TO"),
-        Column("name_ro", "Denumirea (RO)", required=True, example="Ortopedie și traumatologie"),
-        Column("name_ru", "Denumirea (RU)", example="Ортопедия и травматология"),
-        Column("name_en", "Denumirea (EN)", example="Orthopaedics and traumatology"),
-        Column("kind", "Tipul (medical / pharmacy / nursing / other)", example="medical"),
-        Column("isced", "Cod ISCED", example="0912"),
+        Column("code", "Cod", example="0411"),
+        Column("name_ro", "Denumirea (RO)", required=True, example="Contabilitate"),
+        Column("name_ru", "Denumirea (RU)", example="Бухгалтерский учёт"),
+        Column("name_en", "Denumirea (EN)", example="Accounting"),
+        Column("kind", "Nivelul (higher / postsecondary / secondary / other)", example="higher", aliases=("nivelul", "tipul")),
+        Column("isced", "Cod ISCED-F", example="0411"),
     ],
     save_row=_save_specialty,
 )
@@ -136,9 +142,8 @@ def _save_subdivision(values, ctx):
         if not match:
             raise RowError(f"Tipul „{values['kind']}” nu există: {', '.join(kinds)}.")
         obj.kind = match
-    for f in ("beds", "extra_leave_days"):
-        if values.get(f) is not None:
-            setattr(obj, f, values[f])
+    if values.get("extra_leave_days") is not None:
+        obj.extra_leave_days = values["extra_leave_days"]
     if values.get("reduced_hours") is not None:
         obj.reduced_hours = values["reduced_hours"]
     if "harmful" in values and values["harmful"] is not None:
@@ -152,15 +157,15 @@ def _save_subdivision(values, ctx):
 
 
 SUBDIVISIONS = Spec(
-    code="subdivisions", title="Subdiviziunile instituției", sheet_title="Subdiviziuni",
+    code="subdivisions", title="Subdiviziunile întreprinderii", sheet_title="Subdiviziuni",
     columns=[
-        Column("code", "Cod", example="TR1"),
-        Column("name_ro", "Denumirea (RO)", required=True, example="Secția traumatologie nr. 1"),
-        Column("name_ru", "Denumirea (RU)", example="Отделение травматологии № 1"),
+        Column("code", "Cod", example="PROD"),
+        Column("name_ro", "Denumirea (RO)", required=True, example="Secția de producție"),
+        Column("name_ru", "Denumirea (RU)", example="Производственный цех"),
         Column("name_en", "Denumirea (EN)"),
         Column("parent", "Subdiviziunea-părinte (cod sau denumire)"),
-        Column("kind", "Tipul (clinical / paraclinical / ambulatory / admin / other)", example="clinical"),
-        Column("beds", "Paturi", kind="int", example=40),
+        Column("kind", "Tipul (department / section / workshop / branch / warehouse / other)", example="workshop",
+               aliases=("tipul", "felul", "тип")),
         Column("harmful", "Condiții vătămătoare (da/nu)", kind="bool", example="nu"),
         Column("extra_leave_days", "Concediu suplimentar (zile)", kind="int", example=0),
         Column("reduced_hours", "Ore pe săptămână (zi redusă)", kind="decimal"),
@@ -203,8 +208,7 @@ def _save_line(values, ctx):
     line = StaffListLine(
         staff_list=staff_list, subdivision=sub, occupation=occ, units=values["units"],
         base_salary=values.get("base_salary") or Decimal("0"), allowance_pct=values.get("allowance_pct") or Decimal("0"),
-        category=_category(values.get("category")) if values.get("category") else "",
-        effort_note=values.get("effort_note", ""), note=values.get("note", ""),
+        category=_category(values.get("category")), note=values.get("note", ""),
         sort=ctx.setdefault("_sort", 0) + 10,
     )
     ctx["_sort"] = line.sort
@@ -215,17 +219,16 @@ def _save_line(values, ctx):
 STAFF_LINES = Spec(
     code="staff_lines", title="Rândurile statelor de personal", sheet_title="State",
     columns=[
-        Column("subdivision", "Subdiviziunea (cod sau denumire)", required=True, example="Secția traumatologie nr. 1",
+        Column("subdivision", "Subdiviziunea (cod sau denumire)", required=True, example="Secția de producție",
                aliases=("subdiviziunea", "sectia", "secția")),
-        Column("occupation_code", "Cod CORM", example="221104", aliases=("codul functiei", "cod")),
-        Column("occupation", "Funcția", example="Medic traumatolog-ortoped", aliases=("denumirea functiei",)),
+        Column("occupation_code", "Cod CORM", example="753117", aliases=("codul functiei", "cod")),
+        Column("occupation", "Funcția", example="Cusător în confecții", aliases=("denumirea functiei",)),
         Column("units", "Unități", required=True, kind="decimal", example=2.5,
                aliases=("numarul de unitati", "unitati aprobate")),
-        Column("base_salary", "Salariul de funcție", kind="decimal", example=14660),
+        Column("base_salary", "Salariul de funcție", kind="decimal", example=9500),
         Column("allowance_pct", "Sporuri fixe (%)", kind="decimal", example=0),
-        Column("category", "Categoria de personal"),
-        Column("effort_note", "Mențiune (efort)"),
-        Column("note", "Observații"),
+        Column("category", "Categoria de personal (goală — a funcției)", aliases=("categoria de personal", "categoria")),
+        Column("note", "Observații", aliases=("mentiune", "mențiune")),
     ],
     save_row=_save_line,
     notes=["Se adaugă rânduri în statul de personal deschis (ciornă). Funcția se caută după cod CORM, apoi după denumire.",

@@ -4,7 +4,7 @@ export default {
   menu: {
     settings: 'Setări', occupations: 'Funcții (CORM)', specialties: 'Specialități', legalBases: 'Temeiuri legale',
     orderTypes: 'Tipuri de ordine', workSchedules: 'Grafice de lucru', shiftTypes: 'Ture', productionCalendar: 'Calendarul de producție',
-    worktimeSettings: 'Odihna între ture și gărzile pe lună', leaveSettings: 'Evidența concediilor', payrollTypes: 'Tipuri de calcul',
+    worktimeSettings: 'Odihna între ture și turele de noapte pe lună', leaveSettings: 'Evidența concediilor', payrollTypes: 'Tipuri de calcul',
     payrollConstants: 'Constantele salarizării', taxSettings: 'Raportări fiscale: datele plătitorului',
     alertSettings: 'Termene și alerte: ce se urmărește', smtpSettings: 'Poșta (e-mail) pentru notificări și fluturași',
   },

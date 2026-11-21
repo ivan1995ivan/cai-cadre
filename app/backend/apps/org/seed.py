@@ -1,102 +1,122 @@
 """Datele inițiale ale clasificatoarelor. Idempotente: adaugă doar ce lipsește și nu schimbă ce a modificat clientul.
 
-Surse: configurația 1C „Cadre” (Personal.cf) pentru enumerări și ordine, decizia de aprobare a statelor IMSP CS Căzănești
-(2026) pentru codurile CORM marcate „verificat”, Codul muncii nr. 154/2003 pentru temeiurile legale. Codurile CORM ale
-funcțiilor de spital fără cod se completează la instalare (import din Excel al clasificatorului CORM 006-21).
+Surse: Clasificatorul ocupațiilor din Republica Moldova CORM 006-2021 (Ordinul MMPS nr. 11 din 12.11.2021, MO 2022 nr. 6-16
+art. 23) pentru codurile și grupele majore ale funcțiilor; Codul muncii nr. 154/2003 (redacția 2026, cu Legea 193/2025 și
+Legea 156/2025) pentru temeiurile legale; configurația 1C „Cadre” (Personal.cf) pentru enumerări. Funcțiile fără cod nu au
+o denumire identică în CORM — codul se alege la instalare din clasificator (importul din Excel al CORM 006-2021).
+Atenție: Ordinul MMPS nr. 212/2025 (în vigoare din 04.07.2026) a redenumit și a mutat unele ocupații — codurile se verifică
+cu textul consolidat al CORM înainte de raportare.
 """
-from .models import DictItem, LegalBasis, Occupation, OrderType, Specialty
+from .models import STAFF_CATEGORY, DictItem, LegalBasis, Occupation, OrderType, Specialty
 
-# (cod CORM, RO, RU, EN, categoria, ore/săpt.)
+# Grupele majore CORM 006-2021 → categoriile de personal (codul = cifra grupei, prima cifră a codului funcției)
+STAFF_CATEGORIES = [
+    ("1", "Conducători și funcționari superiori", "Руководители и высшие должностные лица", "Managers"),
+    ("2", "Specialiști în diverse domenii de activitate", "Специалисты в различных областях деятельности", "Professionals"),
+    ("3", "Tehnicieni, maiștri și alți specialiști asimilați", "Техники, мастера и приравненные к ним специалисты",
+     "Technicians and associate professionals"),
+    ("4", "Funcționari administrativi", "Административные служащие", "Clerical support workers"),
+    ("5", "Lucrători din domeniul serviciilor și comerțului", "Работники сферы обслуживания и торговли",
+     "Service and sales workers"),
+    ("6", "Lucrători calificați în agricultură, silvicultură, acvacultură și pescuit",
+     "Квалифицированные работники сельского, лесного, рыбного хозяйства", "Skilled agricultural, forestry and fishery workers"),
+    ("7", "Muncitori calificați și lucrători din domeniul artizanal", "Квалифицированные рабочие и ремесленники",
+     "Craft and related trades workers"),
+    ("8", "Operatori și asamblori de mașini și instalații", "Операторы и сборщики машин и установок",
+     "Plant and machine operators, and assemblers"),
+    ("9", "Muncitori necalificați", "Неквалифицированные рабочие", "Elementary occupations"),
+]
+
+# (cod CORM 006-2021, RO, RU, EN, grupa CORM — doar pentru funcțiile fără cod, ore/săpt.)
+# Codurile sunt verificate în textul oficial al Ordinului MMPS nr. 11/2021; denumirile — forma de masculin a celor oficiale.
 OCCUPATIONS = [
-    # codurile din statele aprobate ale unui IMSP (Decizia CR Telenești nr. 1/2026, anexa 1)
-    ("221104", "Medic de familie", "Семейный врач", "Family physician", "physicians", 35),
-    ("322101", "Asistent medical de familie", "Семейная медсестра", "Family nurse", "nurses", 35),
-    ("322101.06", "Asistent medical superior", "Старшая медсестра", "Head nurse", "nurses", 35),
-    ("321203", "Felcer laborant", "Фельдшер-лаборант", "Laboratory feldsher", "nurses", 35),
-    ("322102", "Laborant", "Лаборант", "Laboratory assistant", "nurses", 35),
-    ("325501", "Asistent medical fizioterapie", "Медсестра по физиотерапии", "Physiotherapy nurse", "nurses", 35),
-    ("532102", "Infermieră", "Санитарка", "Nurse aide", "junior", 40),
-    ("121103", "Contabil-șef", "Главный бухгалтер", "Chief accountant", "admin", 40),
-    ("832202", "Conducător auto", "Водитель", "Driver", "admin", 40),
-    ("962202", "Muncitor auxiliar", "Подсобный рабочий", "Auxiliary worker", "admin", 40),
-    ("818206", "Operator sala de cazane", "Оператор котельной", "Boiler room operator", "admin", 40),
-    # funcțiile tipice ale unui spital de traumatologie — codul CORM se completează din clasificator
-    ("", "Director", "Директор", "Director", "leadership", 40),
-    ("", "Director adjunct medical", "Заместитель директора по медицинской части", "Deputy medical director", "leadership", 40),
-    ("", "Șef secție — medic", "Заведующий отделением — врач", "Head of department (physician)", "physicians", 35),
-    ("", "Medic traumatolog-ortoped", "Врач травматолог-ортопед", "Orthopaedic trauma surgeon", "physicians", 35),
-    ("", "Medic anesteziolog-reanimatolog", "Врач анестезиолог-реаниматолог", "Anaesthesiologist", "physicians", 35),
-    ("", "Medic chirurg", "Врач-хирург", "Surgeon", "physicians", 35),
-    ("", "Medic neurochirurg", "Врач-нейрохирург", "Neurosurgeon", "physicians", 35),
-    ("", "Medic combustiolog", "Врач-комбустиолог", "Burns surgeon", "physicians", 35),
-    ("", "Medic radiolog-imagist", "Врач-рентгенолог", "Radiologist", "physicians", 30),
-    ("", "Medic de laborator", "Врач-лаборант", "Laboratory physician", "physicians", 35),
-    ("", "Medic reabilitolog", "Врач-реабилитолог", "Rehabilitation physician", "physicians", 35),
-    ("", "Medic de gardă", "Дежурный врач", "On-call physician", "physicians", 35),
-    ("", "Medic rezident", "Врач-резидент", "Resident physician", "physicians", 35),
-    ("", "Farmacist", "Фармацевт", "Pharmacist", "pharmacists", 40),
-    ("", "Asistent medical de secție", "Палатная медсестра", "Ward nurse", "nurses", 35),
-    ("", "Asistent medical anestezist", "Медсестра-анестезист", "Nurse anaesthetist", "nurses", 35),
-    ("", "Asistent medical de operație", "Операционная медсестра", "Theatre nurse", "nurses", 35),
-    ("", "Asistent medical de proceduri", "Процедурная медсестра", "Procedure nurse", "nurses", 35),
-    ("", "Laborant radiolog", "Рентгенолаборант", "Radiology technician", "nurses", 30),
-    ("", "Infermieră de operație", "Операционная санитарка", "Theatre aide", "junior", 40),
-    ("", "Contabil", "Бухгалтер", "Accountant", "admin", 40),
-    ("", "Economist", "Экономист", "Economist", "admin", 40),
-    ("", "Specialist resurse umane", "Специалист по кадрам", "HR specialist", "admin", 40),
-    ("", "Jurist", "Юрист", "Lawyer", "admin", 40),
-    ("", "Inginer", "Инженер", "Engineer", "admin", 40),
-    ("", "Bucătar", "Повар", "Cook", "admin", 40),
-    ("", "Îngrijitor încăperi", "Уборщик помещений", "Cleaner", "admin", 40),
+    # 1 — conducători
+    ("", "Administrator (societate comercială)", "Администратор (коммерческое общество)", "Company administrator", "1", 40),
+    ("112012", "Director al întreprinderii", "Директор предприятия", "Company director", "1", 40),
+    ("", "Director adjunct", "Заместитель директора", "Deputy director", "1", 40),
+    ("121103", "Contabil-șef", "Главный бухгалтер", "Chief accountant", "1", 40),
+    # 2 — specialiști
+    ("241106", "Contabil", "Бухгалтер", "Accountant", "2", 40),
+    ("263107", "Economist", "Экономист", "Economist", "2", 40),
+    ("261919", "Jurist", "Юрист", "Lawyer", "2", 40),
+    ("242318", "Specialist în resurse umane", "Специалист по человеческим ресурсам", "Human resources specialist", "2", 40),
+    ("243302", "Manager în vânzări", "Менеджер по продажам", "Sales manager", "2", 40),
+    ("251207", "Programator", "Программист", "Programmer", "2", 40),
+    ("252302", "Administrator rețea de calculatoare", "Администратор компьютерной сети", "Network administrator", "2", 40),
+    ("214122", "Inginer în industrie și producție", "Инженер в промышленности и производстве", "Industrial and production engineer",
+     "2", 40),
+    ("214114", "Inginer tehnolog în industrie și producție", "Инженер-технолог в промышленности и производстве",
+     "Process engineer", "2", 40),
+    ("214932", "Inginer securitate și sănătate în muncă", "Инженер по охране труда", "Occupational safety and health engineer",
+     "2", 40),
+    # 3 — tehnicieni, maiștri
+    ("312221", "Maistru în industria prelucrătoare", "Мастер в обрабатывающей промышленности", "Manufacturing supervisor", "3", 40),
+    ("332202", "Agent de vânzări", "Торговый агент", "Sales agent", "3", 40),
+    ("332304", "Merceolog", "Товаровед", "Merchandise specialist", "3", 40),
+    # 4 — funcționari administrativi
+    ("412002", "Secretar", "Секретарь", "Secretary", "4", 40),
+    ("413202", "Operator introducere, validare și prelucrare date", "Оператор ввода, проверки и обработки данных",
+     "Data entry operator", "4", 40),
+    ("413203", "Operator la calculator", "Оператор ЭВМ", "Computer operator", "4", 40),
+    ("422202", "Operator call center", "Оператор call-центра", "Call centre operator", "4", 40),
+    ("432103", "Magaziner", "Кладовщик", "Storekeeper", "4", 40),
+    ("432202", "Dispecer în programare și supraveghere a producției", "Диспетчер по планированию и контролю производства",
+     "Production dispatcher", "4", 40),
+    ("432313", "Dispecer în transporturi", "Диспетчер на транспорте", "Transport dispatcher", "4", 40),
+    ("432314", "Expeditor-logistician în transporturi", "Экспедитор-логист на транспорте", "Freight forwarder (logistics)",
+     "4", 40),
+    # 5 — servicii și comerț
+    ("512001", "Bucătar", "Повар", "Cook", "5", 40),
+    ("522103", "Vânzător în magazine", "Продавец в магазине", "Shop sales assistant", "5", 40),
+    ("523001", "Casier", "Кассир", "Cashier", "5", 40),
+    # 7 — muncitori calificați
+    ("721212", "Sudor", "Сварщик", "Welder", "7", 40),
+    ("723109", "Mecanic auto", "Автомеханик", "Motor vehicle mechanic", "7", 40),
+    ("723314", "Lăcătuș-reparator instalații tehnologice", "Слесарь-ремонтник технологических установок",
+     "Industrial equipment repair fitter", "7", 40),
+    ("741206", "Electrician echipamente electrice și energetice", "Электрик электрического и энергетического оборудования",
+     "Electrical equipment electrician", "7", 40),
+    ("753111", "Croitor în confecții", "Портной в швейном производстве", "Garment tailor", "7", 40),
+    ("753117", "Cusător în confecții", "Швея в швейном производстве", "Sewing machinist", "7", 40),
+    # 8 — operatori, conducători auto
+    ("818923", "Operator la mașini și utilaje în alte ramuri", "Оператор машин и оборудования в других отраслях",
+     "Machine operator", "8", 40),
+    ("832201", "Conducător auto", "Водитель автомобиля", "Car driver", "8", 40),
+    ("833202", "Conducător de autocamion", "Водитель грузового автомобиля", "Lorry driver", "8", 40),
+    ("833102", "Conducător de autobuz / autocar", "Водитель автобуса", "Bus and coach driver", "8", 40),
+    # 9 — muncitori necalificați
+    ("911201", "Îngrijitor încăperi", "Уборщик помещений", "Cleaner", "9", 40),
+    ("932101", "Ambalator manual", "Упаковщик (вручную)", "Hand packer", "9", 40),
+    ("962202", "Muncitor auxiliar", "Подсобный рабочий", "Auxiliary worker", "9", 40),
+    ("962908", "Paznic", "Сторож", "Watchman", "9", 40),
 ]
+# Fără cod: CORM 006-2021 nu are o denumire identică. Variantele oficiale apropiate, de ales la instalare.
+CODE_HINTS = {
+    "Administrator (societate comercială)": "Cod CORM de ales: 112012 (director al întreprinderii), 112031 (președinte al "
+                                            "societății comerciale) sau 112033 (director general, adăugat prin Ordinul MMPS 77/2022).",
+    "Director adjunct": "CORM nu are cod separat: adjunctul primește codul funcției de bază (de ex. 112012) cu sufixul de "
+                        "funcție derivată „01” — de verificat în instrucțiunea CORM.",
+}
 
-# (cod, RO, RU, EN, tip)
-SPECIALTIES = [
-    ("", "Ortopedie și traumatologie", "Ортопедия и травматология", "Orthopaedics and traumatology", "medical"),
-    ("", "Anesteziologie și reanimatologie", "Анестезиология и реаниматология", "Anaesthesiology and intensive care", "medical"),
-    ("", "Chirurgie", "Хирургия", "Surgery", "medical"),
-    ("", "Neurochirurgie", "Нейрохирургия", "Neurosurgery", "medical"),
-    ("", "Combustiologie", "Комбустиология", "Burns care", "medical"),
-    ("", "Radiologie și imagistică", "Радиология и визуализация", "Radiology and imaging", "medical"),
-    ("", "Medicină de laborator", "Лабораторная медицина", "Laboratory medicine", "medical"),
-    ("", "Reabilitare medicală și medicină fizică", "Медицинская реабилитация и физическая медицина",
-     "Physical and rehabilitation medicine", "medical"),
-    ("", "Medicină internă", "Внутренние болезни", "Internal medicine", "medical"),
-    ("", "Neurologie", "Неврология", "Neurology", "medical"),
-    ("", "Cardiologie", "Кардиология", "Cardiology", "medical"),
-    ("", "Medicină de urgență", "Неотложная медицина", "Emergency medicine", "medical"),
-    ("", "Medicină de familie", "Семейная медицина", "Family medicine", "medical"),
-    ("", "Sănătate publică și management", "Общественное здоровье и менеджмент", "Public health and management", "medical"),
-    ("", "Farmacie", "Фармация", "Pharmacy", "pharmacy"),
-    ("", "Asistent medical generalist", "Медсестра общего профиля", "General nurse", "nursing"),
-    ("", "Asistent medical în anestezie", "Медсестра-анестезист", "Anaesthesia nursing", "nursing"),
-    ("", "Laborant", "Лаборант", "Laboratory technician", "nursing"),
-    ("", "Fizioterapie", "Физиотерапия", "Physiotherapy", "nursing"),
-    ("", "Radiologie (studii medii)", "Рентгенология (среднее образование)", "Radiography", "nursing"),
-]
+# (cod, RO, RU, EN, tip). Specialitățile (profesiile după diplomă) se adaugă de client, după actele de studii.
+SPECIALTIES: list = []
 
 # tip: [(cod, RO, RU, EN, extra)]
 DICTS = {
-    "qualification": [
-        ("none", "Fără categorie", "Без категории", "No category", {}),
-        ("second", "Categoria a doua", "Вторая категория", "Second category", {}),
-        ("first", "Categoria întâi", "Первая категория", "First category", {}),
-        ("superior", "Categoria superioară", "Высшая категория", "Higher category", {}),
-    ],
+    STAFF_CATEGORY: [(code, ro, ru, en, {"corm_group": code}) for code, ro, ru, en in STAFF_CATEGORIES],
     "degree": [
-        ("dr", "Doctor în științe medicale", "Доктор медицинских наук", "PhD in medical sciences", {}),
-        ("dr_hab", "Doctor habilitat în științe medicale", "Доктор хабилитат медицинских наук", "Habilitated doctor", {}),
+        ("dr", "Doctor", "Доктор наук", "Doctor (PhD)", {}),
+        ("dr_hab", "Doctor habilitat", "Доктор хабилитат", "Habilitated doctor", {}),
     ],
     "title": [
         ("conf", "Conferențiar universitar", "Доцент", "Associate professor", {}),
         ("prof", "Profesor universitar", "Профессор", "Professor", {}),
     ],
-    "education": [  # din enumerarea 1C „Studii”, completată cu rezidențiatul
+    "education": [  # din enumerarea 1C „Studii”
         ("primary", "Primare", "Начальное", "Primary", {}),
         ("secondary", "Medii", "Среднее", "Secondary", {}),
         ("vocational", "Medii de specialitate", "Среднее специальное", "Vocational (post-secondary)", {}),
         ("higher", "Superioare", "Высшее", "Higher", {}),
-        ("residency", "Rezidențiat", "Резидентура", "Residency", {}),
         ("postgraduate", "Postuniversitare", "Послевузовское", "Postgraduate", {}),
         ("doctorate", "Doctorat", "Докторантура", "Doctorate", {}),
     ],
@@ -106,16 +126,15 @@ DICTS = {
         ("distance", "Fără frecvență", "Заочная", "Distance", {}),
         ("evening", "Serală", "Вечерняя", "Evening", {}),
     ],
-    "document": [
+    "document": [  # actele la angajare — Codul muncii, art. 57 alin. (1); celelalte — după actele normative speciale
         ("id_card", "Buletin de identitate", "Удостоверение личности", "Identity card", {"has_expiry": True}),
         ("passport", "Pașaport", "Паспорт", "Passport", {"has_expiry": True}),
         ("residence", "Permis de ședere", "Вид на жительство", "Residence permit", {"has_expiry": True}),
         ("diploma", "Diplomă de studii", "Диплом об образовании", "Diploma", {}),
-        ("residency_cert", "Certificat de rezidențiat / secundariat", "Сертификат резидентуры", "Residency certificate", {}),
-        ("category_cert", "Certificat de categorie de calificare", "Сертификат квалификационной категории",
-         "Qualification category certificate", {"has_expiry": True}),
-        ("cme_cert", "Certificat de educație medicală continuă", "Сертификат НМО", "CME certificate", {}),
-        ("medical_book", "Carnet medical", "Медицинская книжка", "Health record book", {"has_expiry": True}),
+        ("qualification_cert", "Certificat de calificare", "Свидетельство о квалификации", "Qualification certificate", {}),
+        ("medical_cert", "Certificat medical (aptitudinea de muncă)", "Медицинская справка (годность к работе)",
+         "Medical fitness certificate", {"has_expiry": True}),
+        ("driving_licence", "Permis de conducere", "Водительское удостоверение", "Driving licence", {"has_expiry": True}),
         ("military_book", "Livret militar", "Военный билет", "Military record book", {}),
         ("recruit_cert", "Certificat de recrutare", "Приписное свидетельство", "Recruitment certificate", {}),
         ("criminal_record", "Certificat de cazier judiciar", "Справка о несудимости", "Criminal record certificate",
@@ -138,17 +157,31 @@ DICTS = {
         ("gag", "Găgăuz", "Гагауз", "Gagauz", {}), ("bg", "Bulgar", "Болгарин", "Bulgarian", {}),
         ("other", "Altă naționalitate", "Другая", "Other", {}),
     ],
-    "termination": [
+    "termination": [  # Codul muncii, art. 81–86; legal_basis — codul temeiului legal (articolul, alineatul, litera)
         ("resignation", "Demisie", "По собственному желанию", "Resignation", {"legal_basis": "CM-85"}),
-        ("agreement", "Acordul părților", "По соглашению сторон", "Mutual agreement", {}),
-        ("term_end", "Expirarea termenului contractului", "Истечение срока договора", "End of fixed term", {}),
-        ("staff_cut", "Reducerea numărului sau a statelor de personal", "Сокращение штата",
-         "Staff reduction", {"legal_basis": "CM-86"}),
-        ("unfit", "Necorespunderea funcției deținute", "Несоответствие занимаемой должности", "Unsuitability", {"legal_basis": "CM-86"}),
-        ("disciplinary", "Concediere disciplinară", "Дисциплинарное увольнение", "Disciplinary dismissal", {"legal_basis": "CM-86"}),
+        ("agreement", "Acordul scris al părților", "По письменному соглашению сторон", "Mutual written agreement",
+         {"legal_basis": "CM-AGR"}),
+        ("term_end", "Expirarea termenului contractului", "Истечение срока договора", "End of fixed term",
+         {"legal_basis": "CM-82-F"}),
+        ("probation", "Rezultatul nesatisfăcător al perioadei de probă", "Неудовлетворительный результат испытания",
+         "Unsatisfactory probation", {"legal_basis": "CM-86-A"}),
+        ("liquidation", "Lichidarea unității", "Ликвидация предприятия", "Liquidation of the company", {"legal_basis": "CM-86-B"}),
+        ("staff_cut", "Reducerea numărului sau a statelor de personal", "Сокращение численности или штата",
+         "Staff reduction", {"legal_basis": "CM-86-C"}),
+        ("unfit", "Necorespunderea funcției din motive de sănătate", "Несоответствие должности по состоянию здоровья",
+         "Unfitness for the post on health grounds", {"legal_basis": "CM-86-D"}),
+        ("disciplinary", "Încălcarea repetată a obligațiilor de muncă", "Неоднократное нарушение трудовых обязанностей",
+         "Repeated breach of duties", {"legal_basis": "CM-86-G"}),
+        ("absence", "Absența fără motive întemeiate (4 ore la rând)", "Прогул (4 часа подряд)", "Unjustified absence",
+         {"legal_basis": "CM-86-H"}),
+        ("drunk", "Prezența la muncă în stare de ebrietate", "Появление на работе в нетрезвом состоянии",
+         "Intoxication at work", {"legal_basis": "CM-86-I"}),
+        ("serious_breach", "Încălcarea gravă a obligațiilor de muncă", "Грубое нарушение трудовых обязанностей",
+         "Serious breach of duties", {"legal_basis": "CM-86-P"}),
         ("retirement", "Pensionare", "Выход на пенсию", "Retirement", {}),
-        ("death", "Decesul salariatului", "Смерть работника", "Death of employee", {"legal_basis": "CM-82"}),
-        ("transfer_out", "Transfer la altă unitate", "Перевод в другую организацию", "Transfer to another employer", {}),
+        ("death", "Decesul salariatului", "Смерть работника", "Death of employee", {"legal_basis": "CM-82-A"}),
+        ("transfer_out", "Transfer la altă unitate", "Перевод в другую организацию", "Transfer to another employer",
+         {"legal_basis": "CM-86-U"}),
     ],
     "sanction": [  # Codul muncii, art. 206
         ("warning", "Avertisment", "Замечание", "Warning", {}),
@@ -156,7 +189,7 @@ DICTS = {
         ("severe", "Mustrare aspră", "Строгий выговор", "Severe reprimand", {}),
         ("dismissal", "Concediere", "Увольнение", "Dismissal", {}),
     ],
-    "incentive": [
+    "incentive": [  # Codul muncii, art. 203
         ("bonus", "Premiu unic", "Единовременная премия", "One-off bonus", {}),
         ("thanks", "Mulțumire", "Благодарность", "Letter of thanks", {}),
         ("diploma", "Diplomă de onoare", "Почётная грамота", "Certificate of honour", {}),
@@ -175,7 +208,6 @@ DICTS = {
         ("main_student", "De bază (student)", "Основное (студент)", "Main job (student)", {}),
         ("external", "Cumul extern", "Внешнее совместительство", "External second job", {}),
         ("internal", "Cumul intern", "Внутреннее совместительство", "Internal second job", {}),
-        ("resident", "Rezident", "Резидент", "Resident", {}),
         ("substitute", "Suplinire temporară", "Временное замещение", "Temporary substitution", {}),
     ],
     "military_group": [  # din enumerarea 1C „GrupaEvidentei”
@@ -183,17 +215,27 @@ DICTS = {
         ("border", "Poliția de Frontieră (grăniceri)", "Пограничная полиция", "Border Police", {}),
         ("carabinieri", "Carabinieri", "Карабинеры", "Carabinieri", {}),
     ],
-    "checklist": [  # din catalogul 1C „CecList” (angajare — eliberare), adaptat pentru spital
-        ("contract", "CIM semnat și înregistrat", "Трудовой договор подписан", "Contract signed", {}),
+    "checklist": [  # angajarea — Codul muncii, art. 57 (actele), 58 (CIM în scris), Legea 186/2008 (SSM); eliberarea — ce se predă
+        ("contract", "CIM semnat în două exemplare (CM art. 58)", "Трудовой договор подписан в двух экземплярах",
+         "Employment contract signed (two copies)", {}),
+        ("id_doc", "Actul de identitate (CM art. 57 alin. (1) lit. a))", "Документ, удостоверяющий личность",
+         "Identity document", {}),
+        ("diploma", "Diploma / certificatul de calificare — pentru munca ce cere cunoștințe speciale (art. 57 lit. d))",
+         "Диплом / свидетельство о квалификации", "Diploma / qualification certificate", {}),
+        ("medical_cert", "Certificatul medical — în cazurile prevăzute de lege (art. 57 lit. e))", "Медицинская справка",
+         "Medical certificate (where required by law)", {}),
+        ("declaration", "Declarația pe propria răspundere (art. 57 lit. f))", "Декларация под личную ответственность",
+         "Sworn statement", {}),
         ("job_desc", "Fișa postului semnată", "Должностная инструкция подписана", "Job description signed", {}),
-        ("ssm", "Instructajul SSM și PSI", "Инструктаж по охране труда и ПБ", "Health and safety briefing", {}),
-        ("medical_book", "Carnetul medical / examenul la angajare", "Медкнижка / медосмотр", "Medical check at hiring", {}),
-        ("gdpr", "Declarația privind datele cu caracter personal", "Согласие на обработку персональных данных",
-         "Personal data declaration", {}),
+        ("ssm", "Instructajul SSM și PSI la angajare (Legea 186/2008)", "Вводный инструктаж по охране труда и ПБ",
+         "Health and safety induction", {}),
+        ("gdpr", "Informarea privind prelucrarea datelor cu caracter personal (Legea 195/2024)",
+         "Информирование об обработке персональных данных", "Personal data processing notice", {}),
         ("badge", "Ecusonul / legitimația", "Бейдж / удостоверение", "Badge / ID card", {"returnable": True}),
-        ("uniform", "Uniforma (halat, costum)", "Униформа (халат, костюм)", "Uniform", {"returnable": True}),
+        ("ppe", "Echipamentul individual de protecție / uniforma", "Средства индивидуальной защиты / униформа",
+         "Personal protective equipment / uniform", {"returnable": True}),
         ("locker", "Cheia dulapului", "Ключ от шкафчика", "Locker key", {"returnable": True}),
-        ("system_access", "Acces în sistemul informațional (SIA AMP)", "Доступ в информационную систему",
+        ("system_access", "Accesul la sistemele informatice", "Доступ к информационным системам",
          "Information system access", {"returnable": True}),
     ],
     "military_rank": [
@@ -205,14 +247,17 @@ DICTS = {
     ],
 }
 
-# Codul muncii nr. 154/2003 — articolele de bază. Textul din ordin se poate scrie / corecta din interfață.
+# Codul muncii nr. 154/2003 (redacția 2026) — articolele de bază. Textul din ordin se poate scrie / corecta din interfață.
 # (cod, articol, alineat, literă, RO, RU, EN)
 CM = "Codul muncii nr. 154/2003"
 LEGAL_BASES = [
     ("CM-55", "55", "", "", "Contractul individual de muncă pe durată determinată", "Срочный трудовой договор", "Fixed-term contract"),
+    ("CM-57", "57", "", "", "Actele prezentate la încheierea contractului individual de muncă",
+     "Документы, предъявляемые при заключении трудового договора", "Documents required at hiring"),
     ("CM-60", "60", "", "", "Perioada de probă", "Испытательный срок", "Probation period"),
     ("CM-65", "65", "", "", "Ordinul de angajare", "Приказ о приёме на работу", "Hiring order"),
     ("CM-68", "68", "", "", "Modificarea contractului individual de muncă", "Изменение трудового договора", "Amendment of the contract"),
+    ("CM-TRAVEL", "70", "", "", "Trimiterea în deplasare în interes de serviciu", "Служебная командировка", "Business travel"),
     ("CM-74", "74", "", "", "Transferul la o altă muncă", "Перевод на другую работу", "Transfer to another job"),
     ("CM-76", "76", "", "", "Suspendarea CIM în circumstanțe ce nu depind de voința părților",
      "Приостановление договора по не зависящим от сторон обстоятельствам", "Suspension beyond the parties' control"),
@@ -222,38 +267,71 @@ LEGAL_BASES = [
      "Suspension at one party's initiative"),
     ("CM-82", "82", "", "", "Încetarea CIM în circumstanțe ce nu depind de voința părților",
      "Прекращение договора по не зависящим от сторон обстоятельствам", "Termination beyond the parties' control"),
-    ("CM-AGR", "", "", "", "Încetarea CIM prin acordul scris al părților", "Прекращение договора по соглашению сторон",
-     "Termination by mutual agreement"),
+    ("CM-82-A", "82", "", "a", "Decesul salariatului", "Смерть работника", "Death of the employee"),
+    ("CM-82-F", "82", "", "f", "Expirarea termenului contractului individual de muncă pe durată determinată",
+     "Истечение срока срочного трудового договора", "Expiry of a fixed-term contract"),
+    ("CM-AGR", "82¹", "", "", "Încetarea CIM prin acordul scris al părților", "Прекращение договора по письменному соглашению сторон",
+     "Termination by written mutual agreement"),
     ("CM-85", "85", "", "", "Demisia", "Увольнение по собственному желанию", "Resignation"),
     ("CM-86", "86", "", "", "Concedierea (la inițiativa angajatorului)", "Увольнение по инициативе работодателя",
      "Dismissal by the employer"),
+    ("CM-86-A", "86", "1", "a", "Concedierea: rezultatul nesatisfăcător al perioadei de probă",
+     "Увольнение: неудовлетворительный результат испытания", "Dismissal: unsatisfactory probation"),
+    ("CM-86-B", "86", "1", "b", "Concedierea: lichidarea unității", "Увольнение: ликвидация предприятия",
+     "Dismissal: liquidation of the company"),
+    ("CM-86-C", "86", "1", "c", "Concedierea: reducerea numărului sau a statelor de personal",
+     "Увольнение: сокращение численности или штата", "Dismissal: staff reduction"),
+    ("CM-86-D", "86", "1", "d", "Concedierea: necorespunderea funcției din motive de sănătate",
+     "Увольнение: несоответствие должности по состоянию здоровья", "Dismissal: unfitness on health grounds"),
+    ("CM-86-G", "86", "1", "g", "Concedierea: încălcarea repetată a obligațiilor de muncă",
+     "Увольнение: неоднократное нарушение трудовых обязанностей", "Dismissal: repeated breach of duties"),
+    ("CM-86-H", "86", "1", "h", "Concedierea: absența fără motive întemeiate", "Увольнение: прогул", "Dismissal: unjustified absence"),
+    ("CM-86-I", "86", "1", "i", "Concedierea: prezența la muncă în stare de ebrietate",
+     "Увольнение: появление на работе в нетрезвом состоянии", "Dismissal: intoxication at work"),
+    ("CM-86-P", "86", "1", "p", "Concedierea: încălcarea gravă a obligațiilor de muncă",
+     "Увольнение: грубое нарушение трудовых обязанностей", "Dismissal: serious breach of duties"),
+    ("CM-86-U", "86", "1", "u", "Concedierea: transferul la altă unitate", "Увольнение: перевод на другое предприятие",
+     "Termination: transfer to another employer"),
+    ("CM-101", "101", "", "", "Munca în schimburi (ture)", "Сменная работа", "Shift work"),
+    ("CM-OVERTIME", "104", "", "", "Munca suplimentară", "Сверхурочная работа", "Overtime"),
+    ("CM-110", "110", "", "", "Munca în zilele de repaus", "Работа в выходные дни", "Work on rest days"),
+    ("CM-111", "111", "", "", "Zilele de sărbătoare nelucrătoare", "Нерабочие праздничные дни", "Public holidays"),
     ("CM-112", "112", "", "", "Concediul de odihnă anual", "Ежегодный оплачиваемый отпуск", "Annual paid leave"),
+    ("CM-118", "118", "", "", "Acordarea anuală a concediului de odihnă; amânarea în cazuri excepționale",
+     "Ежегодное предоставление отпуска; перенос в исключительных случаях", "Annual leave; postponement in exceptional cases"),
     ("CM-120", "120", "", "", "Concediul neplătit", "Отпуск без сохранения заработной платы", "Unpaid leave"),
     ("CM-121", "121", "", "", "Concediul de odihnă anual suplimentar", "Ежегодный дополнительный отпуск", "Additional annual leave"),
+    ("CM-RECALL", "122", "", "", "Rechemarea din concediul de odihnă", "Отзыв из отпуска", "Recall from leave"),
     ("CM-123", "123", "", "", "Concediul medical", "Отпуск по болезни", "Sick leave"),
     ("CM-124", "124", "", "", "Concediul de maternitate și concediul parțial plătit pentru îngrijirea copilului",
      "Отпуск по беременности и родам и частично оплачиваемый отпуск по уходу за ребёнком", "Maternity and childcare leave"),
-    ("CM-124-1", "124¹", "", "", "Concediul de paternitate", "Отцовский отпуск", "Paternity leave"),
-    ("CM-STUDY", "", "", "", "Concediul de studii", "Учебный отпуск", "Study leave"),
-    ("CM-RECALL", "", "", "", "Rechemarea din concediul de odihnă", "Отзыв из отпуска", "Recall from leave"),
-    ("CM-OVERTIME", "", "", "", "Munca suplimentară și munca în zilele de repaus / sărbătoare",
-     "Сверхурочная работа и работа в выходные / праздничные дни", "Overtime and work on rest days"),
-    ("CM-SUBST", "", "", "", "Cumulul de funcții și suplinirea temporară", "Совмещение должностей и временное замещение",
-     "Combining posts and temporary substitution"),
-    ("CM-TRAVEL", "", "", "", "Delegarea în interes de serviciu", "Служебная командировка", "Business travel"),
+    ("CM-124-1", "124¹", "", "", "Concediul paternal (până la 15 zile calendaristice)", "Отцовский отпуск (до 15 календарных дней)",
+     "Paternity leave (up to 15 calendar days)"),
+    ("CM-126", "126", "", "", "Concediul suplimentar neplătit pentru îngrijirea copilului",
+     "Дополнительный неоплачиваемый отпуск по уходу за ребёнком", "Additional unpaid childcare leave"),
+    ("CM-PAY", "128–139", "", "", "Salarizarea (salariul de bază, sporurile, sistemele de salarizare)",
+     "Оплата труда (оклад, надбавки, системы оплаты)", "Pay (base salary, allowances, pay systems)"),
+    ("CM-148", "148", "", "", "Reținerile din salariu", "Удержания из заработной платы", "Deductions from wages"),
+    ("CM-SUBST", "156", "", "", "Cumularea funcțiilor și suplinirea salariaților temporar absenți",
+     "Совмещение должностей и замещение временно отсутствующих работников", "Combining posts and temporary substitution"),
+    ("CM-STUDY", "178", "", "", "Concediul de studii (îmbinarea muncii cu studiile)", "Учебный отпуск (совмещение работы с учёбой)",
+     "Study leave"),
+    ("CM-INCENT", "203", "", "", "Stimulările pentru succese în muncă", "Поощрения за успехи в работе", "Rewards for work"),
     ("CM-206", "206", "", "", "Sancțiunile disciplinare", "Дисциплинарные взыскания", "Disciplinary sanctions"),
-    ("CM-INCENT", "", "", "", "Stimularea pentru muncă", "Поощрение за труд", "Rewards for work"),
-    ("HG-837", "", "", "", "Salarizarea angajaților din IMSP (HG nr. 837/2016)", "Оплата труда в ПМСУ (ПП № 837/2016)",
-     "Pay of public medical institutions staff (GD 837/2016)"),
-    ("OMS-386", "", "", "", "Atestarea medicilor și farmaciștilor (Ordinul MS nr. 386/2018)",
-     "Аттестация врачей и фармацевтов (Приказ МЗ № 386/2018)", "Attestation of physicians (MoH order 386/2018)"),
-    ("OMS-100", "", "", "", "Normativele de personal medical (Ordinul MS nr. 100/2008)",
-     "Нормативы медицинского персонала (Приказ МЗ № 100/2008)", "Medical staffing norms (MoH order 100/2008)"),
+    ("CM-211", "211", "2", "", "Ridicarea sancțiunii disciplinare înainte de termen", "Досрочное снятие дисциплинарного взыскания",
+     "Early lifting of a disciplinary sanction"),
+    ("CM-TRAINING", "213", "", "", "Formarea profesională a salariaților", "Профессиональная подготовка работников",
+     "Vocational training of employees"),
+    ("SSM-186", "", "", "", "Supravegherea sănătății lucrătorilor (examenul medical)", "Надзор за здоровьем работников (медосмотр)",
+     "Workers' health surveillance (medical examination)"),
+    ("REG-PAY", "", "", "", "Regulamentul de salarizare / contractul colectiv de muncă", "Положение об оплате труда / коллективный договор",
+     "Pay regulation / collective agreement"),
 ]
-NON_CM_ACTS = {"HG-837": "HG nr. 837/2016", "OMS-386": "Ordinul MS nr. 386/2018", "OMS-100": "Ordinul MS nr. 100/2008"}
+NON_CM_ACTS = {"SSM-186": "Legea securității și sănătății în muncă nr. 186/2008",
+               "REG-PAY": "Regulamentul de salarizare al întreprinderii"}
 
 # Tipurile de ordine (PLAN.md §5.3). from_1c = exista în configurația 1C.
-# (cod, RO, RU, EN, grupa, registrul, efectul, colectiv, temei, titlul în ordin, IRM19, efect salarial, din 1C)
+# (cod, RO, RU, EN, grupa, registrul, efectul, colectiv, temeiurile, titlul în ordin, IRM19, efect salarial, din 1C)
 P, L, T, G = "order_personnel", "order_leave", "order_travel", "order_general"
 ORDER_TYPES = [
     # A. Raporturi de muncă
@@ -300,7 +378,7 @@ ORDER_TYPES = [
      "Cu privire la acordarea concediului parțial plătit pentru îngrijirea copilului", True, True, True),
     ("leave_childcare_unpaid", "Concediu suplimentar neplătit pentru îngrijirea copilului",
      "Дополнительный неоплачиваемый отпуск по уходу за ребёнком", "Additional unpaid childcare leave", "B", L, "leave", False,
-     "CM-124", "Cu privire la acordarea concediului suplimentar neplătit pentru îngrijirea copilului", True, True, False),
+     "CM-126", "Cu privire la acordarea concediului suplimentar neplătit pentru îngrijirea copilului", True, True, False),
     ("leave_study", "Concediu de studii", "Учебный отпуск", "Study leave", "B", L, "leave", False, "CM-STUDY",
      "Cu privire la acordarea concediului de studii", False, True, True),
     ("days_off_paid", "Zile libere plătite (căsătorie, naștere, deces)", "Оплачиваемые свободные дни", "Paid days off", "B", L,
@@ -308,48 +386,45 @@ ORDER_TYPES = [
     ("leave_recall", "Rechemare din concediu", "Отзыв из отпуска", "Recall from leave", "B", L, "leave_recall", False, "CM-RECALL",
      "Cu privire la rechemarea din concediu", False, True, True),
     ("leave_postpone", "Amânarea / transferul concediului", "Перенос отпуска", "Postponing leave", "B", L, "leave_recall", False,
-     "", "Cu privire la amânarea concediului", False, False, False),
+     "CM-118", "Cu privire la amânarea concediului", False, False, False),
     ("leave_compensation", "Compensarea concediului nefolosit", "Компенсация неиспользованного отпуска",
      "Compensation for unused leave", "B", L, "leave", False, "", "Cu privire la compensarea concediului nefolosit", False, True, False),
     # C. Timp de muncă
-    ("schedule", "Aprobarea / modificarea graficului de lucru", "Утверждение / изменение графика работы",
-     "Approving the work schedule", "C", G, "worktime", True, "", "Cu privire la aprobarea graficului de lucru", False, False, True),
+    ("schedule", "Aprobarea / modificarea graficului de lucru (de ture)", "Утверждение / изменение графика работы (смен)",
+     "Approving the work (shift) schedule", "C", G, "worktime", True, "CM-101", "Cu privire la aprobarea graficului de lucru",
+     False, False, True),
     ("rest_day_work", "Lucru în zi de odihnă / sărbătoare", "Работа в выходной / праздничный день", "Work on rest day / holiday",
-     "C", P, "worktime", True, "CM-OVERTIME", "Cu privire la antrenarea la muncă în zi de odihnă", False, True, True),
+     "C", P, "worktime", True, ("CM-110", "CM-111"), "Cu privire la antrenarea la muncă în zi de odihnă", False, True, True),
     ("overtime", "Ore suplimentare", "Сверхурочная работа", "Overtime", "C", P, "worktime", True, "CM-OVERTIME",
      "Cu privire la munca suplimentară", False, True, False),
     ("hours_change", "Modificarea orelor de lucru (program parțial, zi redusă)", "Изменение рабочего времени",
      "Change of working hours", "C", P, "worktime", False, "CM-68", "Cu privire la modificarea orelor de lucru", False, True, True),
-    ("on_call", "Gărzi (graficul lunar)", "Дежурства (месячный график)", "On-call duty (monthly roster)", "C", G, "worktime", True,
-     "", "Cu privire la aprobarea graficului gărzilor", False, True, False),
     # D. Salarizare și stimulare
     ("salary_set", "Stabilirea / modificarea salariului de funcție", "Установление / изменение оклада", "Setting the base salary",
-     "D", P, "salary", True, "HG-837", "Cu privire la stabilirea salariului de funcție", False, True, True),
-    ("allowance", "Stabilirea sporurilor", "Установление надбавок", "Setting allowances", "D", P, "salary", True, "HG-837",
-     "Cu privire la stabilirea sporurilor la salariu", False, True, False),
+     "D", P, "salary", True, ("CM-PAY", "REG-PAY"), "Cu privire la stabilirea salariului de funcție", False, True, True),
+    ("allowance", "Stabilirea sporurilor", "Установление надбавок", "Setting allowances", "D", P, "salary", True,
+     ("CM-PAY", "REG-PAY"), "Cu privire la stabilirea sporurilor la salariu", False, True, False),
     ("bonus", "Premiere", "Премирование", "Bonus", "D", P, "incentive", True, "CM-INCENT", "Cu privire la premiere", False, True, True),
     ("material_aid", "Ajutor material", "Материальная помощь", "Financial aid", "D", P, "incentive", True, "",
      "Cu privire la acordarea ajutorului material", False, True, False),
     ("indexation", "Indexarea / majorarea salariilor", "Индексация / повышение зарплат", "Salary indexation", "D", G, "salary", True,
-     "HG-837", "Cu privire la majorarea salariilor", False, True, False),
+     ("CM-PAY", "REG-PAY"), "Cu privire la majorarea salariilor", False, True, False),
+    ("deduction", "Reținere din salariu", "Удержание из заработной платы", "Deduction from wages", "D", P, "none", False, "CM-148",
+     "Cu privire la reținerea din salariu", False, True, False),
     # E. Disciplină
     ("sanction", "Sancțiune disciplinară", "Дисциплинарное взыскание", "Disciplinary sanction", "E", P, "sanction", False, "CM-206",
      "Cu privire la aplicarea sancțiunii disciplinare", False, False, False),
     ("sanction_lift", "Ridicarea sancțiunii disciplinare", "Снятие дисциплинарного взыскания", "Lifting a sanction", "E", P,
-     "sanction", False, "CM-206", "Cu privire la ridicarea sancțiunii disciplinare", False, False, False),
-    # F. Profesional
-    ("training", "Trimitere la perfecționare / EMC", "Направление на повышение квалификации", "Sending to training / CME", "F", T,
-     "qualification", True, "", "Cu privire la trimiterea la cursuri de perfecționare", False, True, False),
-    ("attestation", "Trimitere la atestare", "Направление на аттестацию", "Sending to attestation", "F", P, "qualification", True,
-     "OMS-386", "Cu privire la trimiterea la atestare", False, False, False),
-    ("category_award", "Conferirea / confirmarea categoriei de calificare", "Присвоение / подтверждение категории",
-     "Award of qualification category", "F", P, "qualification", True, "OMS-386",
-     "Cu privire la conferirea categoriei de calificare", False, True, False),
-    ("medical_exam", "Examenul medical periodic", "Периодический медицинский осмотр", "Periodic medical examination", "F", G,
-     "none", True, "", "Cu privire la efectuarea examenului medical periodic", False, False, False),
+     "sanction", False, "CM-211", "Cu privire la ridicarea sancțiunii disciplinare", False, False, False),
+    # F. Formare profesională și SSM
+    ("training", "Trimitere la formare profesională", "Направление на профессиональное обучение", "Sending to vocational training",
+     "F", T, "qualification", True, "CM-TRAINING", "Cu privire la trimiterea la formare profesională", False, True, False),
+    ("medical_exam", "Examenul medical (supravegherea sănătății, SSM)", "Медицинский осмотр (охрана труда)",
+     "Medical examination (health and safety)", "F", G, "none", True, "SSM-186",
+     "Cu privire la efectuarea examenului medical", False, False, False),
     # G. Organizatorice
     ("staff_list", "Aprobarea / modificarea statelor de personal", "Утверждение / изменение штатного расписания",
-     "Approving the staff list", "G", G, "staff_list", False, "OMS-100", "Cu privire la statele de personal", False, False, False),
+     "Approving the staff list", "G", G, "staff_list", False, "", "Cu privire la statele de personal", False, False, False),
     ("leave_schedule", "Aprobarea graficului concediilor", "Утверждение графика отпусков", "Approving the leave schedule", "G", G,
      "none", False, "CM-112", "Cu privire la aprobarea graficului concediilor de odihnă", False, False, False),
     ("appoint_responsible", "Numirea responsabililor / constituirea comisiilor", "Назначение ответственных / создание комиссий",
@@ -361,24 +436,30 @@ ORDER_TYPES = [
 
 
 def run():
-    for i, (code, ro, ru, en, cat, hours) in enumerate(OCCUPATIONS):
-        lookup = {"code": code} if code else {"code": "", "name_ro": ro}
-        Occupation.objects.get_or_create(**lookup, defaults={
-            "name_ro": ro, "name_ru": ru, "name_en": en, "category": cat, "weekly_hours": hours, "sort": (i + 1) * 10,
-            "notes": "" if code else "Cod CORM de completat din clasificatorul CORM 006-21.",
-        })
-    for i, (code, ro, ru, en, kind) in enumerate(SPECIALTIES):
-        Specialty.objects.get_or_create(name_ro=ro, defaults={"code": code, "name_ru": ru, "name_en": en, "kind": kind,
-                                                              "sort": (i + 1) * 10})
     for kind, items in DICTS.items():
         for i, (code, ro, ru, en, extra) in enumerate(items):
             DictItem.objects.get_or_create(kind=kind, code=code, defaults={
                 "name_ro": ro, "name_ru": ru, "name_en": en, "extra": extra, "sort": (i + 1) * 10})
+    groups = {c.code: c for c in DictItem.objects.filter(kind=STAFF_CATEGORY)}
+    for i, (code, ro, ru, en, group, hours) in enumerate(OCCUPATIONS):
+        lookup = {"code": code} if code else {"code": "", "name_ro": ro}
+        Occupation.objects.get_or_create(**lookup, defaults={
+            "name_ro": ro, "name_ru": ru, "name_en": en, "category": groups.get(group), "weekly_hours": hours,
+            "sort": (i + 1) * 10, "notes": CODE_HINTS.get(ro, ""),
+        })
+    for i, (code, ro, ru, en, kind) in enumerate(SPECIALTIES):
+        Specialty.objects.get_or_create(name_ro=ro, defaults={"code": code, "name_ru": ru, "name_en": en, "kind": kind,
+                                                              "sort": (i + 1) * 10})
     bases = {}
     for i, (code, art, par, let, ro, ru, en) in enumerate(LEGAL_BASES):
-        bases[code], _ = LegalBasis.objects.get_or_create(code=code, defaults={
+        bases[code], created = LegalBasis.objects.get_or_create(code=code, defaults={
             "act": NON_CM_ACTS.get(code, CM), "article": art, "paragraph": par, "letter": let,
             "name_ro": ro, "name_ru": ru, "name_en": en, "sort": (i + 1) * 10})
+        basis = bases[code]
+        # temeiurile livrate fără articol (versiunile vechi) primesc articolul, dacă clientul nu l-a scris el
+        if not created and art and not (basis.article or basis.paragraph or basis.letter) and basis.act == CM:
+            basis.article, basis.paragraph, basis.letter = art, par, let
+            basis.save(update_fields=["article", "paragraph", "letter"])
     for i, row in enumerate(ORDER_TYPES):
         code, ro, ru, en, group, register, effect, collective, basis, title, irm19, payroll, from_1c = row
         ot, created = OrderType.objects.get_or_create(code=code, defaults={
@@ -387,5 +468,6 @@ def run():
             "payroll_effect": payroll, "from_1c": from_1c, "needs_employee": effect not in ("staff_list",),
             "sort": (i + 1) * 10,
         })
-        if created and bases.get(basis):
-            ot.legal_bases.set([bases[basis]])
+        codes = (basis,) if isinstance(basis, str) else basis
+        if created and any(bases.get(c) for c in codes):
+            ot.legal_bases.set([bases[c] for c in codes if bases.get(c)])

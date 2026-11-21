@@ -11,6 +11,7 @@ from apps.org import services as org_services
 from apps.org.models import DictItem, Occupation, StaffList, StaffListLine, Subdivision
 from apps.staff import services
 from apps.staff.models import AccessLog, Employee, Employment, PriorExperience
+from .conftest import legacy_qualification, occupation
 
 
 def xlsx(rows):
@@ -27,14 +28,15 @@ def xlsx(rows):
 
 @pytest.fixture
 def org(seeded):
+    legacy_qualification()
     tr1 = Subdivision.objects.create(code="TR1", name_ro="Secția traumatologie nr. 1", name_ru="Травматология № 1")
     ati = Subdivision.objects.create(code="ATI", name_ro="Secția ATI")
     bo = Subdivision.objects.create(code="BO", name_ro="Blocul operator", parent=ati)
     return {
         "tr1": tr1, "ati": ati, "bo": bo,
-        "doctor": Occupation.objects.get(name_ro="Medic traumatolog-ortoped"),
-        "nurse": Occupation.objects.get(name_ro="Asistent medical de secție"),
-        "anest": Occupation.objects.get(name_ro="Medic anesteziolog-reanimatolog"),
+        "doctor": occupation("Medic traumatolog-ortoped"),
+        "nurse": occupation("Asistent medical de secție"),
+        "anest": occupation("Medic anesteziolog-reanimatolog"),
     }
 
 

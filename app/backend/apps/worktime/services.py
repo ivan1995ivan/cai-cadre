@@ -2,10 +2,14 @@
 
 Ziua unui raport de muncă se socotește așa (de la cel mai „tare” la cel mai „slab”):
 1. celula scrisă de mână în pontaj (rămâne la recalculare);
-2. absența angajatului (concediu, boală, delegare — din ordine și foi de boală) → codul ei (CO, CM, D...);
-3. contractul suspendat → „S”;
-4. tura din graficul lunar al secției (gărzile), dacă există;
-5. tura din graficul de lucru al raportului (săptămânal sau ciclic); fără grafic — 5 zile × (orele săptămânale / 5).
+2. absența angajatului (concediu, boală, delegare — din ordine și foi de boală) → codul ei (C, Cm, D...);
+3. contractul suspendat → „Sp”;
+4. tura din graficul de ture al subdiviziunii (graficul lunar), dacă există;
+5. tura din graficul de lucru al raportului (săptămânal sau ciclic); fără grafic — 5 zile × (orele săptămânale / 5);
+6. ziua fără tură → „R” (repaus) sau „Sn” (sărbătoare nelucrătoare).
+
+Notațiile din pontaj sunt cele din modelul tabelului de evidență a timpului de muncă aprobat prin Convenția colectivă
+(nivel național) nr. 17 din 28.02.2020 (MO nr. 70-74/2020, art. 241), pentru CM art. 106.
 
 Graficul săptămânal se micșorează după normă (0,5 normă din „5 × 8” = 4 ore pe zi); graficul pe ture nu — la cumul se pun
 mai puține ture în graficul lunar.
@@ -27,20 +31,27 @@ from apps.staff.models import Employment
 
 from .models import CalendarDay, JobSchedule, Roster, RosterLine, ShiftType, Timesheet, TimesheetLine
 
-# codurile absențelor în pontaj (după tipul absenței din dosar)
+# codurile absențelor în pontaj (după tipul absenței din dosar) — notațiile Convenției colective nr. 17/2020
 ABSENCE_CODES = {
-    "annual": "CO", "extra": "CA", "unpaid": "CFP", "maternity": "CMT", "paternity": "CP", "childcare": "CIC",
-    "childcare_unpaid": "CICN", "study": "CS", "days_off": "ZL", "travel": "D", "training": "F", "sick": "CM",
+    "annual": "C", "extra": "C", "unpaid": "Cn", "maternity": "Cc", "paternity": "Cc", "childcare": "Cc",
+    "childcare_unpaid": "Cc", "study": "Cs", "days_off": "Ls", "travel": "D", "training": "F", "sick": "Cm",
 }
+SUSPENDED, REST, HOLIDAY = "Sp", "R", "Sn"
 CODE_LABELS = {
-    "CO": "Concediu de odihnă anual", "CA": "Concediu suplimentar", "CFP": "Concediu fără plată", "CMT": "Concediu de maternitate",
-    "CP": "Concediu paternal", "CIC": "Îngrijirea copilului (parțial plătit)", "CICN": "Îngrijirea copilului (neplătit)",
-    "CS": "Concediu de studii", "ZL": "Zile libere plătite", "D": "Deplasare", "F": "Perfecționare / EMC", "CM": "Concediu medical",
-    "S": "CIM suspendat", "A": "Absență nemotivată", "IN": "Învoire (absență permisă)",
+    "R": "Zile de repaus (odihnă)", "Sn": "Zile de sărbătoare nelucrătoare", "Ls": "Zile libere cu menținerea salariului",
+    "C": "Concediu plătit", "Cn": "Concediu neplătit", "Cs": "Concediu de studii", "Cm": "Concediu medical",
+    "Cc": "Concediu de maternitate, pentru îngrijirea copilului, paternal", "D": "Deplasare",
+    "Sp": "Suspendarea contractului individual de muncă", "Șt": "Șomaj tehnic", "St": "Staționare", "Dt": "Detașare",
+    "A": "Absențe",
+    # nu e în modelul Convenției nr. 17/2020 (acolo formarea cu menținerea salariului nu are notație proprie)
+    "F": "Formare profesională (notație proprie)",
 }
-MANUAL_CODES = ["A", "IN"]
+# codurile care se pun de mână (celelalte vin din ordine, foi de boală și grafic)
+MANUAL_CODES = ["A", "Șt", "St", "Dt", "R", "Sn"]
 SETTINGS_KEY = "worktime_settings"
-DEFAULTS = {"min_rest_hours": 12, "max_duties": 0}
+# min_rest_hours — odihna minimă între ture; oricum cel puțin dublul turei anterioare (CM art. 101 alin. (6));
+# max_night_shifts — câte ture de noapte pe lună (0 = fără limită)
+DEFAULTS = {"min_rest_hours": 12, "max_night_shifts": 0}
 ONE = Decimal("1")
 
 
@@ -189,17 +200,17 @@ class Context:
         return out
 
     def shift(self, code):
-        """(ore, ore de noapte, începutul, gardă) pentru codul turei; codurile numerice („8”, „4”) — ore de zi."""
+        """(ore, ore de noapte, începutul) pentru codul turei; codurile numerice („8”, „4”) — ore de zi."""
         if not code:
             return None
         s = self.shifts.get(code)
         if s is not None:
-            return s.hours, s.night_hours, s.start or time(8), s.is_duty
+            return s.hours, s.night_hours, s.start or time(8)
         try:
             hours = Decimal(str(code).replace(",", "."))
         except Exception:  # noqa: BLE001
             return None
-        return hours, Decimal("0"), time(8), False
+        return hours, Decimal("0"), time(8)
 
     def planned(self, jd: JobDays, day: date) -> str:
         """Codul turei din graficul de lucru al raportului (fără graficul lunar)."""
@@ -241,7 +252,7 @@ class Context:
         return total
 
 
-# --- graficul lunar (gărzile) ---------------------------------------------------------------------------------------
+# --- graficul de ture (lunar) ------------------------------------------------------------------------------------------
 def _label(jd: JobDays, ctx: Context) -> dict:
     job = jd.job
     sub_id, occ_id, rate = jd.values_on(max(jd.days))
@@ -271,8 +282,9 @@ def fill_roster(roster: Roster, overwrite=False) -> int:
 
 
 def roster_report(roster: Roster) -> dict:
-    """Rândurile cu totalurile (ore, noapte, gărzi, norma) și avertismentele: norma depășită, odihnă prea scurtă,
-    tură într-o zi de absență."""
+    """Rândurile cu totalurile (ore, noapte, ture de noapte, norma) și avertismentele (CM art. 101): două ture la rând,
+    odihna dintre ture mai scurtă decât dublul turei anterioare (sau decât minimul din setări), prea multe ture de noapte,
+    norma depășită, tură într-o zi de absență."""
     ctx = Context(roster.year, roster.month)
     jobs = {jd.job.pk: jd for jd in ctx.jobs(roster.subdivision)}
     rows, warnings = [], []
@@ -282,9 +294,9 @@ def roster_report(roster: Roster) -> dict:
             jd = JobDays(ln.employment, ctx.days, list(ln.employment.employee.absences.all()))
             jd.days = {d for d in ctx.days if jd.active(d)}
         hours = night = Decimal("0")
-        duties = 0
+        nights = 0
         absences = {}
-        prev_end = None
+        prev_end, prev_hours, prev_shift = None, 0.0, False
         for day in ctx.days:
             code = (ln.days or {}).get(str(day.day), "")
             a = jd.absence(day)
@@ -293,14 +305,20 @@ def roster_report(roster: Roster) -> dict:
             info = ctx.shift(code)
             if info is None:
                 continue
-            h, n, start, duty = info
-            hours, night, duties = hours + h, night + n, duties + (1 if duty else 0)
+            h, n, start = info
+            hours, night, nights = hours + h, night + n, nights + (1 if n > 0 else 0)
             begin = datetime.combine(day, start)
-            if prev_end is not None and ctx.min_rest and (begin - prev_end) < timedelta(hours=float(ctx.min_rest)):
+            if prev_end is not None and h > 0:
                 rest = (begin - prev_end).total_seconds() / 3600
-                warnings.append({"kind": "rest", "employment": ln.employment_id, "name": ln.employment.employee.short_name(),
-                                 "day": day.day, "rest": round(max(rest, 0), 1)})
-            prev_end = begin + timedelta(hours=float(h))
+                # CM art. 101 alin. (6): între ture — cel puțin dublul turei anterioare; orele scrise ca cifră nu sunt tură
+                need = max(float(ctx.min_rest), 2 * prev_hours if prev_shift else 0)
+                who = {"employment": ln.employment_id, "name": ln.employment.employee.short_name(), "day": day.day}
+                if rest <= 0:  # CM art. 101 alin. (4): două ture la rând sunt interzise
+                    warnings.append({"kind": "consecutive", **who})
+                elif rest < need:
+                    warnings.append({"kind": "rest", **who, "rest": round(rest, 1), "need": round(need, 1)})
+            if h > 0:
+                prev_end, prev_hours, prev_shift = begin + timedelta(hours=float(h)), float(h), code in ctx.shifts
             if a is not None:
                 warnings.append({"kind": "absence", "employment": ln.employment_id, "name": ln.employment.employee.short_name(),
                                  "day": day.day, "code": ABSENCE_CODES.get(a.kind, "")})
@@ -308,12 +326,12 @@ def roster_report(roster: Roster) -> dict:
         if hours > norm and norm:
             warnings.append({"kind": "norm", "employment": ln.employment_id, "name": ln.employment.employee.short_name(),
                              "hours": _q(hours), "norm": _q(norm)})
-        max_duties = int(get_settings().get("max_duties") or 0)
-        if max_duties and duties > max_duties:
-            warnings.append({"kind": "duties", "employment": ln.employment_id, "name": ln.employment.employee.short_name(),
-                             "duties": duties, "max": max_duties})
+        max_nights = int(get_settings().get("max_night_shifts") or 0)
+        if max_nights and nights > max_nights:
+            warnings.append({"kind": "nights", "employment": ln.employment_id, "name": ln.employment.employee.short_name(),
+                             "nights": nights, "max": max_nights})
         rows.append({"id": ln.id, **_label(jd, ctx), "days": ln.days or {}, "absences": absences, "note": ln.note,
-                     "hours": _q(hours), "night": _q(night), "duties": duties, "norm": _q(norm), "diff": _q(hours - norm)})
+                     "hours": _q(hours), "night": _q(night), "nights": nights, "norm": _q(norm), "diff": _q(hours - norm)})
     return {"days": _days_header(ctx), "rows": rows, "warnings": warnings}
 
 
@@ -327,15 +345,15 @@ def _cell(ctx: Context, jd: JobDays, day: date, roster_days) -> dict | None:
     a = jd.absence(day)
     if a is not None:
         if a.kind in WITHOUT_HOLIDAYS and ctx.cal.is_holiday(day):
-            return None
+            return {"c": HOLIDAY}
         return {"c": ABSENCE_CODES.get(a.kind, "?")}
     if jd.is_suspended(day):
-        return {"c": "S"}
+        return {"c": SUSPENDED}
     code = roster_days.get(str(day.day), "") if roster_days is not None else ctx.planned(jd, day)
     info = ctx.shift(code)
     if info is None:
-        return None
-    hours, night, _start, _duty = info
+        return {"c": HOLIDAY if ctx.cal.is_holiday(day) else REST}
+    hours, night, _start = info
     cell = {"c": code, "h": float(hours), "n": float(night)}
     if ctx.cal.is_holiday(day):
         cell["hol"] = 1

@@ -12,7 +12,9 @@ from rest_framework.exceptions import ValidationError
 
 from .models import CIVIL_KINDS, OCCUPYING_KINDS, Employee, Employment, EmploymentHistory, PriorExperience
 
-MEDICAL_CATEGORIES = {"physicians", "pharmacists", "nurses", "junior"}
+# categoriile (codurile din clasificatorul „Categoriile de personal”) în care fostele categorii medicale au trecut la
+# conversia din S1: medici, farmaciști → 2, personal mediu → 3, inferior → 5
+MEDICAL_CATEGORIES = {"2", "3", "5"}
 SNAPSHOT = ("subdivision_id", "occupation_id", "rate", "base_salary", "allowance_pct", "combination_pct")
 SNAPSHOT_FIELDS = ["subdivision", "occupation", "rate", "base_salary", "allowance_pct", "combination_pct"]
 
@@ -231,12 +233,12 @@ def seniority(employee: Employee, on_date=None) -> dict:
     on_date = on_date or timezone.localdate()
     prior = [p for p in employee.experience.all() if p.date_from <= on_date]
     here, here_medical = [], []
-    for emp in employee.employments.select_related("occupation"):
+    for emp in employee.employments.select_related("occupation__category"):
         if emp.date_from > on_date or emp.kind in CIVIL_KINDS:
             continue
         end = min(emp.end_date or on_date, on_date)
         here.append((emp.date_from, end))
-        if emp.occupation.category in MEDICAL_CATEGORIES:
+        if emp.occupation.category_id and emp.occupation.category.code in MEDICAL_CATEGORIES:
             here_medical.append((emp.date_from, end))
 
     def clip(p):

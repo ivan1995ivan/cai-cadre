@@ -1,4 +1,4 @@
-"""Instituția: clasificatoarele, subdiviziunile și statele de personal (Etapa 1 din PLAN.md).
+"""Întreprinderea: clasificatoarele, subdiviziunile și statele de personal (Etapa 1 din PLAN.md).
 
 Denumirile au trei limbi (RO / RU / EN); dacă lipsește traducerea, se arată româna.
 """
@@ -8,16 +8,9 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
-# Categoriile de personal din statele IMSP (Ordinul MS 100/2008, anexa „efectivul-limită”)
-STAFF_CATEGORIES = [
-    ("leadership", "Personal de conducere"),
-    ("physicians", "Medici (studii superioare)"),
-    ("pharmacists", "Farmaciști"),
-    ("nurses", "Personal medical cu studii medii"),
-    ("junior", "Personal medical inferior"),
-    ("admin", "Personal administrativ-gospodăresc"),
-    ("other", "Alt personal"),
-]
+# Categoriile de personal sunt un clasificator editabil (DictItem de tipul „staff_category”); valorile livrate sunt grupele
+# majore ale Clasificatorului ocupațiilor din RM (CORM 006-2021), cu codul = cifra grupei (prima cifră a codului funcției).
+STAFF_CATEGORY = "staff_category"
 
 
 class Named(models.Model):
@@ -40,27 +33,42 @@ class Named(models.Model):
         return {"ru": self.name_ru, "en": self.name_en}.get(lang) or self.name_ro
 
 
-class Occupation(Named):
-    """Funcția (ocupația) după Clasificatorul ocupațiilor din RM (CORM 006-21)."""
+def staff_category_for_code(code: str):
+    """Categoria după prima cifră a codului CORM (grupa majoră): „241106” → categoria cu codul „2” (dacă există)."""
+    first = (code or "").strip()[:1]
+    if not first.isdigit():
+        return None
+    return DictItem.objects.filter(kind=STAFF_CATEGORY, code=first, deletion_mark=False).first()
 
-    category = models.CharField("Categoria de personal", max_length=12, choices=STAFF_CATEGORIES, default="other")
+
+class Occupation(Named):
+    """Funcția (ocupația) după Clasificatorul ocupațiilor din RM (CORM 006-2021)."""
+
+    category = models.ForeignKey("DictItem", on_delete=models.PROTECT, null=True, blank=True, related_name="+",
+                                 limit_choices_to={"kind": STAFF_CATEGORY}, verbose_name="Categoria de personal",
+                                 help_text="Goală — se ia după prima cifră a codului CORM (grupa majoră).")
     isco_code = models.CharField("Cod ISCO-08", max_length=8, blank=True)
     weekly_hours = models.DecimalField("Ore pe săptămână", max_digits=4, decimal_places=1, default=Decimal("40"))
     base_leave_days = models.PositiveSmallIntegerField("Concediu de bază (zile)", default=28)
     extra_leave_days = models.PositiveSmallIntegerField("Concediu suplimentar (zile)", default=0)
-    harmful = models.BooleanField("Condiții vătămătoare (HG 1223/2004)", default=False)
+    harmful = models.BooleanField("Condiții de muncă vătămătoare (CM art. 96, 121, 139)", default=False)
     notes = models.CharField("Observații", max_length=300, blank=True)
 
     class Meta(Named.Meta):
         verbose_name = "Funcție (CORM)"
 
+    def save(self, *args, **kwargs):
+        if self.category_id is None:
+            self.category = staff_category_for_code(self.code)
+        super().save(*args, **kwargs)
+
 
 class Specialty(Named):
-    """Specialitatea (medicală, farmaceutică, de nursing sau alta) — pentru studii, atestare și categorii."""
+    """Specialitatea (profesia după studii) — pentru studii și calificare."""
 
-    KINDS = [("medical", "Medicală"), ("pharmacy", "Farmaceutică"), ("nursing", "Nursing / studii medii"),
-             ("other", "Alta")]
-    kind = models.CharField(max_length=10, choices=KINDS, default="medical")
+    KINDS = [("higher", "Învățământ superior"), ("postsecondary", "Învățământ profesional tehnic postsecundar"),
+             ("secondary", "Învățământ profesional tehnic secundar (meserie)"), ("other", "Alta")]
+    kind = models.CharField(max_length=14, choices=KINDS, default="other")
     isced = models.CharField("Cod ISCED", max_length=8, blank=True)
 
     class Meta(Named.Meta):
@@ -68,9 +76,10 @@ class Specialty(Named):
 
 
 class DictItem(Named):
-    """Clasificatoarele mici, după tip: categorii de calificare, grade științifice, studii, tipuri de acte etc."""
+    """Clasificatoarele mici, după tip: categoriile de personal, grade științifice, studii, tipuri de acte etc."""
 
     KINDS = [
+        (STAFF_CATEGORY, "Categoriile de personal (grupele CORM)"),
         ("qualification", "Categorii de calificare"),
         ("degree", "Grade științifice"),
         ("title", "Titluri științifico-didactice"),
@@ -99,7 +108,7 @@ class DictItem(Named):
 
 
 class LegalBasis(models.Model):
-    """Temeiul legal pus în ordine (articol din Codul muncii, HG, ordin MS)."""
+    """Temeiul legal pus în ordine (articol din Codul muncii sau din alt act normativ)."""
 
     code = models.CharField("Cod", max_length=32, unique=True)
     act = models.CharField("Actul normativ", max_length=120, default="Codul muncii nr. 154/2003")
@@ -178,7 +187,7 @@ ORDER_EFFECTS = [
     ("worktime", "Timp de muncă (grafic, ore, zi de odihnă)"),
     ("incentive", "Stimulare (premiu, ajutor material)"),
     ("sanction", "Sancțiune disciplinară"),
-    ("qualification", "Calificare / atestare / formare"),
+    ("qualification", "Formare profesională"),
     ("staff_list", "Statele de personal"),
     ("cancel", "Anularea unui ordin"),
 ]
@@ -189,7 +198,7 @@ ORDER_GROUPS = [
     ("C", "Timp de muncă"),
     ("D", "Salarizare și stimulare"),
     ("E", "Disciplină"),
-    ("F", "Profesional (formare, atestare)"),
+    ("F", "Formare profesională și SSM"),
     ("G", "Organizatorice (de bază)"),
 ]
 
@@ -225,23 +234,22 @@ class OrderType(Named):
 
 
 class Subdivision(Named):
-    """Subdiviziunea instituției (secție, laborator, serviciu); ierarhică."""
+    """Subdiviziunea întreprinderii (departament, secție, serviciu, atelier, filială); ierarhică."""
 
-    KINDS = [("clinical", "Clinică (cu paturi)"), ("paraclinical", "Paraclinică / diagnostic"),
-             ("ambulatory", "Ambulatorie / consultativă"), ("admin", "Administrativă / gospodărească"),
-             ("other", "Alta")]
+    KINDS = [("department", "Departament / direcție"), ("section", "Secție / serviciu / birou"),
+             ("workshop", "Atelier / sector de producție"), ("branch", "Filială / subdiviziune separată (punct de lucru)"),
+             ("warehouse", "Depozit"), ("other", "Alta")]
     parent = models.ForeignKey("self", on_delete=models.PROTECT, null=True, blank=True, related_name="children",
                                verbose_name="Subdiviziunea-părinte")
-    kind = models.CharField("Tipul", max_length=12, choices=KINDS, default="clinical")
-    beds = models.PositiveSmallIntegerField("Paturi", default=0)
-    harmful = models.BooleanField("Condiții vătămătoare (HG 1223/2004)", default=False)
+    kind = models.CharField("Tipul", max_length=12, choices=KINDS, default="section")
+    harmful = models.BooleanField("Condiții de muncă vătămătoare (CM art. 96, 121, 139)", default=False)
     extra_leave_days = models.PositiveSmallIntegerField("Concediu suplimentar pentru condiții (zile)", default=0)
     reduced_hours = models.DecimalField("Ore pe săptămână (zi redusă)", max_digits=4, decimal_places=1, null=True,
                                         blank=True)
     head_name = models.CharField("Șeful subdiviziunii", max_length=150, blank=True)
-    # Cine vede angajații, concediile și pontajul subdiviziunii când rolul are „doar ale mele” (șeful de secție)
+    # Cine vede angajații, concediile și pontajul subdiviziunii când rolul are „doar ale mele” (șeful subdiviziunii)
     users = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name="subdivisions",
-                                   verbose_name="Utilizatorii subdiviziunii (șeful, asistentul superior)")
+                                   verbose_name="Utilizatorii subdiviziunii (șeful, înlocuitorul)")
 
     class Meta(Named.Meta):
         verbose_name = "Subdiviziune"
@@ -262,15 +270,15 @@ class Subdivision(Named):
 
 
 class StaffList(models.Model):
-    """Statele de personal — o versiune (cu numărul și data aprobării de fondator)."""
+    """Statele de personal — o versiune, aprobată prin ordinul (decizia) conducătorului întreprinderii."""
 
     STATUSES = [("draft", "Ciornă"), ("approved", "Aprobat"), ("cancelled", "Anulat")]
     number = models.CharField("Numărul", max_length=40, blank=True)
     date = models.DateField("Data documentului", default=timezone.localdate)
     effective_from = models.DateField("În vigoare de la")
     approved_by = models.CharField("Aprobat prin", max_length=300, blank=True,
-                                   help_text="De ex. Decizia Consiliului raional nr. 1/1 din 20.01.2026")
-    basis = models.TextField("Temeiul (normative, ordine MS)", blank=True)
+                                   help_text="De ex. Ordinul directorului nr. 12-p din 20.01.2026")
+    basis = models.TextField("Temeiul (de ex. modificarea structurii, regulamentul de salarizare)", blank=True)
     status = models.CharField(max_length=10, choices=STATUSES, default="draft")
     previous = models.ForeignKey("self", on_delete=models.SET_NULL, null=True, blank=True, related_name="next_versions",
                                  verbose_name="Versiunea anterioară")
@@ -293,11 +301,12 @@ class StaffListLine(models.Model):
     staff_list = models.ForeignKey(StaffList, on_delete=models.CASCADE, related_name="lines")
     subdivision = models.ForeignKey(Subdivision, on_delete=models.PROTECT, verbose_name="Subdiviziunea")
     occupation = models.ForeignKey(Occupation, on_delete=models.PROTECT, verbose_name="Funcția")
-    category = models.CharField("Categoria de personal", max_length=12, choices=STAFF_CATEGORIES, blank=True)
+    category = models.ForeignKey(DictItem, on_delete=models.PROTECT, null=True, blank=True, related_name="+",
+                                 limit_choices_to={"kind": STAFF_CATEGORY}, verbose_name="Categoria de personal",
+                                 help_text="Goală — categoria funcției.")
     units = models.DecimalField("Unități", max_digits=7, decimal_places=2)
     base_salary = models.DecimalField("Salariul de funcție (lei)", max_digits=12, decimal_places=2, default=Decimal("0"))
     allowance_pct = models.DecimalField("Sporuri fixe (%)", max_digits=6, decimal_places=2, default=Decimal("0"))
-    effort_note = models.CharField("Mențiune („cu 50% efort medic de familie”)", max_length=200, blank=True)
     note = models.CharField("Observații", max_length=300, blank=True)
     sort = models.IntegerField(default=0)
 
@@ -305,8 +314,9 @@ class StaffListLine(models.Model):
         ordering = ["sort", "id"]
         verbose_name = "Rând din statele de personal"
 
-    def effective_category(self) -> str:
-        return self.category or self.occupation.category
+    def effective_category(self):
+        """Categoria rândului: cea scrisă în rând sau, dacă e goală, a funcției (poate fi None)."""
+        return self.category if self.category_id else self.occupation.category
 
     def monthly_fund(self) -> Decimal:
         """Fondul lunar al rândului: unități × salariu × (1 + sporuri %)."""

@@ -90,7 +90,7 @@ def schedule_people(schedule: LeaveSchedule):
     first, last = date(schedule.year, 1, 1), date(schedule.year, 12, 31)
     jobs = (Employment.objects.filter(subdivision_id__in=ids, kind__in=balance.MAIN_KINDS, date_from__lte=last)
             .filter(Q(end_date__isnull=True) | Q(end_date__gte=first)).exclude(status="ended")
-            .select_related("employee", "occupation").order_by("occupation__category", "occupation__sort",
+            .select_related("employee", "occupation__category").order_by("occupation__category__sort", "occupation__sort",
                                                                 "employee__last_name", "employee__first_name"))
     seen, out = set(), []
     for job in jobs:
@@ -164,7 +164,7 @@ def schedule_report(schedule: LeaveSchedule) -> dict:
         rows.append({
             "id": ln.id, "employee": ln.employee_id, "name": emp.full_name(), "short_name": emp.short_name(),
             "tab_number": emp.tab_number, "occupation": occ.name_ro if occ else "", "occupation_id": occ_id,
-            "category": occ.category if occ else "", "date_from": ln.date_from, "days": ln.days, "date_to": ln.date_to,
+            "category": occ.category.code if occ and occ.category_id else "", "date_from": ln.date_from, "days": ln.days, "date_to": ln.date_to,
             "moved_to": ln.moved_to, "note": ln.note, "sort": ln.sort, "available": bal["available"],
             "remaining": bal["remaining"], "state": state,
             "actual": [{"id": a.id, "from": a.date_from, "to": a.date_to, "days": a.days} for a in taken],
@@ -189,7 +189,7 @@ def schedule_guests(schedule: LeaveSchedule, have: list) -> list:
     jobs = (Employment.objects.filter(subdivision_id__in=ids, date_from__lte=last)
             .filter(Q(end_date__isnull=True) | Q(end_date__gte=first)).exclude(status="ended")
             .exclude(kind__in=(*balance.MAIN_KINDS, "contractor")).exclude(employee_id__in=have)
-            .select_related("employee", "occupation", "subdivision"))
+            .select_related("employee", "occupation__category", "subdivision"))
     plans = defaultdict(list)
     for ln in LeaveScheduleLine.objects.filter(schedule__year=schedule.year, employee_id__in=[j.employee_id for j in jobs])             .exclude(schedule=schedule).select_related("schedule__subdivision"):
         plans[ln.employee_id].append(ln)
@@ -198,7 +198,8 @@ def schedule_guests(schedule: LeaveSchedule, have: list) -> list:
         for ln in plans.get(job.employee_id, []):
             out.append({"id": f"g{job.pk}-{ln.pk}", "employee": job.employee_id, "name": job.employee.full_name(),
                         "kind": job.get_kind_display(), "rate": float(job.rate), "occupation": job.occupation.name_ro,
-                        "occupation_id": job.occupation_id, "category": job.occupation.category,
+                        "occupation_id": job.occupation_id,
+                        "category": job.occupation.category.code if job.occupation.category_id else "",
                         "home": ln.schedule.subdivision.name_ro, "date_from": ln.date_from, "days": ln.days,
                         "date_to": ln.date_to, "moved_to": ln.moved_to, "available": ln.days})
     return out
@@ -224,7 +225,7 @@ def schedule_warnings(rows: list) -> list:
     for r in rows:
         if r["occupation_id"]:
             groups[("occupation", r["occupation"])].add(r["employee"])
-        if r["category"] == "physicians":
+        if r["category"] == "2":  # „specialiștii” (CORM grupa 2), unde au trecut medicii la conversia categoriilor
             groups[("physicians", "")].add(r["employee"])
     doctors = groups.get(("physicians", ""), set())
     for (kind, label), people in groups.items():

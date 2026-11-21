@@ -3,7 +3,7 @@ export default {
   menu: { orders: 'Orders', ordersRegister: 'Orders register' },
   org: {
     pointTemplate: 'Text of the “ORDER:” point (empty = default text)',
-    pointTemplateHint: 'Fields: {angajat} {tab} {functia} {sectia} {norma} {salariul} {sporuri} {din} {pana} {zile} {an_de} {an_pana} {motivul} {destinatia} {suma} {procent} {categoria} {sanctiunea} {abaterea} {text}',
+    pointTemplateHint: 'Fields: {angajat} {tab} {functia} {sectia} {norma} {salariul} {sporuri} {din} {pana} {zile} {an_de} {an_pana} {motivul} {destinatia} {suma} {suma_text} {procent} {sanctiunea} {abaterea} {text}',
   },
   staff: { tabs: { orders: 'Orders and absences' } },
   ord: {
@@ -33,6 +33,7 @@ export default {
       purpose: 'Purpose', note: 'Remark', calc: '{{days}} days, last day {{to}} (holidays excluded: {{holidays}})', absence: 'Leave',
       returnDate: 'Back to work on', amount: 'Amount (MDL)', forWhat: 'For what', sanctionRecord: 'Sanction lifted', sanction: 'Sanction',
       misconduct: 'Misconduct', until: 'Until', staffListHint: 'The staff list draft approved by this order.',
+      deductionPercent: 'Percentage of salary (%)', fromDate: 'Starting from', deductionBasis: 'Grounds for the deduction', deductionHint: 'E.g. enforcement order no. … or the employee’s request. At most 20 % of the salary (LC art. 148–149); amount or percentage.',
       cancels: 'Cancels', hours: 'Hours', text: 'Point text',
     },
     tab: {
