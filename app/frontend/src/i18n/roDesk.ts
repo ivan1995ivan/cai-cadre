@@ -5,7 +5,7 @@ export default {
   desk: {
     menuBar: 'Bara de meniu', toolbar: 'Bara de unelte', statusBar: 'Bara de stare', mobileMenu: 'Meniul',
     menu: { file: 'Fișier', windows: 'Ferestre', help: 'Ajutor' },
-    tab: { order: 'Ordinul {{number}}', payroll: 'Calculul {{number}}', itemChange: 'Modificarea {{number}}', payment: 'Îndreptarea {{number}}' },
+    tab: { order: 'Ordinul {{number}}', payroll: 'Calculul {{number}}', itemChange: 'Modificarea {{number}}', payment: 'Îndreptarea {{number}}', productionReport: 'Raportul {{number}}' },
     src: { order: 'Ordinul nr. {{number}} din {{date}}', change: 'Modificarea acumulărilor nr. {{number}} din {{date}}' },
     noFavorites: '(nimic la favorite)', closeWindow: 'Închide fereastra', admin: 'Administrator',
     tool: {

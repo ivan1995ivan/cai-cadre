@@ -241,7 +241,7 @@ export const PAYROLL_STATUS_COLOR: Record<string, string> = { draft: 'gold', che
 export const FORMULAS = ['auto', 'fixed', 'pct_salary', 'pct_base', 'hourly', 'scale', 'expr']
 /** Formulele care se pot calcula și fără rândul angajatului („pentru toți angajații”). */
 export const GENERAL_FORMULAS = ['expr', 'scale', 'pct_salary', 'pct_base']
-export const AUTO_KEYS = ['none', 'salary', 'allowance', 'combination', 'hour_types', 'night', 'holiday', 'overtime', 'leave', 'leave_comp', 'sick', 'sick_accident',
+export const AUTO_KEYS = ['none', 'salary', 'allowance', 'combination', 'hour_types', 'piece', 'piece_prog', 'night', 'holiday', 'overtime', 'leave', 'leave_comp', 'sick', 'sick_accident',
   'min_wage', 'bonus', 'aid', 'income_tax', 'cnam', 'cas', 'cas_min']
 
 export const money = (v: string | number | null | undefined) =>

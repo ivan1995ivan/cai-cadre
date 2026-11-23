@@ -20,13 +20,13 @@ import { MonthPicker } from '../worktime/MonthDocs'
 type Lang = 'ro' | 'ru' | 'en'
 
 /** Treptele pe vechimea totală în muncă ({from: ani, pct}) scrise ca text: „3:5, 10:10, 20:15”. */
-function ScaleInput({ value, onChange }: { value?: { from: number; pct: number }[]; onChange?: (v: unknown[]) => void }) {
+function ScaleInput({ value, onChange, placeholder }: { value?: { from: number; pct: number }[]; onChange?: (v: unknown[]) => void; placeholder?: string }) {
   const { t } = useTranslation()
   const text = (value ?? []).map((s) => `${s.from}:${s.pct}`).join(', ')
   const [draft, setDraft] = useState(text)
   useEffect(() => setDraft(text), [text])
   return (
-    <Input value={draft} placeholder={t('pay.type.scalePlaceholder')} onChange={(e) => setDraft(e.target.value)} onBlur={() => {
+    <Input value={draft} placeholder={placeholder ?? t('pay.type.scalePlaceholder')} onChange={(e) => setDraft(e.target.value)} onBlur={() => {
       const steps = draft.split(/[,;]/).map((p) => p.trim()).filter(Boolean).map((p) => {
         const [k, v] = p.split(':').map((x) => x.trim())
         return { from: Number(k), pct: Number(v) }  // un text care nu e număr îl respinge serverul, cu mesajul lui
@@ -203,6 +203,7 @@ export default function PayTypesPage() {
   const [editing, setEditing] = useState<Partial<PayType> | null>(null)
   const [form] = Form.useForm()
   const formula = Form.useWatch('formula', form)
+  const autoKey = Form.useWatch('auto', form)
   const code = Form.useWatch('code', form)
   const how = (r: PayType) => r.how?.[lang as Lang] || r.how?.ro || ''
 
@@ -293,6 +294,8 @@ export default function PayTypesPage() {
             extra={formula === 'expr' ? t('pay.fx.baseHint') : t('pay.type.baseHint')}>
             <Select mode="multiple" allowClear optionFilterProp="label" options={typeOptions} /></Form.Item>}
           {formula === 'scale' && <Form.Item name="scale" label={t('pay.type.scale')} extra={t('pay.type.scaleHint')}><ScaleInput /></Form.Item>}
+          {formula === 'auto' && autoKey === 'piece_prog' && <Form.Item name="scale" label={t('prod.progScale')} extra={t('prod.progScaleHint')}>
+            <ScaleInput placeholder={t('prod.progScalePlaceholder')} /></Form.Item>}
           {formula && formula !== 'auto' && <>
             <Divider titlePlacement="start">{t('pay.fx.tryTitle')}</Divider>
             <TryPanel form={form} editingId={editing?.id} />

@@ -84,6 +84,7 @@ export interface Branding {
   name_en?: string
   payroll_enabled?: boolean
   military_enabled?: boolean
+  production_enabled?: boolean
   function_panel?: boolean
   languages?: Lang[]
   /** denumirea completă, cu forma juridică („Exemplu SRL”), pe limbi */
@@ -131,6 +132,7 @@ export interface Company {
   bank_accounts: BankAccount[]
   payroll_enabled: boolean
   military_enabled: boolean
+  production_enabled: boolean
   function_panel: boolean
   languages: Lang[]
 }

@@ -174,7 +174,7 @@ export function RemunerationBox({ job, canEdit, onChanged }: { job: Employment; 
       <Space wrap size={4} style={{ marginBottom: 4 }}>
         <Typography.Text strong>{t('ht.remuneration')}:</Typography.Text>
         <Tag color="geekblue">{t(`ht.payModes.${job.pay_mode}`)}</Tag>
-        {job.pay_mode === 'hourly' && <span>{t('ht.hourlyRate')}: <b>{num(job.hourly_rate)} lei</b></span>}
+        {(job.pay_mode === 'hourly' || job.pay_mode === 'piece') && <span>{t('ht.hourlyRate')}: <b>{num(job.hourly_rate)} lei</b></span>}
         {(job.pay_mode === 'salary' || job.pay_mode === 'mixed') && job.base_salary !== null && <span>{t('org.sl.salary')}: <b>{num(job.base_salary)} lei</b></span>}
       </Space>
       {(rates.length > 0 || pays) && <Table<JobHourRate> size="small" rowKey="id" pagination={false} dataSource={rates}

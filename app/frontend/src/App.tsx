@@ -64,6 +64,8 @@ import PaymentEditor from './pages/payroll/PaymentEditor'
 import PayItemChangesPage, { PayItemChangeEditor } from './pages/payroll/PayItemChangesPage'
 import TaxReportsPage, { TaxSettingsPage } from './pages/payroll/TaxReportsPage'
 import ItParkPage, { ItParkMonthEditor } from './pages/payroll/ItParkPage'
+import ProductionReportsPage, { ProductionReportEditor } from './pages/production/ProductionReportsPage'
+import ProductionSettingsPage from './pages/production/ProductionSettings'
 import ReportsPage from './pages/reports/ReportsPage'
 import ReportView from './pages/reports/ReportView'
 import TrainingPage from './pages/training/TrainingPage'
@@ -96,6 +98,9 @@ const SETTING_PAGES: Record<string, (title: string) => React.ReactNode> = {
   payrollTypes: (title) => <PayrollSettingsPage part="types" title={title} />,
   payrollConstants: (title) => <PayrollSettingsPage part="constants" title={title} />,
   taxSettings: (title) => <TaxSettingsPage title={title} />,
+  tariffGrids: (title) => <ProductionSettingsPage part="grids" title={title} />,
+  operations: (title) => <ProductionSettingsPage part="operations" title={title} />,
+  brigades: (title) => <ProductionSettingsPage part="brigades" title={title} />,
   alertSettings: (title) => <AlertSettingsPage title={title} />,
   smtpSettings: (title) => <SmtpSettingsPage title={title} />,
 }
@@ -132,6 +137,8 @@ const MODULE_ROUTES: { path: string; perm?: string; element: React.ReactNode }[]
   { path: 'payroll/payments/:id', perm: 'payroll.view', element: <PaymentEditor /> },
   { path: 'payroll/item-changes', perm: 'payroll.view', element: <PayItemChangesPage /> },
   { path: 'payroll/item-changes/:id', perm: 'payroll.view', element: <PayItemChangeEditor /> },
+  { path: 'production/reports', perm: 'production.view', element: <ProductionReportsPage /> },
+  { path: 'production/reports/:id', perm: 'production.view', element: <ProductionReportEditor /> },
   { path: 'tax-reports', perm: 'tax_reports.view', element: <TaxReportsPage /> },
   { path: 'payroll/it-park', perm: 'tax_reports.view', element: <ItParkPage /> },
   { path: 'payroll/it-park/:year/:month', perm: 'tax_reports.view', element: <ItParkMonthEditor /> },

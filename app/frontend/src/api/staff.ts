@@ -96,9 +96,9 @@ export interface HistoryRow {
 }
 
 /** Modalitatea de remunerare a raportului de muncă (pe funcție); tarifele pe tipuri de ore se plătesc la „hour_types” și „mixed”. */
-export const PAY_MODES = ['salary', 'hourly', 'hour_types', 'mixed'] as const
+export const PAY_MODES = ['salary', 'hourly', 'hour_types', 'mixed', 'piece'] as const
 export type PayMode = (typeof PAY_MODES)[number]
-export const RATE_MODES: PayMode[] = ['hour_types', 'mixed']
+export const RATE_MODES: PayMode[] = ['hour_types', 'mixed', 'piece']
 
 export interface DocSource { kind: 'order' | 'change' | 'manual'; id: number | null; label: string; status: string }
 

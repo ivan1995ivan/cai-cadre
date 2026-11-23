@@ -5,7 +5,7 @@ export default {
   desk: {
     menuBar: 'Строка меню', toolbar: 'Панель инструментов', statusBar: 'Строка состояния', mobileMenu: 'Меню',
     menu: { file: 'Файл', windows: 'Окна', help: 'Справка' },
-    tab: { order: 'Приказ {{number}}', payroll: 'Расчёт {{number}}', itemChange: 'Изменение {{number}}', payment: 'Ведомость {{number}}' },
+    tab: { order: 'Приказ {{number}}', payroll: 'Расчёт {{number}}', itemChange: 'Изменение {{number}}', payment: 'Ведомость {{number}}', productionReport: 'Отчёт {{number}}' },
     src: { order: 'Приказ № {{number}} от {{date}}', change: 'Изменение начислений № {{number}} от {{date}}' },
     noFavorites: '(в избранном пусто)', closeWindow: 'Закрыть окно', admin: 'Администратор',
     tool: {

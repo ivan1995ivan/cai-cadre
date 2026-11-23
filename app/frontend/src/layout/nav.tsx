@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import {
-  ApartmentOutlined, AuditOutlined, BankOutlined, BarChartOutlined, BellOutlined, BookOutlined, CalculatorOutlined, CalendarOutlined,
+  ApartmentOutlined, AuditOutlined, BankOutlined, BarChartOutlined, BellOutlined, BookOutlined, BuildOutlined, CalculatorOutlined, CalendarOutlined,
   CheckSquareOutlined, ClearOutlined, ClockCircleOutlined, CloudServerOutlined, CloudUploadOutlined, DashboardOutlined, DollarOutlined, EnvironmentOutlined,
   FieldNumberOutlined, FileDoneOutlined, FileProtectOutlined, FileTextOutlined, HomeOutlined, IdcardOutlined, KeyOutlined, MailOutlined,
   MedicineBoxOutlined, MenuOutlined, OrderedListOutlined, PrinterOutlined, ProfileOutlined, ReadOutlined,
@@ -46,6 +46,8 @@ export const NAV: NavItem[] = [
   { path: '/payroll', key: 'payroll', icon: <WalletOutlined />, perm: 'payroll.view' },
   { path: '/payroll/payments', key: 'payrollPayments', icon: <DollarOutlined />, perm: 'payroll.view' },
   { path: '/payroll/item-changes', key: 'payItemChanges', icon: <ProfileOutlined />, perm: 'payroll.view' },
+  // S5a: producția (salarizarea în acord) — modul opțional
+  { path: '/production/reports', key: 'productionReports', icon: <BuildOutlined />, perm: 'production.view' },
   { path: '/tax-reports', key: 'taxReports', icon: <FileDoneOutlined />, perm: 'tax_reports.view' },
   { path: '/payroll/it-park', key: 'itPark', icon: <CalculatorOutlined />, perm: 'tax_reports.view' },
   // Etapa 6: formare, sănătate, evidență militară
@@ -103,6 +105,9 @@ export const SETTINGS_NAV: NavItem[] = [
   { path: '/worktime/settings', key: 'worktimeSettings', icon: <ClockCircleOutlined />, perm: 'settings.edit' },
   { path: '/leave/settings', key: 'leaveSettings', icon: <CalendarOutlined />, perm: 'settings.edit' },
   { path: '/payroll/settings/types', key: 'payrollTypes', icon: <OrderedListOutlined />, perm: 'payroll_settings.view' },
+  { path: '/production/tariff-grids', key: 'tariffGrids', icon: <BuildOutlined />, perm: 'production.view' },
+  { path: '/production/operations', key: 'operations', icon: <BuildOutlined />, perm: 'production.view' },
+  { path: '/production/brigades', key: 'brigades', icon: <TeamOutlined />, perm: 'production.view' },
   { path: '/payroll/settings/constants', key: 'payrollConstants', icon: <OrderedListOutlined />, perm: 'payroll_settings.view' },
   { path: '/tax-reports/settings', key: 'taxSettings', icon: <FileDoneOutlined />, perm: 'payroll_settings.edit' },
   { path: '/alerts/settings', key: 'alertSettings', icon: <BellOutlined />, perm: 'settings.edit' },
@@ -118,7 +123,7 @@ export const PANEL_KIND: Record<string, 'start' | 'doc'> = {
   dashboard: 'start', alerts: 'start', portal: 'start',
   staffList: 'doc', contracts: 'doc', employeeRequests: 'doc', orders: 'doc',
   leaveSchedule: 'doc', leave: 'doc', sickLeave: 'doc', rosters: 'doc', timesheets: 'doc',
-  payroll: 'doc', payrollPayments: 'doc', payItemChanges: 'doc', itPark: 'doc',
+  payroll: 'doc', payrollPayments: 'doc', payItemChanges: 'doc', itPark: 'doc', productionReports: 'doc',
 }
 
 /** Legăturile dintre documente în schema de lucru (din primul se face al doilea): săgeata între iconițe, iar documentul de
@@ -128,6 +133,7 @@ export const PANEL_FLOWS: [string, string][] = [
   ['rosters', 'timesheets'], // pontajul din graficul de ture
   ['payroll', 'payrollPayments'], // îndreptarea spre plată din calcul
   ['payItemChanges', 'payroll'], // acumulările planificate intră în calculul lunii
+  ['productionReports', 'payroll'], // rapoartele de producție aprobate intră în calculul lunii (acordul)
 ]
 
 /** Clasificatoarele (setările-cataloage din SETTINGS_NAV) pe care le folosește fiecare funcție: panoul secțiunii le arată
@@ -147,6 +153,7 @@ export const PANEL_CLASSIFIERS: Record<string, string[]> = {
   timesheets: ['workSchedules', 'shiftTypes', 'hourTypes', 'productionCalendar'],
   payroll: ['payrollTypes'],
   payItemChanges: ['payrollTypes'],
+  productionReports: ['operations', 'brigades', 'tariffGrids'],
   payrollPayments: ['banks'],
   military: ['dict:military_group', 'dict:military_rank', 'dict:military_center'],
 }

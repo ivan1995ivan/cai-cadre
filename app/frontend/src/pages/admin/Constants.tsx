@@ -236,6 +236,10 @@ export default function Constants() {
                     extra={t('constants.military_enabledHint')}>
                     <Switch />
                   </Form.Item>
+                  <Form.Item name="production_enabled" label={t('constants.production_enabled')} valuePropName="checked"
+                    extra={t('constants.production_enabledHint')}>
+                    <Switch />
+                  </Form.Item>
                   <Form.Item name="function_panel" label={t('constants.function_panel')} valuePropName="checked"
                     extra={t('constants.function_panelHint')}>
                     <Switch />
