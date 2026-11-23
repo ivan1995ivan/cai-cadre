@@ -18,7 +18,7 @@ Examinator — tarif orar”. Dedesubt:
 - **tarifele pe tipuri de ore**: tipul, lei pe oră, orele garantate pe lună (pot lipsi), de la / până la, sursa (ordinul);
 - **funcțiile exercitate în plus pe același contract** — cumularea funcțiilor, suplinirea, interimatul (vezi mai jos).
 
-Tarifele se plătesc doar la *Pe tipuri de ore* și *Mixt*; la celelalte modalități programul nu le primește (și nu lasă
+Tarifele se plătesc doar la *Pe tipuri de ore*, *Mixt* și *În acord* (vezi *Producția: salarizarea în acord*); la celelalte modalități programul nu le primește (și nu lasă
 schimbarea modalității cât timp există tarife în vigoare — opriți-le în același ordin).
 
 **2. Ordinul.** În ordinele de angajare, de modificare a salariului / condițiilor și de cumul cu raport separat sunt câmpurile

@@ -9,6 +9,10 @@ un rând pe fiecare **raport de muncă** (de bază, cumul, suplinire, contract d
 - **orele pe tipuri** (instruire, examinare, zbor…) la modalitățile „pe tipuri de ore” și „mixt”: ore plătite × tariful, cu
   **orele garantate** ca minim plătit, redus după zilele disponibile — tipul „Ore pe tipuri” (ORE); vezi *Tipuri de ore, tarife
   pe funcție și orele garantate*;
+- **lucrările în acord** din rapoartele de producție aprobate ale lunii (modulul opțional „Producția”): tipul „Salarizarea în
+  acord” (ACORD) — suma lucrărilor, cu rebutul plătit după vinovat, și „Acord progresiv” (ACORDP) peste normă; la modalitatea
+  „În acord” fără salariul de funcție, suplimentarele și noaptea din tariful orar al categoriei; vezi *Producția: salarizarea
+  în acord*;
 - **cumularea funcțiilor / suplinirea / interimatul** pe același contract (CM art. 156) — tipul „Plata pentru cumularea
   funcțiilor / suplinire” (CUMUL): % din salariul propriu sau al funcției cumulate × partea lucrată × zilele cumulării, suma
   fixă × zilele, sau orele × tariful; cumulul (intern / extern) e linie proprie, cu salariul lui;

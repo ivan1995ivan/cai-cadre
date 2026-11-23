@@ -7,6 +7,9 @@ IDNO, CAEM, adresa, contactele, contul bancar) și semnăturile din Constante. I
 Remunerarea se pune pe fiecare funcție (raport de muncă): salariu lunar, tarif orar, tarife pe tipuri de ore (zbor,
 instruire, examinare…) cu orele garantate sau mixt; cumularea funcțiilor / suplinirea pe același contract (CM art. 156) e
 separată de cumul — [docs/ro/worktime/hour-types.md](docs/ro/worktime/hour-types.md).
+Pentru fabrici — modulul opțional **Producția** (salarizarea în acord): grila tarifară, lucrările cu normele și tarifele lor,
+brigăzile cu coeficienții de participare, rapoartele de producție (rebutul pe vinovați, acordul progresiv), din care se
+calculează salariul — [docs/ro/production.md](docs/ro/production.md).
 
 Produsul a fost făcut la început pentru un spital de stat (vezi istoricul de mai jos și [PLAN.md](PLAN.md)); trecerea la
 sectorul privat — [PLAN-SRL.md](PLAN-SRL.md) (etapa S1: fără Stemă, fondator și actele de stat).

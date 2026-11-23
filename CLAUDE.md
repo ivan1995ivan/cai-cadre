@@ -119,6 +119,27 @@ pornească de unde s-a rămas, nu de la zero.
   (capitolul „Munca prin cumul”, art. 267 și urm.?); lista absențelor care reduc garanția (am pus și maternitatea, studiile,
   zilele libere — după principiul „tot ce nu e muncă”); sporurile de noapte / sărbătoare pe orele de zbor — S6.
 
+- **S5a „producția — salarizarea în acord” — gata** (2026-11-23, hotărât de Anatol: modul general, configurabil, fără client
+  concret; volumele de mână + Excel; S5 în doi pași). Aplicația nouă `apps/production` (modul opțional, oprit implicit:
+  `Company.production_enabled`, drepturile `production.*` filtrate ca la evidența militară; licența — parte din salarizare):
+  **grila tarifară** cu istoric pe cod (`TariffGrid` + `TariffRank`: coeficient sau tarif direct), **lucrările**
+  (`Operation`, bifa „progresiv”) cu **normele și tarifele din data dată** (`OperationRate`: norma de timp / de producție,
+  categoria din grilă sau tarif pe unitate direct; tariful = tariful categoriei × norma de timp, 4 zecimale), **brigăzile**
+  (`Brigade`, `BrigadeMember` cu KTU; împărțirea ore × KTU sau × tariful orar), **raportul de producție** (`ProductionReport`
+  seria RP, individual / pe brigadă; rândurile cu rebutul pe vinovați CM art. 162; membrii cu ore și KTU; socotit la salvare,
+  verificat strict și **fixat la aprobare**; aprobarea / anularea blocate cât calculul lunii e aprobat; „Completează din
+  brigadă” cu orele din pontaj; import Excel lucrări / membri; tiparul `production_report`) — `apps/production/services.py`.
+  Salariul: modalitatea **„În acord”** (`pay_mode="piece"`, cere tariful orar al categoriei; plătește și tarifele pe tipuri de
+  ore), tipurile **ACORD** (auto `piece`) și **ACORDP** (auto `piece_prog`, treptele în `PayType.scale` — **nelivrate**, din
+  contractul colectiv), suplimentarele în acord = doar sporul din tariful categoriei, sărbătorile = câștigul în acord pe oră ×
+  100 %, MINIM compară și ACORD; variabilele `OreNormate`, `OreAcord`, `IndeplinireNorma`. Rolurile livrate primesc
+  `production` (contabilitatea tot, directorul view/approve, șeful de subdiviziune view/create/edit pe „own”). Interfața:
+  Salarizare → Rapoarte de producție, Setări → Grila tarifară / Lucrările în acord / Brigăzile, Constante → Module, editorul
+  treptelor ACORDP; `app/docs/ro|ru/production.md`. Verificat: 250 de teste, typecheck, build, capturi Playwright RO / RU
+  (copie de unică folosință, rețea izolată). **De verificat de om / contabilitate:** procentul rebutului parțial și treptele
+  progresive (contractul colectiv); dublul la sărbători pe câștigul mediu pe oră al lunii în acord; orele în acord din pontaj
+  când rândurile nu le au. **Mutat în S5b:** garanția la neîndeplinirea normei (CM art. 161), alături de staționare.
+
 ## Următorii pași (de aici pornește sesiunea următoare)
 
 0. **Deschiderea**: (a) ~~Public Hostname~~ — făcut. (b) asistentul de

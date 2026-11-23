@@ -36,6 +36,15 @@ salariul mediu 17 200 → 17 400, temeiurile vechi; sporul unic pentru orele sup
 Cererile de scutire „pe an” devin cereri cu valabilitate de la / până la, persoanele întreținute — rânduri; cererile cu „S”
 (abrogată) apar „De verificat”.
 
+**Salarizarea în acord (S5a)** — pentru cine configurează:
+- tipurile de calcul noi **ACORD** („Salarizarea în acord”: lucrările din rapoartele de producție aprobate) și **ACORDP**
+  („Acord progresiv”: sporul peste normă pe lucrările marcate „progresiv”) — automate, impozabile, cu CAS și CNAM, intră în
+  medie și în baza sindicatului / pensiei alimentare livrate;
+- **treptele ACORDP nu sunt livrate**: în tipul ACORDP, câmpul „Treptele acordului progresiv” — „de la % îndeplinire : spor %”,
+  de ex. `100:50, 110:100`, din contractul colectiv; fără trepte ACORDP nu se calculează;
+- modalitatea de remunerare nouă **„În acord”** (raportul de muncă, ordinul), cu tariful orar al categoriei obligatoriu;
+- în formule: `OreNormate`, `OreAcord`, `IndeplinireNorma`; vezi *Producția: salarizarea în acord*.
+
 **Tipurile de ore și remunerarea pe funcție (S4b)** — pentru cine configurează:
 - tipul de calcul nou **ORE** („Ore pe tipuri”, automat: ore plătite × tariful, cu orele garantate) — intră în media pentru
   concediu / boală și în baza sindicatului / pensiei alimentare livrate; un tip de ore poate avea tipul lui de calcul (automat,

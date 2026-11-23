@@ -1,5 +1,21 @@
 # Ce e nou
 
+## Etapa S5a: producția — salarizarea în acord
+
+- **Modulul opțional „Producția”** (Constante → Module, oprit implicit) — pentru fabrici și ateliere.
+- **Grila tarifară** (Setări): tariful categoriei I și coeficienții categoriilor (sau tariful scris direct), cu „în vigoare din”.
+- **Lucrările în acord** (Setări): unitatea, secția, bifa „progresiv” și **normele și tarifele cu istoric** — norma de timp sau de
+  producție, categoria lucrării din grilă (tariful = tariful categoriei × norma de timp, CM art. 170) sau tariful pe unitate
+  scris direct.
+- **Brigăzile** (Setări): membrii cu coeficientul de participare (KTU), împărțirea sumei după ore × KTU sau și după tariful orar.
+- **Rapoartele de producție** (Salarizare): individuale sau pe brigadă; cantitatea bună, **rebutul pe vinovați** (fără vină — ca
+  produsul bun, parțial — la procentul din contractul colectiv, din vină — neplătit; CM art. 162), orele; membrii brigăzii
+  „din brigadă”, cu orele din pontaj; import din Excel (lucrările, membrii); aprobarea fixează tarifele; tiparul.
+- **Salariul**: tipurile **ACORD** (lucrările) și **ACORDP** (acordul progresiv pe treptele de îndeplinire a normei, din contractul
+  colectiv); modalitatea de remunerare **„În acord”** — fără salariu de funcție, suplimentarele și noaptea din tariful orar al
+  categoriei, sărbătorile — dublul câștigului în acord, completarea până la salariul minim; variabilele `OreNormate`,
+  `OreAcord`, `IndeplinireNorma` în formule.
+
 ## Etapa S4b: tipurile de ore și remunerarea pe funcție
 
 - **Tipuri de ore** (Setări): instruire, examinare (livrate) și ale dvs. (de ex. zbor) — grupa, legătura cu orele lucrate, pe
