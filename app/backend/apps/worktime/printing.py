@@ -25,7 +25,8 @@ def _lang(request):
     return request.query_params.get("lang") if request.query_params.get("lang") in ("ro", "ru", "en") else "ro"
 
 
-PAY_SHORT = {"salary": "salariu", "hourly": "tarif orar", "hour_types": "tarife pe tipuri de ore", "mixed": "salariu + tarife"}
+PAY_SHORT = {"salary": "salariu", "hourly": "tarif orar", "hour_types": "tarife pe tipuri de ore", "mixed": "salariu + tarife",
+             "piece": "în acord"}
 COMBINATION_SHORT = {"combination": "cumulare", "substitution": "suplinire", "acting": "interimat"}
 
 

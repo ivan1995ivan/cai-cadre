@@ -27,6 +27,25 @@ AUTO_HOW = {
                    "доступные дни / рабочие дни месяца) — при способах «по видам часов» и «смешанный»",
                    "for each hour type with a rate: paid hours × rate, paid = max(actual; guaranteed × available days / working "
                    "days of the month) — for the “by hour types” and “mixed” pay modes"),
+    "piece": ("suma lucrărilor din rapoartele de producție aprobate ale lunii: (cantitatea bună + rebutul fără vina lucrătorului) "
+              "× tariful pe unitate + rebutul parțial × tariful × procentul (CM art. 162); tariful = tariful pe oră al categoriei "
+              "lucrării × norma de timp (CM art. 170) sau scris direct; la brigadă — partea membrului (ore × coeficientul de "
+              "participare)",
+              "сумма работ из утверждённых отчётов о выработке за месяц: (годная продукция + брак не по вине работника) × "
+              "расценка + частичный брак × расценка × процент (ТК ст. 162); расценка = часовая ставка разряда работы × норма "
+              "времени (ТК ст. 170) или указана прямо; в бригаде — доля члена (часы × КТУ)",
+              "the sum of the works in the month's approved production reports: (good output + defects not caused by the "
+              "worker) × piece rate + partial defects × rate × percent (LC art. 162); rate = hourly rate of the work's grade × "
+              "time norm (LC art. 170) or set directly; in a team — the member's share (hours × participation coefficient)"),
+    "piece_prog": ("sporul acordului progresiv pe lucrările marcate „progresiv”: îndeplinirea normei = orele normate / orele "
+                   "lucrate × 100; pentru fiecare treaptă a tipului (de la % îndeplinire: spor %) — partea producției din "
+                   "intervalul treptei × sporul ei",
+                   "надбавка прогрессивной сдельщины по работам с отметкой «прогрессивная»: выполнение нормы = нормо-часы / "
+                   "отработанные часы × 100; по каждой ступени вида (от % выполнения: надбавка %) — доля продукции в интервале "
+                   "ступени × её надбавка",
+                   "the progressive piece-rate supplement on works marked “progressive”: norm fulfilment = standard hours / "
+                   "hours worked × 100; for each step of the type (from % fulfilment: supplement %) — the share of output in the "
+                   "step's band × its supplement"),
     "night": ("tariful orar × orele de noapte × C.night_pct % (CM art. 159)",
               "часовой тариф × ночные часы × C.night_pct % (КТ ст. 159)",
               "hourly rate × night hours × C.night_pct % (LC art. 159)"),

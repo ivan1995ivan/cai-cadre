@@ -144,7 +144,8 @@ def test_how_shows_the_base_for_every_type(admin_client, seeded):
     assert all(set(t["how"]) == {"ro", "ru", "en"} and t["how"]["ro"] for t in types.values())
     # regula motorului, cu valorile constantelor în vigoare
     assert types["SUPL"]["how"]["ro"] == "tariful orar × (primele 2 ore pe zi × 150 % + restul × 200 %), CM art. 157"
-    assert "SAL Salariul de funcție + MINIM Completare până la salariul minim" in types["SINDICAT"]["how"]["ro"]
+    assert "SAL Salariul de funcție + ACORD Salarizarea în acord" in types["SINDICAT"]["how"]["ro"]
+    assert "+ MINIM Completare până la salariul minim" in types["SINDICAT"]["how"]["ro"]
     assert "1 %" in types["SINDICAT"]["how"]["ro"] and "база" in types["SINDICAT"]["how"]["ru"]
     post_type(admin_client, "NOAPTE2", "TarifOrar * OreNoapte * C.night_pct / 100", applies_to="all")
     t = admin_client.get("/api/payroll/types/", {"category": "accrual"}).data

@@ -1,0 +1,56 @@
+{% company_header %}
+
+<div class="doc-title">{{ texts.title }}</div>
+<div class="doc-subtitle">nr. {{ doc.number }} din {{ doc.date }} · {{ doc.kind_label }}{% if doc.brigade %}: {{ doc.brigade }}{% endif %}{% if doc.subdivision %} · {{ doc.subdivision }}{% endif %}{% if not doc.approved %} · <span class="muted">{{ doc.status }}</span>{% endif %}</div>
+{% if texts.intro %}<p style="margin:6px 0">{{ texts.intro|linebreaksbr }}</p>{% endif %}
+
+<table class="grid" style="font-size:8pt">
+  <thead>
+    <tr>
+      <th style="width:7mm" rowspan="2">Nr.</th>
+      {% if doc.kind == "individual" %}<th rowspan="2">Angajatul</th>{% endif %}
+      <th rowspan="2">Lucrarea</th>
+      <th style="width:11mm" rowspan="2">U.m.</th>
+      <th style="width:15mm" rowspan="2">Bune</th>
+      <th colspan="3">Rebut</th>
+      <th style="width:12mm" rowspan="2">Ore</th>
+      <th style="width:16mm" rowspan="2">Tariful (lei)</th>
+      <th style="width:14mm" rowspan="2">Ore normate</th>
+      <th style="width:20mm" rowspan="2">Suma (lei)</th>
+    </tr>
+    <tr><th style="width:13mm">fără vină</th><th style="width:18mm">parțial (%)</th><th style="width:13mm">din vină</th></tr>
+  </thead>
+  <tbody>
+  {% for r in lines %}
+    <tr><td class="num">{{ r.no }}</td>
+      {% if doc.kind == "individual" %}<td>{{ r.name }}{% if r.tab_number %} <span class="muted">({{ r.tab_number }})</span>{% endif %}</td>{% endif %}
+      <td>{{ r.operation }}</td><td>{{ r.unit }}</td><td class="num">{{ r.quantity }}</td><td class="num">{{ r.defect_nofault }}</td>
+      <td class="num">{{ r.defect_partial }}{% if r.defect_partial_pct %} ({{ r.defect_partial_pct }} %){% endif %}</td>
+      <td class="num">{{ r.defect_worker }}</td><td class="num">{{ r.hours }}</td><td class="num">{{ r.rate }}</td>
+      <td class="num">{{ r.normed_hours }}</td><td class="num">{{ r.amount }}</td></tr>
+  {% empty %}<tr><td colspan="12" class="muted">—</td></tr>{% endfor %}
+  <tr><td colspan="{% if doc.kind == 'individual' %}11{% else %}10{% endif %}" style="text-align:right"><b>Total</b></td><td class="num"><b>{{ doc.total }}</b></td></tr>
+  </tbody>
+</table>
+
+{% if members %}
+<p style="margin:8px 0 4px"><b>{{ texts.members_title }}</b> <span class="muted">({{ doc.distribution }})</span></p>
+<table class="grid" style="font-size:8pt">
+  <thead><tr><th style="width:7mm">Nr.</th><th style="width:14mm">Nr. tabel</th><th>Numele, prenumele</th><th>Funcția</th>
+    <th style="width:14mm">Ore</th><th style="width:14mm">KTU</th><th style="width:16mm">Tarif orar</th><th style="width:16mm">Ore normate</th><th style="width:20mm">Suma (lei)</th></tr></thead>
+  <tbody>
+  {% for m in members %}
+    <tr><td class="num">{{ m.no }}</td><td>{{ m.tab_number }}</td><td>{{ m.name }}</td><td>{{ m.occupation }}</td><td class="num">{{ m.hours }}</td>
+      <td class="num">{{ m.coefficient }}</td><td class="num">{{ m.hourly }}</td><td class="num">{{ m.normed_hours }}</td><td class="num">{{ m.amount }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% if doc.note %}<p class="muted" style="margin-top:6px">{{ doc.note|linebreaksbr }}</p>{% endif %}
+
+<div class="signatures">
+  <div>{{ texts.master_label }}<div class="line"></div><div class="who"></div></div>
+  <div>{{ texts.accepted_label }}<div class="line"></div><div class="who"></div></div>
+  <div>{{ texts.accountant_label }}<div class="line"></div><div class="who">{{ company.chief_accountant }}</div></div>
+</div>
+{% if texts.footer %}<div class="doc-footer">{{ texts.footer|linebreaksbr }}</div>{% endif %}

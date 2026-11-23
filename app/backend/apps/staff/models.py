@@ -210,14 +210,16 @@ OCCUPYING_KINDS = {"main", "main_student", "internal", "external"}
 MAIN_KINDS = ("main", "main_student")
 CIVIL_KINDS = {"contractor"}
 # modalitatea de remunerare a raportului (pe funcție): baza plății; tarifele pe tipuri de ore (apps.worktime.JobHourRate) se
-# plătesc la „pe tipuri de ore” și la „mixt”
+# plătesc la „pe tipuri de ore”, la „mixt” și la „în acord” (orele lucrate în regim de timp); „în acord” plătește lucrările din
+# rapoartele de producție aprobate (apps.production), iar tariful orar e cel al categoriei (suplimentare, noapte — CM art. 157, 159)
 PAY_MODES = [
     ("salary", "Salariu lunar"),
     ("hourly", "Tarif orar"),
     ("hour_types", "Pe tipuri de ore"),
     ("mixed", "Mixt: salariu lunar + tarife pe tipuri de ore"),
+    ("piece", "În acord (lucrările din rapoartele de producție)"),
 ]
-RATE_MODES = {"hour_types", "mixed"}  # modalitățile care plătesc tarifele pe tipuri de ore
+RATE_MODES = {"hour_types", "mixed", "piece"}  # modalitățile care plătesc tarifele pe tipuri de ore
 
 
 class Employment(models.Model):

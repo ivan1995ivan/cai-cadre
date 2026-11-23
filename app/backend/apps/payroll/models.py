@@ -59,6 +59,8 @@ class PayType(models.Model):
         ("salary", "Salariul de funcție (pro-rata la orele lucrate)"), ("allowance", "Sporurile fixe din raportul de muncă (%)"),
         ("combination", "Plata pentru cumularea funcțiilor / suplinire (CM art. 156, din raportul de muncă)"),
         ("hour_types", "Ore pe tipuri: ore plătite × tariful (cu orele garantate)"),
+        ("piece", "Salarizarea în acord: lucrările din rapoartele de producție aprobate"),
+        ("piece_prog", "Acord progresiv: sporul pentru producția peste normă (treptele tipului)"),
         ("night", "Munca de noapte (+ % la tariful orar)"),
         ("holiday", "Munca în zile de sărbătoare (+ % la tariful orar)"), ("overtime", "Ore suplimentare (+ % la tariful orar)"),
         ("leave", "Indemnizația de concediu de odihnă (media × zile)"), ("leave_comp", "Compensarea concediului nefolosit"),
@@ -82,7 +84,8 @@ class PayType(models.Model):
                                   help_text="De ex. TarifOrar * OreNoapte * C.night_pct / 100 (apps.payroll.formula)")
     applies_to = models.CharField("Se calculează pentru", max_length=4, choices=APPLIES, default="row")
     base_codes = models.JSONField("Baza de calcul (codurile tipurilor)", default=list, blank=True)
-    scale = models.JSONField("Treptele [{de la (ani): %}]", default=list, blank=True)
+    scale = models.JSONField("Treptele [{de la: %}] — anii de vechime; la acordul progresiv — % îndeplinire a normei",
+                             default=list, blank=True)
     taxable = models.BooleanField("Se impozitează cu impozitul pe venit", default=True)
     cas = models.BooleanField("Intră în baza CAS", default=True)
     cnam = models.BooleanField("Intră în baza CNAM", default=True)

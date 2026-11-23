@@ -23,6 +23,7 @@ DOC_TYPES = [
     ("annual_card", "Fișa personală anuală a veniturilor"),
     ("exemption_request", "Cererea privind acordarea scutirilor (anexa 6, HG 697/2014)"),
     ("pay_item_change", "Modificarea acumulărilor planificate"),
+    ("production_report", "Raportul de producție (lucrările în acord)"),
     ("it_park_tax", "Impozitul unic IT Park — calculul lunii (IU17)"),
     ("isapti17", "ISAPTI17 — salariile achitate de rezidentul IT Park (anual)"),
     ("it_park_note", "Nota anuală pentru angajatul rezidentului IT Park"),

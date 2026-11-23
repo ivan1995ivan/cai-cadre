@@ -87,7 +87,7 @@ def _check_rate(rate):
 
 
 def _check_pay(fields, current=None):
-    """Modalitatea de remunerare și tariful orar: „Tarif orar” cere tariful; tariful orar nu e negativ."""
+    """Modalitatea de remunerare și tariful orar: „Tarif orar” și „În acord” cer tariful; tariful orar nu e negativ."""
     mode = fields.get("pay_mode", getattr(current, "pay_mode", "salary"))
     if mode not in MODES:
         raise ValidationError({"pay_mode": "Modalitatea de remunerare nu există."})
@@ -96,6 +96,9 @@ def _check_pay(fields, current=None):
         raise ValidationError({"hourly_rate": "Tariful orar nu poate fi negativ."})
     if mode == "hourly" and not hourly:
         raise ValidationError({"hourly_rate": "La modalitatea „Tarif orar” dați tariful orar de bază (lei pe oră)."})
+    if mode == "piece" and not hourly:
+        raise ValidationError({"hourly_rate": "La modalitatea „În acord” dați tariful orar al categoriei muncitorului (lei pe oră): "
+                                              "din el se plătesc orele suplimentare și munca de noapte (CM art. 157, 159)."})
 
 
 @transaction.atomic

@@ -21,6 +21,7 @@ SYSTEM_TEMPLATES: list = [
     ("annual_card", "standard", "Fișa personală de evidență a veniturilor (anexa 8)", "landscape", {}),
     ("exemption_request", "standard", "Cererea privind acordarea scutirilor (anexa 6)", "portrait", {}),
     ("pay_item_change", "standard", "Modificarea acumulărilor planificate", "landscape", {}),
+    ("production_report", "standard", "Raportul de producție (lucrările în acord)", "landscape", {}),
     ("it_park_tax", "standard", "Impozitul unic IT Park — calculul lunii (IU17)", "portrait", {}),
     ("isapti17", "standard", "ISAPTI17 — salariile achitate de rezidentul IT Park", "portrait", {}),
     ("it_park_note", "standard", "Nota anuală pentru angajat (IT Park)", "portrait", {}),

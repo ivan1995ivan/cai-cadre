@@ -68,6 +68,16 @@ VARIABLES = {
                    "Total length of service, whole years (at month end)"),
     "VechimeIntreprindereAni": ("Vechimea în întreprindere, ani întregi (la sfârșitul lunii)", "Стаж на предприятии, полных лет (на конец месяца)",
                                 "Length of service in the company, whole years (at month end)"),
+    # acordul (S5a): din rapoartele de producție aprobate ale lunii; suma lucrărilor e [ACORD]
+    "OreNormate": ("Orele normate ale lunii: producția primită ca bună × norma de timp (rapoartele de producție)",
+                   "Нормо-часы месяца: принятая продукция × норма времени (отчёты о выработке)",
+                   "Standard hours of the month: accepted output × time norm (production reports)"),
+    "OreAcord": ("Orele lucrate în acord: din rapoartele de producție (dacă toate le au), altfel din pontaj",
+                 "Часы сдельной работы: из отчётов о выработке (если указаны везде), иначе из табеля",
+                 "Piece-work hours: from the production reports (if all have them), otherwise from the timesheet"),
+    "IndeplinireNorma": ("Îndeplinirea normei, %: OreNormate / OreAcord × 100 (0 — fără lucrări în acord)",
+                         "Выполнение нормы, %: OreNormate / OreAcord × 100 (0 — без сдельных работ)",
+                         "Norm fulfilment, %: OreNormate / OreAcord × 100 (0 — no piece work)"),
 }
 
 # orele pe tipuri: prefixul din formulă → (numele intern, felul pentru motor) și descrierea (RO, RU, EN)

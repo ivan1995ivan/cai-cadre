@@ -43,6 +43,10 @@ class Company(models.Model):
         "Modulul Evidența militară", default=False,
         help_text="Evidența militară a rezerviștilor nu mai e obligatorie pentru agenții economici (Legea 112/2023). Oprit — "
                   "fila din dosar, registrul, rapoartele și clasificatoarele militare nu apar, iar API-ul lor nu răspunde.")
+    production_enabled = models.BooleanField(
+        "Modulul Producția (salarizarea în acord)", default=False,
+        help_text="Pentru fabrici și ateliere: grila tarifară, lucrările în acord cu normele lor, brigăzile și rapoartele de "
+                  "producție, care intră în calculul salariului. Oprit — meniul, setările și API-ul producției nu apar.")
     function_panel = models.BooleanField(
         "Panoul funcțiilor (ca în 1C)", default=False,
         help_text="Secțiunile sus ca file; secțiunea deschide panoul ei: schema de lucru, registrele, clasificatoarele, "

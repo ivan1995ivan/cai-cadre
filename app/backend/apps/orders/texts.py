@@ -281,7 +281,8 @@ def hour_rates_text(item) -> str:
     return ("Tarife pe tipuri de ore: " + "; ".join(parts) + ".") if parts else ""
 
 
-PAY_MODE_TEXT = {"hourly": "tarif orar", "hour_types": "pe tipuri de ore", "mixed": "salariu lunar și tarife pe tipuri de ore"}
+PAY_MODE_TEXT = {"hourly": "tarif orar", "hour_types": "pe tipuri de ore", "mixed": "salariu lunar și tarife pe tipuri de ore",
+                 "piece": "în acord (după lucrările din rapoartele de producție)"}
 
 
 def point_text(item) -> str:
@@ -303,6 +304,8 @@ def point_text(item) -> str:
         ctx["tarife"] = rates_text
         ctx["remunerare"] = (f"Modalitatea de remunerare: {PAY_MODE_TEXT[mode]}"
                              + (f", tariful orar {_fmt_money(p['hourly_rate'])} lei" if mode == "hourly" and p.get("hourly_rate") else "")
+                             + (f", tariful orar al categoriei {_fmt_money(p['hourly_rate'])} lei" if mode == "piece" and p.get("hourly_rate")
+                                else "")
                              + ".") if mode in PAY_MODE_TEXT else ""
         text = template.format_map(ctx)
     except (KeyError, ValueError, IndexError) as exc:

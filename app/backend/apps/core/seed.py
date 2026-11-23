@@ -44,6 +44,7 @@ NUMBER_SERIES = {
     "payroll": ("Calculul salariului", "Расчёт зарплаты", "CS"),
     "payroll_payment": ("Îndreptarea spre plată", "Ведомость на выплату", "PS"),
     "pay_item_change": ("Modificarea acumulărilor planificate", "Изменение плановых начислений", "MA"),
+    "production_report": ("Raportul de producție", "Отчёт о выработке", "RP"),
     "payout": ("Achitare", "Выдача / перечисление", "AC"),
     "excel_import": ("Import din Excel", "Импорт из Excel", "IM"),
 }

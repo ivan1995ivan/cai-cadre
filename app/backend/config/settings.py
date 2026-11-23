@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     "apps.orders",
     "apps.worktime",
     "apps.payroll",
+    "apps.production",
     "apps.alerts",
     "apps.reports",
     "apps.training",

@@ -91,12 +91,13 @@ class PayTypeSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({key: "O listă."})
         for step in attrs.get("scale") or []:
             if not isinstance(step, dict) or set(step) != {"from", "pct"}:
-                raise serializers.ValidationError({"scale": "Fiecare treaptă are „from” (ani de vechime) și „pct”."})
+                raise serializers.ValidationError({"scale": "Fiecare treaptă are „from” (anii de vechime; la acordul progresiv — % "
+                                                            "îndeplinire a normei) și „pct”."})
             try:
                 if Decimal(str(step["from"])) < 0 or Decimal(str(step["pct"])) < 0:
-                    raise serializers.ValidationError({"scale": "Anii și procentul nu pot fi negative."})
+                    raise serializers.ValidationError({"scale": "Treptele și procentul nu pot fi negative."})
             except (InvalidOperation, ValueError) as exc:
-                raise serializers.ValidationError({"scale": "Anii și procentul sunt numere."}) from exc
+                raise serializers.ValidationError({"scale": "Treptele și procentul sunt numere."}) from exc
         if self.instance is None and attrs.get("formula") == "scale" and "applies_to" not in self.initial_data:
             attrs["applies_to"] = "all"  # treptele de vechime — implicit pentru toți angajații (ca până la formulă)
         check_type(self.instance, attrs)
