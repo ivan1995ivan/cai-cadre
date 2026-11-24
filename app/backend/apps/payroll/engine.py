@@ -9,7 +9,8 @@ Pentru fiecare raport de muncă din lună:
    premiile și ajutorul din ordine; lucrările în acord din rapoartele de producție aprobate (apps.production) și sporul
    acordului progresiv peste normă și garanția la neîndeplinirea normei (CM art. 161); staționarea și șomajul tehnic (zilele
    St / Șt din pontaj, cu cauza și procentul din ordin — CM art. 80, 80¹); sporul pentru condiții vătămătoare din
-   subdiviziune / funcție; partea impozabilă a tichetelor de masă din borderoul aprobat (cu reținerea ei);
+   subdiviziune / funcție; partea impozabilă a tichetelor de masă din borderoul aprobat (cu reținerea ei); din cursele
+   aprobate (apps.transport) — plata pe km și diurna (în limita normelor neimpozabilă, peste ele — impozabilă);
 3. rândurile scrise de mână (le înlocuiesc pe cele calculate de același tip) și completarea până la salariul minim;
 4. celelalte tipuri, în ordinea dependențelor (apps.payroll.dependencies): rândurile personale ale angajatului (sumă fixă,
    % din salariu, tarif orar), treptele de vechime, „% din bază” și formulele (apps.payroll.formula) — fiecare după tipurile
@@ -41,6 +42,7 @@ from apps.worktime import hour_types
 from apps.worktime import services as worktime
 from apps.worktime.models import HourType, JobHourRate, RosterLine, TimesheetLine
 from apps.production import services as production
+from apps.transport import services as transport
 
 from . import dependencies, formula, it_park, meal_vouchers
 from .models import EmployeePayItem, PayConstant, Payroll, PayrollItem, PayrollLine, PayType
@@ -272,6 +274,8 @@ class Month:
         self.rosters = {r.employment_id: r.days or {} for r in RosterLine.objects.filter(
             roster__year=self.year, roster__month=self.month, roster__deletion_mark=False)}
         self.meals = meal_vouchers.month_lines(self.first, self.last)
+        # cursele aprobate cu întoarcerea în lună (S6b): plata pe km și diurna, pe raport de muncă
+        self.trips = transport.month_summary(self.first, self.last)
         # orele pe tipuri, tarifele și cumulările (S4b) — pe raport
         self.hour_types = {t.code: t for t in HourType.objects.all()}
         self.guarantee_conf = hour_types.settings()
@@ -491,6 +495,7 @@ class LineCalc:
         self._harmful()
         self._guarantee()
         self._meal_vouchers()
+        self._trips()
         if self.is_main:
             self._sick()
             self._incentives()
@@ -656,6 +661,19 @@ class LineCalc:
             self.add(types[0].code, self.hourly * hours * pct / 100, quantity=hours, base=self.hourly, percent=pct,
                      note=f"{production.fmt(hours)} ore în condiții vătămătoare × {production.fmt(self.hourly, 2)} lei × "
                           f"{production.fmt(pct, 2)} % (subdiviziunea / funcția)")
+
+    def _trips(self):
+        """Cursele aprobate ale lunii (întoarcerea în lună): plata pe km (km × tariful fixat la aprobare, fiecărui șofer al
+        cursei), diurna în limita normelor (neimpozabilă, fără CAS / CNAM) și partea peste norme (impozabilă)."""
+        s = self.m.trips.get(self.job.pk)
+        if s is None or self.job.kind == "contractor":
+            return
+        for t in self.m.by_auto["trip_km"][:1]:
+            self.add(t.code, s.km_amount, quantity=s.km, note=s.km_note())
+        for t in self.m.by_auto["per_diem"][:1]:
+            self.add(t.code, s.per_diem, quantity=s.days, note=f"diurna din {len(s.refs)} curse, în limita normelor (HG 10/2012)")
+        for t in self.m.by_auto["per_diem_excess"][:1]:
+            self.add(t.code, s.per_diem_taxable, note="diurna peste normele HG 10/2012 — venit impozabil (CF art. 20)")
 
     def _meal_vouchers(self):
         """Tichetele de masă din borderourile aprobate cu data în lună: partea peste valoarea neimpozabilă (facilitate
@@ -1075,7 +1093,8 @@ class LineCalc:
         target = q(minimum * self.rate * self.worked_share)
         # salariul tarifar al timpului lucrat: salariul de funcție / tariful orar, plata orelor pe tipuri, lucrările în acord și
         # garanția lor (nu sporurile, nici sporul acordului progresiv)
-        paid = sum((i["amount"] for i in self.items if i["type"].auto in ("salary", "hour_types", "piece", "piece_guarantee")), ZERO)
+        paid = sum((i["amount"] for i in self.items if i["type"].auto in ("salary", "hour_types", "piece", "piece_guarantee",
+                                                                          "trip_km")), ZERO)
         if target > paid:
             self.add(types[0].code, target - paid, base=target,
                      note=f"salariul minim {num(minimum)} × norma {num(self.rate)} × {float(self.worked_share) * 100:.4g} % lucrat = {target}; "

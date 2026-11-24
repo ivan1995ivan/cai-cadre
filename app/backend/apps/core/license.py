@@ -25,9 +25,9 @@ TRIAL_MAX_USERS = 10
 LICENSED_MODULES = ["cadre", "payroll"]
 PAID_MODULES = ["payroll"]
 # Drepturile din registrul de roluri care țin de un modul plătit.
-PERMISSION_MODULES = {"payroll": "payroll", "payroll_settings": "payroll", "tax_reports": "payroll", "production": "payroll"}
+PERMISSION_MODULES = {"payroll": "payroll", "payroll_settings": "payroll", "tax_reports": "payroll", "production": "payroll", "transport": "payroll"}
 # Adresele API ale modulelor plătite (calculul, plata, raportările IPC21 / IALS21 / IRM19).
-API_MODULES = {"/api/payroll/": "payroll", "/api/production/": "payroll"}
+API_MODULES = {"/api/payroll/": "payroll", "/api/production/": "payroll", "/api/transport/": "payroll"}
 # În regimul „doar citire” (licența expirată) rămân permise: intrarea, profilul, licența, notificările și evenimentele externe.
 READ_ONLY_ALLOWED = ("/api/setup/", "/api/auth/", "/api/license/", "/api/system/", "/api/notifications/", "/api/help/", "/api/telephony/",
                      "/api/hub/")

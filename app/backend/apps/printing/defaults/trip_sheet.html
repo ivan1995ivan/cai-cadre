@@ -1,0 +1,37 @@
+{% company_header %}
+
+<div class="doc-title">{{ texts.title }}</div>
+<div class="doc-subtitle">nr. {{ doc.number }}{% if not doc.approved %} · <span class="muted">{{ doc.status }}</span>{% endif %}</div>
+
+<table class="grid" style="font-size:8.5pt;margin-top:4px">
+  <tr><th style="width:35mm;text-align:left">Șoferul</th><td>{{ doc.driver }} (nr. de tabel {{ doc.driver_tab }}){% if doc.co_driver %}; al doilea șofer — {{ doc.co_driver }}{% endif %}</td></tr>
+  <tr><th style="text-align:left">Vehiculul</th><td>{{ doc.vehicle }}{% if doc.trailer %}; remorca — {{ doc.trailer }}{% endif %}</td></tr>
+  <tr><th style="text-align:left">Cursa</th><td>{{ doc.kind }}, {{ doc.scope }}{% if doc.adr %}, ADR{% endif %}{% if doc.route %}: {{ doc.route }}{% endif %}</td></tr>
+  <tr><th style="text-align:left">Plecarea / întoarcerea</th><td>{{ doc.departure }} — {{ doc.arrival }}</td></tr>
+  <tr><th style="text-align:left">Kilometrajul</th><td>{% if doc.odometer_out %}{{ doc.odometer_out }} → {{ doc.odometer_in }}; {% endif %}{{ doc.km }} km{% if doc.km_rate %} × {{ doc.km_rate }} lei/km = {{ doc.km_amount }} lei{% endif %}</td></tr>
+</table>
+
+{% if legs %}
+<p style="margin:8px 0 2px"><b>{{ texts.legs_title }}</b></p>
+<table class="grid" style="font-size:8.5pt">
+  <thead><tr><th style="width:7mm">Nr.</th><th>Țara</th><th style="width:32mm">Intrarea</th><th style="width:32mm">Ieșirea</th><th>Operațiunile</th><th style="width:16mm">Km</th></tr></thead>
+  <tbody>{% for l in legs %}<tr><td class="num">{{ l.no }}</td><td>{{ l.country }}</td><td>{{ l.entered }}</td><td>{{ l.left }}</td><td>{{ l.ops }}</td><td class="num">{{ l.km }}</td></tr>{% endfor %}</tbody>
+</table>
+{% endif %}
+
+{% if diems %}
+<p style="margin:8px 0 2px"><b>{{ texts.diem_title }}</b></p>
+<table class="grid" style="font-size:8pt">
+  <thead><tr><th>Șoferul</th><th style="width:20mm">Ziua</th><th style="width:10mm">Țara</th><th style="width:12mm">Ore</th><th style="width:12mm">%</th><th style="width:22mm">Norma</th><th style="width:16mm">Cursul</th><th style="width:20mm">Suma (lei)</th><th style="width:20mm">Peste normă</th></tr></thead>
+  <tbody>{% for d in diems %}<tr><td>{{ d.name }}</td><td>{{ d.day }}</td><td>{{ d.country }}</td><td class="num">{{ d.hours }}</td><td class="num">{{ d.pct }}</td><td class="num">{{ d.norm }}</td><td class="num">{{ d.fx }}</td><td class="num">{{ d.amount }}</td><td class="num">{{ d.taxable }}</td></tr>{% endfor %}</tbody>
+  <tfoot><tr><th colspan="7" style="text-align:right">Total</th><th class="num">{{ totals.per_diem }}</th><th class="num">{{ totals.per_diem_taxable }}</th></tr></tfoot>
+</table>
+{% endif %}
+{% if doc.note %}<p class="muted" style="margin-top:6px">{{ doc.note|linebreaksbr }}</p>{% endif %}
+
+<div class="signatures">
+  <div>{{ texts.driver_label }}<div class="line"></div><div class="who">{{ doc.driver }}</div></div>
+  <div>{{ texts.dispatcher_label }}<div class="line"></div><div class="who"></div></div>
+  <div>{{ texts.accountant_label }}<div class="line"></div><div class="who">{{ company.chief_accountant }}</div></div>
+</div>
+{% if texts.footer %}<div class="doc-footer">{{ texts.footer|linebreaksbr }}</div>{% endif %}

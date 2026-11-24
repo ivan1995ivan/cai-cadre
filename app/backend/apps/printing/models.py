@@ -25,6 +25,7 @@ DOC_TYPES = [
     ("pay_item_change", "Modificarea acumulărilor planificate"),
     ("production_report", "Raportul de producție (lucrările în acord)"),
     ("meal_vouchers", "Borderoul tichetelor de masă"),
+    ("trip_sheet", "Foaia de parcurs (cursa, diurna)"),
     ("it_park_tax", "Impozitul unic IT Park — calculul lunii (IU17)"),
     ("isapti17", "ISAPTI17 — salariile achitate de rezidentul IT Park (anual)"),
     ("it_park_note", "Nota anuală pentru angajatul rezidentului IT Park"),

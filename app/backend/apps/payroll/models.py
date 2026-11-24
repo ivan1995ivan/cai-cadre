@@ -78,6 +78,10 @@ class PayType(models.Model):
         ("harmful", "Sporul pentru condiții vătămătoare: % din subdiviziune / funcție × salariul de bază pe oră × ore"),
         ("meal_voucher", "Tichetele de masă: partea peste valoarea neimpozabilă (facilitate, din borderoul aprobat)"),
         ("meal_voucher_offset", "Tichetele de masă acordate în natură (se scad din suma de plată)"),
+        # S6b: transportul — din cursele aprobate (foile de parcurs)
+        ("trip_km", "Transport: plata pe km din cursele aprobate (km × tariful)"),
+        ("per_diem", "Transport: diurna în limita normelor (neimpozabilă)"),
+        ("per_diem_excess", "Transport: diurna peste norme (impozabilă)"),
         ("none", "—"),
     ]
     code = models.CharField("Codul", max_length=24, unique=True)

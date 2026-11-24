@@ -119,6 +119,8 @@ class User(AbstractUser):
             codes = {c for c in codes if not c.startswith("military.")}
         if not company.production_enabled:  # modulul opțional „Producția” (acordul) oprit
             codes = {c for c in codes if not c.startswith("production.")}
+        if not company.transport_enabled:  # modulul opțional „Transportul” oprit
+            codes = {c for c in codes if not c.startswith("transport.")}
         self._codes_cached = codes
         return codes
 

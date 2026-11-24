@@ -69,6 +69,15 @@ CONSTANTS = [
      "Codul fiscal, art. 19 lit. a¹), art. 24; HG 227/2018 (modif. 22.01.2026)" + CHECK, Y26),
     ("meal_voucher_night_pct", "Tichetele de masă: schimbul e de noapte dacă orele de noapte sunt cel puțin % din el", "50", "%",
      "Setarea întreprinderii (HG 227/2018, pct. 12)", Y26),
+    # transportul (S6b): diurna șoferilor — Regulamentul aprobat prin HG nr. 10/2012 (redacția HG 1058/2023, HG 783/2024)
+    ("per_diem_pct", "Transport: diurna plătită de întreprindere (% din norma HG 10/2012)", "100", "%",
+     "Setarea întreprinderii; HG 10/2012 pct. 22¹ (privat — cel puțin 70 %)", Y26),
+    ("per_diem_private_min_pct", "Transport: diurna minimă în sectorul privat (% din normă)", "70", "%", "HG 10/2012, pct. 22¹", Y26),
+    ("per_diem_short_pct", "Transport: șoferii peste hotare până la 8 ore (% din normă)", "20", "%", "HG 10/2012, pct. 31 lit. a)", Y26),
+    ("per_diem_day_pct", "Transport: șoferii peste hotare 8–24 de ore neîntrerupt (% din normă)", "40", "%", "HG 10/2012, pct. 31 lit. b)", Y26),
+    ("per_diem_meals_pct", "Transport: masa asigurată de beneficiar, peste 8 ore (% din normă)", "20", "%", "HG 10/2012, pct. 33", Y26),
+    ("per_diem_domestic_pay", "Transport: diurna în țară pentru cursele de mai multe zile (1 — da, 0 — nu)", "0", "",
+     "HG 10/2012, pct. 3 (munca pe drum nu e deplasare), pct. 24; setarea întreprinderii", Y26),
     # regimul IT Park (se folosesc doar în lunile în regim — Setări → Constantele salarizării → Regimul fiscal)
     ("it_park_tax_pct", "IT Park: impozitul unic (% din venitul lunar din vânzări)", "7", "%", "Codul fiscal, art. 370 alin. (1)", Y26),
     ("it_park_min_pct", "IT Park: impozitul unic minim pe angajat (% din salariul mediu lunar prognozat)", "30", "%",
@@ -125,6 +134,14 @@ TYPES = [
     ("GARANT", "Garanția la neîndeplinirea normei (acord)", "Гарантия при невыполнении норм (сдельщина)",
      "Guarantee when the output norm is not met (piece rate)", "accrual", "auto", "piece_guarantee", "0", [], [], T, T, T, "0",
      "0", T, "SAL", 14),
+    # transportul (S6b): plata pe km din cursele aprobate — salariu (în comparația cu salariul minim); diurna — în limita
+    # normelor HG 10/2012 neimpozabilă și fără contribuții, peste ele impozabilă (CF art. 20)
+    ("KM", "Plata pe km (transport)", "Оплата за км (транспорт)", "Pay per km (transport)", "accrual", "auto", "trip_km", "0", [], [],
+     T, T, T, "0", "0", T, "SAL", 16),
+    ("DIURNA", "Diurna (în limita normelor)", "Суточные (в пределах норм)", "Per diem (within the norms)", "accrual", "auto",
+     "per_diem", "0", [], [], F, F, F, "0", "0", F, "", 147),
+    ("DIURNAEX", "Diurna peste norme (impozabilă)", "Суточные сверх норм (облагаемые)", "Per diem above the norms (taxable)",
+     "accrual", "auto", "per_diem_excess", "0", [], [], T, T, T, "0", "0", F, "SAL", 148),
     ("CO", "Indemnizația de concediu de odihnă", "Отпускные", "Annual leave pay", "accrual", "auto", "leave", "0", [], [], T, T, T, "0", "0", F, "SAL", 100),
     ("COMP", "Compensarea concediului nefolosit", "Компенсация за неиспользованный отпуск", "Unused leave compensation", "accrual", "auto", "leave_comp", "0", [], [], T, T, T, "0", "0", F, "SAL", 110),
     ("BOALA", "Indemnizația de boală (zilele angajatorului)", "Больничный (дни работодателя)", "Sick pay (employer days)", "accrual", "auto", "sick", "0", [], [], T, F, T, "0", "0", F, "SAL", 120),
@@ -142,8 +159,8 @@ TYPES = [
     ("ALTE", "Alte plăți", "Прочие выплаты", "Other payments", "accrual", "fixed", "none", "0", [], [], T, T, T, "0", "0", F, "SAL", 170),
     ("IMPOZIT", "Impozitul pe venit", "Подоходный налог", "Income tax", "deduction", "auto", "income_tax", "0", [], [], F, F, F, "0", "0", F, "", 200),
     ("CNAM", "Prima de asigurare medicală (9 %)", "Взнос ОМС (9 %)", "Health insurance (9 %)", "deduction", "auto", "cnam", "0", [], [], F, F, F, "0", "0", F, "", 210),
-    ("SINDICAT", "Cotizația sindicală", "Профсоюзный взнос", "Union fee", "deduction", "pct_base", "none", "1", ["SAL", "ACORD", "ACORDP", "GARANT", "MINIM", "SPOR", "CUMUL", "ORE", "NOCIV", "VATAM", "NOAPTE", "SARB", "SUPL", "STATIONARE", "SOMAJT", "CO", "PREMIU"], [], F, F, F, "0", "0", F, "", 220),
-    ("PENSIE", "Pensie alimentară", "Алименты", "Alimony", "deduction", "pct_base", "none", "0", ["SAL", "ACORD", "ACORDP", "GARANT", "MINIM", "SPOR", "CUMUL", "ORE", "NOCIV", "VATAM", "NOAPTE", "SARB", "SUPL", "STATIONARE", "SOMAJT", "CO", "PREMIU"], [], F, F, F, "0", "0", F, "", 230),
+    ("SINDICAT", "Cotizația sindicală", "Профсоюзный взнос", "Union fee", "deduction", "pct_base", "none", "1", ["SAL", "ACORD", "ACORDP", "GARANT", "KM", "MINIM", "SPOR", "CUMUL", "ORE", "NOCIV", "VATAM", "NOAPTE", "SARB", "SUPL", "STATIONARE", "SOMAJT", "CO", "PREMIU"], [], F, F, F, "0", "0", F, "", 220),
+    ("PENSIE", "Pensie alimentară", "Алименты", "Alimony", "deduction", "pct_base", "none", "0", ["SAL", "ACORD", "ACORDP", "GARANT", "KM", "MINIM", "SPOR", "CUMUL", "ORE", "NOCIV", "VATAM", "NOAPTE", "SARB", "SUPL", "STATIONARE", "SOMAJT", "CO", "PREMIU"], [], F, F, F, "0", "0", F, "", 230),
     ("AVANS", "Avans plătit", "Выплаченный аванс", "Advance paid", "deduction", "auto", "advance", "0", [], [], F, F, F, "0", "0", F, "", 240),
     ("TICHETN", "Tichete de masă acordate în natură", "Талоны на питание, выданные в натуральной форме",
      "Meal vouchers given in kind", "deduction", "auto", "meal_voucher_offset", "0", [], [], F, F, F, "0", "0", F, "", 245),
@@ -155,11 +172,12 @@ TYPES = [
 
 
 # baza sindicatului / pensiei alimentare livrată înainte: până la 1.7 (fără MINIM), până la S4b (fără ORE), până la S5a (fără
-# ACORD / ACORDP) și până la S5b (fără GARANT, VATAM, STATIONARE, SOMAJT)
+# ACORD / ACORDP), până la S5b (fără GARANT, VATAM, STATIONARE, SOMAJT) și până la S6b (fără KM)
 OLD_BASES = (["SAL", "SPOR", "CUMUL", "NOCIV", "NOAPTE", "SARB", "SUPL", "CO", "PREMIU"],
              ["SAL", "MINIM", "SPOR", "CUMUL", "NOCIV", "NOAPTE", "SARB", "SUPL", "CO", "PREMIU"],
              ["SAL", "MINIM", "SPOR", "CUMUL", "ORE", "NOCIV", "NOAPTE", "SARB", "SUPL", "CO", "PREMIU"],
-             ["SAL", "ACORD", "ACORDP", "MINIM", "SPOR", "CUMUL", "ORE", "NOCIV", "NOAPTE", "SARB", "SUPL", "CO", "PREMIU"])
+             ["SAL", "ACORD", "ACORDP", "MINIM", "SPOR", "CUMUL", "ORE", "NOCIV", "NOAPTE", "SARB", "SUPL", "CO", "PREMIU"],
+             ["SAL", "ACORD", "ACORDP", "GARANT", "MINIM", "SPOR", "CUMUL", "ORE", "NOCIV", "VATAM", "NOAPTE", "SARB", "SUPL", "STATIONARE", "SOMAJT", "CO", "PREMIU"])
 
 
 def run():

@@ -134,6 +134,18 @@ AUTO_HOW = {
     "meal_voucher_offset": ("aceeași sumă ca partea impozabilă a tichetelor (sunt deja pe card, nu se plătesc în bani)",
                             "та же сумма, что облагаемая часть талонов (они уже на карте, деньгами не выплачиваются)",
                             "the same amount as the taxable part of the vouchers (already on the card, not paid in cash)"),
+    "trip_km": ("km din cursele aprobate cu întoarcerea în lună × tariful pe km fixat la aprobare (fiecărui șofer al cursei)",
+                "км из утверждённых рейсов с возвращением в месяце × тариф за км, зафиксированный при утверждении (каждому водителю)",
+                "km of the approved trips returning in the month × the rate per km frozen on approval (for each driver)"),
+    "per_diem": ("diurna din cursele aprobate, în limita normelor HG 10/2012: pe zile și țări (până la 8 ore C.per_diem_short_pct %, "
+                 "8–24 de ore C.per_diem_day_pct %, peste — 100 % pe zi), la cursul BNM din ziua dinaintea plecării",
+                 "суточные из утверждённых рейсов в пределах норм ПП 10/2012: по дням и странам (до 8 часов C.per_diem_short_pct %, "
+                 "8–24 часа C.per_diem_day_pct %, больше — 100 % в день), по курсу НБМ накануне выезда",
+                 "per diem of the approved trips within the GD 10/2012 norms: by day and country (up to 8 hours C.per_diem_short_pct %, "
+                 "8–24 hours C.per_diem_day_pct %, longer — 100 % a day), at the NBM rate of the day before departure"),
+    "per_diem_excess": ("partea diurnei peste normele HG 10/2012 (procentul întreprinderii peste 100 %) — venit impozabil",
+                        "часть суточных сверх норм ПП 10/2012 (процент предприятия выше 100 %) — облагаемый доход",
+                        "the part of the per diem above the GD 10/2012 norms (company percent over 100 %) — taxable income"),
     "none": ("—", "—", "—"),
 }
 

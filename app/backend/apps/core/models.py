@@ -47,6 +47,10 @@ class Company(models.Model):
         "Modulul Producția (salarizarea în acord)", default=False,
         help_text="Pentru fabrici și ateliere: grila tarifară, lucrările în acord cu normele lor, brigăzile și rapoartele de "
                   "producție, care intră în calculul salariului. Oprit — meniul, setările și API-ul producției nu apar.")
+    transport_enabled = models.BooleanField(
+        "Modulul Transportul (cursele, diurnele, plata pe km)", default=False, db_default=False,
+        help_text="Pentru transportatori: vehiculele, cursele (foaia de parcurs) cu țările, diurnele șoferilor pe țări și plata pe "
+                  "km, care intră în calculul salariului. Oprit — meniul, setările și API-ul transportului nu apar.")
     function_panel = models.BooleanField(
         "Panoul funcțiilor (ca în 1C)", default=False,
         help_text="Secțiunile sus ca file; secțiunea deschide panoul ei: schema de lucru, registrele, clasificatoarele, "

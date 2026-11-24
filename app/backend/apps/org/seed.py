@@ -127,6 +127,14 @@ DICTS = {
         ("medical_cert", "Certificat medical (aptitudinea de muncă)", "Медицинская справка (годность к работе)",
          "Medical fitness certificate", {"has_expiry": True}),
         ("driving_licence", "Permis de conducere", "Водительское удостоверение", "Driving licence", {"has_expiry": True}),
+        # transportul rutier (Codul transporturilor rutiere nr. 150/2014): competența profesională (CPC, 5 ani), cardul de
+        # conducător pentru tahograf (5 ani), certificatul ADR (mărfuri periculoase, 5 ani)
+        ("cpc", "Certificat de competență profesională a conducătorului auto (CPC)", "Свидетельство о профессиональной компетенции водителя (CPC)",
+         "Driver certificate of professional competence (CPC)", {"has_expiry": True}),
+        ("tachograph_card", "Cardul de conducător auto pentru tahograf", "Карта водителя для тахографа", "Driver tachograph card",
+         {"has_expiry": True}),
+        ("adr", "Certificatul ADR (mărfuri periculoase)", "Свидетельство ДОПОГ (ADR, опасные грузы)", "ADR certificate (dangerous goods)",
+         {"has_expiry": True}),
         ("military_book", "Livret militar", "Военный билет", "Military record book", {}),
         ("recruit_cert", "Certificat de recrutare", "Приписное свидетельство", "Recruitment certificate", {}),
         ("criminal_record", "Certificat de cazier judiciar", "Справка о несудимости", "Criminal record certificate",

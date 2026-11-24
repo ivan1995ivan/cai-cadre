@@ -45,6 +45,7 @@ NUMBER_SERIES = {
     "payroll_payment": ("Îndreptarea spre plată", "Ведомость на выплату", "PS"),
     "pay_item_change": ("Modificarea acumulărilor planificate", "Изменение плановых начислений", "MA"),
     "meal_vouchers": ("Borderoul tichetelor de masă", "Ведомость талонов на питание", "TM"),
+    "trip": ("Foaia de parcurs (cursa)", "Путевой лист (рейс)", "FP"),
     "production_report": ("Raportul de producție", "Отчёт о выработке", "RP"),
     "payout": ("Achitare", "Выдача / перечисление", "AC"),
     "excel_import": ("Import din Excel", "Импорт из Excel", "IM"),
@@ -129,6 +130,7 @@ def run():
     from apps.printing import seed as printing_seed
     from apps.payroll import seed as payroll_seed
     from apps.worktime import seed as worktime_seed
+    from apps.transport import seed as transport_seed
 
     sync_permissions()
     create_default_roles()
@@ -138,3 +140,4 @@ def run():
     org_seed.run()
     worktime_seed.run()
     payroll_seed.run()
+    transport_seed.run()
