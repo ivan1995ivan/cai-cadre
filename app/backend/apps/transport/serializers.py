@@ -3,7 +3,7 @@ from rest_framework import serializers
 from apps.staff.models import Employment
 
 from . import services
-from .models import Country, KmRate, PerDiemNorm, Trip, TripDiem, TripLeg, Vehicle
+from .models import Country, KmRate, PerDiemNorm, TachoFile, Trip, TripDiem, TripLeg, Vehicle
 
 
 def job_label(job) -> str:
@@ -151,7 +151,11 @@ class TripSerializer(serializers.ModelSerializer):
             services.problems(obj) if obj.status == "draft" and self.context.get("detail") else [])
 
     def get_warnings(self, obj):
-        return services.driver_docs(obj) if self.context.get("detail") else []
+        if not self.context.get("detail"):
+            return []
+        from . import tacho
+
+        return services.driver_docs(obj) + tacho.trip_warnings(obj)
 
     def validate(self, attrs):
         dep = attrs.get("departure", getattr(self.instance, "departure", None))
@@ -214,3 +218,18 @@ class JobChoiceSerializer(serializers.ModelSerializer):
 
     def get_label(self, obj):
         return job_label(obj)
+
+
+class TachoFileSerializer(serializers.ModelSerializer):
+    employee_name = serializers.SerializerMethodField()
+    holder = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = TachoFile
+        fields = ["id", "name", "size", "generation", "version", "card_number", "card_nation", "authority", "card_issue",
+                  "card_expiry", "holder", "holder_surname", "holder_first_names", "birth_date", "licence_number", "downloaded_at",
+                  "first_day", "last_day", "days", "employee", "employee_name", "matched_by", "uploaded_at"]
+        read_only_fields = fields
+
+    def get_employee_name(self, obj):
+        return obj.employee.full_name() if obj.employee_id else ""

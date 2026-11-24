@@ -89,7 +89,8 @@ class PerDiemNormViewSet(viewsets.ModelViewSet):
 class TripViewSet(DeletionMarkMixin, viewsets.ModelViewSet):
     perm_module = "transport"
     serializer_class = TripSerializer
-    perm_actions = {"approve": "approve", "unapprove": "approve", "print": "view", "drivers": "view"}
+    perm_actions = {"approve": "approve", "unapprove": "approve", "print": "view", "drivers": "view", "tacho": "view",
+                    "tacho_legs": "view"}
 
     def get_queryset(self):
         qs = Trip.objects.select_related("driver__employee", "driver__occupation", "co_driver__employee", "co_driver__occupation",
@@ -191,6 +192,20 @@ class TripViewSet(DeletionMarkMixin, viewsets.ModelViewSet):
         return Response(JobChoiceSerializer(qs, many=True).data)
 
     @action(detail=True, methods=["get"])
+    def tacho(self, request, pk=None):
+        """Tahograful în timpul cursei: timpii fiecărui șofer, acoperirea cu descărcări, constatările."""
+        from . import tacho
+
+        return Response(tacho.trip_info(self.get_object()))
+
+    @action(detail=True, methods=["get"], url_path="tacho-legs")
+    def tacho_legs(self, request, pk=None):
+        """Țările cursei din trecerile frontierei de pe cardul șoferului — propunerea (se pune în formular, nu se salvează)."""
+        from . import tacho
+
+        return Response({"legs": tacho.legs_from_borders(self.get_object())})
+
+    @action(detail=True, methods=["get"])
     def print(self, request, pk=None):
         from .printing import print_trip
 
@@ -232,3 +247,144 @@ class TripImportView(APIView):
         if not dry_run:
             finish(context)
         return Response(result)
+
+
+# --- tahograful ------------------------------------------------------------------------------------------------------------
+def _month_bounds(text):
+    from datetime import date
+
+    try:
+        y, m = (int(x) for x in str(text).split("-")[:2])
+        first = date(y, m, 1)
+    except (TypeError, ValueError):
+        raise ValidationError({"month": "Luna se scrie AAAA-LL."}) from None
+    nxt = date(y + (m == 12), m % 12 + 1, 1)
+    from datetime import timedelta
+
+    return first, nxt - timedelta(days=1)
+
+
+def _visible_employee(request, pk):
+    emp = Employee.objects.filter(pk=pk).first()
+    if emp is None or not staff.can_see(emp, request.user, "transport"):
+        raise ValidationError({"employee": "Angajatul nu există sau nu este în subdiviziunile dvs."})
+    return emp
+
+
+class TachoFileViewSet(viewsets.ReadOnlyModelViewSet):
+    """Descărcările cardului de conducător: lista, încărcarea (mai multe fișiere deodată), legarea de angajat, fișierul original
+    (pentru control), ștergerea (zilele angajatului se refac din celelalte)."""
+
+    perm_module = "transport"
+    perm_actions = {"upload": "create", "assign": "edit", "original": "view", "remove": "delete", "drivers": "view"}
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def get_serializer_class(self):
+        from .serializers import TachoFileSerializer
+
+        return TachoFileSerializer
+
+    def get_queryset(self):
+        from .models import TachoFile
+
+        qs = TachoFile.objects.select_related("employee")
+        if staff.visible_subdivision_ids(self.request.user, "transport") is not None:
+            visible = staff.scope_employees(Employee.objects.all(), self.request.user, "transport")
+            qs = qs.filter(employee__in=visible)
+        p = self.request.query_params
+        if p.get("employee"):
+            qs = qs.filter(employee_id=p["employee"])
+        if p.get("unmatched") in ("1", "true"):
+            qs = qs.filter(employee__isnull=True)
+        return qs
+
+    @action(detail=False, methods=["post"])
+    def upload(self, request):
+        from . import tacho
+
+        files = request.FILES.getlist("files") or request.FILES.getlist("file")
+        if not files:
+            raise ValidationError({"files": "Alegeți fișierele descărcate de pe card (.ddd)."})
+        if len(files) > 100:
+            raise ValidationError({"files": "Cel mult 100 de fișiere deodată."})
+        results = []
+        for up in files:
+            r = tacho.upload(up.name, up.read(), request.user)
+            emp = r.get("employee")
+            if emp and not staff.can_see(Employee.objects.get(pk=emp), request.user, "transport"):
+                r["employee_name"] = ""
+            results.append(r)
+        return Response({"results": results})
+
+    @action(detail=True, methods=["post"])
+    def assign(self, request, pk=None):
+        from . import tacho
+
+        f = self.get_object()
+        emp = _visible_employee(request, request.data.get("employee")) if request.data.get("employee") else None
+        tacho.assign(f, emp)
+        return Response(self.get_serializer(f).data)
+
+    @action(detail=True, methods=["get"])
+    def original(self, request, pk=None):
+        from django.http import FileResponse
+
+        f = self.get_object()
+        name = f"C_{f.card_number}_{(f.downloaded_at or f.uploaded_at):%Y%m%d%H%M}.ddd"
+        return FileResponse(f.file.open("rb"), as_attachment=True, filename=name, content_type="application/octet-stream")
+
+    @action(detail=True, methods=["post"])
+    def remove(self, request, pk=None):
+        from . import tacho
+
+        tacho.delete_file(self.get_object())
+        return Response(status=204)
+
+    @action(detail=False, methods=["get"])
+    def drivers(self, request):
+        """Angajații cu zile de pe card, văzuți de utilizator."""
+        visible = staff.scope_employees(Employee.objects.all(), request.user, "transport")
+        qs = visible.filter(tacho_days__isnull=False).distinct().order_by("last_name", "first_name")
+        return Response([{"id": e.pk, "label": f"{e.full_name()} ({e.tab_number})"} for e in qs])
+
+
+class TachoDaysView(APIView):
+    """GET ?employee=&month=AAAA-LL — zilele lunii cu activitățile, km, țările, vehiculele și constatările (ora Moldovei)."""
+
+    perm_module = "transport"
+
+    def get(self, request):
+        from . import tacho
+
+        emp = _visible_employee(request, request.query_params.get("employee"))
+        first, last = _month_bounds(request.query_params.get("month") or timezone.localdate().strftime("%Y-%m"))
+        rows = tacho.day_rows(emp, first, last)
+        keys = ("driving", "work", "availability", "rest", "unknown", "km")
+        return Response({"employee": emp.pk, "name": emp.full_name(), "days": rows,
+                         "totals": {k: sum(r[k] for r in rows) for k in keys},
+                         "findings": [f for r in rows for f in r["findings"]]})
+
+
+class TachoFindingsView(APIView):
+    """GET ?month=AAAA-LL[&employee=] — constatările lunii pentru șoferii văzuți (cu date de pe card)."""
+
+    perm_module = "transport"
+
+    def get(self, request):
+        from datetime import datetime, time, timedelta
+
+        from . import tacho
+
+        first, last = _month_bounds(request.query_params.get("month") or timezone.localdate().strftime("%Y-%m"))
+        lo = timezone.make_aware(datetime.combine(first, time.min))
+        hi = timezone.make_aware(datetime.combine(last + timedelta(days=1), time.min))
+        visible = staff.scope_employees(Employee.objects.all(), request.user, "transport")
+        people = visible.filter(tacho_days__day__gte=first - timedelta(days=1), tacho_days__day__lte=last + timedelta(days=1))
+        if request.query_params.get("employee"):
+            people = people.filter(pk=request.query_params["employee"])
+        out = []
+        for e in people.distinct().order_by("last_name", "first_name"):
+            for f in tacho.findings(e, lo, hi):
+                out.append({"employee": e.pk, "name": e.full_name(), **f.as_dict()})
+        out.sort(key=lambda x: (x["start"], x["name"]))
+        return Response({"rows": out})
