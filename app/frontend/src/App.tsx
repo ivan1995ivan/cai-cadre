@@ -65,6 +65,7 @@ import PayItemChangesPage, { PayItemChangeEditor } from './pages/payroll/PayItem
 import MealVouchersPage, { MealVoucherEditor } from './pages/payroll/MealVouchersPage'
 import TripsPage, { TripEditor } from './pages/transport/TripsPage'
 import TransportSettingsPage from './pages/transport/TransportSettings'
+import TachographPage from './pages/transport/TachographPage'
 import TaxReportsPage, { TaxSettingsPage } from './pages/payroll/TaxReportsPage'
 import ItParkPage, { ItParkMonthEditor } from './pages/payroll/ItParkPage'
 import ProductionReportsPage, { ProductionReportEditor } from './pages/production/ProductionReportsPage'
@@ -147,6 +148,7 @@ const MODULE_ROUTES: { path: string; perm?: string; element: React.ReactNode }[]
   { path: 'payroll/meal-vouchers/:id', perm: 'payroll.view', element: <MealVoucherEditor /> },
   { path: 'transport/trips', perm: 'transport.view', element: <TripsPage /> },
   { path: 'transport/trips/:id', perm: 'transport.view', element: <TripEditor /> },
+  { path: 'transport/tachograph', perm: 'transport.view', element: <TachographPage /> },
   { path: 'production/reports', perm: 'production.view', element: <ProductionReportsPage /> },
   { path: 'production/reports/:id', perm: 'production.view', element: <ProductionReportEditor /> },
   { path: 'tax-reports', perm: 'tax_reports.view', element: <TaxReportsPage /> },

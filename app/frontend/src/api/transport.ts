@@ -113,3 +113,60 @@ export interface Trip {
 }
 
 export const blankLeg = (): TripLeg => ({ country: null, entered: null, left: null, loading: false, unloading: false, meals: false, km: null })
+
+// S6b (pasul b): tahograful — descărcările cardului de conducător, zilele cu activitățile, constatările.
+export const ACTIVITY_COLOR: Record<string, string> = { D: '#d4380d', W: '#1677ff', A: '#faad14', R: '#52c41a', U: '#bfbfbf' }
+
+/** Minutele ca „9:05”. */
+export const hm = (minutes: number) => `${Math.floor(minutes / 60)}:${String(Math.round(minutes % 60)).padStart(2, '0')}`
+
+export interface TachoFile {
+  id: number
+  name: string
+  size: number
+  generation: number
+  version: number
+  card_number: string
+  card_nation: string
+  authority: string
+  card_issue: string | null
+  card_expiry: string | null
+  holder: string
+  holder_surname: string
+  holder_first_names: string
+  birth_date: string | null
+  licence_number: string
+  downloaded_at: string | null
+  first_day: string | null
+  last_day: string | null
+  days: number
+  employee: number | null
+  employee_name: string
+  matched_by: string
+  uploaded_at: string
+}
+
+export interface TachoUpload { name: string; status: 'created' | 'duplicate' | 'error'; file?: number; employee?: number | null; employee_name?: string; message: string }
+
+export interface TachoFinding { code: string; title: string; start: string; end: string; value: number; limit: number; text: string; level: 'error' | 'info' }
+
+export interface TachoDayRow {
+  day: string
+  has_data: boolean
+  spans: [number, number, string, number][]
+  driving: number
+  work: number
+  availability: number
+  rest: number
+  unknown: number
+  km: number
+  countries: string[]
+  vehicles: string[]
+  findings: TachoFinding[]
+}
+
+export interface TripTacho {
+  any_files: boolean
+  people: { employee: number; name: string; has_data: boolean; covered: boolean; borders: number
+    totals: { driving: number; work: number; availability: number; rest: number; unknown: number }; findings: TachoFinding[] }[]
+}

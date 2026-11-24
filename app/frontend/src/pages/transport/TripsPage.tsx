@@ -4,7 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import {
   Alert, Button, Card, Checkbox, Col, DatePicker, Form, Input, InputNumber, Popconfirm, Row, Select, Space, Spin, Tag, Typography, message,
 } from 'antd'
-import { CheckOutlined, DeleteOutlined, PlusOutlined, PrinterOutlined, RollbackOutlined, SaveOutlined } from '@ant-design/icons'
+import { CheckOutlined, DeleteOutlined, FieldTimeOutlined, PlusOutlined, PrinterOutlined, RollbackOutlined, SaveOutlined } from '@ant-design/icons'
 import dayjs, { type Dayjs } from 'dayjs'
 
 import Table from '../../components/AppTable'
@@ -18,7 +18,7 @@ import { api, errorText, type Paged } from '../../api/client'
 import { useFetch } from '../../api/hooks'
 import { useApp } from '../../auth/AppContext'
 import { useTabTitle } from '../../layout/tabs'
-import { SCOPES, TRIP_KINDS, blankLeg, type Country, type Trip, type TripDiem, type TripLeg, type Vehicle } from '../../api/transport'
+import { SCOPES, TRIP_KINDS, blankLeg, hm, type Country, type Trip, type TripDiem, type TripLeg, type TripTacho, type Vehicle } from '../../api/transport'
 
 const STATUS_COLOR: Record<string, string> = { draft: 'gold', approved: 'green' }
 const DT = 'DD.MM.YYYY HH:mm'
@@ -101,6 +101,33 @@ function LegRow({ leg, countries, set, onRemove, disabled }: {
   )
 }
 
+/** Tahograful în timpul cursei: timpii fiecărui șofer de pe card, acoperirea cu descărcări, încălcările. */
+function TripTachoPanel({ trip }: { trip: Trip }) {
+  const { t } = useTranslation()
+  const navigate = useNavigate()
+  const { data } = useFetch<TripTacho>(`/transport/trips/${trip.id}/tacho/`, { v: trip.departure + trip.arrival })
+  if (!data || (!data.any_files && !data.people.some((p) => p.has_data))) return null
+  return (
+    <>
+      <Typography.Title level={5} style={{ marginTop: 16 }}>{t('tr.tacho.inTrip')}</Typography.Title>
+      {data.people.map((p) => (
+        <div key={p.employee} style={{ marginBottom: 8 }}>
+          <Space wrap>
+            <b>{p.name}</b>
+            {!p.has_data ? <Tag color="red">{t('tr.tacho.noFiles')}</Tag> : !p.covered && <Tag color="gold">{t('tr.tacho.partial')}</Tag>}
+            {p.has_data && (['driving', 'work', 'availability', 'rest'] as const).map((k) => (
+              <span key={k}>{t(`tr.tacho.sum.${k}`)}: <b>{hm(p.totals[k])}</b></span>))}
+            {p.has_data && <a onClick={() => navigate(`/transport/tachograph?tab=days&employee=${p.employee}&month=${dayjs(trip.departure).format('YYYY-MM')}`)}>
+              {t('tr.tacho.openDays')}</a>}
+          </Space>
+          {p.findings.length > 0 && <ul style={{ margin: '4px 0 0', paddingInlineStart: 18 }}>
+            {p.findings.map((f, i) => <li key={i}><Tag color={f.level === 'error' ? 'red' : 'gold'}>{dayjs(f.start).format(DT)}</Tag>
+              <b>{f.title}</b>: {f.text}</li>)}</ul>}
+        </div>))}
+    </>
+  )
+}
+
 /** Cursa: șoferii, vehiculul, felul și aria, plecarea / întoarcerea, km, segmentele pe țări; la salvare se socotesc plata pe km și
  *  diurna pe zile; aprobarea le fixează și cursa intră în salariul lunii întoarcerii. */
 export function TripEditor() {
@@ -176,6 +203,18 @@ export function TripEditor() {
     }
   }
 
+  const fromTacho = async () => {
+    try {
+      if (dirty && !(await save(true))) return
+      const r = await api.get<{ legs: TripLeg[] }>(`/transport/trips/${id}/tacho-legs/`)
+      setLegs(r.data.legs)
+      setDirty(true)
+      message.success(t('tr.tacho.legsDone', { n: r.data.legs.length }))
+    } catch (e) {
+      message.error(errorText(e))
+    }
+  }
+
   if (!isNew && !doc) return <Spin />
   const tractors = (vehicles ?? []).filter((v) => v.kind !== 'trailer')
   const trailers = (vehicles ?? []).filter((v) => v.kind === 'trailer')
@@ -234,11 +273,15 @@ export function TripEditor() {
       <Space orientation="vertical" style={{ width: '100%' }} size={6}>
         {legs.map((l, i) => <LegRow key={l.id ?? `n${i}`} leg={l} countries={countries ?? []} disabled={!draft} set={(p) => setLeg(i, p)}
           onRemove={() => { setLegs(legs.filter((_x, k) => k !== i)); setDirty(true) }} />)}
-        {draft && <Button icon={<PlusOutlined />} onClick={() => {
-          const prev = legs[legs.length - 1]
-          setLegs([...legs, { ...blankLeg(), entered: prev?.left ?? null }])
-          setDirty(true)
-        }}>{t('tr.leg.add')}</Button>}
+        {draft && <Space wrap>
+          <Button icon={<PlusOutlined />} onClick={() => {
+            const prev = legs[legs.length - 1]
+            setLegs([...legs, { ...blankLeg(), entered: prev?.left ?? null }])
+            setDirty(true)
+          }}>{t('tr.leg.add')}</Button>
+          {doc && <Popconfirm title={t('tr.tacho.legsConfirm')} onConfirm={fromTacho}>
+            <Button icon={<FieldTimeOutlined />}>{t('tr.tacho.legs')}</Button></Popconfirm>}
+        </Space>}
       </Space>
       {doc && <>
         <Typography.Title level={5} style={{ marginTop: 16 }}>{t('tr.trip.pay')}</Typography.Title>
@@ -265,6 +308,7 @@ export function TripEditor() {
               <Table.Summary.Cell index={9} />
             </Table.Summary.Row>) : null} />
       </>}
+      {doc && <TripTachoPanel trip={doc} />}
       {print && doc && <PrintDialog open onClose={() => setPrint(false)} docType="trip_sheet" url={`/transport/trips/${doc.id}/print/`}
         params={{}} optionKeys={[]} title={`${t('tr.trip.title')} ${doc.number}`} />}
     </Card>
