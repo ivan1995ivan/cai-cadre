@@ -117,6 +117,17 @@ FIELDS: dict = {
         ("accountant_label", "Semnătura: contabil-șef", "{funcția_contabilului}", "{funcția_contabilului}", False),
         ("footer", "Text la sfârșit", "", "", True),
     ],
+    "meal_vouchers": [
+        ("title", "Titlul", "BORDEROUL TICHETELOR DE MASĂ", "ВЕДОМОСТЬ ТАЛОНОВ НА ПИТАНИЕ", False),
+        ("intro", "Textul de deasupra tabelului",
+         "Tichetele de masă pentru luna lucrată, transferate pe instrumentul de plată al salariaților (Legea nr. 166/2017, "
+         "HG nr. 227/2018):",
+         "Талоны на питание за отработанный месяц, перечисленные на платёжный инструмент работников (Закон № 166/2017, "
+         "ПП № 227/2018):", True),
+        ("head_label", "Semnătura: conducătorul", "{funcția_conducătorului}", "{funcția_conducătorului}", False),
+        ("accountant_label", "Semnătura: contabil-șef", "{funcția_contabilului}", "{funcția_contabilului}", False),
+        ("footer", "Text la sfârșit", "", "", True),
+    ],
     "it_park_tax": [
         ("title", "Titlul", "CALCULUL IMPOZITULUI UNIC AL REZIDENTULUI PARCULUI IT", "РАСЧЁТ ЕДИНОГО НАЛОГА РЕЗИДЕНТА IT-ПАРКА", False),
         ("annex", "Mențiunea (dreapta sus)", "pentru declarația IU17\n(OMF nr. 135/2017, anexa nr. 1)", "для декларации IU17\n(ПМФ № 135/2017, приложение № 1)", True),
@@ -190,7 +201,7 @@ FIELDS: dict = {
 
 # Ce se poate scrie în texte (în acolade) — arătat în editor: ale documentului și cele din Constante (în toate formele)
 PLACEHOLDERS: dict = {"staff_list": ["număr", "data", "aprobat_prin"], "pay_item_change": ["număr", "data"],
-                      "production_report": ["număr", "data"]}
+                      "production_report": ["număr", "data"], "meal_vouchers": ["număr", "data"]}
 COMPANY_PLACEHOLDERS = {
     "întreprinderea": "full_name", "conducătorul": "director", "funcția_conducătorului": "director_position",
     "contabilul": "chief_accountant", "funcția_contabilului": "chief_accountant_position",

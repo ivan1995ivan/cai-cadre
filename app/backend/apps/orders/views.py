@@ -30,7 +30,7 @@ def _date(value, field="date"):
 class OrderViewSet(DeletionMarkMixin, viewsets.ModelViewSet):
     perm_module = "orders"
     perm_actions = {"sign": "approve", "print": "view", "acknowledge": "edit", "refresh_texts": "edit",
-                    "cancel_by_order": "create", "register": "view", "print_register": "view"}
+                    "cancel_by_order": "create", "register": "view", "print_register": "view", "add_subdivision": "edit"}
 
     def get_serializer_class(self):
         return OrderListSerializer if self.action == "list" else OrderSerializer
@@ -90,6 +90,44 @@ class OrderViewSet(DeletionMarkMixin, viewsets.ModelViewSet):
     def sign(self, request, pk=None):
         order = services.sign(self.get_object(), request.user)
         return Response(OrderSerializer(Order.objects.get(pk=order.pk), context=self.get_serializer_context()).data)
+
+    @action(detail=True, methods=["post"], url_path="add-subdivision")
+    def add_subdivision(self, request, pk=None):
+        """Ordinul colectiv (de ex. staționarea unui atelier): adaugă câte un punct pentru fiecare angajat cu raport de muncă
+        activ la data ordinului în subdiviziune (cu sub-subdiviziunile), fără prestările de servicii și fără cei deja în ordin;
+        punctele noi primesc parametrii primului punct (perioada, cauza, procentul…), cu raportul de muncă al fiecăruia."""
+        from apps.org.models import Subdivision
+        from apps.staff.models import Employment
+
+        order = self.get_object()
+        services.check_editable(order)
+        if not order.order_type.collective:
+            raise ValidationError({"detail": "Acest tip de ordin este pentru un singur angajat."})
+        sub = Subdivision.objects.filter(pk=request.data.get("subdivision")).first()
+        if sub is None:
+            raise ValidationError({"subdivision": "Alegeți subdiviziunea."})
+        day = order.date
+        jobs = (Employment.objects.filter(subdivision_id__in=sub.descendant_ids(), date_from__lte=day)
+                .filter(Q(end_date__isnull=True) | Q(end_date__gte=day)).exclude(kind="contractor")
+                .select_related("employee").order_by("employee__last_name", "employee__first_name", "id"))
+        first = order.items.order_by("sort", "id").first()
+        params = {k: v for k, v in ((first.params or {}) if first else {}).items() if k not in ("employment", "child")}
+        present = set(order.items.values_list("employee_id", flat=True))
+        last = order.items.order_by("-sort").first()
+        sort = last.sort if last else 0
+        added = 0
+        for job in jobs:
+            if job.employee_id in present or not staff_services.can_see(job.employee, request.user):
+                continue
+            present.add(job.employee_id)
+            sort += 10
+            item = OrderItem.objects.create(order=order, employee=job.employee, employment=job,
+                                            params={**params, "employment": job.pk}, sort=sort)
+            services.refresh_text(item)
+            item.save(update_fields=["text"])
+            added += 1
+        data = OrderSerializer(Order.objects.get(pk=order.pk), context=self.get_serializer_context()).data
+        return Response({**data, "added": added})
 
     @action(detail=True, methods=["post"], url_path="refresh-texts")
     def refresh_texts(self, request, pk=None):
@@ -154,6 +192,7 @@ class OrderViewSet(DeletionMarkMixin, viewsets.ModelViewSet):
 
 class OrderItemViewSet(viewsets.ModelViewSet):
     perm_module = "orders"
+    perm_actions = {"copy_params": "edit"}
     serializer_class = OrderItemSerializer
     pagination_class = None
 
@@ -200,6 +239,22 @@ class OrderItemViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         services.check_editable(instance.order)
         instance.delete()
+
+    @action(detail=True, methods=["post"], url_path="copy-params")
+    def copy_params(self, request, pk=None):
+        """Parametrii acestui punct (perioada, cauza, procentul…) la toate celelalte puncte ale ordinului; raportul de muncă al
+        fiecăruia rămâne al lui."""
+        item = self.get_object()
+        self._check(item.order, None)
+        params = {k: v for k, v in (item.params or {}).items() if k not in ("employment", "child")}
+        changed = 0
+        for other in item.order.items.exclude(pk=item.pk):
+            own = {k: v for k, v in (other.params or {}).items() if k == "employment"}
+            other.params = {**params, **own}
+            services.refresh_text(other)
+            other.save(update_fields=["params", "text"])
+            changed += 1
+        return Response({"changed": changed})
 
 
 class EmployeeRecordsMixin:

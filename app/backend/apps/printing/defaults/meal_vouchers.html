@@ -1,0 +1,42 @@
+{% company_header %}
+
+<div class="doc-title">{{ texts.title }}</div>
+<div class="doc-subtitle">nr. {{ doc.number }} din {{ doc.date }} · luna lucrată {{ doc.period }}{% if doc.subdivision %} · {{ doc.subdivision }}{% endif %}{% if not doc.approved %} · <span class="muted">{{ doc.status }}</span>{% endif %}</div>
+{% if texts.intro %}<p style="margin:6px 0">{{ texts.intro|linebreaksbr }}</p>{% endif %}
+<p style="margin:4px 0">Valoarea nominală a tichetului: <b>{{ doc.value }} lei</b> (neimpozabil — {{ doc.cap }} lei).</p>
+
+<table class="grid" style="font-size:8.5pt">
+  <thead>
+    <tr>
+      <th style="width:7mm">Nr.</th>
+      <th style="width:14mm">Nr. tabel</th>
+      <th>Numele, prenumele</th>
+      <th>Funcția, subdiviziunea</th>
+      <th style="width:14mm">Zile lucrate</th>
+      <th style="width:16mm">Ore (în schimburi)</th>
+      <th style="width:14mm">Tichete</th>
+      <th style="width:20mm">Suma (lei)</th>
+      <th style="width:20mm">Partea impozabilă</th>
+      <th style="width:24mm">Semnătura</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for r in rows %}
+    <tr><td class="num">{{ r.no }}</td><td>{{ r.tab_number }}</td><td>{{ r.name }}</td>
+      <td>{{ r.occupation }}<br><span class="muted">{{ r.subdivision }}</span></td><td class="num">{{ r.days }}</td>
+      <td class="num">{{ r.hours }}</td><td class="num">{{ r.count }}</td><td class="num">{{ r.amount }}</td>
+      <td class="num">{{ r.taxable }}</td><td></td></tr>
+  {% empty %}<tr><td colspan="10" class="muted">—</td></tr>{% endfor %}
+  </tbody>
+  <tfoot>
+    <tr><th colspan="6" style="text-align:right">Total</th><th class="num">{{ totals.count }}</th><th class="num">{{ totals.amount }}</th>
+      <th class="num">{{ totals.taxable }}</th><th></th></tr>
+  </tfoot>
+</table>
+{% if doc.note %}<p class="muted" style="margin-top:6px">{{ doc.note|linebreaksbr }}</p>{% endif %}
+
+<div class="signatures">
+  <div>{{ texts.head_label }}<div class="line"></div><div class="who">{{ company.director }}</div></div>
+  <div>{{ texts.accountant_label }}<div class="line"></div><div class="who">{{ company.chief_accountant }}</div></div>
+</div>
+{% if texts.footer %}<div class="doc-footer">{{ texts.footer|linebreaksbr }}</div>{% endif %}

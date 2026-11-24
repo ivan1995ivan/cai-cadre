@@ -51,6 +51,24 @@ CONSTANTS = [
     ("sick_avg_cap_salaries", "Plafonul venitului mediu lunar pentru boală (salarii medii prognozate)", "5", "", "Legea 289/2004, art. 7 alin. (3)", Y26),
     ("leave_avg_months", "Perioada de calcul a salariului mediu (concedii)", "3", "luni", "HG nr. 426/2004", Y26),
     ("advance_pct", "Avansul (% din salariul de funcție al raportului de bază)", "40", "%", "Contractul colectiv / regulamentul intern", Y26),
+    # S5b: timpul fără producție (CM art. 80, 80¹, 161) — procentele legale minime; ordinul poate da un procent mai mare
+    ("idle_employer_pct", "Staționarea din vina angajatorului: plata (% din salariul de bază pe oră)", "100", "%",
+     "Codul muncii, art. 80¹" + CHECK, Y26),
+    ("idle_nofault_pct", "Staționarea fără vina părților: plata (% din salariul de bază pe oră; nu sub salariul minim pe oră)",
+     "66.6667", "%", "Codul muncii, art. 80¹" + CHECK, Y26),
+    ("idle_worker_pct", "Staționarea din vina salariatului: plata (% din salariul de bază pe oră)", "0", "%",
+     "Codul muncii, art. 80¹" + CHECK, Y26),
+    ("tech_unemployment_pct", "Șomajul tehnic: plata (% din salariul de bază)", "50", "%", "Codul muncii, art. 80" + CHECK, Y26),
+    ("shortfall_nofault_pct", "Acord, norma neîndeplinită fără vina părților: garanția (% din tariful categoriei pe oră)",
+     "66.6667", "%", "Codul muncii, art. 161" + CHECK, Y26),
+    # tichetele de masă (Legea 166/2017, HG 227/2018 cu modificările din 22.01.2026)
+    ("meal_voucher_value", "Tichetele de masă: valoarea nominală a tichetului (0 — nu se acordă)", "0", "lei",
+     "Ordinul conducătorului (HG 227/2018, pct. 8)", Y26),
+    ("meal_voucher_min", "Tichetele de masă: valoarea nominală minimă", "35", "lei", "Legea 166/2017; Codul fiscal, art. 24" + CHECK, Y26),
+    ("meal_voucher_cap", "Tichetele de masă: valoarea neimpozabilă a tichetului (peste ea — facilitate impozabilă)", "70", "lei",
+     "Codul fiscal, art. 19 lit. a¹), art. 24; HG 227/2018 (modif. 22.01.2026)" + CHECK, Y26),
+    ("meal_voucher_night_pct", "Tichetele de masă: schimbul e de noapte dacă orele de noapte sunt cel puțin % din el", "50", "%",
+     "Setarea întreprinderii (HG 227/2018, pct. 12)", Y26),
     # regimul IT Park (se folosesc doar în lunile în regim — Setări → Constantele salarizării → Regimul fiscal)
     ("it_park_tax_pct", "IT Park: impozitul unic (% din venitul lunar din vânzări)", "7", "%", "Codul fiscal, art. 370 alin. (1)", Y26),
     ("it_park_min_pct", "IT Park: impozitul unic minim pe angajat (% din salariul mediu lunar prognozat)", "30", "%",
@@ -91,9 +109,22 @@ TYPES = [
     # colectiv / individual)
     ("NOCIV", "Spor pentru condiții nocive / vătămătoare", "Надбавка за вредные условия", "Hazardous conditions allowance", "accrual",
      "pct_salary", "none", "0", [], [], T, T, T, "0", "0", T, "SAL", 60),
+    # S5b: sporul pentru condiții vătămătoare din subdiviziune / funcție (procentul lor × salariul de bază pe oră × orele
+    # lucrate acolo); rândul personal NOCIV, dacă există, îl înlocuiește
+    ("VATAM", "Spor pentru condiții vătămătoare (din subdiviziune / funcție)", "Надбавка за вредные условия (из подразделения / должности)",
+     "Hazardous conditions allowance (from department / post)", "accrual", "auto", "harmful", "0", [], [], T, T, T, "0", "0", T,
+     "SAL", 61),
     ("NOAPTE", "Munca de noapte", "Работа в ночное время", "Night work", "accrual", "auto", "night", "0", [], [], T, T, T, "0", "0", T, "SAL", 70),
     ("SARB", "Munca în zile de sărbătoare / odihnă", "Работа в праздничные / выходные дни", "Holiday work", "accrual", "auto", "holiday", "0", [], [], T, T, T, "0", "0", T, "SAL", 80),
     ("SUPL", "Ore suplimentare", "Сверхурочные часы", "Overtime", "accrual", "auto", "overtime", "0", [], [], T, T, T, "0", "0", T, "SAL", 90),
+    # timpul fără producție (S5b): staționarea și șomajul tehnic — din ordine (pontajul: St / Șt); garanția acordului
+    ("STATIONARE", "Plata timpului de staționare", "Оплата времени простоя", "Downtime pay", "accrual", "auto", "idle", "0", [], [],
+     T, T, T, "0", "0", F, "SAL", 92),
+    ("SOMAJT", "Plata pentru șomajul tehnic", "Оплата технического простоя", "Technical unemployment pay", "accrual", "auto",
+     "tech_unemployment", "0", [], [], T, T, T, "0", "0", F, "SAL", 94),
+    ("GARANT", "Garanția la neîndeplinirea normei (acord)", "Гарантия при невыполнении норм (сдельщина)",
+     "Guarantee when the output norm is not met (piece rate)", "accrual", "auto", "piece_guarantee", "0", [], [], T, T, T, "0",
+     "0", T, "SAL", 14),
     ("CO", "Indemnizația de concediu de odihnă", "Отпускные", "Annual leave pay", "accrual", "auto", "leave", "0", [], [], T, T, T, "0", "0", F, "SAL", 100),
     ("COMP", "Compensarea concediului nefolosit", "Компенсация за неиспользованный отпуск", "Unused leave compensation", "accrual", "auto", "leave_comp", "0", [], [], T, T, T, "0", "0", F, "SAL", 110),
     ("BOALA", "Indemnizația de boală (zilele angajatorului)", "Больничный (дни работодателя)", "Sick pay (employer days)", "accrual", "auto", "sick", "0", [], [], T, F, T, "0", "0", F, "SAL", 120),
@@ -103,13 +134,19 @@ TYPES = [
     ("PREMIU", "Premiu", "Премия", "Bonus", "accrual", "auto", "bonus", "0", [], [], T, T, T, "0", "0", T, "SAL", 130),
     ("AJUTOR", "Ajutor material", "Материальная помощь", "Financial aid", "accrual", "auto", "aid", "0", [], [], T, T, T, "0", "0", F, "SAL", 140),
     ("CADOU", "Cadouri / vouchere", "Подарки / ваучеры", "Gifts / vouchers", "accrual", "fixed", "none", "0", [], [], T, T, T, "0", "10", F, "SAL", 150),
+    # tichetele de masă (S5b): doar partea peste valoarea neimpozabilă (facilitate impozabilă), din borderoul aprobat, și
+    # reținerea ei — tichetele sunt deja pe card, nu se plătesc a doua oară în bani
+    ("TICHET", "Tichete de masă: partea peste valoarea neimpozabilă", "Талоны на питание: часть сверх необлагаемой стоимости",
+     "Meal vouchers: part above the tax-free value", "accrual", "auto", "meal_voucher", "0", [], [], T, T, T, "0", "0", F, "SAL", 155),
     ("CONTRACT", "Plata la contractul de prestări servicii", "Оплата по договору оказания услуг", "Service contract pay", "accrual", "fixed", "none", "0", [], [], T, T, T, "0", "0", F, "SAL", 160),
     ("ALTE", "Alte plăți", "Прочие выплаты", "Other payments", "accrual", "fixed", "none", "0", [], [], T, T, T, "0", "0", F, "SAL", 170),
     ("IMPOZIT", "Impozitul pe venit", "Подоходный налог", "Income tax", "deduction", "auto", "income_tax", "0", [], [], F, F, F, "0", "0", F, "", 200),
     ("CNAM", "Prima de asigurare medicală (9 %)", "Взнос ОМС (9 %)", "Health insurance (9 %)", "deduction", "auto", "cnam", "0", [], [], F, F, F, "0", "0", F, "", 210),
-    ("SINDICAT", "Cotizația sindicală", "Профсоюзный взнос", "Union fee", "deduction", "pct_base", "none", "1", ["SAL", "ACORD", "ACORDP", "MINIM", "SPOR", "CUMUL", "ORE", "NOCIV", "NOAPTE", "SARB", "SUPL", "CO", "PREMIU"], [], F, F, F, "0", "0", F, "", 220),
-    ("PENSIE", "Pensie alimentară", "Алименты", "Alimony", "deduction", "pct_base", "none", "0", ["SAL", "ACORD", "ACORDP", "MINIM", "SPOR", "CUMUL", "ORE", "NOCIV", "NOAPTE", "SARB", "SUPL", "CO", "PREMIU"], [], F, F, F, "0", "0", F, "", 230),
+    ("SINDICAT", "Cotizația sindicală", "Профсоюзный взнос", "Union fee", "deduction", "pct_base", "none", "1", ["SAL", "ACORD", "ACORDP", "GARANT", "MINIM", "SPOR", "CUMUL", "ORE", "NOCIV", "VATAM", "NOAPTE", "SARB", "SUPL", "STATIONARE", "SOMAJT", "CO", "PREMIU"], [], F, F, F, "0", "0", F, "", 220),
+    ("PENSIE", "Pensie alimentară", "Алименты", "Alimony", "deduction", "pct_base", "none", "0", ["SAL", "ACORD", "ACORDP", "GARANT", "MINIM", "SPOR", "CUMUL", "ORE", "NOCIV", "VATAM", "NOAPTE", "SARB", "SUPL", "STATIONARE", "SOMAJT", "CO", "PREMIU"], [], F, F, F, "0", "0", F, "", 230),
     ("AVANS", "Avans plătit", "Выплаченный аванс", "Advance paid", "deduction", "auto", "advance", "0", [], [], F, F, F, "0", "0", F, "", 240),
+    ("TICHETN", "Tichete de masă acordate în natură", "Талоны на питание, выданные в натуральной форме",
+     "Meal vouchers given in kind", "deduction", "auto", "meal_voucher_offset", "0", [], [], F, F, F, "0", "0", F, "", 245),
     ("IMPRUMUT", "Împrumut / prejudiciu / alte rețineri", "Займ / ущерб / прочие удержания", "Loan / damage / other deductions", "deduction", "fixed", "none", "0", [], [], F, F, F, "0", "0", F, "", 250),
     ("CAS", "Contribuția de asigurări sociale (angajator, 24 %)", "Взнос соцстрахования (работодатель, 24 %)", "Social insurance (employer, 24 %)", "employer", "auto", "cas", "0", [], [], F, F, F, "0", "0", F, "", 300),
     ("CASMIN", "CAS pe diferența până la baza minimă (salariul minim)", "Взнос соцстрахования на разницу до минимальной базы",
@@ -117,11 +154,12 @@ TYPES = [
 ]
 
 
-# baza sindicatului / pensiei alimentare livrată înainte: până la 1.7 (fără MINIM), până la S4b (fără ORE) și până la S5a (fără
-# ACORD / ACORDP)
+# baza sindicatului / pensiei alimentare livrată înainte: până la 1.7 (fără MINIM), până la S4b (fără ORE), până la S5a (fără
+# ACORD / ACORDP) și până la S5b (fără GARANT, VATAM, STATIONARE, SOMAJT)
 OLD_BASES = (["SAL", "SPOR", "CUMUL", "NOCIV", "NOAPTE", "SARB", "SUPL", "CO", "PREMIU"],
              ["SAL", "MINIM", "SPOR", "CUMUL", "NOCIV", "NOAPTE", "SARB", "SUPL", "CO", "PREMIU"],
-             ["SAL", "MINIM", "SPOR", "CUMUL", "ORE", "NOCIV", "NOAPTE", "SARB", "SUPL", "CO", "PREMIU"])
+             ["SAL", "MINIM", "SPOR", "CUMUL", "ORE", "NOCIV", "NOAPTE", "SARB", "SUPL", "CO", "PREMIU"],
+             ["SAL", "ACORD", "ACORDP", "MINIM", "SPOR", "CUMUL", "ORE", "NOCIV", "NOAPTE", "SARB", "SUPL", "CO", "PREMIU"])
 
 
 def run():
@@ -138,7 +176,7 @@ def run():
             "percent": Decimal(pct), "base_codes": base, "scale": scale, "taxable": taxable, "cas": cas, "cnam": cnam,
             "exempt_month": Decimal(ex_month), "exempt_avg_pct": Decimal(ex_avg), "in_average": in_avg, "ipc_code": ipc,
             "sort": sort, "is_system": True, "on_payslip": True})
-    # completarea până la salariul minim, orele pe tipuri și acordul intră în baza sindicatului / pensiei alimentare — doar unde
+    # completarea până la salariul minim, orele pe tipuri, acordul și timpul fără producție intră în baza sindicatului / pensiei alimentare — doar unde
     # baza e încă cea livrată
     for t in PayType.objects.filter(code__in=("SINDICAT", "PENSIE"), is_system=True):
         if t.base_codes in OLD_BASES:

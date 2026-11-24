@@ -7,7 +7,9 @@ Pentru fiecare raport de muncă din lună:
    la „pe tipuri de ore” și „mixt”), sporurile fixe, plata pentru cumularea funcțiilor / suplinire (înregistrările de pe raport,
    CM art. 156), noaptea, sărbătorile, suplimentarele, concediul (media × zile), compensarea, boala (zilele angajatorului),
    premiile și ajutorul din ordine; lucrările în acord din rapoartele de producție aprobate (apps.production) și sporul
-   acordului progresiv peste normă;
+   acordului progresiv peste normă și garanția la neîndeplinirea normei (CM art. 161); staționarea și șomajul tehnic (zilele
+   St / Șt din pontaj, cu cauza și procentul din ordin — CM art. 80, 80¹); sporul pentru condiții vătămătoare din
+   subdiviziune / funcție; partea impozabilă a tichetelor de masă din borderoul aprobat (cu reținerea ei);
 3. rândurile scrise de mână (le înlocuiesc pe cele calculate de același tip) și completarea până la salariul minim;
 4. celelalte tipuri, în ordinea dependențelor (apps.payroll.dependencies): rândurile personale ale angajatului (sumă fixă,
    % din salariu, tarif orar), treptele de vechime, „% din bază” și formulele (apps.payroll.formula) — fiecare după tipurile
@@ -30,17 +32,17 @@ from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 
-from apps.leave.models import Absence, LeaveAdjustment, SickLeave
+from apps.leave.models import IDLE_KINDS, Absence, LeaveAdjustment, SickLeave
 from apps.org import calendar as holidays
 from apps.orders.models import Incentive
 from apps.staff import services as staff
 from apps.staff.models import MAIN_KINDS, RATE_MODES, Employment, FunctionCombination
 from apps.worktime import hour_types
 from apps.worktime import services as worktime
-from apps.worktime.models import HourType, JobHourRate, TimesheetLine
+from apps.worktime.models import HourType, JobHourRate, RosterLine, TimesheetLine
 from apps.production import services as production
 
-from . import dependencies, formula, it_park
+from . import dependencies, formula, it_park, meal_vouchers
 from .models import EmployeePayItem, PayConstant, Payroll, PayrollItem, PayrollLine, PayType
 
 ZERO, CENT = Decimal("0"), Decimal("0.01")
@@ -105,6 +107,29 @@ def average_daily(employment: Employment, year: int, month: int, months: int, fa
         absent += (min(a.date_to, stop) - max(a.date_from, start)).days + 1
     days = max(days - absent, 1)
     return q(total / days), {"months": len(used), "sum": q(total), "days": days}
+
+
+def average_hourly(employment: Employment, year: int, month: int, months: int):
+    """Câștigul mediu pe oră: acumulările care intră în medie din ultimele `months` luni aprobate / orele lucrate în ele (din
+    pontajul păstrat pe rândul calculului). None — fără istoric cu ore."""
+    first = add_months(date(year, month, 1), -months)
+    end = date(year, month, 1) - timedelta(days=1)
+    total, hours, used = ZERO, ZERO, set()
+    lines = (PayrollLine.objects.filter(employment=employment, payroll__status="approved", payroll__year__gte=first.year)
+             .select_related("payroll"))
+    for ln in lines:
+        p = ln.payroll
+        if not first <= date(p.year, p.month, 1) <= end:
+            continue
+        h = Decimal(str(((ln.info or {}).get("timesheet") or {}).get("hours") or 0))
+        if not h:
+            continue
+        hours += h
+        used.add((p.year, p.month))
+        total += sum((i.amount for i in ln.items.filter(pay_type__in_average=True, pay_type__category="accrual")), ZERO)
+    if not hours:
+        return None, {"months": 0}
+    return q(total / hours), {"months": len(used), "sum": q(total), "hours": float(hours)}
 
 
 # --- incapacitatea temporară de muncă (Legea 289/2004) --------------------------------------------------------------
@@ -237,8 +262,16 @@ class Month:
         self.ctx = worktime.Context(self.year, self.month)
         self.types = {t.code: t for t in PayType.objects.filter(is_active=True).exclude(auto__in=AT_PAYMENT)}
         self._index()
-        self.timesheets = {ln.employment_id: ln.totals or {} for ln in TimesheetLine.objects.filter(
-            timesheet__year=self.year, timesheet__month=self.month, timesheet__deletion_mark=False)}
+        # pontajul lunii pe raport de muncă: un raport în două tabele (transfer în lună) — totalurile adunate, zilele unite
+        self.timesheets, self.ts_days = {}, defaultdict(dict)
+        for ln in TimesheetLine.objects.filter(timesheet__year=self.year, timesheet__month=self.month, timesheet__deletion_mark=False):
+            self.timesheets[ln.employment_id] = worktime.merge_totals(self.timesheets.get(ln.employment_id), ln.totals or {})
+            for key, cell in (ln.days or {}).items():
+                if Decimal(str(cell.get("h") or 0)) > 0 or key not in self.ts_days[ln.employment_id]:
+                    self.ts_days[ln.employment_id][key] = cell
+        self.rosters = {r.employment_id: r.days or {} for r in RosterLine.objects.filter(
+            roster__year=self.year, roster__month=self.month, roster__deletion_mark=False)}
+        self.meals = meal_vouchers.month_lines(self.first, self.last)
         # orele pe tipuri, tarifele și cumulările (S4b) — pe raport
         self.hour_types = {t.code: t for t in HourType.objects.all()}
         self.guarantee_conf = hour_types.settings()
@@ -282,14 +315,29 @@ class Month:
             return self.ctx.jobs(self.payroll.subdivision)
         from apps.org.models import Subdivision
 
-        out, seen = [], set()
+        out, seen = [], {}
         for sub in Subdivision.objects.filter(parent__isnull=True):
             for jd in self.ctx.jobs(sub):
                 if jd.job.pk not in seen:
-                    seen.add(jd.job.pk)
+                    seen[jd.job.pk] = jd
                     out.append(jd)
+                else:  # transferul între subdiviziuni de nivel întâi în lună: același raport, zilele din ambele
+                    seen[jd.job.pk].days |= jd.days
         out.sort(key=lambda jd: (jd.job.employee.last_name, jd.job.employee.first_name, jd.job.kind != "main", jd.job.pk))
         return out
+
+    def full_norm(self, jd) -> Decimal:
+        """Norma de ore a lunii întregi pentru raport (toate zilele lucrătoare ale lunii, la norma raportului din istoric)."""
+        if not hasattr(self, "_full_norms"):
+            self._full_norms = {}
+        if jd.job.pk not in self._full_norms:
+            own = jd.days
+            jd.days = set(self.ctx.days)
+            try:
+                self._full_norms[jd.job.pk] = self.ctx.norm(jd)
+            finally:
+                jd.days = own
+        return self._full_norms[jd.job.pk]
 
     def typed(self, employment_id) -> dict:
         if self._typed is None:
@@ -321,8 +369,11 @@ class LineCalc:
         self.job = jd.job
         self.ts = month.timesheet(jd)
         self.items: list = []
-        self.norm = Decimal(str(self.ts.get("norm") or 0))
+        self.norm = Decimal(str(self.ts.get("norm") or 0))  # norma zilelor raportului în lună (pentru suplimentare)
         self.hours = Decimal(str(self.ts.get("hours") or 0))
+        # norma lunii întregi la norma raportului: salariul de funcție e pe lună — cine e angajat / eliberat în lună primește
+        # partea zilelor lui (orele lucrate / norma lunii întregi), iar salariul pe oră e salariul / norma lunii întregi
+        self.month_norm = month.full_norm(jd) or self.norm
         sub_id, occ_id, rate = jd.values_on(max(jd.days))
         self.rate = Decimal(rate)
         rec = next((h for h in reversed(jd.history) if h.date <= max(jd.days)), None)
@@ -335,7 +386,7 @@ class LineCalc:
             self.hourly = self.hourly_rate
         else:
             self.salary_full = q(self.job.base_salary * self.rate)  # salariul pentru norma raportului
-            self.hourly = q(self.salary_full / self.norm) if self.norm and self.pay_mode != "hour_types" else ZERO
+            self.hourly = q(self.salary_full / self.month_norm) if self.month_norm and self.pay_mode != "hour_types" else ZERO
         # orele pe tipuri (instruire, examinare, zbor…) cu orele garantate și plata lor (apps.worktime.hour_types)
         self.hour_summary = hour_types.summarize(month.ctx, jd, month.typed(self.job.pk), month.rates.get(self.job.pk, []),
                                                  month.hour_types, month.guarantee_conf)
@@ -345,7 +396,16 @@ class LineCalc:
         # orele de sărbătoare peste normă se plătesc separat (SUPL, SARB), întregi
         ts = self.ts
         self.salary_hours = ((self._d("regular") + self._d("holiday_in_norm")) if "regular" in ts else self.hours - added) + added
-        self.worked_share = (min(self.salary_hours, self.norm) / self.norm) if self.norm else (ZERO if self.job.kind == "contractor" else Decimal("1"))
+        if self.norm:
+            self.worked_share = min(self.salary_hours, self.norm) / self.month_norm
+        else:
+            self.worked_share = ZERO if self.job.kind == "contractor" else Decimal("1")
+        # evidența globală (CM art. 99): în lunile perioadei salariul se plătește pentru norma lunii fără zilele de absență
+        # (orele graficului peste / sub normă se socotesc la sfârșitul perioadei — suplimentarele din pontaj)
+        self.summarized = ts.get("summarized")
+        if self.summarized and self.norm:
+            present = max(self.norm - self._d("norm_absent"), ZERO)
+            self.worked_share = present / self.month_norm
         # lucrările în acord ale lunii și îndeplinirea normei (din orele rapoartelor sau din pontaj)
         self.piece = month.production.get(self.job.pk)
         self.piece_pct = self.piece_basis = None
@@ -358,7 +418,9 @@ class LineCalc:
                      "salary_full": float(self.salary_full), "hourly": float(self.hourly), "timesheet": self.ts,
                      "tab_number": self.job.employee.tab_number, "name": self.job.employee.full_name(), "is_main": is_main,
                      "pay_mode": self.pay_mode, "hourly_rate": float(self.hourly_rate),
-                     "hour_types": self.hour_summary}
+                     "hour_types": self.hour_summary, "month_norm": float(self.month_norm)}
+        if self.summarized:
+            self.info["summarized"] = self.summarized
         if self.piece is not None:
             self.info["production"] = {"amount": float(self.piece.amount), "progressive": float(self.piece.progressive),
                                        "normed_hours": float(self.piece.normed_hours), "hours": float(self.piece_basis or 0),
@@ -425,6 +487,10 @@ class LineCalc:
             if self.hourly:
                 self._overtime(t.code, self.hourly, full=not increment_only)
         self._leave()
+        self._idle()
+        self._harmful()
+        self._guarantee()
+        self._meal_vouchers()
         if self.is_main:
             self._sick()
             self._incentives()
@@ -448,6 +514,164 @@ class LineCalc:
                 self.add(t.code, extra, base=s.progressive,
                          note=f"lucrările în acord progresiv {production.fmt(s.progressive, 2)} lei, îndeplinirea normei "
                               f"{production.fmt(self.piece_pct, 2)} %: {how}")
+
+    def _guarantee(self):
+        """Garanția la neîndeplinirea normei în acord (CM art. 161), pe fiecare raport de producție aprobat cu cauza scrisă:
+        din vina angajatorului — cel puțin câștigul mediu pe oră × orele lucrate la raport; fără vina părților — cel puțin
+        C.shortfall_nofault_pct % (2/3) din tariful categoriei × orele. Se plătește diferența dintre garanție și câștigul în acord
+        al raportului."""
+        s, m = self.piece, self.m
+        types = m.by_auto["piece_guarantee"]
+        if s is None or not s.shortfalls or not types or self.job.kind == "contractor":
+            return
+        c = m.const
+        avg = None
+        for x in s.shortfalls:
+            hours, earned = x["hours"], x["amount"]
+            if not hours or not x["complete"]:
+                continue
+            if x["cause"] == "employer":
+                if avg is None:
+                    avg, how = average_hourly(self.job, m.year, m.month, int(c("leave_avg_months", "3")))
+                    avg_note = (f"câștigul mediu pe oră {production.fmt(avg, 2)} lei ({how['months']} luni)" if avg is not None
+                                else "")
+                    if avg is None:
+                        avg, avg_note = self.hourly, f"fără istoric: tariful orar {production.fmt(self.hourly, 2)} lei"
+                rate, why = avg, f"din vina angajatorului — {avg_note}"
+            else:
+                pct = c("shortfall_nofault_pct", "66.6667")
+                rate = self.hourly * pct / 100
+                why = f"fără vina părților — {production.fmt(pct, 2)} % din tariful categoriei {production.fmt(self.hourly, 2)} lei"
+            guaranteed = q(rate * hours)
+            if guaranteed > earned:
+                self.add(types[0].code, guaranteed - earned, quantity=hours, base=rate,
+                         note=f"{x['ref']}: {production.fmt(hours)} ore × {production.fmt(rate, 2)} lei = {production.fmt(guaranteed, 2)} lei "
+                              f"({why}, CM art. 161), câștigul în acord {production.fmt(earned, 2)} lei")
+
+    def _idle_days(self):
+        """Zilele de staționare / șomaj tehnic ale raportului în lună: (ziua, felul, orele planificate, absența). Din celulele
+        pontajului (St / Șt, cu orele planificate „ph”), fără pontaj — din ordine (absențele lunii) și graficul de lucru."""
+        m, jd = self.m, self.jd
+        cells = m.ts_days.get(self.job.pk)
+        out = []
+        roster = m.rosters.get(self.job.pk)
+        for day in sorted(jd.days):
+            a = jd.absence(day)
+            if a is not None and (a.kind not in IDLE_KINDS or (a.employment_id and a.employment_id != self.job.pk)):
+                a = None
+            if cells is not None:
+                cell = cells.get(str(day.day)) or {}
+                code = cell.get("c")
+                if code not in worktime.IDLE_CODES:
+                    continue
+                kind = "idle" if code == "St" else "tech_unemployment"
+                hours = (Decimal(str(cell["ph"])) if "ph" in cell
+                         else worktime.planned_hours(m.ctx, jd, day, roster))
+            elif a is not None:
+                kind = a.kind
+                hours = worktime.planned_hours(m.ctx, jd, day, roster)
+            else:
+                continue
+            if a is not None and a.kind != kind:
+                a = None
+            if hours > 0:
+                out.append((day, kind, hours, a))
+        return out
+
+    def _idle(self):
+        """Staționarea (CM art. 80¹) și șomajul tehnic (CM art. 80): orele planificate ale zilelor St / Șt × salariul de bază pe
+        oră × procentul — cel din ordin, altfel cel din Constante după cauză (din vina angajatorului 100 %, fără vina părților
+        2/3, dar nu sub salariul minim pe oră, din vina salariatului 0; șomajul tehnic 50 %). Zilele fără ordin (codul pus de
+        mână în pontaj) — staționarea „fără vina părților”."""
+        m, c = self.m, self.m.const
+        if self.job.kind == "contractor" or not self.hourly:
+            return
+        groups = defaultdict(lambda: [ZERO, 0, []])
+        for day, kind, hours, a in self._idle_days():
+            cause = (a.cause if a is not None and a.cause else "nobody") if kind == "idle" else ""
+            pct = a.pay_pct if a is not None and a.pay_pct is not None else None
+            ref = (f"ordinul {a.order_item.order.reference()}" if a is not None and a.order_item_id and a.order_item.order.number
+                   else ("fără ordin (pontajul)" if a is None else ""))
+            g = groups[(kind, cause, pct, ref)]
+            g[0] += hours
+            g[1] += 1
+        if not groups:
+            return
+        min_hourly = c("min_salary") / c("min_salary_hours", "169") if c("min_salary_hours", "169") else ZERO
+        for (kind, cause, pct, ref), (hours, days, _x) in groups.items():
+            types = m.by_auto[kind]
+            if not types:
+                continue
+            if pct is None:
+                pct = (c("tech_unemployment_pct", "50") if kind == "tech_unemployment"
+                       else c({"employer": "idle_employer_pct", "nobody": "idle_nofault_pct", "worker": "idle_worker_pct"}[cause],
+                              {"employer": "100", "nobody": "66.6667", "worker": "0"}[cause]))
+            rate = self.hourly * pct / 100
+            floor = ""
+            if kind == "idle" and cause == "nobody" and rate < min_hourly * self.rate:
+                rate, floor = min_hourly * self.rate, f", ridicat la salariul minim pe oră {production.fmt(min_hourly, 2)} lei × norma {num(self.rate)}"
+            if not rate:
+                continue
+            label = ("șomaj tehnic (CM art. 80)" if kind == "tech_unemployment" else
+                     {"employer": "staționare din vina angajatorului", "nobody": "staționare fără vina părților",
+                      "worker": "staționare din vina salariatului"}[cause] + " (CM art. 80¹)")
+            self.add(types[0].code, rate * hours, quantity=hours, base=self.hourly, percent=pct,
+                     note=f"{label}: {days} zile, {production.fmt(hours)} ore × {production.fmt(self.hourly, 2)} lei × "
+                          f"{production.fmt(pct, 2)} %{floor}" + (f"; {ref}" if ref else ""))
+
+    def _harmful_hours(self) -> dict:
+        """Orele lucrate în condiții vătămătoare pe procent: ziua în subdiviziunea / funcția cu sporul (procentul mai mare
+        dintre ele), din pontaj; fără pontaj — orele planificate ale zilelor fără absență."""
+        m, jd = self.m, self.jd
+        cells = m.ts_days.get(self.job.pk)
+        roster = m.rosters.get(self.job.pk)
+        out = defaultdict(lambda: ZERO)
+        for day in sorted(jd.days):
+            sub_id, occ_id, _rate = jd.values_on(day)
+            sub, occ = m.ctx.subdivisions.get(sub_id), m.ctx.occupations.get(occ_id)
+            pct = max((x.harmful_pct for x in (sub, occ) if x is not None and x.harmful and x.harmful_pct), default=ZERO)
+            if not pct:
+                continue
+            if cells is not None:
+                hours = Decimal(str((cells.get(str(day.day)) or {}).get("h") or 0))
+            elif jd.absence(day) is None and not jd.is_suspended(day):
+                hours = worktime.planned_hours(m.ctx, jd, day, roster)
+            else:
+                hours = ZERO
+            if hours > 0:
+                out[pct] += hours
+        return out
+
+    def _harmful(self):
+        """Sporul pentru condiții vătămătoare (CM art. 139; mărimea — din contractul colectiv, scrisă la subdiviziune / funcție):
+        salariul de bază pe oră × orele lucrate în aceste condiții × procentul. Rândul personal NOCIV (spor stabilit
+        individual) îl înlocuiește."""
+        m = self.m
+        types = m.by_auto["harmful"]
+        if not types or self.job.kind == "contractor" or not self.hourly:
+            return
+        if self.rows().get("NOCIV"):
+            return
+        for pct, hours in sorted(self._harmful_hours().items()):
+            self.add(types[0].code, self.hourly * hours * pct / 100, quantity=hours, base=self.hourly, percent=pct,
+                     note=f"{production.fmt(hours)} ore în condiții vătămătoare × {production.fmt(self.hourly, 2)} lei × "
+                          f"{production.fmt(pct, 2)} % (subdiviziunea / funcția)")
+
+    def _meal_vouchers(self):
+        """Tichetele de masă din borderourile aprobate cu data în lună: partea peste valoarea neimpozabilă (facilitate
+        impozabilă, CF art. 19 lit. a¹)) — acumularea, și reținerea ei (tichetele sunt deja pe card)."""
+        m = self.m
+        for ln in m.meals.get(self.job.pk, []):
+            if not ln.taxable:
+                continue
+            doc = ln.voucher_list
+            note = (f"borderoul {doc.reference()}, luna {doc.month:02d}.{doc.year}: {ln.count} tichete × "
+                    f"({production.fmt(doc.value, 2)} − {production.fmt(doc.cap, 2)}) lei peste valoarea neimpozabilă")
+            for t in m.by_auto["meal_voucher"][:1]:
+                self.add(t.code, ln.taxable, quantity=ln.count, base=doc.value - doc.cap, note=note)
+            for t in m.by_auto["meal_voucher_offset"][:1]:
+                self.add(t.code, ln.taxable, quantity=ln.count,
+                         note=f"partea impozabilă a tichetelor de masă, acordată în natură (borderoul {doc.reference()})")
 
     def _piece_holiday(self, code):
         """În acord, munca în zilele de sărbătoare / repaus se plătește cel puțin cu dublul tarifelor în acord (CM art. 158):
@@ -849,9 +1073,9 @@ class LineCalc:
             return
         minimum = m.const("min_salary")
         target = q(minimum * self.rate * self.worked_share)
-        # salariul tarifar al timpului lucrat: salariul de funcție / tariful orar, plata orelor pe tipuri și lucrările în acord
-        # (nu sporurile, nici sporul acordului progresiv)
-        paid = sum((i["amount"] for i in self.items if i["type"].auto in ("salary", "hour_types", "piece")), ZERO)
+        # salariul tarifar al timpului lucrat: salariul de funcție / tariful orar, plata orelor pe tipuri, lucrările în acord și
+        # garanția lor (nu sporurile, nici sporul acordului progresiv)
+        paid = sum((i["amount"] for i in self.items if i["type"].auto in ("salary", "hour_types", "piece", "piece_guarantee")), ZERO)
         if target > paid:
             self.add(types[0].code, target - paid, base=target,
                      note=f"salariul minim {num(minimum)} × norma {num(self.rate)} × {float(self.worked_share) * 100:.4g} % lucrat = {target}; "

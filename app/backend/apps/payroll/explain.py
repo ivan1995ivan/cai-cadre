@@ -4,12 +4,15 @@ from decimal import Decimal
 
 # regula motorului (apps.payroll.engine) pentru fiecare cheie „auto”
 AUTO_HOW = {
-    "salary": ("salariul de funcție × norma raportului × orele lucrate / norma lunii (orele obișnuite + cele de sărbătoare în "
-               "limita normei); la modalitatea „tarif orar” — tariful orar × orele lucrate; la „pe tipuri de ore” — nu se calculează",
-               "оклад × ставка × отработанные часы / норма месяца (обычные + праздничные в пределах нормы); при способе «почасовой "
-               "тариф» — тариф × отработанные часы; при «по видам часов» — не начисляется",
-               "base salary × rate × hours worked / monthly norm (regular hours + holiday hours within the norm); for the “hourly "
-               "rate” mode — hourly rate × hours worked; for “by hour types” — not calculated"),
+    "salary": ("salariul de funcție × norma raportului × orele lucrate / norma lunii întregi (orele obișnuite + cele de sărbătoare "
+               "în limita normei; angajat / eliberat în lună — partea lui); la evidența globală — norma lunii fără zilele de "
+               "absență; la modalitatea „tarif orar” — tariful orar × orele lucrate; la „pe tipuri de ore” — nu se calculează",
+               "оклад × ставка × отработанные часы / норма всего месяца (обычные + праздничные в пределах нормы; принятый / "
+               "уволенный в месяце — его доля); при суммированном учёте — норма месяца без дней отсутствия; при способе "
+               "«почасовой тариф» — тариф × отработанные часы; при «по видам часов» — не начисляется",
+               "base salary × rate × hours worked / norm of the whole month (regular hours + holiday hours within the norm; hired / "
+               "leaving in the month — their share); with aggregate accounting — the month norm without absence days; for the "
+               "“hourly rate” mode — hourly rate × hours worked; for “by hour types” — not calculated"),
     "allowance": ("SalariuFunctie × partea lucrată × sporul fix (%) din raportul de muncă",
                   "SalariuFunctie × отработанная доля × постоянная надбавка (%) из трудового отношения",
                   "SalariuFunctie × worked share × fixed allowance (%) of the employment"),
@@ -95,6 +98,42 @@ AUTO_HOW = {
     "cas_min": ("C.cas_employer_pct % × (salariul minim × timpul lucrat − baza CAS reală), Legea 489/1999 art. 22",
                 "C.cas_employer_pct % × (минимальная зарплата × отработанное время − фактическая база), Закон 489/1999 ст. 22",
                 "C.cas_employer_pct % × (minimum wage × time worked − actual CAS base), Law 489/1999 art. 22"),
+    "idle": ("orele planificate ale zilelor de staționare (St) × salariul de bază pe oră × procentul din ordin sau, gol, după cauză: "
+             "din vina angajatorului C.idle_employer_pct %, fără vina părților C.idle_nofault_pct % (nu sub salariul minim pe oră), "
+             "din vina salariatului C.idle_worker_pct % (CM art. 80¹)",
+             "плановые часы дней простоя (St) × часовая ставка оклада × процент из приказа или, если пусто, по причине: по вине "
+             "работодателя C.idle_employer_pct %, без вины сторон C.idle_nofault_pct % (не ниже минимальной часовой зарплаты), "
+             "по вине работника C.idle_worker_pct % (ТК ст. 80¹)",
+             "planned hours of the downtime days (St) × hourly base salary × the order's percent or, if empty, by cause: the "
+             "employer's fault C.idle_employer_pct %, nobody's fault C.idle_nofault_pct % (not below the hourly minimum wage), "
+             "the employee's fault C.idle_worker_pct % (LC art. 80¹)"),
+    "tech_unemployment": ("orele planificate ale zilelor de șomaj tehnic (Șt) × salariul de bază pe oră × procentul din ordin (gol — "
+                          "C.tech_unemployment_pct %, CM art. 80)",
+                          "плановые часы дней технического простоя (Șt) × часовая ставка оклада × процент из приказа (пусто — "
+                          "C.tech_unemployment_pct %, ТК ст. 80)",
+                          "planned hours of the technical unemployment days (Șt) × hourly base salary × the order's percent "
+                          "(empty — C.tech_unemployment_pct %, LC art. 80)"),
+    "piece_guarantee": ("pe fiecare raport de producție cu norma neîndeplinită: orele lucrate × (din vina angajatorului — câștigul "
+                        "mediu pe oră; fără vina părților — C.shortfall_nofault_pct % din tariful categoriei) − câștigul în acord "
+                        "al raportului, dacă e mai mare (CM art. 161)",
+                        "по каждому отчёту о выработке с невыполненной нормой: отработанные часы × (по вине работодателя — "
+                        "средний часовой заработок; без вины сторон — C.shortfall_nofault_pct % тарифа разряда) − сдельный "
+                        "заработок по отчёту, если больше (ТК ст. 161)",
+                        "for each production report with the norm not met: hours worked × (the employer's fault — average hourly "
+                        "pay; nobody's fault — C.shortfall_nofault_pct % of the grade rate) − the report's piece-rate earnings, "
+                        "if higher (LC art. 161)"),
+    "harmful": ("salariul de bază pe oră × orele lucrate în condiții vătămătoare × procentul subdiviziunii / funcției (cel mai mare); "
+                "nu se calculează când angajatul are rândul personal NOCIV",
+                "часовая ставка оклада × часы во вредных условиях × процент подразделения / должности (больший); не "
+                "начисляется, если у работника есть персональная строка NOCIV",
+                "hourly base salary × hours worked in hazardous conditions × the department / post percent (the higher); not "
+                "calculated when the employee has a personal NOCIV row"),
+    "meal_voucher": ("tichetele din borderoul aprobat cu data în lună × (valoarea nominală − C.meal_voucher_cap lei neimpozabili)",
+                     "талоны из утверждённой ведомости с датой в месяце × (номинал − C.meal_voucher_cap лей без налога)",
+                     "vouchers from the approved list dated in the month × (face value − C.meal_voucher_cap lei tax-free)"),
+    "meal_voucher_offset": ("aceeași sumă ca partea impozabilă a tichetelor (sunt deja pe card, nu se plătesc în bani)",
+                            "та же сумма, что облагаемая часть талонов (они уже на карте, деньгами не выплачиваются)",
+                            "the same amount as the taxable part of the vouchers (already on the card, not paid in cash)"),
     "none": ("—", "—", "—"),
 }
 

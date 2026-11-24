@@ -56,9 +56,11 @@ def test_constants_history_and_type_validation(admin_client, seeded):
     assert bad.status_code == 400
     # sporurile HG 837/2016 (vechimea, categoria) și gărzile nu se mai preîncarcă; NOCIV rămâne (Codul muncii, art. 139)
     assert not PayType.objects.filter(code__in=("VECH", "CATEG", "GARDA")).exists() and PayType.objects.filter(code="NOCIV").exists()
-    # S4b: orele pe tipuri (ORE) intră în baza sindicatului; S5a: și acordul (ACORD, ACORDP)
-    assert PayType.objects.get(code="SINDICAT").base_codes == ["SAL", "ACORD", "ACORDP", "MINIM", "SPOR", "CUMUL", "ORE", "NOCIV", "NOAPTE",
-                                                               "SARB", "SUPL", "CO", "PREMIU"]
+    # S4b: orele pe tipuri (ORE) intră în baza sindicatului; S5a: și acordul (ACORD, ACORDP); S5b: garanția acordului, sporul
+    # vătămător, staționarea și șomajul tehnic
+    assert PayType.objects.get(code="SINDICAT").base_codes == ["SAL", "ACORD", "ACORDP", "GARANT", "MINIM", "SPOR", "CUMUL", "ORE",
+                                                               "NOCIV", "VATAM", "NOAPTE", "SARB", "SUPL", "STATIONARE", "SOMAJT",
+                                                               "CO", "PREMIU"]
     ok = admin_client.post("/api/payroll/types/", {"code": "TRANSP", "name_ro": "Compensație transport", "formula": "fixed",
                                                    "taxable": False, "cas": False, "cnam": False}, format="json")
     assert ok.status_code == 201 and PayType.objects.get(code="TRANSP").is_system is False

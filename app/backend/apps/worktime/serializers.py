@@ -116,7 +116,7 @@ class WorkScheduleSerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkSchedule
         fields = ["id", "code", "name", "kind", "kind_label", "weekly_hours", "week", "cycle", "cycle_start", "holidays_off",
-                  "note", "is_active", "jobs_count"]
+                  "accounting_months", "accounting_start", "note", "is_active", "jobs_count"]
 
     def validate(self, attrs):
         kind = attrs.get("kind", getattr(self.instance, "kind", "week"))
@@ -130,6 +130,12 @@ class WorkScheduleSerializer(serializers.ModelSerializer):
         for code in [*(week or []), *(cycle or [])]:
             if code and code not in codes and not str(code).replace(",", ".").replace(".", "").isdigit():
                 raise serializers.ValidationError({"week": f"Tura „{code}” nu există în clasificatorul de ture."})
+        # evidența globală (CM art. 99): perioada de calcul de cel mult un an; începe cu prima zi a lunii
+        months = attrs.get("accounting_months", getattr(self.instance, "accounting_months", 1))
+        if months is None or not 1 <= months <= 12:
+            raise serializers.ValidationError({"accounting_months": "Perioada de calcul este de la 1 la 12 luni (CM art. 99)."})
+        if attrs.get("accounting_start"):
+            attrs["accounting_start"] = attrs["accounting_start"].replace(day=1)
         return attrs
 
 

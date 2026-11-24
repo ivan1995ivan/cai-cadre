@@ -22,7 +22,7 @@ class OccupationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Occupation
         fields = NAMED + ["category", "category_name", "isco_code", "weekly_hours", "base_leave_days", "extra_leave_days",
-                          "harmful", "notes"]
+                          "harmful", "harmful_pct", "notes"]
 
     def get_category_name(self, obj):
         return obj.category.local_name(user_lang(self)) if obj.category_id else ""
@@ -98,7 +98,7 @@ class SubdivisionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Subdivision
-        fields = NAMED + ["parent", "parent_name", "kind", "harmful", "extra_leave_days", "reduced_hours", "head_name",
+        fields = NAMED + ["parent", "parent_name", "kind", "harmful", "harmful_pct", "extra_leave_days", "reduced_hours", "head_name",
                           "users"]
 
     def validate_parent(self, parent):

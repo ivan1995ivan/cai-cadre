@@ -26,9 +26,10 @@ from rest_framework.exceptions import ValidationError
 ZERO, CENT = Decimal("0"), Decimal("0.01")
 SETTINGS_KEY = "guarantee_absences"
 # felurile de absență care reduc garanția (apps.leave.models.ABSENCE_KINDS): tot ce nu e muncă — concediile (cel de odihnă se
-# plătește din medie, care cuprinde deja orele), boala, îngrijirea copilului; fără deplasare și formare profesională
+# plătește din medie, care cuprinde deja orele), boala, îngrijirea copilului, staționarea și șomajul tehnic (plătite după
+# regula lor); fără deplasare și formare profesională
 DEFAULT_REDUCING = ["annual", "extra", "unpaid", "maternity", "paternity", "childcare", "childcare_unpaid", "study", "days_off",
-                    "sick"]
+                    "sick", "idle", "tech_unemployment"]
 NOT_REDUCING = ("travel", "training")
 
 

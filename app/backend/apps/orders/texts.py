@@ -3,7 +3,7 @@
 Textul se poate schimba în Administrare → Setări → Tipuri de ordine (câmpul „Textul punctului”) sau direct în ordin. Câmpurile
 din acolade: {angajat}, {tab}, {functia}, {sectia}, {norma}, {salariul}, {sporuri}, {din}, {pana}, {zile}, {an_de},
 {an_pana}, {motivul}, {destinatia}, {scopul}, {suma}, {suma_text}, {procent}, {sanctiunea}, {abaterea},
-{fel}, {proba}, {termen}, {data}, {ore}, {suplinit}, {cum}, {plata}, {ordin_anulat}, {text}, {acumulari}, {tarife}. Tabelul „Acumulări și rețineri”
+{fel}, {proba}, {termen}, {data}, {ore}, {suplinit}, {cum}, {plata}, {cauza}, {plata_timp}, {ordin_anulat}, {text}, {acumulari}, {tarife}. Tabelul „Acumulări și rețineri”
 ({acumulari}) se adaugă la sfârșitul punctului dacă textul-model nu îl are.
 """
 from collections import defaultdict
@@ -64,6 +64,10 @@ DEFAULT_POINTS = {
     "overtime": "Se antrenează la muncă suplimentară {angajat}, {functia}, {sectia}, la {din}, {ore} ore, cu plata conform "
                 "legislației.",
     "hours_change": "Se stabilește {angajat} (nr. de tabel {tab}), {functia}, {sectia}, începând cu {din}: {text}.",
+    "idle": "Se declară staționare pentru {angajat} (nr. de tabel {tab}), {functia}, {sectia}, de la {din} până la {pana}, "
+            "{cauza}; timpul de staționare {plata_timp}{motiv}.",
+    "tech_unemployment": "Se instituie șomaj tehnic pentru {angajat} (nr. de tabel {tab}), {functia}, {sectia}, de la {din} "
+                         "până la {pana}, cu plata {plata_timp}{motiv}.",
     "salary_set": "Se stabilește {angajat} (nr. de tabel {tab}), {functia}, {sectia}, salariul de funcție de {salariul} "
                   "lei{sporuri}, începând cu {din}.",
     "allowance": "Se stabilește {angajat} (nr. de tabel {tab}), {functia}, {sectia}, spor la salariu de {procent}%, "
@@ -184,10 +188,37 @@ def context(item) -> dict:
                     f", cu începere de la {_d(p.get('date_from'))}" if p.get("date_from") else ""),
         "ordin_anulat": p.get("cancelled_label") or "", "text": p.get("text") or "", "data": _d(item.order.date),
         **combination_text(p, order_code),
+        **idle_text(p, order_code),
     })
     if order_code in ("substitution", "combination", "acting") and job is not None and (p.get("mode") or "on_base") != "separate":
         ctx["functia"] = job.occupation.name_ro  # funcția de bază (cumularea e pe raportul de bază)
     return ctx
+
+
+IDLE_CAUSE_TEXT = {"employer": "din vina angajatorului", "nobody": "fără vina angajatorului și a salariatului",
+                   "worker": "din vina salariatului"}
+
+
+def idle_text(p: dict, order_code: str) -> dict:
+    """{cauza} și {plata_timp} la staționare (CM art. 80¹) și șomajul tehnic (CM art. 80): procentul scris în ordin sau cel
+    legal după cauză."""
+    if order_code not in ("idle", "tech_unemployment"):
+        return {}
+    pct = p.get("pay_pct")
+    has_pct = pct not in (None, "")
+    if order_code == "tech_unemployment":
+        return {"cauza": "", "plata_timp": f"de {_fmt_rate(pct)}% din salariul de bază" if has_pct
+                else "de cel puțin 50% din salariul de bază"}
+    cause = p.get("cause") or "nobody"
+    if cause == "worker" and not has_pct:
+        return {"cauza": IDLE_CAUSE_TEXT[cause], "plata_timp": "nu se plătește"}
+    if has_pct:
+        paid = f"se plătește cu {_fmt_rate(pct)}% din salariul de bază" + (", dar nu mai puțin decât salariul minim pe oră"
+                                                                if cause == "nobody" else "")
+    else:
+        paid = ("se plătește integral (100% din salariul de bază)" if cause == "employer"
+                else "se plătește cu 2/3 din salariul de bază, dar nu mai puțin decât salariul minim pe oră")
+    return {"cauza": IDLE_CAUSE_TEXT.get(cause, ""), "plata_timp": paid}
 
 
 def combination_text(p: dict, order_code: str) -> dict:

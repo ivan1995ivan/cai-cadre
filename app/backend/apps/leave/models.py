@@ -23,13 +23,22 @@ ABSENCE_KINDS = [
     ("travel", "Deplasare în interes de serviciu"),
     ("training", "Formare profesională"),
     ("sick", "Concediu medical"),
+    # S5b: timpul fără producție, din ordin (CM art. 80, 80¹) — se plătesc după cauză (apps.payroll.engine)
+    ("idle", "Staționare"),
+    ("tech_unemployment", "Șomaj tehnic"),
 ]
+# staționarea: cauza (CM art. 80¹) — din vina angajatorului se plătește integral, fără vina nimănui — cel puțin 2/3 din salariul
+# de bază pe oră (nu sub salariul minim pe oră), din vina salariatului — nu se plătește
+IDLE_CAUSES = [("employer", "Din vina angajatorului"), ("nobody", "Fără vina angajatorului și a salariatului"),
+               ("worker", "Din vina salariatului")]
+IDLE_KINDS = ("idle", "tech_unemployment")
 
 # tipul de ordin → tipul absenței
 ORDER_ABSENCE = {
     "leave_annual": "annual", "leave_extra": "extra", "leave_unpaid": "unpaid", "leave_maternity": "maternity",
     "leave_paternity": "paternity", "leave_childcare": "childcare", "leave_childcare_unpaid": "childcare_unpaid",
     "leave_study": "study", "days_off_paid": "days_off", "travel": "travel", "training": "training",
+    "idle": "idle", "tech_unemployment": "tech_unemployment",
 }
 # tipul absenței → tipul de ordin (cererile de concediu se transformă în ordine)
 ABSENCE_ORDER = {kind: code for code, kind in ORDER_ABSENCE.items()}
@@ -38,7 +47,7 @@ SUSPENDING = {"childcare", "childcare_unpaid"}
 # concediile socotite în zile calendaristice fără sărbători; celelalte — zile calendaristice simple
 WITHOUT_HOLIDAYS = {"annual", "extra", "unpaid", "study", "days_off"}
 # ce se poate cere printr-o cerere de concediu (deplasările, perfecționarea și boala nu se cer)
-REQUEST_KINDS = [k for k in ABSENCE_KINDS if k[0] in ABSENCE_ORDER and k[0] not in ("travel", "training")]
+REQUEST_KINDS = [k for k in ABSENCE_KINDS if k[0] in ABSENCE_ORDER and k[0] not in ("travel", "training", *IDLE_KINDS)]
 
 
 class Absence(models.Model):
@@ -52,6 +61,9 @@ class Absence(models.Model):
     work_year_to = models.DateField("Anul de muncă până la", null=True, blank=True)
     destination = models.CharField("Destinația / locul", max_length=200, blank=True)
     note = models.CharField("Observații", max_length=300, blank=True)
+    # staționarea / șomajul tehnic: cauza și procentul plății scrise în ordin (gol — cel din Constantele salarizării)
+    cause = models.CharField("Cauza (staționarea)", max_length=10, choices=IDLE_CAUSES, blank=True, default="", db_default="")
+    pay_pct = models.DecimalField("Plata (% din salariul de bază)", max_digits=6, decimal_places=2, null=True, blank=True)
     recalled_on = models.DateField("Rechemat la", null=True, blank=True)
     days_returned = models.PositiveSmallIntegerField("Zile neutilizate (rechemare)", default=0)
     order_item = models.ForeignKey("orders.OrderItem", on_delete=models.SET_NULL, null=True, blank=True,

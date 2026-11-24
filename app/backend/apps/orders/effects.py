@@ -418,6 +418,30 @@ def leave(item, order, user):
     return result
 
 
+def idle(item, order, user):
+    """Staționarea (CM art. 80¹) / șomajul tehnic (CM art. 80): absența pe perioadă (pontajul — St / Șt), cu cauza și procentul
+    plății; procentul gol — cel din Constantele salarizării după cauză (apps.payroll.engine)."""
+    from apps.leave.models import IDLE_CAUSES
+
+    p = item.params or {}
+    code = order.order_type.code
+    cause = p.get("cause") or ("nobody" if code == "idle" else "")
+    if code == "idle" and cause not in {c for c, _ in IDLE_CAUSES}:
+        _err(item, "alegeți cauza staționării.")
+    pct = p_dec(item, "pay_pct")
+    if pct is not None and not (0 <= pct <= 100):
+        _err(item, "procentul plății este între 0 și 100.")
+    if code == "tech_unemployment" and pct is not None and pct < 50:
+        _err(item, "șomajul tehnic se plătește cu cel puțin 50% din salariul de bază (CM art. 80).")
+    if code == "idle" and pct is not None and cause == "employer" and pct < 100:
+        _err(item, "staționarea din vina angajatorului se plătește integral — 100% (CM art. 80¹).")
+    if code == "idle" and pct is not None and cause == "nobody" and pct * 3 < 200:
+        _err(item, "staționarea fără vina părților se plătește cu cel puțin 2/3 din salariul de bază (CM art. 80¹).")
+    result = leave(item, order, user)
+    Absence.objects.filter(pk=result.get("absence")).update(cause=cause if code == "idle" else "", pay_pct=pct)
+    return result
+
+
 def undo_leave(item, result):
     Absence.objects.filter(pk=result.get("absence")).delete()
     if result.get("suspend_history"):
@@ -620,6 +644,7 @@ EFFECTS = {
     "terminate": (terminate, undo_terminate),
     "leave": (leave, undo_leave),
     "travel": (leave, undo_leave),
+    "idle": (idle, undo_leave),
     "leave_recall": (leave_recall, undo_leave_recall),
     "incentive": (incentive, undo_incentive),
     "sanction": (sanction, undo_sanction),

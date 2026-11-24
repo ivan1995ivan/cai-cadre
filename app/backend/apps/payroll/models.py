@@ -70,7 +70,15 @@ class PayType(models.Model):
         ("aid", "Ajutor material din ordine"), ("advance", "Avansul plătit (se ia din plăți, pe fluturaș)"),
         ("income_tax", "Impozitul pe venit (se reține la plată)"), ("cnam", "Prima de asigurare medicală (se reține la plată)"),
         ("cas", "Contribuția de asigurări sociale (angajator)"),
-        ("cas_min", "CAS pe diferența până la baza minimă (salariul minim)"), ("none", "—"),
+        ("cas_min", "CAS pe diferența până la baza minimă (salariul minim)"),
+        # S5b: timpul fără producție, condițiile vătămătoare, tichetele de masă
+        ("idle", "Staționarea (CM art. 80¹): orele zilelor St × salariul de bază pe oră × % după cauză"),
+        ("tech_unemployment", "Șomajul tehnic (CM art. 80): orele zilelor Șt × salariul de bază pe oră × %"),
+        ("piece_guarantee", "Acord: garanția la neîndeplinirea normei (CM art. 161), din rapoartele de producție"),
+        ("harmful", "Sporul pentru condiții vătămătoare: % din subdiviziune / funcție × salariul de bază pe oră × ore"),
+        ("meal_voucher", "Tichetele de masă: partea peste valoarea neimpozabilă (facilitate, din borderoul aprobat)"),
+        ("meal_voucher_offset", "Tichetele de masă acordate în natură (se scad din suma de plată)"),
+        ("none", "—"),
     ]
     code = models.CharField("Codul", max_length=24, unique=True)
     name_ro = models.CharField("Denumire (RO)", max_length=200)
@@ -78,7 +86,7 @@ class PayType(models.Model):
     name_en = models.CharField("Denumire (EN)", max_length=200, blank=True)
     category = models.CharField("Categoria", max_length=10, choices=CATEGORIES, default="accrual")
     formula = models.CharField("Formula", max_length=12, choices=FORMULAS, default="fixed")
-    auto = models.CharField("Calculul automat", max_length=16, choices=AUTO, default="none")
+    auto = models.CharField("Calculul automat", max_length=24, choices=AUTO, default="none")
     percent = models.DecimalField("Procentul (la formulele cu %)", max_digits=7, decimal_places=3, default=ZERO)
     expression = models.TextField("Formula (expresia)", blank=True,
                                   help_text="De ex. TarifOrar * OreNoapte * C.night_pct / 100 (apps.payroll.formula)")
@@ -346,6 +354,64 @@ class ExemptionDependent(models.Model):
         if self.date_from and next_month(self.date_from) > first:
             return False
         return self.date_to is None or self.date_to >= first
+
+
+class MealVoucherList(models.Model):
+    """Borderoul tichetelor de masă (Legea 166/2017, HG 227/2018): tichetele pentru luna lucrată, transferate la data
+    borderoului. Numărul — din pontajul lunii lucrate: o zi lucrată = un tichet; la munca în schimburi — orele ÷ 8, orele din
+    schimbul de noapte ÷ 7, rotunjit (HG 227/2018 pct. 12). Aprobat — partea peste valoarea neimpozabilă intră în calculul
+    salariului lunii datei (facilitate impozabilă, CF art. 19 lit. a¹)), fără să se plătească în bani."""
+
+    STATUSES = [("draft", "Ciornă"), ("approved", "Aprobat")]
+    number = models.CharField("Numărul", max_length=30, blank=True)
+    date = models.DateField("Data transferului", default=timezone.localdate)
+    year = models.PositiveSmallIntegerField("Anul lucrat")
+    month = models.PositiveSmallIntegerField("Luna lucrată")
+    subdivision = models.ForeignKey(Subdivision, on_delete=models.PROTECT, null=True, blank=True, related_name="+",
+                                    verbose_name="Subdiviziunea (gol — toată întreprinderea)")
+    value = models.DecimalField("Valoarea nominală a tichetului (lei)", max_digits=8, decimal_places=2)
+    cap = models.DecimalField("Valoarea neimpozabilă a tichetului (lei)", max_digits=8, decimal_places=2)
+    status = models.CharField(max_length=10, choices=STATUSES, default="draft", db_index=True)
+    note = models.TextField("Observații", blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+    created_at = models.DateTimeField(default=timezone.now)
+    approved_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+    approved_at = models.DateTimeField(null=True, blank=True)
+    deletion_mark = models.BooleanField("Marcat pentru ștergere", default=False)
+
+    class Meta:
+        ordering = ["-date", "-id"]
+        verbose_name = "Borderoul tichetelor de masă"
+
+    def __str__(self):
+        return f"Borderoul tichetelor de masă nr. {self.number or '—'} din {self.date:%d.%m.%Y}"
+
+    def reference(self) -> str:
+        return f"nr. {self.number} din {self.date:%d.%m.%Y}" if self.number else f"din {self.date:%d.%m.%Y}"
+
+
+class MealVoucherLine(models.Model):
+    """Un angajat în borderou: zilele și orele lucrate, numărul tichetelor (socotit sau scris de mână), suma și partea
+    impozabilă."""
+
+    voucher_list = models.ForeignKey(MealVoucherList, on_delete=models.CASCADE, related_name="lines")
+    employee = models.ForeignKey(Employee, on_delete=models.PROTECT, related_name="+")
+    employment = models.ForeignKey(Employment, on_delete=models.PROTECT, related_name="+")
+    days = models.PositiveSmallIntegerField("Zile lucrate", default=0)
+    day_hours = models.DecimalField("Ore în schimburi de zi", max_digits=7, decimal_places=2, default=Decimal("0"))
+    night_hours = models.DecimalField("Ore în schimburi de noapte", max_digits=7, decimal_places=2, default=Decimal("0"))
+    shifts = models.BooleanField("Munca în schimburi (orele ÷ 8 / ÷ 7)", default=False)
+    count = models.PositiveSmallIntegerField("Tichete", default=0)
+    manual = models.BooleanField("Numărul scris de mână", default=False)
+    amount = models.DecimalField("Suma (lei)", max_digits=12, decimal_places=2, default=Decimal("0"))
+    taxable = models.DecimalField("Partea impozabilă (lei)", max_digits=12, decimal_places=2, default=Decimal("0"))
+    note = models.CharField("Explicația", max_length=300, blank=True)
+    sort = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ["sort", "id"]
+        verbose_name = "Rândul borderoului tichetelor de masă"
+        constraints = [models.UniqueConstraint(fields=["voucher_list", "employment"], name="uniq_meal_voucher_line")]
 
 
 class Payroll(models.Model):

@@ -21,6 +21,12 @@ class PayrollConfig(AppConfig):
         printing_views.SAMPLE_BUILDERS["annual_card"] = payment_printing.sample_annual
         printing_views.SAMPLE_BUILDERS["exemption_request"] = payment_printing.sample_exemption
         printing_views.SAMPLE_BUILDERS["pay_item_change"] = change_printing.sample_change
+        from . import meal_vouchers
+        from .models import MealVoucherLine, MealVoucherList
+
+        printing_views.SAMPLE_BUILDERS["meal_vouchers"] = meal_vouchers.sample
+        register(MealVoucherList)
+        register(MealVoucherLine, parent="voucher_list")
         register(PayItemChange)
         register(PayItemChangeLine, parent="change")
         register(OccupationPayItem, parent="occupation")

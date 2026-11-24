@@ -1,7 +1,7 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from . import it_park_views, payment_views, views
+from . import it_park_views, meal_views, payment_views, views
 
 router = DefaultRouter()
 router.register("constants", views.PayConstantViewSet, basename="pay-constant")
@@ -15,6 +15,7 @@ router.register("items", views.PayrollItemViewSet, basename="payroll-item")
 router.register("payments", payment_views.PaymentViewSet, basename="payment")
 router.register("payment-lines", payment_views.PaymentLineViewSet, basename="payment-line")
 router.register("fiscal-regimes", it_park_views.FiscalRegimeViewSet, basename="fiscal-regime")
+router.register("meal-vouchers", meal_views.MealVoucherViewSet, basename="meal-voucher")
 
 urlpatterns = [
     path("debts/", payment_views.DebtsView.as_view()),

@@ -22,6 +22,7 @@ SYSTEM_TEMPLATES: list = [
     ("exemption_request", "standard", "Cererea privind acordarea scutirilor (anexa 6)", "portrait", {}),
     ("pay_item_change", "standard", "Modificarea acumulărilor planificate", "landscape", {}),
     ("production_report", "standard", "Raportul de producție (lucrările în acord)", "landscape", {}),
+    ("meal_vouchers", "standard", "Borderoul tichetelor de masă", "landscape", {}),
     ("it_park_tax", "standard", "Impozitul unic IT Park — calculul lunii (IU17)", "portrait", {}),
     ("isapti17", "standard", "ISAPTI17 — salariile achitate de rezidentul IT Park", "portrait", {}),
     ("it_park_note", "standard", "Nota anuală pentru angajat (IT Park)", "portrait", {}),

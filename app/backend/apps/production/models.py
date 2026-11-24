@@ -181,6 +181,12 @@ class ProductionReport(models.Model):
     brigade = models.ForeignKey(Brigade, on_delete=models.PROTECT, null=True, blank=True, related_name="reports",
                                 verbose_name="Brigada")
     status = models.CharField(max_length=10, choices=STATUSES, default="draft", db_index=True)
+    # garanția la neîndeplinirea normei (CM art. 161): din vina angajatorului — cel puțin salariul mediu pe orele lucrate;
+    # fără vina părților — cel puțin 2/3 din salariul de bază (tariful categoriei); gol — norma îndeplinită sau din vina
+    # lucrătorului (se plătește doar producția)
+    SHORTFALL = [("employer", "Din vina angajatorului"), ("nobody", "Fără vina angajatorului și a lucrătorului")]
+    shortfall_cause = models.CharField("Neîndeplinirea normei", max_length=10, choices=SHORTFALL, blank=True, default="",
+                                       db_default="")
     note = models.TextField("Observații", blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
     created_at = models.DateTimeField(default=timezone.now)

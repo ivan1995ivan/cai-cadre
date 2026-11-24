@@ -26,6 +26,8 @@ ABSENCE_T = {
     "travel": ("Deplasare în interes de serviciu", "Командировка", "Business trip"),
     "training": ("Formare profesională", "Профессиональное обучение", "Vocational training"),
     "sick": ("Concediu medical", "Больничный", "Sick leave"),
+    "idle": ("Staționare", "Простой", "Downtime"),
+    "tech_unemployment": ("Șomaj tehnic", "Технический простой", "Technical unemployment"),
 }
 CHILDCARE = ("maternity", "childcare", "childcare_unpaid")
 

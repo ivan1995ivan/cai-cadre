@@ -289,8 +289,8 @@ class ProductionReportSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductionReport
         fields = ["id", "deletion_mark", "number", "date", "kind", "kind_label", "subdivision", "subdivision_name", "brigade",
-                  "brigade_name", "status", "status_label", "note", "created_at", "approved_at", "lines", "members", "totals",
-                  "problems", "who"]
+                  "brigade_name", "status", "status_label", "shortfall_cause", "note", "created_at", "approved_at", "lines", "members",
+                  "totals", "problems", "who"]
         read_only_fields = ["number", "status", "created_at", "approved_at"]
 
     def get_totals(self, obj):

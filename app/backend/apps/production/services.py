@@ -207,6 +207,8 @@ def recompute(report: ProductionReport, strict: bool = False) -> list:
             problems.append(f"{who}: la raportul pe brigadă rândurile nu au angajat (suma se împarte membrilor)")
         if ln.operation.progressive and report.kind == "individual" and ln.hours is None:
             problems.append(f"{who}: lucrarea în acord progresiv cere orele lucrate (din ele se socotește îndeplinirea normei)")
+        if report.shortfall_cause and report.kind == "individual" and ln.hours is None:
+            problems.append(f"{who}: la norma neîndeplinită dați orele lucrate (garanția se socotește pe ele, CM art. 161)")
         try:
             compute_line(ln, report.date)
         except ValidationError as exc:
@@ -254,6 +256,8 @@ class JobMonth:
     hours: Decimal = ZERO
     hours_complete: bool = True  # toate rândurile au orele lucrate
     refs: list = field(default_factory=list)  # [(referința raportului, suma)]
+    # garanția la neîndeplinirea normei (CM art. 161): rapoartele cu cauza scrisă — [{ref, cause, amount, hours, complete}]
+    shortfalls: list = field(default_factory=list)
 
     def note(self) -> str:
         parts = [f"{ref}: {fmt(amount, 2)} lei" for ref, amount in self.refs[:6]]
@@ -266,6 +270,7 @@ def month_summary(first: date, last: date, employment_ids=None) -> dict:
     out = defaultdict(JobMonth)
     reports = ProductionReport.objects.filter(status="approved", deletion_mark=False, date__gte=first, date__lte=last)
     per_ref = defaultdict(lambda: ZERO)
+    short = {}  # (raportul de muncă, raportul de producție) → partea lui din raportul cu norma neîndeplinită
     lines = ProductionLine.objects.filter(report__in=reports, employment__isnull=False).select_related("operation", "report")
     members = ProductionMember.objects.filter(report__in=reports).select_related("report")
     if employment_ids is not None:
@@ -281,6 +286,14 @@ def month_summary(first: date, last: date, employment_ids=None) -> dict:
         else:
             s.hours += ln.hours
         per_ref[(ln.employment_id, ln.report.date, ln.report_id, ln.report.reference())] += ln.amount
+        if ln.report.shortfall_cause:
+            x = short.setdefault((ln.employment_id, ln.report_id), {"ref": ln.report.reference(), "cause": ln.report.shortfall_cause,
+                                                                    "amount": ZERO, "hours": ZERO, "complete": True})
+            x["amount"] += ln.amount
+            if ln.hours is None:
+                x["complete"] = False
+            else:
+                x["hours"] += ln.hours
     for m in members.order_by("report__date", "report_id", "sort", "id"):
         s = out[m.employment_id]
         s.amount += m.amount
@@ -288,8 +301,16 @@ def month_summary(first: date, last: date, employment_ids=None) -> dict:
         s.normed_hours += m.normed_hours
         s.hours += m.hours
         per_ref[(m.employment_id, m.report.date, m.report_id, m.report.reference() + " (brigada)")] += m.amount
+        if m.report.shortfall_cause:
+            x = short.setdefault((m.employment_id, m.report_id), {"ref": m.report.reference() + " (brigada)",
+                                                                  "cause": m.report.shortfall_cause, "amount": ZERO,
+                                                                  "hours": ZERO, "complete": True})
+            x["amount"] += m.amount
+            x["hours"] += m.hours
     for (job_id, _day, _pk, ref), amount in sorted(per_ref.items(), key=lambda kv: (kv[0][1], kv[0][2])):
         out[job_id].refs.append((ref, amount))
+    for (job_id, _pk), x in sorted(short.items(), key=lambda kv: kv[0][1]):
+        out[job_id].shortfalls.append(x)
     return dict(out)
 
 

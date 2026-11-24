@@ -40,7 +40,8 @@ KIND_CATEGORY = {"main": "101", "main_student": "101", "substitute": "101", "int
                  "external": "123", "contractor": "105"}
 # absențele declarate ca perioade separate (col. 5–7) — codul categoriei
 ABSENCE_CATEGORY = {"annual": "160", "extra": "16012", "study": "16011", "unpaid": "159", "childcare": "157",
-                    "childcare_unpaid": "158", "paternity": "165"}
+                    "childcare_unpaid": "158", "paternity": "165",
+                    "tech_unemployment": "179"}  # șomajul tehnic, cu plata lui ca bază (S5b — de verificat în Particularitățile CNAS)
 SICK_EMPLOYER_CATEGORY = "15311"  # indemnizația pentru incapacitate temporară plătită din mijloacele angajatorului
 SICK_ACCIDENT_CATEGORY = "15321"  # accidentul de muncă / boala profesională, din mijloacele angajatorului (Particularitățile 2026)
 # IRM19: categoria riscului asigurat (col. 5) după tipul ordinului de concediu
@@ -131,7 +132,7 @@ def ipc21_rows(year: int, month: int) -> dict:
         e = emp_lines[0].employee
         n += 1
         absences = list(Absence.objects.filter(employee=e, date_from__lte=last, date_to__gte=first))
-        leave_base = ZERO
+        leave_base = tech_base = ZERO
         groups = defaultdict(lambda: {"base": ZERO, "start": None, "end": None, "code": ""})
         sick = accident = ZERO
         final_lines = [ln for ln in emp_lines if ln.it_park]
@@ -163,6 +164,8 @@ def ipc21_rows(year: int, month: int) -> dict:
                     accident += it.amount
                 elif t.auto == "leave":
                     leave_base += it.amount if t.cas else ZERO
+                elif t.auto == "tech_unemployment":
+                    tech_base += it.amount if t.cas else ZERO
                 elif t.cas:
                     g["base"] += it.amount
         main_code = next((g["code"] for g in groups.values() if g["code"]), "") or it_code
@@ -174,10 +177,17 @@ def ipc21_rows(year: int, month: int) -> dict:
                 continue
             if final_lines and a.kind in ("annual", "extra", "unpaid"):
                 continue  # în regim: concediul plătit e în venitul asigurat, cel neplătit pe toată luna — 159 de mai sus
+            if a.kind == "tech_unemployment":
+                rows.append(_t2(n, e, max(a.date_from, first), min(a.date_to, last), cat, cas_pct if tech_base else ZERO,
+                                main_code, tech_base, ZERO))
+                tech_base = ZERO
+                continue
             base = leave_base if a.kind == "annual" else ZERO
             leave_base = ZERO if a.kind == "annual" else leave_base
             rows.append(_t2(n, e, max(a.date_from, first), min(a.date_to, last), cat, cas_pct if base else ZERO, main_code,
                             base, ZERO))
+        if tech_base:  # șomajul tehnic fără ordin în lună (codul pus de mână în pontaj) — cu salariul
+            rows.append(_t2(n, e, first, last, KIND_CATEGORY.get("main"), cas_pct, main_code, tech_base, ZERO))
         if leave_base:  # concediul plătit fără absență în lună (de ex. calculat înainte) — cu salariul
             rows.append(_t2(n, e, first, last, "160", cas_pct, main_code, leave_base, ZERO))
         s = next((a for a in absences if a.kind == "sick"), None)

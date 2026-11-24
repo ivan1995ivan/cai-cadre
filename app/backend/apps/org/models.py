@@ -52,6 +52,10 @@ class Occupation(Named):
     base_leave_days = models.PositiveSmallIntegerField("Concediu de bază (zile)", default=28)
     extra_leave_days = models.PositiveSmallIntegerField("Concediu suplimentar (zile)", default=0)
     harmful = models.BooleanField("Condiții de muncă vătămătoare (CM art. 96, 121, 139)", default=False)
+    # S5b: sporul pentru condiții vătămătoare (CM art. 139; mărimea — din contractul colectiv), din salariul de bază pe oră ×
+    # orele lucrate pe această funcție; între funcție și subdiviziune se ia procentul mai mare
+    harmful_pct = models.DecimalField("Sporul pentru condiții vătămătoare (% din salariul de bază pe oră)", max_digits=6,
+                                      decimal_places=2, default=Decimal("0"), db_default=Decimal("0"))
     notes = models.CharField("Observații", max_length=300, blank=True)
 
     class Meta(Named.Meta):
@@ -181,6 +185,7 @@ ORDER_EFFECTS = [
     ("leave_recall", "Rechemare / amânare concediu"),
     ("travel", "Delegare"),
     ("worktime", "Timp de muncă (grafic, ore, zi de odihnă)"),
+    ("idle", "Staționare / șomaj tehnic (CM art. 80, 80¹)"),
     ("incentive", "Stimulare (premiu, ajutor material)"),
     ("sanction", "Sancțiune disciplinară"),
     ("qualification", "Formare profesională"),
@@ -239,6 +244,8 @@ class Subdivision(Named):
                                verbose_name="Subdiviziunea-părinte")
     kind = models.CharField("Tipul", max_length=12, choices=KINDS, default="section")
     harmful = models.BooleanField("Condiții de muncă vătămătoare (CM art. 96, 121, 139)", default=False)
+    harmful_pct = models.DecimalField("Sporul pentru condiții vătămătoare (% din salariul de bază pe oră)", max_digits=6,
+                                      decimal_places=2, default=Decimal("0"), db_default=Decimal("0"))
     extra_leave_days = models.PositiveSmallIntegerField("Concediu suplimentar pentru condiții (zile)", default=0)
     reduced_hours = models.DecimalField("Ore pe săptămână (zi redusă)", max_digits=4, decimal_places=1, null=True,
                                         blank=True)

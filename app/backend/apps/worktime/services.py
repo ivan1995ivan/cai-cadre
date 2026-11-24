@@ -24,7 +24,7 @@ from django.db.models import Q
 from rest_framework.exceptions import ValidationError
 
 from apps.core.models import SystemSetting
-from apps.leave.models import WITHOUT_HOLIDAYS, Absence
+from apps.leave.models import IDLE_KINDS, WITHOUT_HOLIDAYS, Absence
 from apps.org import calendar as holidays
 from apps.org.models import Subdivision
 from apps.staff.models import Employment
@@ -35,6 +35,7 @@ from .models import CalendarDay, JobSchedule, Roster, RosterLine, ShiftType, Tim
 ABSENCE_CODES = {
     "annual": "C", "extra": "C", "unpaid": "Cn", "maternity": "Cc", "paternity": "Cc", "childcare": "Cc",
     "childcare_unpaid": "Cc", "study": "Cs", "days_off": "Ls", "travel": "D", "training": "F", "sick": "Cm",
+    "idle": "St", "tech_unemployment": "Șt",
 }
 SUSPENDED, REST, HOLIDAY = "Sp", "R", "Sn"
 CODE_LABELS = {
@@ -341,11 +342,20 @@ def _days_header(ctx: Context) -> list:
 
 
 # --- tabela de pontaj ----------------------------------------------------------------------------------------------
+IDLE_CODES = ("St", "Șt")  # staționarea, șomajul tehnic — zilele lor au orele planificate („ph”), care se plătesc după cauză
+
+
 def _cell(ctx: Context, jd: JobDays, day: date, roster_days) -> dict | None:
     a = jd.absence(day)
     if a is not None:
         if a.kind in WITHOUT_HOLIDAYS and ctx.cal.is_holiday(day):
             return {"c": HOLIDAY}
+        if a.kind in IDLE_KINDS:
+            # staționarea / șomajul tehnic acoperă doar zilele cu tură planificată; repausul și sărbătoarea rămân ale lor
+            planned = planned_hours(ctx, jd, day, roster_days)
+            if planned <= 0:
+                return {"c": HOLIDAY if ctx.cal.is_holiday(day) else REST}
+            return {"c": ABSENCE_CODES[a.kind], "ph": float(planned)}
         return {"c": ABSENCE_CODES.get(a.kind, "?")}
     if jd.is_suspended(day):
         return {"c": SUSPENDED}
@@ -381,6 +391,49 @@ def split_overtime(hours: Decimal, first: Decimal) -> tuple:
     hours = max(hours, Decimal("0"))
     head = min(hours, first)
     return head, hours - head
+
+
+def accounting_period(schedule, year: int, month: int):
+    """Perioada de calcul a evidenței globale (CM art. 99) care cuprinde luna: (prima lună, ultima lună) ca date (ziua 1);
+    None — evidența e lunară (perioada de o lună, sau luna e înaintea primei perioade)."""
+    n = int(getattr(schedule, "accounting_months", 1) or 1)
+    if schedule is None or n <= 1:
+        return None
+    start = schedule.accounting_start or date(year, 1, 1)
+    k = (year * 12 + month - 1) - (start.year * 12 + start.month - 1)
+    if k < 0:
+        return None
+    first_index = start.year * 12 + start.month - 1 + (k // n) * n
+    last_index = first_index + n - 1
+    return date(first_index // 12, first_index % 12 + 1, 1), date(last_index // 12, last_index % 12 + 1, 1)
+
+
+def _day_norm(ctx: Context, jd: JobDays, day: date) -> Decimal:
+    """Norma zilei lucrătoare din calendar pentru raport (orele săptămânale / 5 − ziua scurtată, × norma)."""
+    if not ctx.cal.is_working(day):
+        return Decimal("0")
+    _s, _o, rate = jd.values_on(day)
+    return (jd.weekly_hours(day, ctx.subdivisions, ctx.occupations) / 5 - ctx.cal.hours_less(day)) * rate
+
+
+def _period_before(jd: JobDays, first_month: date, year: int, month: int) -> dict:
+    """Orele lunilor de dinainte din perioada de calcul (din tabelele de pontaj ale raportului): obișnuite, norma, norma
+    zilelor de absență și lunile fără pontaj."""
+    out = {"regular": Decimal("0"), "norm": Decimal("0"), "norm_absent": Decimal("0"), "months": [], "missing": []}
+    cur = first_month
+    while (cur.year, cur.month) < (year, month):
+        lines = list(TimesheetLine.objects.filter(employment=jd.job, timesheet__year=cur.year, timesheet__month=cur.month,
+                                                  timesheet__deletion_mark=False).values_list("totals", flat=True))
+        if lines:
+            for t in lines:
+                t = t or {}
+                for k in ("regular", "norm", "norm_absent"):
+                    out[k] += Decimal(str(t.get(k) or 0))
+            out["months"].append(f"{cur:%m.%Y}")
+        else:
+            out["missing"].append(f"{cur:%m.%Y}")
+        cur = (cur + timedelta(days=32)).replace(day=1)
+    return out
 
 
 def line_totals(ctx: Context, jd: JobDays, days: dict, roster_days=None) -> dict:
@@ -419,17 +472,75 @@ def line_totals(ctx: Context, jd: JobDays, days: dict, roster_days=None) -> dict
         elif cell.get("c"):
             codes[cell["c"]] += 1
     norm = ctx.norm(jd) if jd.days else Decimal("0")
-    period = max(regular - norm, Decimal("0"))
+    # norma zilelor lucrătoare din calendar în care raportul n-a lucrat din cauza unei absențe (concediu, boală, staționare…)
+    norm_absent = Decimal("0")
+    idle = defaultdict(lambda: Decimal("0"))
+    for key, cell in days.items():
+        code = cell.get("c") or ""
+        if Decimal(str(cell.get("h") or 0)) > 0 or not code or code in (REST, HOLIDAY) or not key.isdigit():
+            continue
+        day = ctx.days[int(key) - 1] if 1 <= int(key) <= len(ctx.days) else None
+        if day is not None and day in jd.days:
+            norm_absent += _day_norm(ctx, jd, day)
+        if code in IDLE_CODES:
+            idle[code] += Decimal(str(cell.get("ph") or 0))
+    out_extra = {"norm_absent": _q(norm_absent)}
+    if idle:
+        out_extra["idle"] = {k: _q(v) for k, v in sorted(idle.items())}
+    js = jd.schedule(max(jd.days)) if jd.days else None
+    acc = accounting_period(js.schedule, ctx.year, ctx.month) if js is not None else None
+    if acc is None:
+        period = max(regular - norm, Decimal("0"))  # evidența lunară: orele peste norma lunii
+    else:
+        # evidența globală (CM art. 99): în lunile perioadei nu sunt suplimentare pe lună; în ultima — orele obișnuite ale
+        # perioadei peste norma ei (fără zilele de absență)
+        first_m, last_m = acc
+        last = (ctx.year, ctx.month) == (last_m.year, last_m.month)
+        info = {"months": js.schedule.accounting_months, "from": f"{first_m:%m.%Y}", "to": f"{last_m:%m.%Y}", "last": last}
+        period = Decimal("0")
+        if last:
+            before = _period_before(jd, first_m, ctx.year, ctx.month)
+            p_regular = before["regular"] + regular
+            p_norm = before["norm"] - before["norm_absent"] + norm - norm_absent
+            period = max(p_regular - p_norm, Decimal("0"))
+            info.update({"regular": _q(p_regular), "norm": _q(p_norm), "missing_months": before["missing"]})
+        out_extra["summarized"] = info
     if period:
         a, b = split_overtime(period, first)
-        ot_first, ot_next, regular = ot_first + a, ot_next + b, regular - period
+        # orele trec din cele obișnuite în suplimentare (la evidența globală — cel mult cele ale lunii; restul au fost lucrate
+        # în lunile de dinainte ale perioadei)
+        ot_first, ot_next, regular = ot_first + a, ot_next + b, regular - min(period, regular)
     special = holiday + rest_work
     in_norm = min(special, max(norm - regular, Decimal("0")))
     return {"days": int(worked), "hours": _q(hours), "night": _q(night), "holiday": _q(holiday), "rest_work": _q(rest_work),
             "regular": _q(regular), "norm": _q(norm), "overtime": _q(ot_first + ot_next), "overtime_2": _q(ot_first),
             "overtime_over": _q(ot_next), "overtime_period": _q(period), "overtime_days": dict(sorted(ot_days.items(), key=lambda kv: int(kv[0]))),
             "holiday_in_norm": _q(in_norm), "holiday_over_norm": _q(special - in_norm),
-            "missing": _q(max(norm - regular - in_norm, Decimal("0"))), "codes": dict(sorted(codes.items()))}
+            "missing": _q(max(norm - regular - in_norm, Decimal("0"))), "codes": dict(sorted(codes.items())), **out_extra}
+
+
+def merge_totals(a: dict | None, b: dict) -> dict:
+    """Totalurile a două linii de pontaj ale aceluiași raport de muncă (transfer în lună): numerele adunate, codurile și
+    orele pe zile unite; evidența globală — a ultimei linii."""
+    if not a:
+        return dict(b)
+    out = dict(a)
+    for k, v in b.items():
+        if isinstance(v, bool) or k == "summarized":
+            out[k] = v
+        elif isinstance(v, (int, float)):
+            out[k] = _q(Decimal(str(out.get(k) or 0)) + Decimal(str(v)))
+        elif isinstance(v, dict):
+            merged = dict(out.get(k) or {})
+            for kk, vv in v.items():
+                if isinstance(vv, (int, float)) and not isinstance(vv, bool):
+                    merged[kk] = _q(Decimal(str(merged.get(kk) or 0)) + Decimal(str(vv)))
+                else:
+                    merged[kk] = vv
+            out[k] = merged
+        else:
+            out[k] = v
+    return out
 
 
 @transaction.atomic
@@ -478,6 +589,10 @@ def set_cell(line: TimesheetLine, day: int, code: str, hours=None, night=None) -
     code = (code or "").strip()
     if not code and hours in (None, "", 0, "0"):
         days[str(day)] = {"c": "", "m": 1}
+    elif code in IDLE_CODES:
+        jd0 = _line_job_days(line, ctx)
+        roster0 = _roster_days(line)
+        days[str(day)] = {"c": code, "m": 1, "ph": float(planned_hours(ctx, jd0, d, roster0))}
     elif code in CODE_LABELS:
         days[str(day)] = {"c": code, "m": 1}
     else:
@@ -493,15 +608,26 @@ def set_cell(line: TimesheetLine, day: int, code: str, hours=None, night=None) -
             cell["hol"] = 1
         days[str(day)] = cell
     line.days = days
+    line.totals = line_totals(ctx, _line_job_days(line, ctx), days, _roster_days(line))
+    line.save(update_fields=["days", "totals"])
+    return line
+
+
+def _line_job_days(line: TimesheetLine, ctx: Context) -> JobDays:
+    """Zilele raportului de muncă al liniei în subdiviziunea tabelei (cu absențele lunii)."""
+    ts = line.timesheet
     jd = JobDays(line.employment, ctx.days, list(line.employment.employee.absences.filter(
         date_from__lte=ctx.days[-1], date_to__gte=ctx.days[0])))
     ids = ts.subdivision.descendant_ids()
     jd.days = {x for x in ctx.days if jd.active(x) and jd.values_on(x)[0] in ids}
+    return jd
+
+
+def _roster_days(line: TimesheetLine):
+    ts = line.timesheet
     roster = RosterLine.objects.filter(roster__subdivision=ts.subdivision, roster__year=ts.year, roster__month=ts.month,
                                        employment=line.employment).first()
-    line.totals = line_totals(ctx, jd, days, roster.days or {} if roster else None)
-    line.save(update_fields=["days", "totals"])
-    return line
+    return (roster.days or {}) if roster else None
 
 
 def typed_by_job(year: int, month: int, employment_ids) -> dict:

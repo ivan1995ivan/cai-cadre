@@ -47,6 +47,10 @@ class WorkSchedule(models.Model):
     cycle = models.JSONField("Turele ciclului, la rând", default=list, blank=True)
     cycle_start = models.DateField("Ciclul începe la", null=True, blank=True)
     holidays_off = models.BooleanField("Sărbătorile sunt zile libere", default=True)
+    # evidența globală (cumulată) a timpului de muncă (CM art. 99): perioada de calcul în luni (1 — evidența lunară) și luna
+    # cu care începe prima perioadă (gol — ianuarie); suplimentarele = orele peste norma perioadei, în ultima ei lună
+    accounting_months = models.PositiveSmallIntegerField("Perioada de calcul (luni, evidența globală)", default=1, db_default=1)
+    accounting_start = models.DateField("Prima perioadă de calcul începe cu luna", null=True, blank=True)
     note = models.CharField("Observații", max_length=300, blank=True)
     is_active = models.BooleanField(default=True)
     deletion_mark = models.BooleanField("Marcat pentru ștergere", default=False)
