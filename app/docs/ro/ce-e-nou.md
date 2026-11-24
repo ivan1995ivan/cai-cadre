@@ -1,5 +1,23 @@
 # Ce e nou
 
+## Etapa S5b: fabrica — timpul fără producție, sporul vătămător, evidența globală, tichetele de masă
+
+- **Staționarea și șomajul tehnic prin ordin** (tipurile noi „Staționare”, „Șomaj tehnic”, colective): perioada, cauza (din vina
+  angajatorului — integral; fără vina părților — 2/3, nu sub salariul minim pe oră; din vina salariatului — neplătit), procentul;
+  în pontaj singure ca **St / Șt** cu orele planificate; în salariu — **STATIONARE**, **SOMAJT** (CM art. 80, 80¹).
+- **Ordinele colective**: „Adaugă subdiviziunea” (toți angajații secției într-un clic) și „La toate punctele” (aceiași parametri).
+- **Garanția la neîndeplinirea normei** în acord (CM art. 161), pe raportul de producție: din vina angajatorului — media pe oră,
+  fără vina părților — 2/3 din tariful categoriei; tipul **GARANT**.
+- **Sporul pentru condiții vătămătoare** din subdiviziune / funcție (câmpul nou „Sporul vătămător, %”), plătit singur pe orele
+  lucrate acolo — tipul **VATAM**; rândul personal NOCIV îl înlocuiește.
+- **Evidența globală a timpului de muncă** (CM art. 99): perioada de calcul pe graficul de lucru (1–12 luni); suplimentarele —
+  la sfârșitul perioadei, salariul — pentru norma lunii fără absențe.
+- **Tichetele de masă** (*Salarizare → Tichete de masă*): borderoul pe luna lucrată, din pontaj (o zi — un tichet; în schimburi —
+  ore ÷ 8, noaptea ÷ 7), numărul de mână, aprobarea, tiparul; partea peste 70 lei — în salariu (TICHET), reținută (TICHETN).
+- **Reparat**: salariul celui angajat sau eliberat în lună se plătește pentru partea lui din norma lunii întregi (până acum —
+  salariul întreg), iar salariul pe oră e salariul / norma lunii întregi; un raport de muncă în două tabele de pontaj (transfer
+  în lună) intră în calcul cu orele din amândouă.
+
 ## Etapa S5a: producția — salarizarea în acord
 
 - **Modulul opțional „Producția”** (Constante → Module, oprit implicit) — pentru fabrici și ateliere.

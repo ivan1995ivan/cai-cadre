@@ -111,5 +111,8 @@ plată a rebutului parțial se scrie pe rând, în raport (din contractul colect
 sărbători în acord socotit pe câștigul mediu pe oră al lunii în acord; orele lucrate în acord luate din pontaj când rândurile
 nu le au.
 
-**Ce urmează (S5b):** staționarea pe vinovați (CM art. 80¹), garanția la neîndeplinirea normei (CM art. 161), șomajul tehnic,
-evidența globală a timpului, tichetele de masă, sporul pentru condiții vătămătoare.
+**Garanția la neîndeplinirea normei (S5b).** În antetul raportului, câmpul „Neîndeplinirea normei (CM art. 161)”: din vina
+angajatorului — cel puțin câștigul mediu pe oră × orele lucrate la raport; fără vina părților — cel puțin 2/3 din tariful orar al
+categoriei × orele. Salariul plătește diferența până la câștigul în acord al raportului — tipul **GARANT**. Cu cauza scrisă, orele
+lucrate sunt obligatorii pe fiecare rând. Detaliile, cu staționarea, șomajul tehnic, sporul vătămător și evidența globală — în
+*Fabrica: timpul fără producție, sporul vătămător, evidența globală*.

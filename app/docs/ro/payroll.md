@@ -13,6 +13,10 @@ un rând pe fiecare **raport de muncă** (de bază, cumul, suplinire, contract d
   acord” (ACORD) — suma lucrărilor, cu rebutul plătit după vinovat, și „Acord progresiv” (ACORDP) peste normă; la modalitatea
   „În acord” fără salariul de funcție, suplimentarele și noaptea din tariful orar al categoriei; vezi *Producția: salarizarea
   în acord*;
+- **timpul fără producție** (S5b): staționarea și șomajul tehnic din ordine (zilele St / Șt din pontaj × salariul pe oră × %
+  după cauză — STATIONARE, SOMAJT), garanția la neîndeplinirea normei în acord (GARANT), sporul pentru condiții vătămătoare
+  din subdiviziune / funcție pe orele lucrate acolo (VATAM), partea impozabilă a tichetelor de masă din borderoul aprobat cu
+  reținerea ei (TICHET, TICHETN); vezi *Fabrica: timpul fără producție…* și *Tichetele de masă*;
 - **cumularea funcțiilor / suplinirea / interimatul** pe același contract (CM art. 156) — tipul „Plata pentru cumularea
   funcțiilor / suplinire” (CUMUL): % din salariul propriu sau al funcției cumulate × partea lucrată × zilele cumulării, suma
   fixă × zilele, sau orele × tariful; cumulul (intern / extern) e linie proprie, cu salariul lui;

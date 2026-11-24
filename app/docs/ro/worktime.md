@@ -9,6 +9,10 @@ Raporturi de muncă → „Graficul de lucru”), cu data de la care e valabil �
 grafic, raportul se socotește 5 zile pe săptămână cu orele funcției (40 / 35 / 30 h pe săptămână) înmulțite cu norma: la
 0,5 normă — 4 ore pe zi. Graficul pe ture nu se micșorează după normă; la cumul se pun mai puține ture.
 
+**Evidența globală a timpului de muncă** (CM art. 99): la graficul de lucru — „Perioada de calcul, luni” (1 — lunară; 2–12) și
+luna cu care începe prima perioadă. Suplimentarele se socotesc la sfârșitul perioadei, din toate lunile ei; salariul lunar — pe
+norma lunii fără absențe. Vezi *Fabrica: timpul fără producție, sporul vătămător, evidența globală*.
+
 **Tipurile de ore** (setarea *Tipuri de ore*): instruire, examinare, zbor… — coloanele orelor pe tipuri din pontaj, cu
 tariful și orele garantate pe raportul de muncă. Absențele care reduc orele garantate și suspendarea — în setarea *Odihna
 între ture și turele de noapte pe lună*. Vezi *Tipuri de ore, tarife pe funcție și orele garantate*.

@@ -9,7 +9,10 @@ instruire, examinare…) cu orele garantate sau mixt; cumularea funcțiilor / su
 separată de cumul — [docs/ro/worktime/hour-types.md](docs/ro/worktime/hour-types.md).
 Pentru fabrici — modulul opțional **Producția** (salarizarea în acord): grila tarifară, lucrările cu normele și tarifele lor,
 brigăzile cu coeficienții de participare, rapoartele de producție (rebutul pe vinovați, acordul progresiv), din care se
-calculează salariul — [docs/ro/production.md](docs/ro/production.md).
+calculează salariul — [docs/ro/production.md](docs/ro/production.md). Timpul fără producție — staționarea și șomajul tehnic
+prin ordin, garanția la neîndeplinirea normei, sporul pentru condiții vătămătoare din subdiviziune / funcție, evidența globală a
+timpului de muncă — [docs/ro/factory-time.md](docs/ro/factory-time.md); tichetele de masă (borderoul din pontaj, partea
+impozabilă în salariu) — [docs/ro/payroll/meal-vouchers.md](docs/ro/payroll/meal-vouchers.md).
 
 Produsul a fost făcut la început pentru un spital de stat (vezi istoricul de mai jos și [PLAN.md](PLAN.md)); trecerea la
 sectorul privat — [PLAN-SRL.md](PLAN-SRL.md) (etapa S1: fără Stemă, fondator și actele de stat).

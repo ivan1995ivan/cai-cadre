@@ -2,7 +2,9 @@
 
 **Ordin nou:** alegeți tipul (grupat pe A–G: raporturi de muncă, concedii, timp de muncă, salarizare și stimulare,
 disciplină, formare profesională și SSM, organizatorice), data și angajatul (la ordinele colective — mai mulți). Titlul,
-temeiurile legale și preambulul vin din tipul ordinului și se pot schimba.
+temeiurile legale și preambulul vin din tipul ordinului și se pot schimba. La **ordinele colective** (de ex. staționarea, șomajul
+tehnic) se pot adăuga **toți angajații unei subdiviziuni** („Adaugă subdiviziunea”, cu parametrii primului punct), iar butonul
+**„La toate punctele”** de pe un punct copiază parametrii lui (perioada, cauza, procentul) la celelalte.
 
 **Antetul**, ca în 1C — eticheta în stânga câmpului, pe două coloane: în stânga *Nr. și data* (numărul gol = următorul la
 semnare), titlul, **temeiurile legale** și preambulul; în dreapta temeiul (cererea, demersul), punctele finale, semnatarul

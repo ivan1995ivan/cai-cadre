@@ -10,7 +10,9 @@ suplimentar), Cn concediu neplătit, Cs concediu de studii, Cm concediu medical,
 A absențe. Formarea profesională cu menținerea salariului nu are notație în model — se pune F (notație proprie).
 
 **Corectarea de mână**: clic pe celulă — tura, orele lucrate (și de noapte) sau notația (A, Șt, St, Dt, R, Sn se pun de
-mână). Celulele scrise de mână rămân la „Recalculează” (sunt subliniate); „Recalculează tot” le șterge.
+mână). Celulele scrise de mână rămân la „Recalculează” (sunt subliniate); „Recalculează tot” le șterge. **St** (staționare) și
+**Șt** (șomaj tehnic) vin singure din ordinele „Staționare” / „Șomaj tehnic”, pe zilele cu tură planificată, cu orele planificate
+ale zilei (pe care salariul le plătește după cauză); puse de mână, primesc tot orele planificate.
 
 **Totalurile** pe rând: zile și ore lucrate, ore de noapte, ore în zile de sărbătoare, norma lunii pentru raport (zilele
 lucrătoare × orele pe zi × norma), orele suplimentare (+) sau nelucrate (−), zilele pe notații (repaus, sărbători,

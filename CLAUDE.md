@@ -36,6 +36,11 @@ pornească de unde s-a rămas, nu de la zero.
   și administratorul se dau în asistentul de instalare (doar local, prin tunel
   SSH — `docs/instalare.md`). Regimul de probă ține 30 de zile de la instalare,
   apoi doar citire — licența o emite Anatol.
+- **Instalată — cu date demo** (2026-11-24, cerut de Anatol, ca să verifice S1–S5a pe
+  `https://cai-cadre.integratii.md`): stiva reconstruită cu codul de la `14f9718`, instalarea prin API-ul asistentului
+  din containerul `app` (PostgreSQL `db` / `caicadre` / `caicadre_app`), administratorul `anatol`, „Demo Producție” SRL
+  (`crm_demo`, utilizatorii pe roluri — `docs/instalare.md`); modulul Producția — oprit. Prima copie cu aplicația:
+  `cai-cadre-2026-11-24`. **Baza e demonstrativă**: pentru date reale — bază nouă, instalare curată.
 
 - **Stiva — pornită** (2026-11-17, Ion): `.env` cu parole generate și
   `TUNNEL_TOKEN` (tunel propriu), toate cele cinci servicii `healthy`,
@@ -140,11 +145,35 @@ pornească de unde s-a rămas, nu de la zero.
   progresive (contractul colectiv); dublul la sărbători pe câștigul mediu pe oră al lunii în acord; orele în acord din pontaj
   când rândurile nu le au. **Mutat în S5b:** garanția la neîndeplinirea normei (CM art. 161), alături de staționare.
 
+- **S5b „fabrica: timpul fără producție” — gata** (2026-11-24, hotărât de Anatol: staționarea / șomajul tehnic din ordin,
+  evidența globală pe graficul de lucru, tichetele — borderou + salariu, sporul vătămător automat din subdiviziune / funcție).
+  **Staționarea / șomajul tehnic**: tipurile de ordin `idle` / `tech_unemployment` (efectul `idle`, colective) → `Absence`
+  (`idle`, `tech_unemployment`, cu `cause` și `pay_pct`) → pontajul St / Șt cu orele planificate (`ph`), doar pe zilele cu tură;
+  salariul: STATIONARE / SOMAJT = orele × salariul pe oră × % (cauza: 100 / 66,6667 nu sub salariul minim pe oră / 0; șomajul
+  50 %), constantele `idle_*`, `tech_unemployment_pct`; IPC21 categoria 179; ordinele colective: „Adaugă subdiviziunea”
+  (`orders/<id>/add-subdivision/`), „La toate punctele” (`items/<id>/copy-params/`). **Garanția CM art. 161**:
+  `ProductionReport.shortfall_cause` (employer / nobody; orele obligatorii) → GARANT = max(garanția − câștigul raportului),
+  media pe oră (`engine.average_hourly`, din `PayrollLine.info`) / 2/3 din tariful categoriei; intră în MINIM. **Sporul
+  vătămător**: `harmful_pct` pe `Subdivision` / `Occupation` (procentul mai mare) → VATAM = salariul pe oră × orele lucrate
+  acolo, pe zile, din pontaj; rândul personal NOCIV îl înlocuiește. **Evidența globală**: `WorkSchedule.accounting_months` /
+  `accounting_start`, `worktime.accounting_period`; în pontaj fără suplimentare lunară, în ultima lună suplimentarele perioadei
+  (din liniile lunilor de dinainte), `norm_absent`; salariul = norma lunii fără absențe. **Tichetele**: `MealVoucherList` /
+  `MealVoucherLine` (seria TM, `apps/payroll/meal_vouchers.py`, `meal_views.py`, tiparul `meal_vouchers`), din pontajul lunii
+  lucrate (o zi — un tichet; în schimburi zi ÷ 8 + noapte ÷ 7, rotunjit — HG 227/2018 pct. 12, verificat în textul HG din
+  01.2026), numărul de mână, aprobarea → TICHET (partea peste `meal_voucher_cap` 70) + reținerea TICHETN; `meal_voucher_value`
+  livrat 0. **Reparat**: salariul celui angajat / eliberat în lună = partea din norma lunii întregi (`Month.full_norm`), salariul
+  pe oră = salariul / norma lunii întregi; un raport în două tabele de pontaj — totalurile unite (`worktime.merge_totals`).
+  Câmpurile noi au `db_default` (migrațiile vechi din teste). Interfața: Salarizare → Tichete de masă, ordinele (cauza, %),
+  raportul de producție, graficul de lucru, subdiviziunea / funcția; `docs/ro|ru/factory-time.md`,
+  `docs/ro|ru/payroll/meal-vouchers.md`. Verificat: 257 de teste, typecheck, build. **De verificat de om / contabilitate:**
+  articolele CM (80, 80¹, 99, 161) în redacția 2026, categoria 179 în IPC21, ridicarea la salariul minim pe oră la timp
+  parțial, suplimentarele perioadei „2 ore / restul”, limitele tichetelor 35 / 70 și CAS / CNAM pe partea impozabilă, un tichet
+  pe zi la timp parțial.
+
 ## Următorii pași (de aici pornește sesiunea următoare)
 
-0. **Deschiderea**: (a) ~~Public Hostname~~ — făcut. (b) asistentul de
-   instalare, doar local: `ssh -L 3960:127.0.0.1:3960 <utilizator>@<server>`,
-   `http://127.0.0.1:3960`, valorile din `docs/instalare.md`. (c) proba
+0. **Deschiderea**: (a) ~~Public Hostname~~ — făcut. (b) ~~asistentul de
+   instalare~~ — făcut 2026-11-24, cu date demo (vezi Status). (c) proba
    restaurării (`./restore-check.sh`) după prima copie cu aplicația instalată.
 1. **Sursa adevărului pentru cod**: `app/` din acest depozit; schimbările se fac
    și se comit aici.

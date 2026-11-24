@@ -36,6 +36,16 @@ salariul mediu 17 200 → 17 400, temeiurile vechi; sporul unic pentru orele sup
 Cererile de scutire „pe an” devin cereri cu valabilitate de la / până la, persoanele întreținute — rânduri; cererile cu „S”
 (abrogată) apar „De verificat”.
 
+**Timpul fără producție, sporul vătămător, tichetele de masă (S5b)** — pentru cine configurează:
+- tipurile de calcul noi, automate: **STATIONARE** (staționarea), **SOMAJT** (șomajul tehnic), **GARANT** (garanția acordului),
+  **VATAM** (sporul vătămător din subdiviziune / funcție), **TICHET** (partea impozabilă a tichetelor) și reținerea **TICHETN**;
+  STATIONARE, SOMAJT, GARANT, VATAM intră în baza sindicatului / pensiei alimentare livrate;
+- constantele noi: `idle_employer_pct` 100, `idle_nofault_pct` 66,6667, `idle_worker_pct` 0, `tech_unemployment_pct` 50,
+  `shortfall_nofault_pct` 66,6667, `meal_voucher_value` 0 (scrieți valoarea tichetului), `meal_voucher_min` 35,
+  `meal_voucher_cap` 70, `meal_voucher_night_pct` 50;
+- salariul lunar al celui angajat / eliberat în lună se plătește din norma lunii întregi (până acum — salariul întreg);
+- vezi *Fabrica: timpul fără producție, sporul vătămător, evidența globală* și *Tichetele de masă*.
+
 **Salarizarea în acord (S5a)** — pentru cine configurează:
 - tipurile de calcul noi **ACORD** („Salarizarea în acord”: lucrările din rapoartele de producție aprobate) și **ACORDP**
   („Acord progresiv”: sporul peste normă pe lucrările marcate „progresiv”) — automate, impozabile, cu CAS și CNAM, intră în
