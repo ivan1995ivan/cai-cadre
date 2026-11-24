@@ -200,9 +200,14 @@ pornească de unde s-a rămas, nu de la zero.
   `tacho_download` (28 de zile) și `tacho_infringement` (14 zile). Interfața: Salarizare → Tahograful (descărcări / zilele șoferului /
   încălcările), panoul și „Țările din tahograf” în foaia de parcurs; `docs/ro|ru/transport.md` secțiunea 4. Verificat: 279 de teste
   (fișiere G1 / G2v2 construite după specificație), typecheck, build. **De verificat:** pe fișiere .ddd reale (G1, G2, G2v2); fără card =
-  odihnă; compensarea (prima odihnă ≥ 9 h + deficit); termenul de 28 de zile în RM; pachetul de mobilitate UE neaplicat. **Urmează:** (c) GPS
-  + KPI; apoi S6 aviația. **Instrucțiunea Word pentru firma de transport** (cerută de Anatol: de la angajat, acte, ordine, vehicul, cursă,
-  diurnă, constante — până la salariu; cu video și link în program) — de făcut după (b).
+  odihnă; compensarea (prima odihnă ≥ 9 h + deficit); termenul de 28 de zile în RM; pachetul de mobilitate UE neaplicat. Reparat după capturi: odihna tăiată
+  de marginea datelor (începutul / sfârșitul descărcării) nu mai e judecată ca „redusă”; zilele se opresc la ora descărcării.
+- **Instrucțiunea pentru firma de transport** — gata (2026-11-24, cerută de Anatol: de la angajat, acte, ordin, vehicul, constante, cursă,
+  diurnă, tahograf — până la salariu; Word de descărcat + video care rulează într-o filă nouă, din program): `app/docs/files/`
+  (`transport-instructiune.docx`, 28 de pagini, 28 de capturi; `transport-video.webm`, ~4 min, VP9, subtitrări), servite public de
+  `/api/help/files/<nume>` (Word ca atașament, video cu Range), legate din Ajutor → Transportul (RO / RU). Se refac cu
+  `app/tools/ghid-transport/` (copia de probă cu date demo, Playwright, docx) — README acolo. **Urmează:** (c) GPS + KPI; apoi S6
+  aviația.
 
 ## Următorii pași (de aici pornește sesiunea următoare)
 
@@ -282,7 +287,7 @@ inventa alt model — șabloanele sunt în `/srv/projects/tolea` și
 ## Structura depozitului
 
 ```
-app/                 CAI CADRE 1.6.0 (Dockerfile, backend/ Django, frontend/ React, docs/ ro|ru, PLAN.md)
+app/                 CAI CADRE 1.6.0 (Dockerfile, backend/ Django, frontend/ React, docs/ ro|ru + files/ (ghidurile Word / video), PLAN.md)
 docs/                instrucțiuni pentru cine configurează serverul (instalare.md)
 docker-compose.yml   stiva de pe server (db, backup, app, web, cloudflared)
 backup.sh, backups/  copia zilnică: dump + fișierele instanței + oglinda media; copiile nu intră în git

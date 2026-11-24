@@ -5,6 +5,10 @@ parcurs**: șoferii, vehiculul, plecarea și întoarcerea, km și țările parcu
 singură în calculul salariului lunii întoarcerii: **plata pe km** și **diurna** fiecărui șofer, socotită pe zile și țări după
 Regulamentul aprobat prin HG nr. 10/2012.
 
+**Instrucțiunea pas cu pas pentru firma de transport** — de la angajat, acte și ordin la vehicul, constante, cursă, diurnă,
+tahograf și salariu: [descarcă documentul Word](/api/help/files/transport-instructiune.docx) ·
+[vezi video-ul (se deschide într-o filă nouă)](/api/help/files/transport-video.webm).
+
 ## Pentru omul de la ecran
 
 **1. Cursa** (*Salarizare → Curse (foi de parcurs) → „Cursă nouă”*, seria **FP**):

@@ -2,6 +2,8 @@
 
 ## Etapa S6b, pasul (b): tahograful — cardul șoferului și limitele de conducere / odihnă
 
+- **Instrucțiunea pentru firma de transport**: documentul Word (de la angajat la salariu, cu capturi) și video-ul — în Ajutor (F1) →
+  Transportul.
 - **Salarizare → Tahograful**: se încarcă fișierele descărcate de pe **cardul de conducător** (.ddd, generația 1 și „smart”);
   fiecare se citește (activitățile pe minute, km, vehiculele, țările, la „smart 2” și trecerile frontierei / încărcările) și se
   leagă singur de angajat — după numărul cardului din dosar sau după nume și data nașterii (cardul se adaugă atunci în dosar).

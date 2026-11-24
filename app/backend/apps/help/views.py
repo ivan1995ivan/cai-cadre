@@ -53,3 +53,49 @@ class HelpIndexView(APIView):
             title = first[0][2:].strip() if first and first[0].startswith("# ") else key
             articles.append({"key": key, "title": title})
         return Response(articles)
+
+
+FILE_TYPES = {
+    "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "webm": "video/webm",
+    "mp4": "video/mp4",
+}
+
+
+class HelpFileView(APIView):
+    """Fișierele instrucțiunilor (docs/files/): documentul Word se descarcă, video-ul se deschide în browser și rulează, cu
+    derularea (cererile Range). Publice, ca instrucțiunile: legăturile din Ajutor se deschid într-o filă nouă, fără jeton."""
+
+    public = True
+    authentication_classes = []
+
+    def get(self, request, name):
+        from django.http import FileResponse, Http404, HttpResponse
+
+        path = settings.DOCS_DIR / "files" / name
+        if not path.is_file():
+            raise Http404
+        ext = name.rsplit(".", 1)[1]
+        size = path.stat().st_size
+        rng = re.match(r"^bytes=(\d*)-(\d*)$", request.headers.get("Range", ""))
+        if rng and ext != "docx" and (rng.group(1) or rng.group(2)):
+            if rng.group(1):
+                start = int(rng.group(1))
+                end = min(int(rng.group(2)), size - 1) if rng.group(2) else size - 1
+            else:  # ultimii N octeți
+                start, end = max(size - int(rng.group(2)), 0), size - 1
+            if start >= size or start > end:
+                response = HttpResponse(status=416)
+                response["Content-Range"] = f"bytes */{size}"
+                return response
+            with path.open("rb") as fh:
+                fh.seek(start)
+                body = fh.read(end - start + 1)
+            response = HttpResponse(body, status=206, content_type=FILE_TYPES[ext])
+            response["Content-Range"] = f"bytes {start}-{end}/{size}"
+        else:
+            response = FileResponse(path.open("rb"), content_type=FILE_TYPES[ext], as_attachment=ext == "docx", filename=name)
+        response["Accept-Ranges"] = "bytes"
+        response["X-Content-Type-Options"] = "nosniff"
+        response["Cache-Control"] = "public, max-age=3600"
+        return response
