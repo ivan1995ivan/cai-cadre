@@ -63,6 +63,8 @@ import PaymentsPage from './pages/payroll/PaymentsPage'
 import PaymentEditor from './pages/payroll/PaymentEditor'
 import PayItemChangesPage, { PayItemChangeEditor } from './pages/payroll/PayItemChangesPage'
 import MealVouchersPage, { MealVoucherEditor } from './pages/payroll/MealVouchersPage'
+import TripsPage, { TripEditor } from './pages/transport/TripsPage'
+import TransportSettingsPage from './pages/transport/TransportSettings'
 import TaxReportsPage, { TaxSettingsPage } from './pages/payroll/TaxReportsPage'
 import ItParkPage, { ItParkMonthEditor } from './pages/payroll/ItParkPage'
 import ProductionReportsPage, { ProductionReportEditor } from './pages/production/ProductionReportsPage'
@@ -102,6 +104,9 @@ const SETTING_PAGES: Record<string, (title: string) => React.ReactNode> = {
   tariffGrids: (title) => <ProductionSettingsPage part="grids" title={title} />,
   operations: (title) => <ProductionSettingsPage part="operations" title={title} />,
   brigades: (title) => <ProductionSettingsPage part="brigades" title={title} />,
+  vehicles: (title) => <TransportSettingsPage part="vehicles" title={title} />,
+  kmRates: (title) => <TransportSettingsPage part="kmRates" title={title} />,
+  countries: (title) => <TransportSettingsPage part="countries" title={title} />,
   alertSettings: (title) => <AlertSettingsPage title={title} />,
   smtpSettings: (title) => <SmtpSettingsPage title={title} />,
 }
@@ -140,6 +145,8 @@ const MODULE_ROUTES: { path: string; perm?: string; element: React.ReactNode }[]
   { path: 'payroll/item-changes/:id', perm: 'payroll.view', element: <PayItemChangeEditor /> },
   { path: 'payroll/meal-vouchers', perm: 'payroll.view', element: <MealVouchersPage /> },
   { path: 'payroll/meal-vouchers/:id', perm: 'payroll.view', element: <MealVoucherEditor /> },
+  { path: 'transport/trips', perm: 'transport.view', element: <TripsPage /> },
+  { path: 'transport/trips/:id', perm: 'transport.view', element: <TripEditor /> },
   { path: 'production/reports', perm: 'production.view', element: <ProductionReportsPage /> },
   { path: 'production/reports/:id', perm: 'production.view', element: <ProductionReportEditor /> },
   { path: 'tax-reports', perm: 'tax_reports.view', element: <TaxReportsPage /> },

@@ -52,7 +52,7 @@ export const DEFAULT_SECTIONS: MenuSection[] = [
     ['leave', 'leaveSchedule', 'sickLeave', 'rosters', 'timesheets'],
     ['repLeavePeriod', 'repTimesheetSummary']),
   section('salarii', 'wallet',
-    ['payItemChanges', 'productionReports', 'mealVouchers', 'payroll', 'payrollPayments', 'itPark'],
+    ['payItemChanges', 'productionReports', 'trips', 'mealVouchers', 'payroll', 'payrollPayments', 'itPark'],
     ['repSalaryBook', 'taxReports', 'repMunca1']),
   section('formare', 'training',
     ['training', 'health', 'military'],
@@ -71,7 +71,7 @@ export const ROUTE_ITEMS: NavItem[] = [...ALL_ITEMS, ...SETTINGS_NAV]
 
 /** Ce ține de modulul Salarizare: dispare din meniu și din Setări când întreprinderea e livrată fără salariu (Constante → Module). */
 export const PAYROLL_ITEMS = new Set(['payroll', 'payrollPayments', 'payItemChanges', 'mealVouchers', 'itPark', 'payrollTypes', 'payrollConstants', 'taxSettings', 'taxReports', 'repSalaryBook',
-  'productionReports', 'tariffGrids', 'operations', 'brigades'])
+  'productionReports', 'tariffGrids', 'operations', 'brigades', 'trips', 'vehicles', 'kmRates', 'countries'])
 /** Ce ține de modulul opțional „Evidența militară” (oprit implicit, Constante → Module): registrul și rapoartele lui dispar
  *  singure (serverul nu dă drepturile `military.*`), clasificatoarele lui se ascund aici. */
 export const MILITARY_ITEMS = new Set(['military', 'repMilitaryRegister', 'repMilitaryMissing', 'repMilitaryChanges', 'repMilitaryRecruits',
@@ -79,12 +79,15 @@ export const MILITARY_ITEMS = new Set(['military', 'repMilitaryRegister', 'repMi
 
 /** Ce ține de modulul opțional „Producția” (salarizarea în acord, oprit implicit): rapoartele de producție și setările lor. */
 export const PRODUCTION_ITEMS = new Set(['productionReports', 'tariffGrids', 'operations', 'brigades'])
+/** Ce ține de modulul opțional „Transportul” (cursele, diurnele, plata pe km; oprit implicit). */
+export const TRANSPORT_ITEMS = new Set(['trips', 'vehicles', 'kmRates', 'countries'])
 
 /** Funcția / setarea ține de un modul oprit din Constante → Module (Salarizarea, Evidența militară, Producția). */
-export function moduleOff(branding: { payroll_enabled?: boolean; military_enabled?: boolean; production_enabled?: boolean } | null | undefined,
+export function moduleOff(branding: { payroll_enabled?: boolean; military_enabled?: boolean; production_enabled?: boolean;
+  transport_enabled?: boolean } | null | undefined,
   key: string): boolean {
   return (branding?.payroll_enabled === false && PAYROLL_ITEMS.has(key)) || (branding?.military_enabled !== true && MILITARY_ITEMS.has(key))
-    || (branding?.production_enabled !== true && PRODUCTION_ITEMS.has(key))
+    || (branding?.production_enabled !== true && PRODUCTION_ITEMS.has(key)) || (branding?.transport_enabled !== true && TRANSPORT_ITEMS.has(key))
 }
 const BY_KEY = Object.fromEntries(ALL_ITEMS.map((i) => [i.key, i]))
 

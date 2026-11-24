@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
 import {
   ApartmentOutlined, AuditOutlined, BankOutlined, BarChartOutlined, BellOutlined, BookOutlined, BuildOutlined, CalculatorOutlined, CalendarOutlined,
-  CheckSquareOutlined, ClearOutlined, ClockCircleOutlined, CloudServerOutlined, CoffeeOutlined, CloudUploadOutlined, DashboardOutlined, DollarOutlined, EnvironmentOutlined,
-  FieldNumberOutlined, FileDoneOutlined, FileProtectOutlined, FileTextOutlined, HomeOutlined, IdcardOutlined, KeyOutlined, MailOutlined,
+  CarOutlined, CheckSquareOutlined, ClearOutlined, ClockCircleOutlined, CloudServerOutlined, CoffeeOutlined, CloudUploadOutlined, DashboardOutlined, DollarOutlined, EnvironmentOutlined,
+  FieldNumberOutlined, FileDoneOutlined, FileProtectOutlined, FileTextOutlined, GlobalOutlined, HomeOutlined, IdcardOutlined, KeyOutlined, MailOutlined,
   MedicineBoxOutlined, MenuOutlined, OrderedListOutlined, PrinterOutlined, ProfileOutlined, ReadOutlined,
   SafetyCertificateOutlined, SafetyOutlined, ScheduleOutlined, SettingOutlined, SolutionOutlined, TableOutlined, TagsOutlined,
   TeamOutlined, UserOutlined, WalletOutlined, WifiOutlined,
@@ -50,6 +50,8 @@ export const NAV: NavItem[] = [
   { path: '/payroll/meal-vouchers', key: 'mealVouchers', icon: <CoffeeOutlined />, perm: 'payroll.view' },
   // S5a: producția (salarizarea în acord) — modul opțional
   { path: '/production/reports', key: 'productionReports', icon: <BuildOutlined />, perm: 'production.view' },
+  // S6b: transportul — cursele (foile de parcurs) — modul opțional
+  { path: '/transport/trips', key: 'trips', icon: <CarOutlined />, perm: 'transport.view' },
   { path: '/tax-reports', key: 'taxReports', icon: <FileDoneOutlined />, perm: 'tax_reports.view' },
   { path: '/payroll/it-park', key: 'itPark', icon: <CalculatorOutlined />, perm: 'tax_reports.view' },
   // Etapa 6: formare, sănătate, evidență militară
@@ -110,6 +112,9 @@ export const SETTINGS_NAV: NavItem[] = [
   { path: '/production/tariff-grids', key: 'tariffGrids', icon: <BuildOutlined />, perm: 'production.view' },
   { path: '/production/operations', key: 'operations', icon: <BuildOutlined />, perm: 'production.view' },
   { path: '/production/brigades', key: 'brigades', icon: <TeamOutlined />, perm: 'production.view' },
+  { path: '/transport/vehicles', key: 'vehicles', icon: <CarOutlined />, perm: 'transport.view' },
+  { path: '/transport/km-rates', key: 'kmRates', icon: <CarOutlined />, perm: 'transport.view' },
+  { path: '/transport/countries', key: 'countries', icon: <GlobalOutlined />, perm: 'transport.view' },
   { path: '/payroll/settings/constants', key: 'payrollConstants', icon: <OrderedListOutlined />, perm: 'payroll_settings.view' },
   { path: '/tax-reports/settings', key: 'taxSettings', icon: <FileDoneOutlined />, perm: 'payroll_settings.edit' },
   { path: '/alerts/settings', key: 'alertSettings', icon: <BellOutlined />, perm: 'settings.edit' },
@@ -125,7 +130,7 @@ export const PANEL_KIND: Record<string, 'start' | 'doc'> = {
   dashboard: 'start', alerts: 'start', portal: 'start',
   staffList: 'doc', contracts: 'doc', employeeRequests: 'doc', orders: 'doc',
   leaveSchedule: 'doc', leave: 'doc', sickLeave: 'doc', rosters: 'doc', timesheets: 'doc',
-  payroll: 'doc', payrollPayments: 'doc', payItemChanges: 'doc', itPark: 'doc', productionReports: 'doc', mealVouchers: 'doc',
+  payroll: 'doc', payrollPayments: 'doc', payItemChanges: 'doc', itPark: 'doc', productionReports: 'doc', mealVouchers: 'doc', trips: 'doc',
 }
 
 /** Legăturile dintre documente în schema de lucru (din primul se face al doilea): săgeata între iconițe, iar documentul de
@@ -138,6 +143,7 @@ export const PANEL_FLOWS: [string, string][] = [
   ['productionReports', 'payroll'], // rapoartele de producție aprobate intră în calculul lunii (acordul)
   ['timesheets', 'mealVouchers'], // tichetele de masă din pontajul lunii lucrate
   ['mealVouchers', 'payroll'], // partea impozabilă a tichetelor intră în calculul lunii
+  ['trips', 'payroll'], // cursele aprobate: plata pe km și diurna intră în calculul lunii întoarcerii
 ]
 
 /** Clasificatoarele (setările-cataloage din SETTINGS_NAV) pe care le folosește fiecare funcție: panoul secțiunii le arată
@@ -158,6 +164,7 @@ export const PANEL_CLASSIFIERS: Record<string, string[]> = {
   payroll: ['payrollTypes'],
   payItemChanges: ['payrollTypes'],
   productionReports: ['operations', 'brigades', 'tariffGrids'],
+  trips: ['vehicles', 'kmRates', 'countries'],
   payrollPayments: ['banks'],
   military: ['dict:military_group', 'dict:military_rank', 'dict:military_center'],
 }

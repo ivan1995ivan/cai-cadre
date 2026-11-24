@@ -240,6 +240,10 @@ export default function Constants() {
                     extra={t('constants.production_enabledHint')}>
                     <Switch />
                   </Form.Item>
+                  <Form.Item name="transport_enabled" label={t('constants.transport_enabled')} valuePropName="checked"
+                    extra={t('constants.transport_enabledHint')}>
+                    <Switch />
+                  </Form.Item>
                   <Form.Item name="function_panel" label={t('constants.function_panel')} valuePropName="checked"
                     extra={t('constants.function_panelHint')}>
                     <Switch />
