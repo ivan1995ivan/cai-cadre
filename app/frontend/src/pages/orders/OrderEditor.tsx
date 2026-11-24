@@ -5,7 +5,8 @@ import {
   Alert, Button, Card, Col, DatePicker, Form, Input, InputNumber, Popconfirm, Row, Select, Space, Spin, Tag, Tooltip, Typography, message,
 } from 'antd'
 import {
-  CheckCircleOutlined, DeleteOutlined, FileTextOutlined, PlusOutlined, PrinterOutlined, ReloadOutlined, SaveOutlined, StopOutlined,
+  ApartmentOutlined, CheckCircleOutlined, CopyOutlined, DeleteOutlined, FileTextOutlined, PlusOutlined, PrinterOutlined, ReloadOutlined, SaveOutlined,
+  StopOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 
@@ -18,6 +19,7 @@ import { ORDER_STATUS_COLOR, type Order, type OrderItem } from '../../api/orders
 import { useApp } from '../../auth/AppContext'
 import ItemParams, { paramsIn, paramsOut } from './ItemParams'
 import EmployeeSelect from '../../components/EmployeeSelect'
+import SubdivisionSelect from '../../components/SubdivisionSelect'
 import FormLayout from '../../components/FormLayout'
 import MarkButton, { MarkedBanner } from '../../components/MarkButton'
 import { useTabTitle } from '../../layout/tabs'
@@ -43,6 +45,7 @@ export default function OrderEditor() {
   const [print, setPrint] = useState<{ item?: number } | null>(null)
   const [busy, setBusy] = useState(false)
   const [adding, setAdding] = useState<number | undefined>()
+  const [addingSub, setAddingSub] = useState<number | undefined>()
   const [dirty, setDirty] = useState(false)
   const { data: bases } = useFetch<{ id: number; code: string; name_ro: string }[]>('/org/legal-bases/', { active: 1 })
   const draft = order?.status === 'draft' && !order.deletion_mark  // ordinul marcat pentru ștergere nu se mai schimbă
@@ -111,6 +114,31 @@ export default function OrderEditor() {
     try {
       await api.post('/orders/items/', { order: order.id, employee: adding })
       setAdding(undefined)
+      load()
+    } catch (e) {
+      message.error(errorText(e))
+    }
+  }
+
+  /** Ordinul colectiv: toți angajații subdiviziunii, cu parametrii primului punct (perioada, cauza…). */
+  const addSubdivision = async () => {
+    if (!addingSub || !order) return
+    try {
+      if (dirty && !(await saveAll(true))) return
+      const r = await api.post<Order & { added: number }>(`/orders/orders/${order.id}/add-subdivision/`, { subdivision: addingSub })
+      message.success(t('ord.addedFromSubdivision', { count: r.data.added }))
+      setAddingSub(undefined)
+      load()
+    } catch (e) {
+      message.error(errorText(e))
+    }
+  }
+  /** Parametrii unui punct la toate celelalte (raportul de muncă al fiecăruia rămâne al lui). */
+  const copyParams = async (item: OrderItem) => {
+    try {
+      if (dirty && !(await saveAll(true))) return
+      const r = await api.post<{ changed: number }>(`/orders/items/${item.id}/copy-params/`)
+      message.success(t('ord.paramsCopied', { count: r.data.changed }))
       load()
     } catch (e) {
       message.error(errorText(e))
@@ -232,7 +260,8 @@ export default function OrderEditor() {
           {items.map((item, idx) => (
             <PointCard key={item.id} no={idx + 1} item={item} order={order} disabled={!canEdit}
               register={(f) => { forms.current[item.id] = f }} onChange={() => setDirty(true)}
-              onRemove={() => removeItem(item)} onExtract={() => setPrint({ item: item.id })} />
+              onRemove={() => removeItem(item)} onExtract={() => setPrint({ item: item.id })}
+              onCopy={canEdit && order.collective && items.length > 1 ? () => copyParams(item) : undefined} />
           ))}
         </Space>
         {canAdd && (
@@ -240,6 +269,14 @@ export default function OrderEditor() {
             <EmployeeSelect style={{ width: 420 }} placeholder={t('ord.addEmployee')} value={adding}
               onChange={(v) => setAdding(typeof v === 'number' ? v : undefined)} />
             <Button icon={<PlusOutlined />} disabled={!adding} onClick={addEmployee}>{t('common.add')}</Button>
+          </Space>
+        )}
+        {canAdd && order.collective && (
+          <Space style={{ marginTop: 8 }} wrap>
+            <SubdivisionSelect style={{ width: 420 }} placeholder={t('ord.addSubdivision')} value={addingSub}
+              onChange={(v) => setAddingSub(typeof v === 'number' ? v : undefined)} />
+            <Button icon={<ApartmentOutlined />} disabled={!addingSub} onClick={addSubdivision}>{t('ord.addSubdivisionBtn')}</Button>
+            <Typography.Text type="secondary">{t('ord.addSubdivisionHint')}</Typography.Text>
           </Space>
         )}
       </Card>
@@ -252,7 +289,7 @@ export default function OrderEditor() {
   )
 }
 
-function PointCard({ no, item, order, disabled, register, onChange, onRemove, onExtract }: {
+function PointCard({ no, item, order, disabled, register, onChange, onRemove, onExtract, onCopy }: {
   no: number
   item: OrderItem
   order: Order
@@ -261,6 +298,7 @@ function PointCard({ no, item, order, disabled, register, onChange, onRemove, on
   onChange: () => void
   onRemove: () => void
   onExtract: () => void
+  onCopy?: () => void
 }) {
   const { t } = useTranslation()
   const [form] = Form.useForm()
@@ -278,6 +316,8 @@ function PointCard({ no, item, order, disabled, register, onChange, onRemove, on
       </Space>}
       extra={<Space>
         {order.status !== 'draft' && item.employee && <Button size="small" onClick={onExtract}>{t('ord.extract')}</Button>}
+        {onCopy && <Popconfirm title={t('ord.copyParamsConfirm')} onConfirm={onCopy}>
+          <Button size="small" icon={<CopyOutlined />}>{t('ord.copyParams')}</Button></Popconfirm>}
         {!disabled && <Popconfirm title={t('common.confirmDelete')} onConfirm={onRemove}><Button size="small" type="text" danger icon={<DeleteOutlined />} /></Popconfirm>}
       </Space>}>
       {(item.warnings ?? []).map((w) => <Alert key={w} type="warning" showIcon message={w} style={{ marginBottom: 8 }} />)}

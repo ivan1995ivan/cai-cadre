@@ -76,7 +76,8 @@ export default function OrgPage() {
           { title: t('common.code'), dataIndex: 'code', width: 90 },
           { title: t('org.kind'), dataIndex: 'kind', width: 190, render: (v: string) => t(`org.subKind.${v}`) },
           { title: t('org.harmful'), dataIndex: 'harmful', width: 150,
-            render: (v: boolean, r) => v ? <Tag color="volcano">{t('org.harmfulShort', { days: r.extra_leave_days })}</Tag> : null },
+            render: (v: boolean, r) => v ? <Tag color="volcano">{t('org.harmfulShort', { days: r.extra_leave_days })}
+              {Number(r.harmful_pct) ? ` · +${Number(r.harmful_pct)}%` : ''}</Tag> : null },
           { title: t('org.head'), dataIndex: 'head_name', width: 200 },
           ...(canEdit ? [{ title: '', key: 'del', width: 50, render: (_: unknown, r: Subdivision) => (
             <MarkButton endpoint="/org/subdivisions/" row={r} onDone={reload} />) }] : []),
@@ -96,7 +97,9 @@ export default function OrgPage() {
               </Form.Item>
             </Col>
             <Col span={12}><Form.Item name="kind" label={t('org.kind')}><Select options={opts('org.subKind', meta?.subdivision_kinds)} /></Form.Item></Col>
-            <Col span={12}><Form.Item name="harmful" label={t('org.harmful')} valuePropName="checked"><Switch /></Form.Item></Col>
+            <Col span={6}><Form.Item name="harmful" label={t('org.harmful')} valuePropName="checked"><Switch /></Form.Item></Col>
+            <Col span={6}><Form.Item name="harmful_pct" label={t('org.harmfulPct')} tooltip={t('org.harmfulPctHint')}>
+              <InputNumber min={0} max={300} style={{ width: '100%' }} suffix="%" /></Form.Item></Col>
             <Col span={6}><Form.Item name="extra_leave_days" label={t('org.extraLeave')}><InputNumber min={0} style={{ width: '100%' }} /></Form.Item></Col>
             <Col span={6}><Form.Item name="reduced_hours" label={t('org.reducedHours')}><InputNumber min={0} max={40} style={{ width: '100%' }} /></Form.Item></Col>
             <Col span={12}><Form.Item name="head_name" label={t('org.head')}><Input /></Form.Item></Col>

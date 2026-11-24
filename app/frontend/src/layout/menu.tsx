@@ -52,7 +52,7 @@ export const DEFAULT_SECTIONS: MenuSection[] = [
     ['leave', 'leaveSchedule', 'sickLeave', 'rosters', 'timesheets'],
     ['repLeavePeriod', 'repTimesheetSummary']),
   section('salarii', 'wallet',
-    ['payItemChanges', 'productionReports', 'payroll', 'payrollPayments', 'itPark'],
+    ['payItemChanges', 'productionReports', 'mealVouchers', 'payroll', 'payrollPayments', 'itPark'],
     ['repSalaryBook', 'taxReports', 'repMunca1']),
   section('formare', 'training',
     ['training', 'health', 'military'],
@@ -70,7 +70,7 @@ export const ALL_ITEMS: NavItem[] = [...NAV, ...ADMIN_NAV, ...REPORT_NAV]
 export const ROUTE_ITEMS: NavItem[] = [...ALL_ITEMS, ...SETTINGS_NAV]
 
 /** Ce ține de modulul Salarizare: dispare din meniu și din Setări când întreprinderea e livrată fără salariu (Constante → Module). */
-export const PAYROLL_ITEMS = new Set(['payroll', 'payrollPayments', 'payItemChanges', 'itPark', 'payrollTypes', 'payrollConstants', 'taxSettings', 'taxReports', 'repSalaryBook',
+export const PAYROLL_ITEMS = new Set(['payroll', 'payrollPayments', 'payItemChanges', 'mealVouchers', 'itPark', 'payrollTypes', 'payrollConstants', 'taxSettings', 'taxReports', 'repSalaryBook',
   'productionReports', 'tariffGrids', 'operations', 'brigades'])
 /** Ce ține de modulul opțional „Evidența militară” (oprit implicit, Constante → Module): registrul și rapoartele lui dispar
  *  singure (serverul nu dă drepturile `military.*`), clasificatoarele lui se ascund aici. */

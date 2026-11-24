@@ -29,7 +29,7 @@ interface ReportData {
 }
 
 const ABSENCES = ['annual', 'extra', 'unpaid', 'maternity', 'paternity', 'childcare', 'childcare_unpaid', 'study', 'days_off', 'travel',
-  'training', 'sick']
+  'training', 'sick', 'idle', 'tech_unemployment']
 
 function fmt(value: unknown, type: Column['type']) {
   if (value === null || value === undefined || value === '') return ''

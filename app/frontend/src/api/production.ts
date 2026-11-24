@@ -130,6 +130,7 @@ export interface ProductionReport {
   brigade_name: string
   status: 'draft' | 'approved'
   status_label: string
+  shortfall_cause: '' | 'employer' | 'nobody'
   note: string
   created_at: string
   approved_at: string | null

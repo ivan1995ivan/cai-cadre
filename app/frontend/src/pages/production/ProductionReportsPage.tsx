@@ -157,7 +157,8 @@ export function ProductionReportEditor() {
     setLines(doc.lines)
     setMembers(doc.members)
     setProblems(doc.problems)
-    header.setFieldsValue({ date: dayjs(doc.date), kind: doc.kind, brigade: doc.brigade, subdivision: doc.subdivision, note: doc.note })
+    header.setFieldsValue({ date: dayjs(doc.date), kind: doc.kind, brigade: doc.brigade, subdivision: doc.subdivision, note: doc.note,
+      shortfall_cause: doc.shortfall_cause || '' })
     setDirty(false)
   }, [doc, header])
 
@@ -167,7 +168,7 @@ export function ProductionReportEditor() {
       const h = await header.validateFields()
       const r = await api.patch<ProductionReport>(`/production/reports/${doc.id}/`, {
         date: h.date.format('YYYY-MM-DD'), kind: h.kind, brigade: h.kind === 'brigade' ? h.brigade ?? null : null,
-        subdivision: h.subdivision ?? null, note: h.note ?? '',
+        subdivision: h.subdivision ?? null, note: h.note ?? '', shortfall_cause: h.shortfall_cause ?? '',
         lines: lines.filter((l) => l.operation).map((l) => ({ id: l.id, employment: h.kind === 'individual' ? l.employment : null, operation: l.operation,
           quantity: l.quantity || 0, defect_nofault: l.defect_nofault || 0, defect_partial: l.defect_partial || 0,
           defect_partial_pct: l.defect_partial_pct ?? null, defect_worker: l.defect_worker || 0, hours: l.hours ?? null, note: l.note ?? '' })),
@@ -236,6 +237,9 @@ export function ProductionReportEditor() {
             <Select options={(brigades ?? []).map((b) => ({ value: b.id, label: `${b.code} — ${b.name}` }))} /></Form.Item></Col>}
           <Col xs={24} md={4}><Form.Item name="subdivision" label={t('prod.op.subdivision')}><SubdivisionSelect /></Form.Item></Col>
           <Col xs={24} md={individual ? 9 : 4}><Form.Item name="note" label={t('org.notes')}><Input /></Form.Item></Col>
+          <Col xs={24} md={12}><Form.Item name="shortfall_cause" label={t('prod.rep.shortfall')} extra={t('prod.rep.shortfallHint')}>
+            <Select options={['', 'employer', 'nobody'].map((k) => ({ value: k, label: t(`prod.rep.shortfalls.${k || 'none'}`) }))} />
+          </Form.Item></Col>
         </Row>
       </Form>
       <Typography.Title level={5}>{t('prod.rep.lines')}</Typography.Title>

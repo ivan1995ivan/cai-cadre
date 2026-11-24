@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import {
   ApartmentOutlined, AuditOutlined, BankOutlined, BarChartOutlined, BellOutlined, BookOutlined, BuildOutlined, CalculatorOutlined, CalendarOutlined,
-  CheckSquareOutlined, ClearOutlined, ClockCircleOutlined, CloudServerOutlined, CloudUploadOutlined, DashboardOutlined, DollarOutlined, EnvironmentOutlined,
+  CheckSquareOutlined, ClearOutlined, ClockCircleOutlined, CloudServerOutlined, CoffeeOutlined, CloudUploadOutlined, DashboardOutlined, DollarOutlined, EnvironmentOutlined,
   FieldNumberOutlined, FileDoneOutlined, FileProtectOutlined, FileTextOutlined, HomeOutlined, IdcardOutlined, KeyOutlined, MailOutlined,
   MedicineBoxOutlined, MenuOutlined, OrderedListOutlined, PrinterOutlined, ProfileOutlined, ReadOutlined,
   SafetyCertificateOutlined, SafetyOutlined, ScheduleOutlined, SettingOutlined, SolutionOutlined, TableOutlined, TagsOutlined,
@@ -46,6 +46,8 @@ export const NAV: NavItem[] = [
   { path: '/payroll', key: 'payroll', icon: <WalletOutlined />, perm: 'payroll.view' },
   { path: '/payroll/payments', key: 'payrollPayments', icon: <DollarOutlined />, perm: 'payroll.view' },
   { path: '/payroll/item-changes', key: 'payItemChanges', icon: <ProfileOutlined />, perm: 'payroll.view' },
+  // S5b: borderoul tichetelor de masă
+  { path: '/payroll/meal-vouchers', key: 'mealVouchers', icon: <CoffeeOutlined />, perm: 'payroll.view' },
   // S5a: producția (salarizarea în acord) — modul opțional
   { path: '/production/reports', key: 'productionReports', icon: <BuildOutlined />, perm: 'production.view' },
   { path: '/tax-reports', key: 'taxReports', icon: <FileDoneOutlined />, perm: 'tax_reports.view' },
@@ -123,7 +125,7 @@ export const PANEL_KIND: Record<string, 'start' | 'doc'> = {
   dashboard: 'start', alerts: 'start', portal: 'start',
   staffList: 'doc', contracts: 'doc', employeeRequests: 'doc', orders: 'doc',
   leaveSchedule: 'doc', leave: 'doc', sickLeave: 'doc', rosters: 'doc', timesheets: 'doc',
-  payroll: 'doc', payrollPayments: 'doc', payItemChanges: 'doc', itPark: 'doc', productionReports: 'doc',
+  payroll: 'doc', payrollPayments: 'doc', payItemChanges: 'doc', itPark: 'doc', productionReports: 'doc', mealVouchers: 'doc',
 }
 
 /** Legăturile dintre documente în schema de lucru (din primul se face al doilea): săgeata între iconițe, iar documentul de
@@ -134,6 +136,8 @@ export const PANEL_FLOWS: [string, string][] = [
   ['payroll', 'payrollPayments'], // îndreptarea spre plată din calcul
   ['payItemChanges', 'payroll'], // acumulările planificate intră în calculul lunii
   ['productionReports', 'payroll'], // rapoartele de producție aprobate intră în calculul lunii (acordul)
+  ['timesheets', 'mealVouchers'], // tichetele de masă din pontajul lunii lucrate
+  ['mealVouchers', 'payroll'], // partea impozabilă a tichetelor intră în calculul lunii
 ]
 
 /** Clasificatoarele (setările-cataloage din SETTINGS_NAV) pe care le folosește fiecare funcție: panoul secțiunii le arată

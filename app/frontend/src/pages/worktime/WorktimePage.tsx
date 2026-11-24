@@ -54,7 +54,8 @@ function CycleInput({ value, onChange, shifts }: { value?: string[]; onChange?: 
 
 export type WorktimePart = 'schedules' | 'shifts' | 'hourTypes' | 'calendar' | 'settings'
 
-const ABSENCE_KINDS = ['annual', 'extra', 'unpaid', 'maternity', 'paternity', 'childcare', 'childcare_unpaid', 'study', 'days_off', 'sick']
+const ABSENCE_KINDS = ['annual', 'extra', 'unpaid', 'maternity', 'paternity', 'childcare', 'childcare_unpaid', 'study', 'days_off', 'sick',
+  'idle', 'tech_unemployment']
 
 /** O setare a timpului de muncă (Administrare → Setări): graficele de lucru, turele, calendarul de producție sau regulile. */
 export default function WorktimeSettingsPage({ part, title }: { part: WorktimePart; title: string }) {
@@ -86,6 +87,9 @@ export default function WorktimeSettingsPage({ part, title }: { part: WorktimePa
       render: (v) => (Array.isArray(v) && v.length ? v.map((c) => c || '–').join(' ') : '') },
     { key: 'cycle_start', label: t('wt.sch.cycleStart'), type: 'date', inTable: false },
     { key: 'holidays_off', label: t('wt.sch.holidaysOff'), type: 'bool', width: 110 },
+    { key: 'accounting_months', label: t('wt.sch.accountingMonths'), type: 'number', width: 110, extra: t('wt.sch.accountingHint'),
+      render: (v) => (Number(v) > 1 ? t('wt.sch.accountingValue', { n: v }) : t('wt.sch.accountingMonthly')) },
+    { key: 'accounting_start', label: t('wt.sch.accountingStart'), type: 'date', inTable: false, extra: t('wt.sch.accountingStartHint') },
     { key: 'note', label: t('org.notes'), inTable: false },
     { key: 'jobs_count', label: t('wt.sch.jobs'), type: 'number', width: 90, render: (v) => String(v ?? 0) },
   ]
@@ -112,7 +116,7 @@ export default function WorktimeSettingsPage({ part, title }: { part: WorktimePa
   const parts: Record<WorktimePart, React.ReactNode> = {
     schedules: (
       <CrudTable endpoint="/worktime/schedules/" fields={scheduleFields} canEdit={canEdit}
-        defaults={{ kind: 'week', weekly_hours: 40, week: ['8', '8', '8', '8', '8', '', ''], cycle: [], holidays_off: true }}
+        defaults={{ kind: 'week', weekly_hours: 40, week: ['8', '8', '8', '8', '8', '', ''], cycle: [], holidays_off: true, accounting_months: 1 }}
         title={<Typography.Text type="secondary">{t('wt.sch.hint')}</Typography.Text>} />
     ),
     shifts: (

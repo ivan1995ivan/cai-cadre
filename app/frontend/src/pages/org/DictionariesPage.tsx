@@ -94,6 +94,8 @@ export default function DictionaryPage({ dict, title }: { dict: string; title: s
     { key: 'base_leave_days', label: t('org.baseLeave'), type: 'number', inTable: false },
     { key: 'extra_leave_days', label: t('org.extraLeave'), type: 'number', width: 90 },
     { key: 'harmful', label: t('org.harmful'), type: 'bool', width: 90 },
+    { key: 'harmful_pct', label: t('org.harmfulPct'), type: 'number', width: 90, extra: t('org.harmfulPctHint'),
+      render: (v) => (Number(v) ? `${Number(v)}%` : '') },
     { key: 'notes', label: t('org.notes'), type: 'textarea', inTable: false },
     ...common,
   ]

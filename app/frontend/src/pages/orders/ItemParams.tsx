@@ -28,7 +28,7 @@ export const hasHourRates = (effect: string) => ['hire', 'change', 'salary', 'su
 const LEAVE_KIND: Record<string, string> = {
   leave_annual: 'annual', leave_extra: 'extra', leave_unpaid: 'unpaid', leave_maternity: 'maternity', leave_paternity: 'paternity',
   leave_childcare: 'childcare', leave_childcare_unpaid: 'childcare_unpaid', leave_study: 'study', days_off_paid: 'days_off',
-  travel: 'travel', training: 'training',
+  travel: 'travel', training: 'training', idle: 'idle', tech_unemployment: 'tech_unemployment',
 }
 
 /** Parametrii unui punct al ordinului, după efectul tipului (angajare, modificare, concediu, sancțiune...). */
@@ -255,7 +255,7 @@ export default function ItemParams({ form, effect, code, employee, disabled, onC
       </Form.Item></Col>
       <Col xs={24} md={12}>{num('year', t('lv.sch.year'))}</Col>
     </Row>
-  } else if (effect === 'leave' || effect === 'travel' || code === 'training') {
+  } else if (effect === 'leave' || effect === 'travel' || code === 'training' || effect === 'idle') {
     body = <Row gutter={24}>
       {effect !== 'travel' && code !== 'training' && <Col xs={24}>{job}</Col>}
       <Col xs={24} md={12}>{date('date_from', t('staff.sen.from'), true)}</Col>
@@ -272,7 +272,14 @@ export default function ItemParams({ form, effect, code, employee, disabled, onC
       {(effect === 'travel' || code === 'training') && <>
         <Col xs={24}><Form.Item name="destination" label={t('ord.p.destination')} rules={[{ required: true }]}><Input /></Form.Item></Col>
         <Col xs={24}><Form.Item name="purpose" label={t('ord.p.purpose')}><Input /></Form.Item></Col></>}
-      {effect === 'leave' && code !== 'leave_annual' && <Col xs={24}><Form.Item name="note" label={t('ord.p.note')}><Input /></Form.Item></Col>}
+      {code === 'idle' && <Col xs={24} md={12}><Form.Item name="cause" label={t('ord.p.idleCause')} rules={[{ required: true }]}
+        initialValue="nobody" extra={t('ord.p.idleCauseHint')}>
+        <Select options={['employer', 'nobody', 'worker'].map((k) => ({ value: k, label: t(`ord.p.idleCauses.${k}`) }))} /></Form.Item></Col>}
+      {effect === 'idle' && <Col xs={24} md={12}><Form.Item name="pay_pct" label={t('ord.p.idlePct')}
+        extra={t(code === 'idle' ? 'ord.p.idlePctHint' : 'ord.p.techPctHint')}>
+        <InputNumber min={0} max={100} step={1} style={{ width: '100%' }} suffix="%" /></Form.Item></Col>}
+      {effect === 'idle' && <Col xs={24}><Alert type="info" showIcon title={t('ord.p.idleHint')} /></Col>}
+      {(effect === 'leave' || effect === 'idle') && code !== 'leave_annual' && <Col xs={24}><Form.Item name="note" label={t('ord.p.note')}><Input /></Form.Item></Col>}
       {calc && !disabled && <Col xs={24}><Alert type="info" showIcon title={t('ord.p.calc', {
         days: calc.days, to: dayjs(calc.to).format('DD.MM.YYYY'), holidays: calc.holidays.length })} /></Col>}
     </Row>

@@ -20,6 +20,7 @@ export interface Occupation extends NamedItem {
   base_leave_days: number
   extra_leave_days: number
   harmful: boolean
+  harmful_pct?: string
   notes: string
 }
 
@@ -33,6 +34,7 @@ export interface Subdivision extends NamedItem {
   parent_name: string
   kind: string
   harmful: boolean
+  harmful_pct?: string
   extra_leave_days: number
   reduced_hours: string | null
   head_name: string

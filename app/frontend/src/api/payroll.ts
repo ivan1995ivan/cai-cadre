@@ -242,7 +242,8 @@ export const FORMULAS = ['auto', 'fixed', 'pct_salary', 'pct_base', 'hourly', 's
 /** Formulele care se pot calcula și fără rândul angajatului („pentru toți angajații”). */
 export const GENERAL_FORMULAS = ['expr', 'scale', 'pct_salary', 'pct_base']
 export const AUTO_KEYS = ['none', 'salary', 'allowance', 'combination', 'hour_types', 'piece', 'piece_prog', 'night', 'holiday', 'overtime', 'leave', 'leave_comp', 'sick', 'sick_accident',
-  'min_wage', 'bonus', 'aid', 'income_tax', 'cnam', 'cas', 'cas_min']
+  'min_wage', 'bonus', 'aid', 'income_tax', 'cnam', 'cas', 'cas_min', 'idle', 'tech_unemployment', 'piece_guarantee', 'harmful',
+  'meal_voucher', 'meal_voucher_offset']
 
 export const money = (v: string | number | null | undefined) =>
   v === null || v === undefined || v === '' || Number(v) === 0 ? '' : Number(v).toLocaleString('ro-MD', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
