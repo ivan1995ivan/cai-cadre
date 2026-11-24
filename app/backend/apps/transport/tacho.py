@@ -197,6 +197,13 @@ def spans(employee, start: datetime, end: datetime) -> tuple:
     return out, data_start, min(data_end, end)
 
 
+def _clip(rows, data_end):
+    """Intervalele tăiate la sfârșitul datelor (ora ultimei descărcări): după ea cardul încă nu știe nimic."""
+    if data_end is None:
+        return rows
+    return [(s, min(e, data_end), code, crew) for s, e, code, crew in rows if s < data_end]
+
+
 def findings(employee, start: datetime, end: datetime) -> list:
     """Constatările care încep în [start, end) (datele cu CONTEXT_DAYS zile înainte și după)."""
     pad = timedelta(days=CONTEXT_DAYS)
@@ -216,6 +223,7 @@ def day_rows(employee, first, last) -> list:
     lo, _ = _local_bounds(first)
     _, hi = _local_bounds(last)
     rows, data_start, data_end = spans(employee, lo, hi)
+    rows = _clip(rows, data_end)
     found = findings(employee, lo, hi) if rows else []
     km = {d.day: d.distance for d in TachoDay.objects.filter(employee=employee, day__gte=first - timedelta(days=1),
                                                              day__lte=last + timedelta(days=1))}
@@ -255,6 +263,7 @@ def trip_info(trip) -> dict:
             continue
         emp = job.employee
         rows, a, b = spans(emp, trip.departure, trip.arrival)
+        rows = _clip(rows, b)
         totals = dict.fromkeys(CODES, 0)
         for s, e, code, _crew in rows:
             s2, e2 = max(s, trip.departure), min(e, trip.arrival)

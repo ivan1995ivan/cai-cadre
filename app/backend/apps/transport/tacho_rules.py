@@ -48,6 +48,7 @@ class Seg:
     end: datetime
     act: str  # D / W / A / R
     crew: bool = False
+    open: bool = False  # odihna tăiată de marginea datelor (începutul / sfârșitul descărcării) — lungimea reală nu se știe
 
     @property
     def minutes(self) -> int:
@@ -105,6 +106,8 @@ def normalize(spans: list, data_start: datetime, data_end: datetime) -> list:
         cursor = b
     if cursor < data_end:
         add(cursor, data_end, "R")
+    for s in out:
+        s.open = s.act == "R" and (s.start <= data_start or s.end >= data_end)
     return out
 
 
@@ -211,7 +214,7 @@ def _daily_rest(segs, data_end) -> list:
             split = any(r.start < q.start and r.minutes >= SPLIT_FIRST for r in cands)
             if inside >= DAILY_REST or (crew and inside >= DAILY_REST_REDUCED) or (split and inside >= DAILY_REST_REDUCED):
                 pass  # odihna normală (sau împărțită 3 + 9, sau în echipaj)
-            elif inside >= DAILY_REST_REDUCED:
+            elif inside >= DAILY_REST_REDUCED and not q.open:
                 reduced += 1
                 if reduced > REDUCED_MAX:
                     out.append(Finding("daily_rest_reduced", q.start, q.end, inside, DAILY_REST,
@@ -241,7 +244,7 @@ def _weekly_rest(segs, data_start, data_end) -> list:
         if gap > WEEKLY_GAP:
             out.append(Finding("weekly_rest_late", prev.end + timedelta(minutes=WEEKLY_GAP), r.start, gap, WEEKLY_GAP,
                                f"odihna săptămânală a început după {hm(gap)} de la cea de dinainte (cel mult 6 × 24 h)"))
-        if prev.minutes < WEEKLY_REST and r.minutes < WEEKLY_REST:
+        if prev.minutes < WEEKLY_REST and r.minutes < WEEKLY_REST and not (prev.open or r.open):
             out.append(Finding("weekly_reduced_twice", r.start, r.end, r.minutes, WEEKLY_REST,
                                f"odihnele săptămânale de {hm(prev.minutes)} și {hm(r.minutes)} sunt amândouă reduse"))
     if weekly:
@@ -254,7 +257,7 @@ def _weekly_rest(segs, data_start, data_end) -> list:
     used = set()
     rests = [s for s in segs if s.act == "R" and s.minutes >= DAILY_REST_REDUCED]
     for r in weekly:
-        if r.minutes >= WEEKLY_REST:
+        if r.minutes >= WEEKLY_REST or r.open:  # tăiată de marginea datelor — poate fi normală
             continue
         deficit = WEEKLY_REST - r.minutes
         deadline = week_start(r.start) + timedelta(days=28)  # sfârșitul săptămânii a treia de după

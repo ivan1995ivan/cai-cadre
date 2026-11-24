@@ -194,7 +194,8 @@ function Days({ employee, month, onChange }: { employee: string | null; month: D
         exportName={t('tr.tacho.days')}
         expandable={{ rowExpandable: (r) => r.findings.length > 0, expandedRowRender: (r) => <FindingList items={r.findings} /> }}
         columns={[
-          { title: t('tr.tacho.day'), dataIndex: 'day', width: 100, render: (v: string) => dayjs(v).format('DD.MM.YYYY dd') },
+          { title: t('tr.tacho.day'), dataIndex: 'day', width: 125,
+            render: (v: string) => <span style={{ whiteSpace: 'nowrap' }}>{dayjs(v).format('DD.MM.YYYY dd')}</span> },
           { title: t('tr.tacho.timeline'), key: 'bar', render: (_: unknown, r) => (r.has_data ? <DayBar spans={r.spans} />
             : <Typography.Text type="secondary">{t('tr.tacho.noData')}</Typography.Text>) },
           ...keys.map((k) => ({ title: t(`tr.tacho.sum.${k}`), dataIndex: k, width: 80, align: 'right' as const,

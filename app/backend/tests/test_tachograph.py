@@ -262,6 +262,14 @@ def test_compliant_schedule_has_no_findings():
     assert run(ext + week(59 * 60) * 2) == []
 
 
+def test_rests_cut_by_the_data_edges_are_not_judged():
+    # datele încep cu o odihnă (de fapt mai lungă, de dinaintea descărcării) și se termină cu una (descărcarea în timpul ei):
+    # lungimea lor reală nu se știe — nu sunt „odihne săptămânale reduse”
+    spans, end = timeline(START, [("R", 28 * 60)] + day_of(480) * 4 + day_of(480)[:-1] + [("R", 30 * 60)])
+    found = tacho_rules.analyze(spans, START, end)
+    assert not {"weekly_reduced_twice", "weekly_compensation", "compensation_due"} & set(codes(found))
+
+
 def test_weekly_rest_rules():
     assert "weekly_rest_late" in codes(run(day_of(480) * 7))
     # două odihne săptămânale reduse la rând
@@ -313,6 +321,12 @@ def test_upload_match_assign_and_rebuild(admin_client, fleet):  # noqa: F811
     newer = TachoFile.objects.get(pk=res[1]["file"])
     assert admin_client.post(f"/api/transport/tacho-files/{newer.pk}/remove/").status_code == 204
     assert TachoDay.objects.get(employee=e, day=d2).distance == 50 and not TachoDay.objects.filter(day=d3).exists()
+    # descărcarea rămasă e din 03.03 07:00 UTC (09:00 la Chișinău): după ora ei cardul nu știe nimic — ziua se oprește acolo
+    rows = {x["day"]: x for x in admin_client.get("/api/transport/tacho/days/", {"employee": e.pk, "month": "2026-03"}).data["days"]}
+    last = rows[d2]
+    assert last["spans"][-1][1] == 9 * 60
+    assert sum(last[k] for k in ("driving", "work", "availability", "rest", "unknown")) == 9 * 60
+    assert not rows[d3]["has_data"]
     # originalul se descarcă doar prin API
     r = admin_client.get(f"/api/transport/tacho-files/{res[0]['file']}/original/")
     assert r.status_code == 200 and b"".join(r.streaming_content) == first
@@ -358,6 +372,7 @@ def test_days_findings_trip_and_alerts(admin_client, fleet):  # noqa: F811
     assert rows[d1]["driving"] == 630 and rows[d1]["km"] == 900 and "RO" in rows[d1]["countries"]
     assert {f["code"] for f in rows[d1]["findings"]} >= {"continuous", "daily_driving"}
     assert not rows[date(2026, 3, 20)]["has_data"]
+    assert not rows[date(2026, 3, 5)]["has_data"]
     found = admin_client.get("/api/transport/tacho/findings/", {"month": "2026-03"}).data["rows"]
     assert {f["code"] for f in found} >= {"continuous", "daily_driving"} and found[0]["name"] == e.full_name()
     # cursa: timpii, avertismentul, țările din trecerile frontierei
