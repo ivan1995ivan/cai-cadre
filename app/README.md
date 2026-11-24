@@ -13,6 +13,8 @@ calculează salariul — [docs/ro/production.md](docs/ro/production.md). Timpul 
 prin ordin, garanția la neîndeplinirea normei, sporul pentru condiții vătămătoare din subdiviziune / funcție, evidența globală a
 timpului de muncă — [docs/ro/factory-time.md](docs/ro/factory-time.md); tichetele de masă (borderoul din pontaj, partea
 impozabilă în salariu) — [docs/ro/payroll/meal-vouchers.md](docs/ro/payroll/meal-vouchers.md).
+Pentru transportatori — modulul opțional **Transportul**: vehiculele, cursele (foaia de parcurs) cu țările parcurse, plata pe km
+și diurna șoferilor pe zile și țări după HG 10/2012, în salariu — [docs/ro/transport.md](docs/ro/transport.md).
 
 Produsul a fost făcut la început pentru un spital de stat (vezi istoricul de mai jos și [PLAN.md](PLAN.md)); trecerea la
 sectorul privat — [PLAN-SRL.md](PLAN-SRL.md) (etapa S1: fără Stemă, fondator și actele de stat).

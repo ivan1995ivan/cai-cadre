@@ -13,6 +13,8 @@ un rând pe fiecare **raport de muncă** (de bază, cumul, suplinire, contract d
   acord” (ACORD) — suma lucrărilor, cu rebutul plătit după vinovat, și „Acord progresiv” (ACORDP) peste normă; la modalitatea
   „În acord” fără salariul de funcție, suplimentarele și noaptea din tariful orar al categoriei; vezi *Producția: salarizarea
   în acord*;
+- **cursele aprobate** (modulul opțional „Transportul”, S6b): plata pe km (KM) și diurna șoferilor pe zile și țări — în
+  limita normelor HG 10/2012 neimpozabilă (DIURNA), peste ele impozabilă (DIURNAEX); vezi *Transportul*;
 - **timpul fără producție** (S5b): staționarea și șomajul tehnic din ordine (zilele St / Șt din pontaj × salariul pe oră × %
   după cauză — STATIONARE, SOMAJT), garanția la neîndeplinirea normei în acord (GARANT), sporul pentru condiții vătămătoare
   din subdiviziune / funcție pe orele lucrate acolo (VATAM), partea impozabilă a tichetelor de masă din borderoul aprobat cu

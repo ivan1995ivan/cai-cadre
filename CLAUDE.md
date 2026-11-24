@@ -170,6 +170,23 @@ pornească de unde s-a rămas, nu de la zero.
   parțial, suplimentarele perioadei „2 ore / restul”, limitele tichetelor 35 / 70 și CAS / CNAM pe partea impozabilă, un tichet
   pe zi la timp parțial.
 
+- **S6b „transportul”, pasul (a) — gata** (2026-11-24, hotărât de Anatol: transportul înaintea aviației — e un client
+  posibil —, în trei pași, general, fără materialele clientului). Aplicația `apps/transport`, modul opțional
+  (`Company.transport_enabled`, drepturile `transport.*`, ca producția; licența — salarizarea): `Vehicle`, `KmRate` (rândul cu
+  cele mai multe potriviri exacte: felul cursei / aria / vehiculul, din data), `Country` + `PerDiemNorm` (seed: 186 de țări,
+  anexa nr. 2 la HG 10/2012 în redacția HG 1058/2023, categoria I — citită din MO 502-504/2023, verificată prin sondaj; rândurile
+  fără țară proprie nelivrate), `Trip` (seria FP; km din kilometraj; socotit la salvare, fixat la aprobare; luna întoarcerii) cu
+  `TripLeg` (țara, intrarea / ieșirea, încărcare / descărcare, masa) și `TripDiem`; `apps/transport/per_diem.py` — pct. 31 (≤ 8 h
+  20 %, 8–24 h 40 %, > 24 h modul general 100 % pe zi de la plecare la sosire, pct. 24), pct. 26 (țara de destinație a zilei),
+  pct. 23 (tranzitul < 24 h — norma destinației), pct. 33 (masa — 20 %), pct. 22¹ (privat ≥ 70 %), cursul BNM din ziua dinaintea
+  plecării (pct. 41), în țară — doar cu `per_diem_domestic_pay` (pct. 3, 24); verificările (curse suprapuse, absențe, segmente),
+  actele șoferului ca avertismente (tipuri noi de act: `cpc`, `tachograph_card`, `adr`), importul din Excel (rând pe țară), tiparul
+  `trip_sheet`; salariul: KM (în MINIM), DIURNA, DIURNAEX; constantele `per_diem_*`. Interfața: Salarizare → Curse, Setări →
+  Vehiculele / Tarife pe km / Țările și diurnele; `docs/ro|ru/transport.md`. Verificat: testele, typecheck, build. **De verificat de
+  om / contabilitate:** 70 % peste 20 / 40 %, 20 / 40 % față de pct. 24, țara zilei, cursul la avans, regimul fiscal / CAS al
+  diurnei (legis.md inaccesibil de pe server), normele RF pe orașe. **Urmează:** (b) tahograful .ddd + limitele conducere / odihnă;
+  (c) GPS + KPI; apoi S6 aviația.
+
 ## Următorii pași (de aici pornește sesiunea următoare)
 
 0. **Deschiderea**: (a) ~~Public Hostname~~ — făcut. (b) ~~asistentul de

@@ -36,6 +36,11 @@ salariul mediu 17 200 → 17 400, temeiurile vechi; sporul unic pentru orele sup
 Cererile de scutire „pe an” devin cereri cu valabilitate de la / până la, persoanele întreținute — rânduri; cererile cu „S”
 (abrogată) apar „De verificat”.
 
+**Transportul (S6b)** — pentru cine configurează: tipurile automate **KM** (plata pe km — intră în baza sindicatului / pensiei
+livrate și în completarea până la salariul minim), **DIURNA** (neimpozabilă, fără CAS / CNAM), **DIURNAEX** (peste norme,
+impozabilă); constantele `per_diem_pct` 100, `per_diem_private_min_pct` 70, `per_diem_short_pct` 20, `per_diem_day_pct` 40,
+`per_diem_meals_pct` 20, `per_diem_domestic_pay` 0; vezi *Transportul*.
+
 **Timpul fără producție, sporul vătămător, tichetele de masă (S5b)** — pentru cine configurează:
 - tipurile de calcul noi, automate: **STATIONARE** (staționarea), **SOMAJT** (șomajul tehnic), **GARANT** (garanția acordului),
   **VATAM** (sporul vătămător din subdiviziune / funcție), **TICHET** (partea impozabilă a tichetelor) și reținerea **TICHETN**;

@@ -1,5 +1,19 @@
 # Ce e nou
 
+## Etapa S6b, pasul (a): transportul — cursele, diurnele șoferilor, plata pe km
+
+- **Modulul opțional „Transportul”** (Constante → Module, oprit implicit) — pentru transportatori, marfă și pasageri, în țară și
+  internațional.
+- **Setări**: vehiculele și remorcile; **tarifele pe km** cu istoric (după felul cursei, arie și vehicul — se ia rândul cel mai
+  potrivit); **țările și diurnele** — 186 de țări cu normele pe zi din anexa nr. 2 la HG 10/2012 (redacția 2024).
+- **Cursa (foaia de parcurs)** (*Salarizare → Curse*): șoferii, vehiculul, remorca, plecarea / întoarcerea, km din kilometraj,
+  țările cu ora trecerii frontierei, încărcarea / descărcarea, masa; verificările (curse suprapuse, concediu în timpul cursei,
+  segmentele); actele șoferului ca avertismente (permis, CPC, card tahograf, medical, ADR — tipuri noi de act); import din Excel;
+  tiparul.
+- **Diurna pe zile și țări** după HG 10/2012: șoferii până la 8 ore — 20 %, 8–24 de ore — 40 %, peste — 100 % pe zi cu norma
+  țării de destinație (tranzitul sub 24 de ore — norma destinației), masa asigurată — 20 %, minimum 70 % în privat, cursul BNM.
+- **Salariul**: **KM** (plata pe km, în comparația cu salariul minim), **DIURNA** (neimpozabilă), **DIURNAEX** (peste norme).
+
 ## Etapa S5b: fabrica — timpul fără producție, sporul vătămător, evidența globală, tichetele de masă
 
 - **Staționarea și șomajul tehnic prin ordin** (tipurile noi „Staționare”, „Șomaj tehnic”, colective): perioada, cauza (din vina
