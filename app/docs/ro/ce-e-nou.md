@@ -1,5 +1,20 @@
 # Ce e nou
 
+## Etapa S6b, pasul (b): tahograful — cardul șoferului și limitele de conducere / odihnă
+
+- **Salarizare → Tahograful**: se încarcă fișierele descărcate de pe **cardul de conducător** (.ddd, generația 1 și „smart”);
+  fiecare se citește (activitățile pe minute, km, vehiculele, țările, la „smart 2” și trecerile frontierei / încărcările) și se
+  leagă singur de angajat — după numărul cardului din dosar sau după nume și data nașterii (cardul se adaugă atunci în dosar).
+  Originalul se păstrează pentru control.
+- **Zilele șoferului**: luna zi cu zi, cu bara celor 24 de ore și totalurile (conducere, altă muncă, disponibilitate, odihnă, fără
+  card), km, țările, vehiculele.
+- **Încălcările** limitelor (CTR 150/2014, AETR art. 6–8): conducerea continuă 4 h 30, zilnică 9 / 10 h, săptămânală 56 h, două
+  săptămâni 90 h, odihna zilnică (11 h / 3 + 9 / redusă 9 h de cel mult 3 ori), săptămânală (45 / 24 h, după cel mult 6 × 24 h,
+  compensarea reducerii).
+- **În foaia de parcurs**: timpii de pe card în timpul cursei, încălcările ca avertismente; butonul „Țările din tahograf” pune
+  țările cursei din trecerile frontierei (tahograful „smart 2”).
+- **Alertele**: descărcarea cardului la 28 de zile; încălcările din ultimele 14 zile.
+
 ## Etapa S6b, pasul (a): transportul — cursele, diurnele șoferilor, plata pe km
 
 - **Modulul opțional „Transportul”** (Constante → Module, oprit implicit) — pentru transportatori, marfă și pasageri, în țară și

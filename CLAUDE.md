@@ -187,6 +187,23 @@ pornească de unde s-a rămas, nu de la zero.
   diurnei (legis.md inaccesibil de pe server), normele RF pe orașe. **Urmează:** (b) tahograful .ddd + limitele conducere / odihnă;
   (c) GPS + KPI; apoi S6 aviația.
 
+- **S6b „transportul”, pasul (b) „tahograful” — gata** (2026-11-24, hotărât de Anatol: doar cardul șoferului; încălcările + rezumatul,
+  pontajul rămâne cum e; fișierele reale le cere Anatol de la firmă). `apps/transport/ddd.py` — citirea descărcării cardului (EF-urile
+  cu eticheta FID + anexa 00/01 G1, 02/03 G2: 0520 identificarea, 050E, 0521, 0504 tamponul circular al activităților — pe zile, din cea
+  mai nouă înapoi —, 0505 vehiculele (31 / 48 de octeți), 0506 locurile (10 / 21), la G2v2 0528 frontiera (17) și 0529 încărcările (20);
+  semnăturile nu se verifică); `TachoFile` (originalul în `media/private/tachograph/`, sha256 unic, legat după numărul cardului din actul
+  `tachograph_card` — primele 14 caractere — sau nume + data nașterii, atunci actul se creează), `TachoDay` (ziua UTC, intervalele, minutele;
+  din descărcarea cea mai nouă — `tacho.rebuild` la fiecare încărcare / legare / ștergere), `TachoEvent`; `apps/transport/tacho_rules.py` —
+  AETR art. 6–8 (continuă, zilnică 9 / 10 h cu 2 prelungiri, 56 / 90 h, odihna zilnică 11 / 3 + 9 / redusă ≤ 3, echipajul 9 h în 30 h,
+  săptămânală 45 / 24 h după ≤ 6 × 24 h, două reduse la rând, compensarea până la sfârșitul săptămânii a 3-a), UTC, săptămâna luni, fără
+  card = odihnă; `tacho.py` — zilele pe ora Moldovei, cursa (timpi, avertismente, `trips/{id}/tacho/`, `tacho-legs/`), alertele
+  `tacho_download` (28 de zile) și `tacho_infringement` (14 zile). Interfața: Salarizare → Tahograful (descărcări / zilele șoferului /
+  încălcările), panoul și „Țările din tahograf” în foaia de parcurs; `docs/ro|ru/transport.md` secțiunea 4. Verificat: 279 de teste
+  (fișiere G1 / G2v2 construite după specificație), typecheck, build. **De verificat:** pe fișiere .ddd reale (G1, G2, G2v2); fără card =
+  odihnă; compensarea (prima odihnă ≥ 9 h + deficit); termenul de 28 de zile în RM; pachetul de mobilitate UE neaplicat. **Urmează:** (c) GPS
+  + KPI; apoi S6 aviația. **Instrucțiunea Word pentru firma de transport** (cerută de Anatol: de la angajat, acte, ordine, vehicul, cursă,
+  diurnă, constante — până la salariu; cu video și link în program) — de făcut după (b).
+
 ## Următorii pași (de aici pornește sesiunea următoare)
 
 0. **Deschiderea**: (a) ~~Public Hostname~~ — făcut. (b) ~~asistentul de

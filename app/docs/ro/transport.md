@@ -1,4 +1,4 @@
-# Transportul: cursele, diurnele șoferilor, plata pe km
+# Transportul: cursele, diurnele șoferilor, plata pe km, tahograful
 
 *Modul opțional, pentru transportatori (marfă și pasageri, în țară și internațional).* Fiecare cursă se scrie într-o **foaie de
 parcurs**: șoferii, vehiculul, plecarea și întoarcerea, km și țările parcurse, cu ora trecerii frontierei. Cursa aprobată intră
@@ -75,8 +75,47 @@ diurnei pe zile, semnăturile (șoferul, dispecerul, contabilul-șef).
 - **DIURNA — „Diurna (în limita normelor)”**: neimpozabilă, fără CAS și CNAM, nu intră în medie;
 - **DIURNAEX — „Diurna peste norme (impozabilă)”**: partea peste normă (procentul întreprinderii peste 100 %).
 
-Salariul de funcție, noaptea, suplimentarele, sărbătorile se socotesc ca la toți, din pontaj (pasul următor — orele din
-tahograf).
+Salariul de funcție, noaptea, suplimentarele, sărbătorile se socotesc ca la toți, din pontaj. Tahograful (mai jos) arată timpii
+de pe card și încălcările — pontajul nu se schimbă din el.
+
+**4. Tahograful** (*Salarizare → Tahograful*) — fișierele descărcate de pe **cardul de conducător** (.ddd; generația 1 și
+generația 2 „smart”, inclusiv versiunea 2):
+- **Descărcările cardului** — „Încarcă fișierele .ddd” (se pot alege mai multe deodată). Din fiecare fișier se citesc: titularul,
+  numărul și termenul cardului, permisul, **activitățile pe zile** (conducere, altă muncă, disponibilitate, pauză / odihnă, pe
+  minute), km pe zi, vehiculele folosite, țara la începutul / sfârșitul zilei de muncă și, la tahograful „smart 2”, **trecerile
+  frontierei** și **încărcările / descărcările**. Fișierul se leagă singur de angajat: după **numărul cardului** din dosar (actul
+  „Cardul de conducător auto pentru tahograf”), altfel după **nume și data nașterii** — atunci cardul se adaugă în dosar, cu
+  termenul de pe card. Negăsit — „nelegat”: butonul „Leagă de angajat”. Același fișier încărcat a doua oară se recunoaște („era
+  deja”); un fișier care nu e descărcarea unui card de conducător (descărcarea vehiculului V_*.ddd, cardul de atelier) se respinge
+  cu motivul. **Originalul se păstrează** și se descarcă de aici, pentru control; ștergerea unei descărcări reface zilele șoferului
+  din celelalte.
+- **Zilele șoferului** — luna zi cu zi, ora Moldovei: bara celor 24 de ore (conducerea — pe toată înălțimea; altă muncă,
+  disponibilitatea, odihna, timpul fără card), totalurile pe zi și pe lună, km, țările, vehiculele și încălcările zilei (rândul se
+  deschide). Când descărcările se suprapun, ziua se ia din cea mai nouă.
+- **Încălcările lunii** — pentru toți șoferii pe care îi vedeți: de la / până la, regula, ce s-a găsit; galben — „de urmărit”
+  (odihna săptămânală redusă care încă se poate compensa).
+
+Regulile verificate (Codul transporturilor rutiere nr. 150/2014; Acordul AETR art. 6–8, la fel ca Reg. (CE) nr. 561/2006):
+- **conducerea continuă**: după 4 h 30 min — pauza de 45 min (sau 15 min, apoi 30 min); disponibilitatea și altă muncă nu sunt pauză;
+- **conducerea zilnică** (între două odihne): 9 h, de cel mult două ori pe săptămână 10 h;
+- **conducerea săptămânală** 56 h, **în două săptămâni la rând** 90 h;
+- **odihna zilnică**: în 24 de ore de la sfârșitul odihnei de dinainte — 11 h (sau 3 h + 9 h), redusă 9 h de cel mult 3 ori între
+  două odihne săptămânale; în echipaj — 9 h în 30 de ore;
+- **odihna săptămânală**: cel târziu după 6 perioade de 24 h; normală 45 h, redusă 24 h; în două săptămâni la rând cel puțin una
+  normală; reducerea se compensează în bloc până la sfârșitul săptămânii a treia, lipită de o odihnă de cel puțin 9 h.
+
+Cum se socotește: pe ora UTC a tahografului, săptămâna de luni 00:00 până duminică 24:00; **timpul fără card și zilele fără
+înregistrare se iau ca odihnă** (conducerea fără card nu se vede de pe card); ultima zi a descărcării se oprește la ora
+descărcării; pentru o lună se iau și 28 de zile înainte și după (odihnele și compensările care o ating).
+
+**În foaia de parcurs**: „Tahograful în timpul cursei” — timpii fiecărui șofer în cursă, dacă descărcările acoperă toată cursa,
+încălcările din timpul ei; în „Actele șoferilor” — avertismentele (lipsa descărcărilor, încălcările; nu opresc aprobarea).
+Butonul **„Țările din tahograf”** pune țările cursei din trecerile frontierei de pe cardul șoferului (doar tahograful „smart 2”),
+cu încărcarea / descărcarea — se verifică, se completează masa, se salvează; diurna se socotește din ele ca de obicei.
+
+**Alertele** (*Termene și alerte*): „Descărcarea cardului de tahograf” — la 28 de zile de la ultima descărcare (anunțată cu 7 zile
+înainte), pentru angajații activi cu cardul în dosar; „Încălcări ale timpului de conducere / odihnă” — din ultimele 14 zile, câte una
+pe șofer și zi. Le primesc contabilitatea și șeful de subdiviziune (pentru șoferii lui).
 
 ## Pentru cine configurează
 
@@ -112,6 +151,13 @@ actelor: „Certificat de competență profesională (CPC)”, „Cardul de cond
 de „Permis de conducere” și „Certificat medical”. Numerotarea — seria **FP**; tiparul — *Setări → Șabloane de tipar → Foaia de
 parcurs*.
 
+**Tahograful** n-are setări proprii — limitele sunt cele din lege. Ca legarea să fie sigură: în dosarul șoferului actul „Cardul de
+conducător auto pentru tahograf” cu **numărul cardului** (cele 16 caractere de pe card sau primele 14) și termenul; pentru legarea
+după nume — data nașterii. Cardul se descarcă cu cititorul de carduri / programul lui (fișierul .ddd); programul nu citește cardul
+direct. Alertele se pornesc / opresc și zilele lor se schimbă în *Setări → Alerte*. Fișierele stau în volumul media, în partea
+privată (se dau doar prin API, cu dreptul de vizualizare la transport), și intră în copia zilnică. Semnătura digitală a fișierului
+nu se verifică.
+
 **De verificat de om / contabilitate:**
 - dacă minimul de 70 % (pct. 22¹) se aplică și peste procentele reduse ale șoferilor (20 % / 40 %) — programul îl aplică peste tot;
 - cum se împacă 20 % / 40 % (pct. 31) cu „100 % în ziua plecării și a sosirii” (pct. 24) — programul: la aflările până la 24 de
@@ -122,5 +168,13 @@ parcurs*.
 - regimul fiscal: diurna în limita normelor — neimpozabilă și fără CAS / CNAM, peste norme — impozabilă (Codul fiscal art. 20,
   Legea 489/1999 anexa 3) — textul în vigoare n-a putut fi citit de pe legis.md; normele Federației Ruse pe orașe.
 
-**Ce urmează:** pasul (b) — fișierele tahografului (.ddd) și limitele timpului de conducere / odihnă; pasul (c) — importul din GPS
-și indicatorii KPI.
+- **tahograful**: cititorul e făcut după specificație (anexa 1B la Reg. 3821/85, anexa 1C la Reg. (UE) 2016/799) și încercat pe
+  fișiere construite după ea — **de verificat pe descărcări reale** de generația 1, 2 și 2 v2 (cerute de la firmă);
+- timpul fără card și zilele fără înregistrare socotite odihnă;
+- compensarea odihnei săptămânale reduse: o odihnă de cel puțin 9 h + ce lipsește, până la sfârșitul săptămânii a treia
+  (programul ia prima potrivită — aproximare);
+- echipajul: fereastra de 30 de ore când în perioada aceea s-a condus în echipaj;
+- descărcarea cardului la 28 de zile (Reg. (UE) 581/2010) — de confirmat termenul pentru RM; regulile „pachetului de mobilitate” al
+  UE (două odihne săptămânale reduse la rând în transportul internațional, întoarcerea acasă) — neaplicate (AETR).
+
+**Ce urmează:** pasul (c) — importul din GPS și indicatorii KPI.
