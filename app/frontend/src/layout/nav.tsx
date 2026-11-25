@@ -20,6 +20,7 @@ export const navLabel = (t: (key: string) => string, item: NavItem) => t(item.la
 export const NAV: NavItem[] = [
   { path: '/', key: 'dashboard', icon: <DashboardOutlined /> },
   { path: '/alerts', key: 'alerts', icon: <BellOutlined /> },
+  { path: '/calendar', key: 'hrCalendar', icon: <CalendarOutlined />, perm: 'employees.view' },
   // Etapa 1: întreprinderea, subdiviziunile, statele de personal
   { path: '/org', key: 'org', icon: <ApartmentOutlined />, perm: 'org.view' },
   { path: '/staff-list', key: 'staffList', icon: <TableOutlined />, perm: 'org.view' },
@@ -129,7 +130,7 @@ export const SETTINGS_NAV: NavItem[] = [
  * lucrului”; restul (catalogul angajaților, registrul ordinelor, evidențele) stau la Registre. Ce nu e aici e registru.
  */
 export const PANEL_KIND: Record<string, 'start' | 'doc'> = {
-  dashboard: 'start', alerts: 'start', portal: 'start',
+  dashboard: 'start', alerts: 'start', hrCalendar: 'start', portal: 'start',
   staffList: 'doc', contracts: 'doc', employeeRequests: 'doc', orders: 'doc',
   leaveSchedule: 'doc', leave: 'doc', sickLeave: 'doc', rosters: 'doc', timesheets: 'doc',
   payroll: 'doc', payrollPayments: 'doc', payItemChanges: 'doc', itPark: 'doc', productionReports: 'doc', mealVouchers: 'doc', trips: 'doc', tachograph: 'doc',

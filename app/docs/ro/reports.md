@@ -38,3 +38,11 @@ angajaților, ocuparea posturilor, registrul ordinelor, soldurile concediilor, p
 > formularul statistic se completează pe site-ul BNS. Din 2026 formularele BNS pentru muncă sunt **M1** (trimestrial) și
 > **M3** (anual) — raportul nu reproduce rândurile lor, de aceea și-a păstrat denumirea. Formarea profesională, sănătatea și
 > securitatea în muncă și evidența militară (doar cu modulul pornit) au grupele lor în catalog.
+
+**Fișa decontărilor cu angajatul** (grupa Salarizarea; și din fila Salariu a fișei): soldul salarial la începutul perioadei,
+fiecare calcul aprobat (de plătit) și fiecare plată achitată (achitat) cu soldul după ea, rulajul, soldul final și concluzia
+în cuvinte — „întreprinderea datorează lui … X lei”, „a primit cu X lei mai mult”, „decontările sunt închise”. Sumele sunt
+înainte de impozitul pe venit și CNAM (se rețin la plată). Calculul intră la ultima zi a lunii lui, plata — în ziua achitării.
+
+În rapoarte rândul care are documentul lui îl deschide (dublu clic sau legătura din prima coloană); concluzia raportului apare
+sub tabel, în tipar și în Excel.

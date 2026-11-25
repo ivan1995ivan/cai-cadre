@@ -68,6 +68,23 @@ class SmtpTestView(APIView):
         return Response({"sent": to})
 
 
+def _leave_plan(user, today) -> dict:
+    """Graficul concediilor anului: zilele planificate în graficele aprobate (tot anul și până azi) față de zilele de concediu
+    anual luate până azi — pentru angajații pe care îi vede utilizatorul."""
+    from apps.leave.models import Absence, LeaveScheduleLine
+    from apps.staff import services as staff
+    from apps.staff.models import Employee
+
+    people = staff.scope_employees(Employee.objects.all(), user, "leave")
+    lines = LeaveScheduleLine.objects.filter(schedule__year=today.year, schedule__status="approved",
+                                             schedule__deletion_mark=False, employee__in=people)
+    planned = sum(ln.days for ln in lines)
+    planned_to_date = sum(ln.days for ln in lines if (ln.moved_to or ln.date_from) <= today)
+    taken = sum(a.days for a in Absence.objects.filter(kind="annual", employee__in=people, date_from__year=today.year,
+                                                       date_from__lte=today))
+    return {"year": today.year, "planned": planned, "planned_to_date": planned_to_date, "taken": taken}
+
+
 class DashboardStatsView(APIView):
     """Indicatorii panoului de start (PLAN.md §5.9, p.15), pe secțiile utilizatorului dacă vede doar secțiile lui."""
 
@@ -104,6 +121,7 @@ class DashboardStatsView(APIView):
             out["unacknowledged"] = OrderItem.objects.filter(order__status="signed", acknowledged_on__isnull=True,
                                                              employee__isnull=False, order__signed_at__date__gte=today - timedelta(days=90)).count()
         if user.has_crm_perm("leave.view"):
+            out["leave_plan"] = _leave_plan(user, today)
             reqs = LeaveRequest.objects.filter(status="new", deletion_mark=False)
             ids = staff.visible_subdivision_ids(user, "leave")
             if ids is not None:
@@ -122,3 +140,21 @@ def _this_year(birth, today):
         return birth.replace(year=today.year)
     except ValueError:
         return birth.replace(year=today.year, day=28)
+
+
+class CalendarView(APIView):
+    """GET ?month=AAAA-LL — calendarul de personal al lunii (apps.alerts.hr_calendar), după drepturile utilizatorului."""
+
+    def get(self, request):
+        from rest_framework.exceptions import ValidationError
+
+        from .hr_calendar import events
+
+        text = request.query_params.get("month") or timezone.localdate().strftime("%Y-%m")
+        try:
+            year, month = (int(x) for x in text.split("-")[:2])
+            if not 1 <= month <= 12:
+                raise ValueError
+        except ValueError:
+            raise ValidationError({"month": "Luna se scrie AAAA-LL."}) from None
+        return Response(events(request.user, year, month))

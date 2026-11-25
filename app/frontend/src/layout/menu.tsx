@@ -38,7 +38,7 @@ const section = (key: string, icon: string, items: string[], reports: string[] =
  * sunt funcții de meniu: le deschide Administrare → Setări (SETTINGS_NAV).
  */
 export const DEFAULT_SECTIONS: MenuSection[] = [
-  section('principal', 'home', ['dashboard', 'alerts', 'portal']),
+  section('principal', 'home', ['dashboard', 'alerts', 'hrCalendar', 'portal']),
   section('institutia', 'org',
     ['org', 'staffList', 'occupancy'],
     ['repVacancies', 'repStructure']),

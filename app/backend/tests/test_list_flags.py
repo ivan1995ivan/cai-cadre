@@ -26,7 +26,7 @@ def test_list_flags(admin_client, org):  # noqa: F811
     assert fa["absent"]["kind"] == "sick" and fa["absent"]["to"] == (today + timedelta(days=3)).isoformat()
     assert fa["probation"] == (today + timedelta(days=20)).isoformat()
     assert fa["contract_ends"] == (today + timedelta(days=10)).isoformat() and "missing" not in fa
-    assert fb == {"missing": ["idnp", "iban"]}
+    assert fb == {"missing": ["idnp"]}  # IBAN-ul lipsă — plata în numerar, nu semn
     # semnele nu adaugă cereri pe rând: cu 10 angajați în plus — tot atâtea cereri
     from django.db import connection
     from django.test.utils import CaptureQueriesContext

@@ -17,6 +17,7 @@ interface Stats {
   sick?: number
   travel?: number
   units?: { approved: number; occupied: number; vacant: number }
+  leave_plan?: { year: number; planned: number; planned_to_date: number; taken: number }
   birthdays?: { id: number; name: string; date: string }[]
   orders_draft?: number | null
   unacknowledged?: number
@@ -63,6 +64,17 @@ export default function Dashboard() {
               <Typography.Text>{t('dashboard.approved')}: <b>{units.approved}</b></Typography.Text>
               <Typography.Text>{t('dashboard.occupied')}: <b>{units.occupied}</b></Typography.Text>
               <Typography.Text type={units.vacant ? 'warning' : undefined}>{t('dashboard.vacancies')}: <b>{units.vacant}</b></Typography.Text>
+            </Space>
+          </Card>
+        </Col>}
+        {data?.leave_plan && data.leave_plan.planned > 0 && <Col xs={24} lg={8}>
+          <Card title={t('dashboard.leavePlan', { year: data.leave_plan.year })} onClick={() => navigate('/leave/schedule')} hoverable>
+            <Progress type="dashboard" percent={data.leave_plan.planned_to_date
+              ? Math.round((data.leave_plan.taken / data.leave_plan.planned_to_date) * 100) : 0} />
+            <Space orientation="vertical" size={0} style={{ marginLeft: 12 }}>
+              <Typography.Text>{t('dashboard.leavePlanned')}: <b>{data.leave_plan.planned}</b></Typography.Text>
+              <Typography.Text>{t('dashboard.leaveToDate')}: <b>{data.leave_plan.planned_to_date}</b></Typography.Text>
+              <Typography.Text>{t('dashboard.leaveTaken')}: <b>{data.leave_plan.taken}</b></Typography.Text>
             </Space>
           </Card>
         </Col>}

@@ -11,6 +11,12 @@ def _d(day) -> str:
     return f"{day:%d.%m.%Y}" if day else ""
 
 
+def _num(v) -> str:
+    """Numărul fără zerouri în plus și fără notația științifică (3840, nu 3.84E+3)."""
+    d = Decimal(v or 0).normalize()
+    return format(d, "f").replace(".", ",")
+
+
 def _money(v) -> str:
     return f"{Decimal(v or 0):,.2f}".replace(",", " ").replace(".", ",")
 
@@ -33,7 +39,7 @@ def events(employee, request) -> list:
     for job in employee.employments.select_related("occupation", "subdivision").prefetch_related(
             "history__occupation", "history__subdivision"):
         for h in job.history.all():
-            parts = [h.occupation.name_ro, h.subdivision.name_ro, f"norma {h.rate.normalize()}"]
+            parts = [h.occupation.name_ro, h.subdivision.name_ro, f"norma {_num(h.rate)}"]
             if "base_salary" not in hidden:
                 parts.append(f"salariul {_money(h.base_salary)} lei")
             add(h.date, "job", f"{h.get_event_display()} — {job.get_kind_display().lower()}", "; ".join(parts)
@@ -66,7 +72,7 @@ def events(employee, request) -> list:
 
         for t in Training.objects.filter(employee=employee):
             add(t.date_from, "training", f"{t.get_kind_display()}: {t.title}"[:200],
-                ", ".join(x for x in (t.provider, f"{t.hours.normalize()} ore" if t.hours else "") if x))
+                ", ".join(x for x in (t.provider, f"{_num(t.hours)} ore" if t.hours else "") if x))
     from apps.core.models import Company
 
     if can("transport.view") and getattr(Company.get(), "transport_enabled", False):
@@ -78,7 +84,7 @@ def events(employee, request) -> list:
         for t in (Trip.objects.filter(Q(driver__employee=employee) | Q(co_driver__employee=employee), deletion_mark=False)
                   .select_related("vehicle")):
             add(timezone.localtime(t.departure).date(), "trip", f"Cursa {t.reference()} ({t.get_status_display().lower()})",
-                f"{t.route or ''} · {t.vehicle.plate} · {t.km.normalize()} km".strip(" ·"), f"/transport/trips/{t.pk}")
+                f"{t.route or ''} · {t.vehicle.plate} · {_num(t.km)} km".strip(" ·"), f"/transport/trips/{t.pk}")
     if can("payroll.view"):
         from datetime import date
 

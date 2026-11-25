@@ -287,7 +287,8 @@ class EmployeeListSerializer(MaskMixin, serializers.ModelSerializer):
 
     def get_flags(self, obj):
         """Semnele din prima coloană a listei: absent azi (felul, până când), în probă, contractul pe termen care expiră în
-        CONTRACT_WARN_DAYS zile, lipsește IDNP / IBAN (doar la angajații în muncă)."""
+        CONTRACT_WARN_DAYS zile, lipsește IDNP (doar la angajații în muncă; IBAN-ul lipsă nu e semn — înseamnă plata în
+        numerar)."""
         from datetime import timedelta
 
         from django.utils import timezone
@@ -303,10 +304,8 @@ class EmployeeListSerializer(MaskMixin, serializers.ModelSerializer):
                 out["probation"] = m.probation_until
             if m.date_to and today <= m.date_to <= today + timedelta(days=self.CONTRACT_WARN_DAYS):
                 out["contract_ends"] = m.date_to
-        if obj.status in ("active", "suspended"):
-            missing = [name for name, value in (("idnp", obj.idnp), ("iban", obj.iban)) if not value]
-            if missing:
-                out["missing"] = missing
+        if obj.status in ("active", "suspended") and not obj.idnp:
+            out["missing"] = ["idnp"]
         return out
 
 

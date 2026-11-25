@@ -4,6 +4,11 @@ Lista arată angajații în funcție; filtrele schimbă starea (activi, cu CIM s
 (cu sub-secțiile ei), categoria de personal și tipul angajării. Coloanele se aleg din rotița din dreapta tabelului
 (IDNP, data nașterii, telefonul sunt ascunse implicit); butonul Excel exportă lista cu filtrele puse.
 
+**Semnele din prima coloană** (mausul pe semn spune ce e): absent azi — concediu (portocaliu), boală (roșu), deplasare
+(albastru), cu data întoarcerii; în perioada de probă; contractul pe durată determinată expiră în 30 de zile; lipsește IDNP
+sau IBAN (la angajații în muncă). Telefonul se verifică la salvare: cifre, 0XXXXXXXX sau +373XXXXXXXX ori un număr străin cu
+prefixul țării (spațiile și cratimele se scot); un număr vechi scris altfel nu oprește salvarea fișei cât nu e schimbat.
+
 **Fișa scurtă**: țineți mouse-ul o clipă pe numele angajatului — apare fotografia, data nașterii și vârsta, raporturile de
 muncă (funcția, subdiviziunea, norma, de când), vechimea în întreprindere, totală și în specialitate, absența de azi (concediu, boală), concediul disponibil, contactele și mărimile echipamentului. Fișa
 scurtă nu se scrie în jurnalul accesului; datele sensibile se ascund după aceleași drepturi ca în dosar.
@@ -27,7 +32,14 @@ scurtă nu se scrie în jurnalul accesului; datele sensibile se ascund după ace
   reținerile personale, fișa personală anuală (anexa 8). Raportul de muncă cu salariul de funcție sub salariul minim pe țară
   arată avertismentul „sub salariul minim” (la calcul se adaugă completarea până la minim).
 - **Angajare / eliberare** — lista de verificare: ce s-a semnat și primit la angajare, ce s-a predat la plecare.
+- **Cronologia** — tot ce s-a întâmplat cu angajatul, cele mai noi sus: istoria raporturilor de muncă (angajare, transferuri,
+  salariu, suspendare, încetare), ordinele, absențele, certificatele medicale, sancțiunile și stimulările, formarea, cursele,
+  salariul lunilor aprobate. Filtrul pe fel, exportul în Excel; dublu clic deschide documentul. Fiecare fel apare doar cu
+  dreptul lui; salariul din istorie — doar dacă rolul nu-l ascunde.
 - **Jurnalul accesului** — cine a deschis, tipărit sau exportat dosarul.
+
+**Ordin nou** (sus, cu dreptul de a crea ordine) — ordinul pentru acest angajat: alegeți tipul și data, angajatul e deja pus.
+Din fila **Salariu** — legătura spre **Fișa decontărilor cu angajatul**.
 
 **Tipar:** fișa personală (MR-2), adeverința de la locul de muncă, adeverința de vechime și **adeverința privind
 salariul (pentru bancă)** — cu numărul din seria „Adeverință” și câmpul *Se eliberează pentru* (de ex. banca). Numărul se ia

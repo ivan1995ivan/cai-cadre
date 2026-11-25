@@ -66,6 +66,7 @@ import MealVouchersPage, { MealVoucherEditor } from './pages/payroll/MealVoucher
 import TripsPage, { TripEditor } from './pages/transport/TripsPage'
 import TransportSettingsPage from './pages/transport/TransportSettings'
 import TachographPage from './pages/transport/TachographPage'
+import HrCalendarPage from './pages/HrCalendarPage'
 import KpiSheetsPage, { KpiSheetEditor } from './pages/transport/KpiPage'
 import { GpsDaysPage, IncidentsPage } from './pages/transport/TransportRecords'
 import TaxReportsPage, { TaxSettingsPage } from './pages/payroll/TaxReportsPage'
@@ -219,6 +220,7 @@ function makeRouter() {
       <Route index element={<Dashboard />} />
       <Route path="profile" element={<Profile />} />
       <Route path="alerts" element={<AlertsPage />} />
+      <Route path="calendar" element={<HrCalendarPage />} />
       <Route path="about" element={<AboutPage />} />
       <Route path="panel/:key" element={<SectionPanel />} />
       {MODULE_ROUTES.map((r) => (

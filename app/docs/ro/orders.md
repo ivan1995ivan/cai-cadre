@@ -55,3 +55,11 @@ după aceea de alt document, anularea se oprește — anulați întâi documentu
 (butonul de pe punct). **Registrul ordinelor** arată ordinele pe registru și an, în ordinea numerelor, cu numerele lipsă.
 
 Textele-model ale punctelor se schimbă în Administrare → Setări → Tipuri de ordine.
+
+**Documente legate** (în ordinul semnat, sub puncte): ce a rezultat la semnare — absențele, acumulările planificate, tarifele
+pe tipuri de ore, cumulările, formarea, sancțiunile și stimulările, corectările soldului concediilor — și de unde a pornit
+(cererea de concediu, ordinul pe care îl anulează); ordinul anulat arată prin ce ordin. Legătura deschide documentul.
+
+**Împarte suma** (ordinul de premiere cu mai mulți angajați, ciornă): suma totală a primei se împarte egal, după salariul de
+funcție (pentru normă) sau după orele lucrate în luna aleasă (pontajul). Rotunjirea la bani merge la partea cea mai mare, ca
+totalul să fie exact. „Pune sumele în puncte” le scrie în fiecare punct; se pot corecta apoi de mână.

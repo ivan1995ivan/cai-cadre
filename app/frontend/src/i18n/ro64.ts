@@ -1,6 +1,6 @@
 // S6b (pasul c): KPI-ul șoferilor (fișa lunii, schemele, indicatorii), evenimentele șoferilor, GPS-ul vehiculelor, combustibilul cursei.
 export default {
-  menu: { kpiSheets: 'KPI-ul șoferilor', driverIncidents: 'Evenimentele șoferilor', gpsDays: 'GPS-ul vehiculelor', kpiIndicators: 'Indicatorii KPI',
+  menu: { hrCalendar: 'Calendarul', kpiSheets: 'KPI-ul șoferilor', driverIncidents: 'Evenimentele șoferilor', gpsDays: 'GPS-ul vehiculelor', kpiIndicators: 'Indicatorii KPI',
     kpiSchemes: 'Schemele KPI' },
   desk: { tab: { kpiSheet: 'Fișa KPI {{number}}' } },
   pay: {
@@ -12,6 +12,8 @@ export default {
   ord: { dist: { button: 'Împarte suma', title: 'Împărțirea primei pe angajați', hint: 'Suma totală se împarte pe punctele ordinului: egal, după salariul de funcție (pentru normă) sau după orele lucrate în luna aleasă (pontajul). Rotunjirea merge la partea cea mai mare, ca totalul să fie exact. Sumele se pun în puncte și se pot corecta apoi de mână.', total: 'Suma totală', calc: 'Socotește', apply: 'Pune sumele în puncte', done: 'Sume puse în {{n}} puncte', amount: 'Suma', methods: { equal: 'Egal', salary: 'După salariu', hours: 'După ore' }, basis: { equal: '', salary: 'Salariul de funcție', hours: 'Ore lucrate' } }, related: { title: 'Documente legate', sources: 'De unde a pornit', made: 'Ce a rezultat la semnare', what: 'Documentul', employee: 'Angajatul', detail: 'Detalii' } },
   rep: { employee: 'Angajatul', chooseEmployee: 'Alegeți angajatul — raportul e despre un singur angajat.' },
   pp: { settlement: 'Fișa decontărilor cu angajatul' },
+  cal: { toggle: 'Clic — ascunde / arată', title: 'Calendarul de personal', workDays: '{{n}} zile lucrătoare, {{h}} sărbători', empty: 'Nimic în luna aceasta (sau nu aveți drepturile modulelor).', more: '+ încă {{n}}', noneDay: 'Nimic în ziua aceasta', kinds: { leave: 'Concediu', sick: 'Boală', travel: 'Deplasare / formare', idle: 'Staționare', trip: 'Cursă', birthday: 'Ziua de naștere', probation: 'Sfârșitul probei', contract: 'Expiră contractul', document: 'Expiră actul' } },
+  dashboard: { leavePlan: 'Graficul concediilor {{year}}', leavePlanned: 'Zile planificate pe an', leaveToDate: 'Planificate până azi', leaveTaken: 'Luate până azi' },
   kpi: {
     title: 'Fișa KPI', new: 'Fișă KPI nouă', create: 'Creează și completează',
     hint: 'Pe lună: șoferii cu schemă KPI, indicatorii din curse, evenimente și tahograf, punctajul și prima. Aprobată, prima intră în calculul salariului aceleiași luni.',

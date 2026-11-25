@@ -1,6 +1,6 @@
 // S6b (step c): driver KPI (monthly sheet, schemes, indicators), driver incidents, vehicle GPS, trip fuel.
 export default {
-  menu: { kpiSheets: 'Driver KPI', driverIncidents: 'Driver incidents', gpsDays: 'Vehicle GPS', kpiIndicators: 'KPI indicators', kpiSchemes: 'KPI schemes' },
+  menu: { hrCalendar: 'Calendar', kpiSheets: 'Driver KPI', driverIncidents: 'Driver incidents', gpsDays: 'Vehicle GPS', kpiIndicators: 'KPI indicators', kpiSchemes: 'KPI schemes' },
   desk: { tab: { kpiSheet: 'KPI sheet {{number}}' } },
   pay: {
     cmp: { button: 'Compare recalculation', buttonHint: 'What would change if the month were calculated now, per employee — applied only to the chosen ones', title: 'Recalculation: old → new', hint: 'The calculation now against the saved one, only employees with changes (nothing written yet). Tick whom to recalculate; the others stay as they are.', none: 'Recalculating changes nothing.', apply: 'Recalculate ticked ({{n}})', applied: 'Recalculated: {{n}}', gross: 'Gross', net: 'To pay', diff: 'Difference', items: 'Rows that change', status: { new: 'new', removed: 'leaves the payroll' } },
@@ -11,6 +11,8 @@ export default {
   ord: { dist: { button: 'Split the amount', title: 'Splitting the bonus among employees', hint: 'The total is split over the order points: equally, by base salary (for the rate) or by hours worked in the chosen month (timesheet). Rounding goes to the largest share so the total is exact. The amounts are put into the points and can be corrected by hand.', total: 'Total amount', calc: 'Calculate', apply: 'Put the amounts into the points', done: 'Amounts set in {{n}} points', amount: 'Amount', methods: { equal: 'Equally', salary: 'By salary', hours: 'By hours' }, basis: { equal: '', salary: 'Base salary', hours: 'Hours worked' } }, related: { title: 'Related documents', sources: 'Based on', made: 'Created on signing', what: 'Document', employee: 'Employee', detail: 'Details' } },
   rep: { employee: 'Employee', chooseEmployee: 'Choose the employee — the report is about one employee.' },
   pp: { settlement: 'Employee settlement statement' },
+  cal: { toggle: 'Click to hide / show', title: 'Staff calendar', workDays: '{{n}} working days, {{h}} holidays', empty: 'Nothing this month (or no module rights).', more: '+ {{n}} more', noneDay: 'Nothing on this day', kinds: { leave: 'Leave', sick: 'Sickness', travel: 'Business trip / training', idle: 'Downtime', trip: 'Trip', birthday: 'Birthday', probation: 'Probation ends', contract: 'Contract expires', document: 'Document expires' } },
+  dashboard: { leavePlan: 'Leave schedule {{year}}', leavePlanned: 'Days planned for the year', leaveToDate: 'Planned to date', leaveTaken: 'Taken to date' },
   kpi: {
     title: 'KPI sheet', new: 'New KPI sheet', create: 'Create and fill',
     hint: 'Per month: drivers with a KPI scheme, indicators from trips, incidents and the tachograph, the score and the bonus. Once approved, the bonus goes into the same month\'s payroll.',

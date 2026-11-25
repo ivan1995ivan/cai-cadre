@@ -102,3 +102,8 @@ plafoanele, intră în medie, codul pentru IPC21 / IALS21.
 contractele individuale de muncă e **impozitat final** — fără CAS, fără CNAM și impozit la plată, fără scutiri; completarea
 până la salariul minim rămâne; contractele de prestări servicii — în regimul general. Calculul are eticheta „IT Park —
 impozitat final”, coloana CAS arată „IT Park”, iar restul e chiar suma de plată. Detaliat — [Regimul IT Park](help:payroll/it-park).
+
+**Compară recalcularea** (calculul neaprobat): arată, fără să scrie nimic, ce s-ar schimba dacă luna s-ar calcula acum — pe
+angajat calculatul și suma de plată vechi → nou, diferența și rândurile pe tipuri care se schimbă; angajații noi și cei care
+ies din calcul sunt marcați. Se recalculează doar cei bifați (implicit toți); ceilalți rămân cum erau. Folositor după o
+corectare (un ordin semnat târziu, un pontaj schimbat), ca să nu se schimbe pe nevăzute sumele deja verificate.

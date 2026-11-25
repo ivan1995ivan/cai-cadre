@@ -9,4 +9,5 @@ urlpatterns = [
     path("smtp/", views.SmtpView.as_view()),
     path("smtp/test/", views.SmtpTestView.as_view()),
     path("dashboard/", views.DashboardStatsView.as_view()),
+    path("calendar/", views.CalendarView.as_view()),
 ]

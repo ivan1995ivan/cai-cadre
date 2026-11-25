@@ -1,5 +1,16 @@
 # Ce e nou
 
+## Idei preluate: listele, cronologia, decontările, calendarul
+
+- **Lista angajaților**: semnele din prima coloană (absent azi, în probă, contract care expiră, lipsește IDNP / IBAN); telefonul
+  verificat la salvare; „Închide celelalte” ferestre.
+- **Fișa angajatului**: fila **Cronologia** (tot ce s-a întâmplat cu el) și butonul **Ordin nou**.
+- **Ordinul semnat**: **Documente legate** (ce a rezultat și de unde a pornit); în ordinul de premiere — **Împarte suma** (egal,
+  după salariu, după ore).
+- **Calculul salariului**: **Compară recalcularea** — vechi → nou pe angajat, se recalculează doar cei bifați.
+- **Rapoarte**: **Fișa decontărilor cu angajatul** cu concluzia în cuvinte; rândurile deschid documentul.
+- **Principal → Calendarul** de personal pe lună; pe pagina de start — **Graficul concediilor** planificat / luat.
+
 ## Securitate: fișierele personale, adresa reală, blocarea contului
 
 - **Fotografiile și scanările actelor angajaților, scanările certificatelor medicale, semnătura și ștampila întreprinderii**

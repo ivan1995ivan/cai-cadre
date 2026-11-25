@@ -233,7 +233,14 @@ pornească de unde s-a rămas, nu de la zero.
   descărcare; în interfață `api/files.ts`); `/media/` public doar pentru `company/` (logo-uri). IP-ul real și blocarea contului —
   vezi pașii 3 și 4. Verificat: 297 de teste, typecheck, build, `nginx-test.sh`.
 - **Ideile din sarcinile tehnice ale altui proiect** (2026-11-25): 27 de PDF-uri (CRM de vânzări) analizate și șterse, cum a
-  cerut Anatol; ideile de afișare potrivite pentru noi — de ales cu Anatol ce se face.
+  cerut Anatol; Anatol a ales toate cele 4 pachete — făcute: **A** (semnele din lista angajaților `flags` — absent azi, probă,
+  contract care expiră, lipsește IDNP; telefonul verificat doar când se schimbă; „Închide celelalte”), **B** (cronologia
+  `staff/timeline.py` + fila „Cronologia”; „Ordin nou” din fișă — `orders/NewOrderDialog.tsx`; „Documente legate” —
+  `orders/related.py`), **C** (raportul `employee_settlement` — `reports/settlement.py`, rândurile cu `_link`, `conclusion`;
+  „Compară recalcularea” — `payroll/recalc.py`; „Împarte suma” în ordinul de premiere — `orders/distribute.py`), **D**
+  (Principal → Calendarul — `alerts/hr_calendar.py`, `pages/HrCalendarPage.tsx`; blocul „Graficul concediilor” pe pagina de
+  start). Neluat: „semaforul pe zile” (ce înseamnă o zi bună în cadre — de hotărât), discuțiile pe document. Verificat: 306 teste,
+  typecheck, build, capturi pe copia demo.
 
 ## Următorii pași (de aici pornește sesiunea următoare)
 
