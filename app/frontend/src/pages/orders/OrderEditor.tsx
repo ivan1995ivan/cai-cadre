@@ -5,14 +5,14 @@ import {
   Alert, Button, Card, Col, DatePicker, Form, Input, InputNumber, Popconfirm, Row, Select, Space, Spin, Tag, Tooltip, Typography, message,
 } from 'antd'
 import {
-  ApartmentOutlined, CheckCircleOutlined, CopyOutlined, DeleteOutlined, FileTextOutlined, PlusOutlined, PrinterOutlined, ReloadOutlined, SaveOutlined,
-  StopOutlined,
+  ApartmentOutlined, CheckCircleOutlined, CopyOutlined, DeleteOutlined, FileTextOutlined, PercentageOutlined, PlusOutlined, PrinterOutlined, ReloadOutlined, SaveOutlined, StopOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 
 import CloseForm from '../../components/CloseForm'
 import PrintDialog from '../../components/PrintDialog'
 import RelatedDocs from './RelatedDocs'
+import DistributeDialog from './DistributeDialog'
 import { useUnsavedGuard } from '../../components/UnsavedGuard'
 import { api, errorText, fieldErrors } from '../../api/client'
 import { useFetch } from '../../api/hooks'
@@ -47,6 +47,7 @@ export default function OrderEditor() {
   const [busy, setBusy] = useState(false)
   const [adding, setAdding] = useState<number | undefined>()
   const [addingSub, setAddingSub] = useState<number | undefined>()
+  const [distributing, setDistributing] = useState(false)
   const [dirty, setDirty] = useState(false)
   const { data: bases } = useFetch<{ id: number; code: string; name_ro: string }[]>('/org/legal-bases/', { active: 1 })
   const draft = order?.status === 'draft' && !order.deletion_mark  // ordinul marcat pentru ștergere nu se mai schimbă
@@ -253,7 +254,11 @@ export default function OrderEditor() {
       </Card>
 
       <Card title={<Space><FileTextOutlined />{t('ord.points')}</Space>}
-        extra={canEdit && items.length > 0 && <Button icon={<ReloadOutlined />} onClick={regenerate}>{t('ord.regenerate')}</Button>}>
+        extra={<Space>
+          {canEdit && order.effect === 'incentive' && items.length > 1 && <Button icon={<PercentageOutlined />}
+            onClick={() => setDistributing(true)}>{t('ord.dist.button')}</Button>}
+          {canEdit && items.length > 0 && <Button icon={<ReloadOutlined />} onClick={regenerate}>{t('ord.regenerate')}</Button>}
+        </Space>}>
         {items.length === 0 && order.effect !== 'staff_list' && <Typography.Paragraph type="secondary">{t('ord.noPoints')}</Typography.Paragraph>}
         {order.effect === 'staff_list' && items.length === 0 && canEdit && (
           <Button icon={<PlusOutlined />} onClick={async () => { await api.post('/orders/items/', { order: order.id, params: {} }); load() }}>{t('ord.addPoint')}</Button>)}
@@ -283,6 +288,7 @@ export default function OrderEditor() {
       </Card>
 
       {order.status !== 'draft' && <RelatedDocs order={order.id} />}
+      <DistributeDialog order={order.id} items={items} open={distributing} onClose={() => setDistributing(false)} onDone={load} />
 
       {print && (
         <PrintDialog open onClose={() => setPrint(null)} docType={print.item ? 'order_extract' : 'order'} url={`/orders/orders/${order.id}/print/`}

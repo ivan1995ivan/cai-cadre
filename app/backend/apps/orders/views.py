@@ -29,11 +29,20 @@ def _date(value, field="date"):
 
 class OrderViewSet(DeletionMarkMixin, viewsets.ModelViewSet):
     perm_module = "orders"
-    perm_actions = {"related": "view", "sign": "approve", "print": "view", "acknowledge": "edit", "refresh_texts": "edit",
+    perm_actions = {"distribute": "edit", "related": "view", "sign": "approve", "print": "view", "acknowledge": "edit", "refresh_texts": "edit",
                     "cancel_by_order": "create", "register": "view", "print_register": "view", "add_subdivision": "edit"}
 
     def get_serializer_class(self):
         return OrderListSerializer if self.action == "list" else OrderSerializer
+
+    @action(detail=True, methods=["post"])
+    def distribute(self, request, pk=None):
+        """Propunerea împărțirii unei sume pe punctele ordinului de stimulare: {total, method: equal | salary | hours, year,
+        month} → suma fiecărui punct (nu se salvează)."""
+        from .distribute import distribute
+
+        d = request.data
+        return Response(distribute(self.get_object(), d.get("total"), d.get("method", "equal"), d.get("year"), d.get("month")))
 
     @action(detail=True, methods=["get"])
     def related(self, request, pk=None):
