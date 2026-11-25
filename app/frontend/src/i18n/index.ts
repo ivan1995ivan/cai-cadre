@@ -64,6 +64,7 @@ import ro60 from './ro60'
 import ro61 from './ro61'
 import ro62 from './ro62'
 import ro63 from './ro63'
+import ro64 from './ro64'
 import roDesk from './roDesk'
 import ru from './ru'
 import ru1 from './ru1'
@@ -128,6 +129,7 @@ import ru60 from './ru60'
 import ru61 from './ru61'
 import ru62 from './ru62'
 import ru63 from './ru63'
+import ru64 from './ru64'
 import ruDesk from './ruDesk'
 import en from './en'
 import en1 from './en1'
@@ -164,6 +166,7 @@ import en31 from './en31'
 import en32 from './en32'
 import en33 from './en33'
 import en34 from './en34'
+import en35 from './en35'
 import enDesk from './enDesk'
 
 function initialLang() {
@@ -189,7 +192,7 @@ function merge(...parts: Tree[]): Tree {
 }
 
 i18n.use(initReactI18next).init({
-  resources: { ro: { translation: merge(ro, ro1, ro2, ro3, ro4, ro5, ro6, ro7, ro8, ro9, ro10, ro11, ro12, ro13, ro14, ro15, ro16, ro17, ro18, ro19, ro20, ro21, ro22, ro24, ro25, ro26, ro27, ro28, ro29, ro30, ro31, ro32, ro33, ro34, ro35, ro36, ro37, ro38, ro39, ro40, ro41, ro42, ro43, ro44, ro45, ro46, ro47, ro48, ro49, ro50, ro51, ro52, ro53, ro54, ro55, ro56, ro57, ro58, ro59, ro60, ro61, ro62, ro63, roDesk) }, ru: { translation: merge(ru, ru1, ru2, ru3, ru4, ru5, ru6, ru7, ru8, ru9, ru10, ru11, ru12, ru13, ru14, ru15, ru16, ru17, ru18, ru19, ru20, ru21, ru22, ru24, ru25, ru26, ru27, ru28, ru29, ru30, ru31, ru32, ru33, ru34, ru35, ru36, ru37, ru38, ru39, ru40, ru41, ru42, ru43, ru44, ru45, ru46, ru47, ru48, ru49, ru50, ru51, ru52, ru53, ru54, ru55, ru56, ru57, ru58, ru59, ru60, ru61, ru62, ru63, ruDesk) }, en: { translation: merge(en, en1, en2, en3, en4, en5, en6, en7, en8, en9, en10, en11, en12, en13, en14, en15, en16, en17, en18, en19, en20, en21, en22, en23, en24, en25, en26, en27, en28, en29, en30, en31, en32, en33, en34, enDesk) } },
+  resources: { ro: { translation: merge(ro, ro1, ro2, ro3, ro4, ro5, ro6, ro7, ro8, ro9, ro10, ro11, ro12, ro13, ro14, ro15, ro16, ro17, ro18, ro19, ro20, ro21, ro22, ro24, ro25, ro26, ro27, ro28, ro29, ro30, ro31, ro32, ro33, ro34, ro35, ro36, ro37, ro38, ro39, ro40, ro41, ro42, ro43, ro44, ro45, ro46, ro47, ro48, ro49, ro50, ro51, ro52, ro53, ro54, ro55, ro56, ro57, ro58, ro59, ro60, ro61, ro62, ro63, ro64, roDesk) }, ru: { translation: merge(ru, ru1, ru2, ru3, ru4, ru5, ru6, ru7, ru8, ru9, ru10, ru11, ru12, ru13, ru14, ru15, ru16, ru17, ru18, ru19, ru20, ru21, ru22, ru24, ru25, ru26, ru27, ru28, ru29, ru30, ru31, ru32, ru33, ru34, ru35, ru36, ru37, ru38, ru39, ru40, ru41, ru42, ru43, ru44, ru45, ru46, ru47, ru48, ru49, ru50, ru51, ru52, ru53, ru54, ru55, ru56, ru57, ru58, ru59, ru60, ru61, ru62, ru63, ru64, ruDesk) }, en: { translation: merge(en, en1, en2, en3, en4, en5, en6, en7, en8, en9, en10, en11, en12, en13, en14, en15, en16, en17, en18, en19, en20, en21, en22, en23, en24, en25, en26, en27, en28, en29, en30, en31, en32, en33, en34, en35, enDesk) } },
   lng: initialLang(),
   fallbackLng: 'ro',
   interpolation: { escapeValue: false },

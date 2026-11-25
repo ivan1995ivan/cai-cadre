@@ -4,7 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import {
   Alert, Button, Card, Checkbox, Col, DatePicker, Form, Input, InputNumber, Popconfirm, Row, Select, Space, Spin, Tag, Typography, message,
 } from 'antd'
-import { CheckOutlined, DeleteOutlined, FieldTimeOutlined, PlusOutlined, PrinterOutlined, RollbackOutlined, SaveOutlined } from '@ant-design/icons'
+import { AimOutlined, CheckOutlined, DeleteOutlined, FieldTimeOutlined, PlusOutlined, PrinterOutlined, RollbackOutlined, SaveOutlined } from '@ant-design/icons'
 import dayjs, { type Dayjs } from 'dayjs'
 
 import Table from '../../components/AppTable'
@@ -18,7 +18,9 @@ import { api, errorText, type Paged } from '../../api/client'
 import { useFetch } from '../../api/hooks'
 import { useApp } from '../../auth/AppContext'
 import { useTabTitle } from '../../layout/tabs'
-import { SCOPES, TRIP_KINDS, blankLeg, hm, type Country, type Trip, type TripDiem, type TripLeg, type TripTacho, type Vehicle } from '../../api/transport'
+import {
+  SCOPES, TRIP_KINDS, blankLeg, hm, type Country, type Trip, type TripDiem, type TripGps, type TripLeg, type TripTacho, type Vehicle,
+} from '../../api/transport'
 
 const STATUS_COLOR: Record<string, string> = { draft: 'gold', approved: 'green' }
 const DT = 'DD.MM.YYYY HH:mm'
@@ -128,6 +130,37 @@ function TripTachoPanel({ trip }: { trip: Trip }) {
   )
 }
 
+/** GPS-ul vehiculului pe zilele cursei: km, timpii, combustibilul, țările; „Km din GPS” pune km și kilometrajul în formular. */
+function TripGpsPanel({ trip, draft, onUse }: { trip: Trip; draft: boolean; onUse: (g: TripGps) => void }) {
+  const { t } = useTranslation()
+  const { data } = useFetch<TripGps>(`/transport/trips/${trip.id}/gps/`, { v: trip.km })
+  if (!data || !data.days.length) return null
+  return (
+    <>
+      <Typography.Title level={5} style={{ marginTop: 16 }}>{t('tr.gps.inTrip')}</Typography.Title>
+      <Space wrap style={{ marginBottom: 6 }}>
+        <span>{t('tr.gps.kmTotal')}: <b>{num(data.km, 1)}</b></span>
+        <span>{t('tr.gps.sheetKm')}: <b>{num(data.sheet_km, 1)}</b>{data.diff_pct !== null && <Tag style={{ marginInlineStart: 6 }}
+          color={Math.abs(data.diff_pct) > 5 ? 'orange' : 'green'}>{data.diff_pct > 0 ? '+' : ''}{num(data.diff_pct, 1)} %</Tag>}</span>
+        {data.fuel !== null && <span>{t('tr.gps.fuel')}: <b>{num(data.fuel)}</b></span>}
+        {data.countries.length > 0 && <span>{t('tr.tacho.countries')}: {data.countries.map((c) => <Tag key={c}>{c}</Tag>)}</span>}
+        {data.missing.length > 0 && <Tag color="orange">{t('tr.gps.missing', { days: data.missing.map((d) => dayjs(d).format('DD.MM')).join(', ') })}</Tag>}
+        {draft && <Button size="small" icon={<AimOutlined />} onClick={() => onUse(data)}>{t('tr.gps.useKm')}</Button>}
+      </Space>
+      <Table size="small" rowKey="day" dataSource={data.days} pagination={false}
+        columns={[
+          { title: t('tr.gps.day'), dataIndex: 'day', width: 100, render: (v: string) => dayjs(v).format('DD.MM.YYYY') },
+          { title: t('tr.gps.km'), dataIndex: 'km', width: 80, align: 'right', render: (v: number) => num(v, 1) },
+          { title: t('tr.gps.moving'), dataIndex: 'moving_min', width: 100, align: 'right', render: (v: number | null) => (v === null ? '' : hm(v)) },
+          { title: t('tr.gps.startStop'), key: 'ss', width: 120, render: (_: unknown, r) => `${r.first_start || '…'} – ${r.last_stop || '…'}` },
+          { title: t('tr.gps.fuel'), dataIndex: 'fuel_l', width: 90, align: 'right', render: (v: number | null) => (v === null ? '' : num(v)) },
+          { title: t('tr.tacho.countries'), dataIndex: 'countries', render: (v: string[]) => v.join(', ') },
+        ]} />
+      <Typography.Text type="secondary">{t('tr.gps.wholeDays')}</Typography.Text>
+    </>
+  )
+}
+
 /** Cursa: șoferii, vehiculul, felul și aria, plecarea / întoarcerea, km, segmentele pe țări; la salvare se socotesc plata pe km și
  *  diurna pe zile; aprobarea le fixează și cursa intră în salariul lunii întoarcerii. */
 export function TripEditor() {
@@ -157,8 +190,10 @@ export function TripEditor() {
       return
     }
     if (!doc) return
+    const n = (v: string | null) => (v === null ? null : Number(v))
     header.setFieldsValue({ ...doc, departure: dayjs(doc.departure), arrival: dayjs(doc.arrival), km: doc.km ? Number(doc.km) : null,
-      per_diem_pct: doc.per_diem_pct === null ? null : Number(doc.per_diem_pct) })
+      per_diem_pct: n(doc.per_diem_pct), fuel_out: n(doc.fuel_out), fuel_added: n(doc.fuel_added), fuel_in: n(doc.fuel_in),
+      fuel_used: n(doc.fuel_used), fuel_adj_pct: n(doc.fuel_adj_pct), docs_submitted: doc.docs_submitted ? dayjs(doc.docs_submitted) : null })
     setLegs(doc.legs)
     setDirty(false)
   }, [doc, isNew, header])
@@ -168,7 +203,9 @@ export function TripEditor() {
       const h = await header.validateFields()
       const body = { ...h, departure: h.departure.toISOString(), arrival: h.arrival.toISOString(), co_driver: h.co_driver ?? null,
         trailer: h.trailer ?? null, km: h.km ?? 0, per_diem_pct: h.per_diem_pct ?? null, odometer_out: h.odometer_out ?? null,
-        odometer_in: h.odometer_in ?? null, route: h.route ?? '', note: h.note ?? '',
+        odometer_in: h.odometer_in ?? null, route: h.route ?? '', note: h.note ?? '', fuel_out: h.fuel_out ?? null,
+        fuel_added: h.fuel_added ?? null, fuel_in: h.fuel_in ?? null, fuel_used: h.fuel_used ?? null, fuel_adj_pct: h.fuel_adj_pct ?? null,
+        docs_submitted: h.docs_submitted ? h.docs_submitted.format('YYYY-MM-DD') : null,
         legs: legs.map((l) => ({ id: l.id, country: l.country, entered: l.entered, left: l.left, loading: l.loading, unloading: l.unloading,
           meals: l.meals, km: l.km === '' ? null : l.km, note: l.note ?? '' })) }
       if (isNew) {
@@ -265,7 +302,20 @@ export function TripEditor() {
           <Col xs={12} md={6}><Form.Item name="adr" valuePropName="checked" label=" "><Checkbox>{t('tr.trip.adr')}</Checkbox></Form.Item></Col>
           <Col xs={12} md={6}><Form.Item name="meals_provided" valuePropName="checked" label=" " extra={t('tr.trip.mealsHint')}>
             <Checkbox>{t('tr.trip.meals')}</Checkbox></Form.Item></Col>
-          <Col xs={24}><Form.Item name="note" label={t('org.notes')}><Input /></Form.Item></Col>
+          <Col xs={12} md={4}><Form.Item name="fuel_out" label={t('tr.fuel.out')}><InputNumber min={0} suffix="l" style={{ width: '100%' }} /></Form.Item></Col>
+          <Col xs={12} md={4}><Form.Item name="fuel_added" label={t('tr.fuel.added')}><InputNumber min={0} suffix="l" style={{ width: '100%' }} /></Form.Item></Col>
+          <Col xs={12} md={4}><Form.Item name="fuel_in" label={t('tr.fuel.in')}><InputNumber min={0} suffix="l" style={{ width: '100%' }} /></Form.Item></Col>
+          <Col xs={12} md={4}><Form.Item name="fuel_used" label={t('tr.fuel.used')} extra={doc?.fuel_source ? t(`tr.fuel.sources.${doc.fuel_source}`) : t('tr.fuel.usedHint')}>
+            <InputNumber min={0} suffix="l" style={{ width: '100%' }} /></Form.Item></Col>
+          <Col xs={12} md={4}><Form.Item name="fuel_adj_pct" label={t('tr.fuel.adj')} extra={t('tr.fuel.adjHint')}>
+            <InputNumber min={-50} max={100} suffix="%" style={{ width: '100%' }} /></Form.Item></Col>
+          <Col xs={12} md={4}><Form.Item label={t('tr.fuel.norm')}
+            extra={doc?.totals.fuel_pct != null ? t('tr.fuel.pct', { pct: num(doc.totals.fuel_pct, 1) }) : t('tr.fuel.normHint')}>
+            <Input disabled value={doc?.fuel_norm_l ? `${num(doc.fuel_norm_l)} l` : '—'} /></Form.Item></Col>
+          <Col xs={12} md={4}><Form.Item name="docs_submitted" label={t('tr.trip.docsSubmitted')}
+            extra={doc ? t('tr.trip.docsDue', { date: dayjs(doc.totals.docs_due).format('DD.MM.YYYY') }) : t('tr.trip.docsHint')}>
+            <DatePicker format="DD.MM.YYYY" style={{ width: '100%' }} /></Form.Item></Col>
+          <Col xs={24} md={20}><Form.Item name="note" label={t('org.notes')}><Input /></Form.Item></Col>
         </Row>
       </Form>
       <Typography.Title level={5}>{t('tr.leg.title')}</Typography.Title>
@@ -309,6 +359,13 @@ export function TripEditor() {
             </Table.Summary.Row>) : null} />
       </>}
       {doc && <TripTachoPanel trip={doc} />}
+      {doc && <TripGpsPanel trip={doc} draft={draft} onUse={(g) => {
+        header.setFieldsValue(g.odometer_out !== null && g.odometer_in !== null
+          ? { odometer_out: g.odometer_out, odometer_in: g.odometer_in, km: g.km }
+          : { odometer_out: null, odometer_in: null, km: g.km })
+        setDirty(true)
+        message.success(t('tr.gps.used'))
+      }} />}
       {print && doc && <PrintDialog open onClose={() => setPrint(false)} docType="trip_sheet" url={`/transport/trips/${doc.id}/print/`}
         params={{}} optionKeys={[]} title={`${t('tr.trip.title')} ${doc.number}`} />}
     </Card>

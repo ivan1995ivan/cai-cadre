@@ -1,11 +1,6 @@
 import type { ReactNode } from 'react'
 import {
-  ApartmentOutlined, AuditOutlined, BankOutlined, BarChartOutlined, BellOutlined, BookOutlined, BuildOutlined, CalculatorOutlined, CalendarOutlined,
-  CarOutlined, FieldTimeOutlined, CheckSquareOutlined, ClearOutlined, ClockCircleOutlined, CloudServerOutlined, CoffeeOutlined, CloudUploadOutlined, DashboardOutlined, DollarOutlined, EnvironmentOutlined,
-  FieldNumberOutlined, FileDoneOutlined, FileProtectOutlined, FileTextOutlined, GlobalOutlined, HomeOutlined, IdcardOutlined, KeyOutlined, MailOutlined,
-  MedicineBoxOutlined, MenuOutlined, OrderedListOutlined, PrinterOutlined, ProfileOutlined, ReadOutlined,
-  SafetyCertificateOutlined, SafetyOutlined, ScheduleOutlined, SettingOutlined, SolutionOutlined, TableOutlined, TagsOutlined,
-  TeamOutlined, UserOutlined, WalletOutlined, WifiOutlined,
+  AimOutlined, ApartmentOutlined, AuditOutlined, BankOutlined, BarChartOutlined, BellOutlined, BookOutlined, BuildOutlined, CalculatorOutlined, CalendarOutlined, CarOutlined, CheckSquareOutlined, ClearOutlined, ClockCircleOutlined, CloudServerOutlined, CloudUploadOutlined, CoffeeOutlined, DashboardOutlined, DollarOutlined, EnvironmentOutlined, FieldNumberOutlined, FieldTimeOutlined, FileDoneOutlined, FileProtectOutlined, FileTextOutlined, GlobalOutlined, HomeOutlined, IdcardOutlined, KeyOutlined, MailOutlined, MedicineBoxOutlined, MenuOutlined, OrderedListOutlined, PrinterOutlined, ProfileOutlined, ReadOutlined, SafetyCertificateOutlined, SafetyOutlined, ScheduleOutlined, SettingOutlined, SolutionOutlined, TableOutlined, TagsOutlined, TeamOutlined, TrophyOutlined, UserOutlined, WalletOutlined, WarningOutlined, WifiOutlined,
 } from '@ant-design/icons'
 
 export interface NavItem {
@@ -53,6 +48,10 @@ export const NAV: NavItem[] = [
   // S6b: transportul — cursele (foile de parcurs) — modul opțional
   { path: '/transport/trips', key: 'trips', icon: <CarOutlined />, perm: 'transport.view' },
   { path: '/transport/tachograph', key: 'tachograph', icon: <FieldTimeOutlined />, perm: 'transport.view' },
+  // S6b (pasul c): KPI-ul șoferilor, evenimentele lor, zilele vehiculelor din GPS
+  { path: '/transport/kpi-sheets', key: 'kpiSheets', icon: <TrophyOutlined />, perm: 'transport.view' },
+  { path: '/transport/incidents', key: 'driverIncidents', icon: <WarningOutlined />, perm: 'transport.view' },
+  { path: '/transport/gps', key: 'gpsDays', icon: <AimOutlined />, perm: 'transport.view' },
   { path: '/tax-reports', key: 'taxReports', icon: <FileDoneOutlined />, perm: 'tax_reports.view' },
   { path: '/payroll/it-park', key: 'itPark', icon: <CalculatorOutlined />, perm: 'tax_reports.view' },
   // Etapa 6: formare, sănătate, evidență militară
@@ -116,6 +115,8 @@ export const SETTINGS_NAV: NavItem[] = [
   { path: '/transport/vehicles', key: 'vehicles', icon: <CarOutlined />, perm: 'transport.view' },
   { path: '/transport/km-rates', key: 'kmRates', icon: <CarOutlined />, perm: 'transport.view' },
   { path: '/transport/countries', key: 'countries', icon: <GlobalOutlined />, perm: 'transport.view' },
+  { path: '/transport/kpi-indicators', key: 'kpiIndicators', icon: <TrophyOutlined />, perm: 'transport.view' },
+  { path: '/transport/kpi-schemes', key: 'kpiSchemes', icon: <TrophyOutlined />, perm: 'transport.view' },
   { path: '/payroll/settings/constants', key: 'payrollConstants', icon: <OrderedListOutlined />, perm: 'payroll_settings.view' },
   { path: '/tax-reports/settings', key: 'taxSettings', icon: <FileDoneOutlined />, perm: 'payroll_settings.edit' },
   { path: '/alerts/settings', key: 'alertSettings', icon: <BellOutlined />, perm: 'settings.edit' },
@@ -132,6 +133,7 @@ export const PANEL_KIND: Record<string, 'start' | 'doc'> = {
   staffList: 'doc', contracts: 'doc', employeeRequests: 'doc', orders: 'doc',
   leaveSchedule: 'doc', leave: 'doc', sickLeave: 'doc', rosters: 'doc', timesheets: 'doc',
   payroll: 'doc', payrollPayments: 'doc', payItemChanges: 'doc', itPark: 'doc', productionReports: 'doc', mealVouchers: 'doc', trips: 'doc', tachograph: 'doc',
+  kpiSheets: 'doc', driverIncidents: 'doc',
 }
 
 /** Legăturile dintre documente în schema de lucru (din primul se face al doilea): săgeata între iconițe, iar documentul de
@@ -146,6 +148,9 @@ export const PANEL_FLOWS: [string, string][] = [
   ['mealVouchers', 'payroll'], // partea impozabilă a tichetelor intră în calculul lunii
   ['trips', 'payroll'], // cursele aprobate: plata pe km și diurna intră în calculul lunii întoarcerii
   ['tachograph', 'trips'], // timpii de pe cardul tahografului și țările din trecerile frontierei — în foaia de parcurs
+  ['trips', 'kpiSheets'], // consumul și actele curselor aprobate — în indicatorii KPI
+  ['driverIncidents', 'kpiSheets'], // daunele și amenzile — în indicatorii KPI
+  ['kpiSheets', 'payroll'], // prima KPI din fișa aprobată intră în calculul lunii
 ]
 
 /** Clasificatoarele (setările-cataloage din SETTINGS_NAV) pe care le folosește fiecare funcție: panoul secțiunii le arată
@@ -168,6 +173,9 @@ export const PANEL_CLASSIFIERS: Record<string, string[]> = {
   productionReports: ['operations', 'brigades', 'tariffGrids'],
   trips: ['vehicles', 'kmRates', 'countries'],
   tachograph: ['dict:document'],
+  kpiSheets: ['kpiSchemes', 'kpiIndicators'],
+  driverIncidents: ['kpiIndicators'],
+  gpsDays: ['vehicles'],
   payrollPayments: ['banks'],
   military: ['dict:military_group', 'dict:military_rank', 'dict:military_center'],
 }

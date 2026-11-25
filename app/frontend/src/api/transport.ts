@@ -15,6 +15,7 @@ export interface Vehicle {
   category: string
   tachograph: boolean
   fuel_norm: string | null
+  gps_id: string
   subdivision: number | null
   subdivision_name: string
   note: string
@@ -99,6 +100,14 @@ export interface Trip {
   adr: boolean
   meals_provided: boolean
   per_diem_pct: string | null
+  fuel_out: string | null
+  fuel_added: string | null
+  fuel_in: string | null
+  fuel_used: string | null
+  fuel_adj_pct: string | null
+  fuel_source: '' | 'tank' | 'manual' | 'gps'
+  fuel_norm_l: string | null
+  docs_submitted: string | null
   status: 'draft' | 'approved'
   status_label: string
   note: string
@@ -107,7 +116,8 @@ export interface Trip {
   how: string
   legs: TripLeg[]
   diems: TripDiem[]
-  totals: { km: number; km_amount: number; per_diem: number; per_diem_taxable: number }
+  totals: { km: number; km_amount: number; per_diem: number; per_diem_taxable: number; fuel_used: number | null; fuel_norm: number | null
+    fuel_pct: number | null; fuel_source: string; docs_due: string }
   problems: string[]
   warnings: string[]
 }
@@ -169,4 +179,147 @@ export interface TripTacho {
   any_files: boolean
   people: { employee: number; name: string; has_data: boolean; covered: boolean; borders: number
     totals: { driving: number; work: number; availability: number; rest: number; unknown: number }; findings: TachoFinding[] }[]
+}
+
+// S6b (pasul c): GPS-ul vehiculelor, evenimentele șoferilor, KPI.
+export interface GpsDay {
+  id: number
+  vehicle: number
+  plate: string
+  day: string
+  km: string
+  moving_min: number | null
+  engine_min: number | null
+  first_start: string | null
+  last_stop: string | null
+  fuel_l: string | null
+  odometer_start: number | null
+  odometer_end: number | null
+  countries: string
+  source: string
+  imported_at: string
+}
+
+export interface TripGps {
+  days: { day: string; km: number; moving_min: number | null; engine_min: number | null; first_start: string; last_stop: string
+    fuel_l: number | null; odometer_start: number | null; odometer_end: number | null; countries: string[]; source: string }[]
+  missing: string[]
+  km: number
+  fuel: number | null
+  sheet_km: number
+  diff_pct: number | null
+  odometer_out: number | null
+  odometer_in: number | null
+  countries: string[]
+}
+
+export const INCIDENT_KINDS = ['damage_cargo', 'damage_vehicle', 'accident', 'fine', 'complaint', 'other'] as const
+export const KPI_SOURCES = ['fuel', 'incidents', 'documents', 'tacho', 'manual'] as const
+
+export interface KpiIndicator {
+  id: number
+  code: string
+  name_ro: string
+  name_ru: string
+  name_en: string
+  source: string
+  source_label: string
+  kinds: string[]
+  measure: 'count' | 'amount'
+  mode: 'linear' | 'step'
+  full_at: string
+  zero_at: string
+  unit: string
+  description: string
+  sort: number
+  is_active: boolean
+}
+
+export interface KpiSchemeItem {
+  id?: number
+  indicator: number
+  indicator_code?: string
+  indicator_name?: string
+  weight: string | number
+  mode: '' | 'linear' | 'step'
+  full_at: string | number | null
+  zero_at: string | number | null
+}
+
+export interface KpiAssignment {
+  id: number
+  scheme: number
+  scheme_code: string
+  occupation: number | null
+  occupation_name: string
+  employment: number | null
+  employment_label: string
+  date_from: string
+  date_to: string | null
+}
+
+export interface KpiScheme {
+  id: number
+  code: string
+  name: string
+  base_kind: 'fixed' | 'pct'
+  base_kind_label: string
+  base_amount: string
+  base_pct: string
+  min_score: string
+  prorate: boolean
+  needs_trips: boolean
+  document: string
+  is_active: boolean
+  items: KpiSchemeItem[]
+  assignments: KpiAssignment[]
+}
+
+export interface KpiDetail {
+  code: string
+  name: string
+  source: string
+  unit: string
+  weight: number
+  mode: string
+  full_at: number
+  zero_at: number
+  value: number | null
+  score: number | null
+  manual: boolean
+  how: string
+}
+
+export interface KpiLine {
+  id: number
+  employee: number
+  employee_name: string
+  tab_number: string
+  employment: number
+  occupation: string
+  scheme: number
+  scheme_code: string
+  base: string
+  score: string | null
+  amount: string
+  prorate: boolean
+  details: KpiDetail[]
+  overrides: Record<string, string>
+  note: string
+}
+
+export interface KpiSheet {
+  id: number
+  deletion_mark: boolean
+  number: string
+  date: string
+  year: number
+  month: number
+  subdivision: number | null
+  subdivision_name: string
+  status: 'draft' | 'approved'
+  status_label: string
+  note: string
+  lines: KpiLine[]
+  totals: { people: number; amount: number; avg_score: number | null }
 }

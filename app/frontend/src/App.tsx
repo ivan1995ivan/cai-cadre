@@ -66,6 +66,8 @@ import MealVouchersPage, { MealVoucherEditor } from './pages/payroll/MealVoucher
 import TripsPage, { TripEditor } from './pages/transport/TripsPage'
 import TransportSettingsPage from './pages/transport/TransportSettings'
 import TachographPage from './pages/transport/TachographPage'
+import KpiSheetsPage, { KpiSheetEditor } from './pages/transport/KpiPage'
+import { GpsDaysPage, IncidentsPage } from './pages/transport/TransportRecords'
 import TaxReportsPage, { TaxSettingsPage } from './pages/payroll/TaxReportsPage'
 import ItParkPage, { ItParkMonthEditor } from './pages/payroll/ItParkPage'
 import ProductionReportsPage, { ProductionReportEditor } from './pages/production/ProductionReportsPage'
@@ -108,6 +110,8 @@ const SETTING_PAGES: Record<string, (title: string) => React.ReactNode> = {
   vehicles: (title) => <TransportSettingsPage part="vehicles" title={title} />,
   kmRates: (title) => <TransportSettingsPage part="kmRates" title={title} />,
   countries: (title) => <TransportSettingsPage part="countries" title={title} />,
+  kpiIndicators: (title) => <TransportSettingsPage part="kpiIndicators" title={title} />,
+  kpiSchemes: (title) => <TransportSettingsPage part="kpiSchemes" title={title} />,
   alertSettings: (title) => <AlertSettingsPage title={title} />,
   smtpSettings: (title) => <SmtpSettingsPage title={title} />,
 }
@@ -149,6 +153,10 @@ const MODULE_ROUTES: { path: string; perm?: string; element: React.ReactNode }[]
   { path: 'transport/trips', perm: 'transport.view', element: <TripsPage /> },
   { path: 'transport/trips/:id', perm: 'transport.view', element: <TripEditor /> },
   { path: 'transport/tachograph', perm: 'transport.view', element: <TachographPage /> },
+  { path: 'transport/kpi-sheets', perm: 'transport.view', element: <KpiSheetsPage /> },
+  { path: 'transport/kpi-sheets/:id', perm: 'transport.view', element: <KpiSheetEditor /> },
+  { path: 'transport/incidents', perm: 'transport.view', element: <IncidentsPage /> },
+  { path: 'transport/gps', perm: 'transport.view', element: <GpsDaysPage /> },
   { path: 'production/reports', perm: 'production.view', element: <ProductionReportsPage /> },
   { path: 'production/reports/:id', perm: 'production.view', element: <ProductionReportEditor /> },
   { path: 'tax-reports', perm: 'tax_reports.view', element: <TaxReportsPage /> },

@@ -10,9 +10,13 @@ import type { ImportResult } from '../api/org'
  * Importul din Excel, în doi pași: se încarcă fișierul și se vede rezultatul încercării (ce se adaugă, ce se actualizează,
  * erorile pe rânduri), apoi „Importă” scrie totul într-o tranzacție. Șablonul (antetul + exemplu) se descarcă de aici.
  */
-export default function ExcelImport({ code, url = '/org/import/', extra = {}, label, onDone, allowCreateOccupations, children }: {
+export default function ExcelImport({ code, url = '/org/import/', extra = {}, label, onDone, allowCreateOccupations, children,
+  accept = '.xlsx', dropText }: {
   code: string
   url?: string
+  /** ce fișiere se pot alege (implicit Excel; exporturile altor programe — și .csv) și textul zonei de încărcare */
+  accept?: string
+  dropText?: string
   extra?: Record<string, string | number>
   label?: string
   onDone?: () => void
@@ -84,10 +88,10 @@ export default function ExcelImport({ code, url = '/org/import/', extra = {}, la
               {t('excel.createOccupations')}
             </Checkbox>
           )}
-          <Upload.Dragger accept=".xlsx" maxCount={1} showUploadList={false}
+          <Upload.Dragger accept={accept} maxCount={1} showUploadList={false}
             beforeUpload={(f) => { setFile(f); setResult(null); send(true, f); return false }}>
             <p className="ant-upload-drag-icon"><InboxOutlined /></p>
-            <p>{file ? file.name : t('excel.drop')}</p>
+            <p>{file ? file.name : dropText ?? t('excel.drop')}</p>
           </Upload.Dragger>
           {result && (
             <>
