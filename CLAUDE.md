@@ -239,7 +239,7 @@ pornească de unde s-a rămas, nu de la zero.
   `orders/related.py`), **C** (raportul `employee_settlement` — `reports/settlement.py`, rândurile cu `_link`, `conclusion`;
   „Compară recalcularea” — `payroll/recalc.py`; „Împarte suma” în ordinul de premiere — `orders/distribute.py`), **D**
   (Principal → Calendarul — `alerts/hr_calendar.py`, `pages/HrCalendarPage.tsx`; blocul „Graficul concediilor” pe pagina de
-  start). Neluat: „semaforul pe zile” (ce înseamnă o zi bună în cadre — de hotărât), discuțiile pe document. Verificat: 306 teste,
+  start). Nu se fac (hotărât de Anatol, 2026-11-25): „semaforul pe zile” și discuțiile pe document. Instalate pe site 2026-11-25. Verificat: 306 teste,
   typecheck, build, capturi pe copia demo.
 
 ## Următorii pași (de aici pornește sesiunea următoare)
