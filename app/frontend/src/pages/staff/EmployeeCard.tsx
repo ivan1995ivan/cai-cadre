@@ -6,7 +6,7 @@ import {
   Statistic, Switch, Table, Tabs, Tag, Typography, Upload, message,
 } from 'antd'
 import {
-  ArrowLeftOutlined, CameraOutlined, FileProtectOutlined, InboxOutlined, PrinterOutlined, SaveOutlined, UserOutlined,
+  ArrowLeftOutlined, CameraOutlined, FileAddOutlined, FileProtectOutlined, InboxOutlined, PrinterOutlined, SaveOutlined, UserOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 
@@ -20,6 +20,8 @@ import MarkButton, { MarkedBanner } from '../../components/MarkButton'
 import PrintDialog from '../../components/PrintDialog'
 import { api, errorText, fieldErrors } from '../../api/client'
 import { openPrivate, usePrivateUrl } from '../../api/files'
+import NewOrderDialog from '../orders/NewOrderDialog'
+import TimelineTab from './TimelineTab'
 import { useFetch } from '../../api/hooks'
 import type { Specialty } from '../../api/org'
 import { useDict, type AccessEntry, type Employee } from '../../api/staff'
@@ -57,6 +59,7 @@ export default function EmployeeCard() {
   const [tab, setTab] = useState(search.get('tab') || 'personal')
   const [form] = Form.useForm()
   const [printDoc, setPrintDoc] = useState<string | null>(null)
+  const [newOrder, setNewOrder] = useState(false)
   const [purpose, setPurpose] = useState('')
   const [salaryMonths, setSalaryMonths] = useState<number | 'range'>(6)
   const [salaryRange, setSalaryRange] = useState<[dayjs.Dayjs, dayjs.Dayjs]>([dayjs().subtract(6, 'month'), dayjs().subtract(1, 'month')])
@@ -207,6 +210,7 @@ export default function EmployeeCard() {
                 onClick: ({ key }) => { setPurpose(''); setPrintDoc(key) } }}>
                 <Button icon={<PrinterOutlined />}>{t('org.sl.print')}</Button>
               </Dropdown>
+              {hasPerm('orders.create') && !e.deletion_mark && <Button icon={<FileAddOutlined />} onClick={() => setNewOrder(true)}>{t('ord.new')}</Button>}
               {sensitive && <HistoryButton model="staff.Employee" id={e.id} onRestored={load} />}
               {hasPerm('users.create') && <PortalAccessButton employee={e.id} />}
               {canEdit && e.status === 'dismissed' && (
@@ -220,12 +224,14 @@ export default function EmployeeCard() {
           </Col>
         </Row>
         <MarkedBanner endpoint="/staff/employees/" row={e} onDone={load} canUnmark={hasPerm('employees.delete')} />
+        <NewOrderDialog open={newOrder} onClose={() => setNewOrder(false)} employee={e.id} employeeName={e.full_name} />
       </Card>
 
       <Card>
         <Tabs activeKey={tab} onChange={setTab} destroyOnHidden={false} items={[
           { key: 'personal', label: t('staff.tabs.personal'), children: personal, forceRender: true },
           { key: 'jobs', label: t('staff.tabs.jobs'), children: <EmploymentsTab employee={e} onChanged={load} /> },
+          { key: 'timeline', label: t('staff.timeline.title'), children: <TimelineTab employee={e.id} name={e.full_name} /> },
           ...(hasPerm('orders.view') || hasPerm('employees.view') ? [{ key: 'orders', label: t('staff.tabs.orders'), children: <OrdersTab employee={e.id} /> }] : []),
           ...(hasPerm('leave.view') || hasPerm('sick_leave.view') ? [{ key: 'leave', label: t('staff.tabs.leave'), children: <LeaveTab employee={e.id} /> }] : []),
           ...(hasPerm('payroll.view') ? [{ key: 'pay', label: t('staff.tabs.pay'), children: <PayTab employee={e.id} /> }] : []),

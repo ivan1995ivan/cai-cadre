@@ -1,18 +1,18 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { Button, Card, DatePicker, Form, Input, Modal, Select, Space, Tag, Typography, message } from 'antd'
+import { Button, Card, Input, Select, Space, Tag } from 'antd'
 import { BookOutlined, PlusOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 
 import Table from '../../components/AppTable'
 import { ROW_TONE } from '../../components/rowTone'
-import EmployeeSelect from '../../components/EmployeeSelect'
-import { api, errorText, type Paged } from '../../api/client'
+import NewOrderDialog from './NewOrderDialog'
+import type { Paged } from '../../api/client'
 import { useFetch } from '../../api/hooks'
 import type { OrgMeta } from '../../api/org'
-import { ORDER_STATUS_COLOR, type Order, type OrderTypeLite } from '../../api/orders'
-import { useApp, useLocalName } from '../../auth/AppContext'
+import { ORDER_STATUS_COLOR, type Order } from '../../api/orders'
+import { useApp } from '../../auth/AppContext'
 import { useEnumOptions } from '../org/DictionariesPage'
 
 /** Lista ordinelor: filtre pe registru, an, stare, grupă; ordin nou din tipul ales. */
@@ -20,41 +20,20 @@ export default function OrdersList() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { hasPerm } = useApp()
-  const localName = useLocalName()
   const opts = useEnumOptions()
   const [filters, setFilters] = useState<Record<string, string | number | undefined>>({ year: dayjs().year() })
   const [page, setPage] = useState(1)
   const { data, loading } = useFetch<Paged<Order>>('/orders/orders/', { ...filters, page, page_size: 50 })
   const { data: meta } = useFetch<OrgMeta>('/org/meta/')
-  const { data: types } = useFetch<OrderTypeLite[]>('/org/order-types/', { active: 1 })
   const [creating, setCreating] = useState(false)
-  const [form] = Form.useForm()
   const set = (k: string, v: string | number | undefined) => { setFilters((f) => ({ ...f, [k]: v })); setPage(1) }
-  const typeId = Form.useWatch('order_type', form)
-  const chosenType = (types ?? []).find((x) => x.id === typeId)
 
-  const typeOptions = (meta?.order_groups ?? []).map((g) => ({
-    label: t(`org.orderGroup.${g}`),
-    options: (types ?? []).filter((x) => x.group === g).map((x) => ({ value: x.id, label: localName(x) })),
-  }))
-
-  const create = async () => {
-    const v = await form.validateFields()
-    try {
-      const r = await api.post<Order>('/orders/orders/', { order_type: v.order_type, date: v.date.format('YYYY-MM-DD'),
-        employees: Array.isArray(v.employees) ? v.employees : v.employees ? [v.employees] : [] })
-      setCreating(false)
-      navigate(`/orders/${r.data.id}`)
-    } catch (e) {
-      message.error(errorText(e))
-    }
-  }
 
   return (
     <Card title={t('menu.orders')} extra={<Space>
       <Button icon={<BookOutlined />} onClick={() => navigate('/orders/register')}>{t('menu.ordersRegister')}</Button>
       {hasPerm('orders.create') && <Button type="primary" icon={<PlusOutlined />}
-        onClick={() => { form.resetFields(); form.setFieldsValue({ date: dayjs() }); setCreating(true) }}>{t('ord.new')}</Button>}
+        onClick={() => setCreating(true)}>{t('ord.new')}</Button>}
     </Space>}>
       <Space wrap style={{ marginBottom: 12 }}>
         <Input.Search allowClear placeholder={t('ord.searchHint')} style={{ width: 260 }} onSearch={(v) => set('q', v || undefined)} />
@@ -80,21 +59,7 @@ export default function OrdersList() {
           { title: t('ord.status'), dataIndex: 'status', width: 110, render: (v: string) => <Tag color={ORDER_STATUS_COLOR[v]}>{t(`ord.statuses.${v}`)}</Tag> },
         ]} />
 
-      <Modal open={creating} title={t('ord.new')} onOk={create} onCancel={() => setCreating(false)} width={640}>
-        <Form form={form} layout="vertical">
-          <Form.Item name="order_type" label={t('ord.type')} rules={[{ required: true }]}>
-            <Select showSearch optionFilterProp="label" options={typeOptions} />
-          </Form.Item>
-          <Form.Item name="date" label={t('ord.date')} rules={[{ required: true }]}><DatePicker format="DD.MM.YYYY" /></Form.Item>
-          {chosenType?.needs_employee !== false && (
-            <Form.Item name="employees" label={chosenType?.collective ? t('ord.employeesMany') : t('ord.employeeOne')}
-              extra={t('ord.employeeHint')}>
-              <EmployeeSelect mode={chosenType?.collective ? 'multiple' : undefined} />
-            </Form.Item>
-          )}
-          {chosenType && <Typography.Text type="secondary">{t('org.registers.' + chosenType.register)} · {t('org.effects.' + chosenType.effect)}</Typography.Text>}
-        </Form>
-      </Modal>
+      <NewOrderDialog open={creating} onClose={() => setCreating(false)} />
     </Card>
   )
 }

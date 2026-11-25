@@ -29,11 +29,20 @@ def _date(value, field="date"):
 
 class OrderViewSet(DeletionMarkMixin, viewsets.ModelViewSet):
     perm_module = "orders"
-    perm_actions = {"sign": "approve", "print": "view", "acknowledge": "edit", "refresh_texts": "edit",
+    perm_actions = {"related": "view", "sign": "approve", "print": "view", "acknowledge": "edit", "refresh_texts": "edit",
                     "cancel_by_order": "create", "register": "view", "print_register": "view", "add_subdivision": "edit"}
 
     def get_serializer_class(self):
         return OrderListSerializer if self.action == "list" else OrderSerializer
+
+    @action(detail=True, methods=["get"])
+    def related(self, request, pk=None):
+        """Documentele legate de ordin: ce a rezultat din punctele lui la semnare (absențele, acumulările planificate, tarifele
+        pe tipuri de ore, cumulările, formarea, sancțiunile și stimulările, corectările soldului concediilor) și de unde
+        a pornit (cererea de concediu, ordinul anulat de acesta / care îl anulează)."""
+        from .related import related
+
+        return Response(related(self.get_object(), request.user))
 
     def get_queryset(self):
         p = self.request.query_params

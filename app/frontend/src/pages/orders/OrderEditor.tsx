@@ -12,6 +12,7 @@ import dayjs from 'dayjs'
 
 import CloseForm from '../../components/CloseForm'
 import PrintDialog from '../../components/PrintDialog'
+import RelatedDocs from './RelatedDocs'
 import { useUnsavedGuard } from '../../components/UnsavedGuard'
 import { api, errorText, fieldErrors } from '../../api/client'
 import { useFetch } from '../../api/hooks'
@@ -280,6 +281,8 @@ export default function OrderEditor() {
           </Space>
         )}
       </Card>
+
+      {order.status !== 'draft' && <RelatedDocs order={order.id} />}
 
       {print && (
         <PrintDialog open onClose={() => setPrint(null)} docType={print.item ? 'order_extract' : 'order'} url={`/orders/orders/${order.id}/print/`}
