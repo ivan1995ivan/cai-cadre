@@ -223,12 +223,13 @@ class EmployeeListSerializer(MaskMixin, serializers.ModelSerializer):
     rate = serializers.SerializerMethodField()
     date_from = serializers.SerializerMethodField()
     jobs = serializers.SerializerMethodField()
+    flags = serializers.SerializerMethodField()
 
     class Meta:
         model = Employee
         fields = ["id", "tab_number", "full_name", "last_name", "first_name", "patronymic", "idnp", "birth_date", "sex",
                   "phone", "email", "status", "status_label", "is_archived", "subdivision", "occupation", "category",
-                  "category_name", "kind", "rate", "date_from", "jobs"]
+                  "category_name", "kind", "rate", "date_from", "jobs", "flags"]
 
     def _main(self, obj):
         if not hasattr(obj, "_main_cache"):
@@ -266,6 +267,47 @@ class EmployeeListSerializer(MaskMixin, serializers.ModelSerializer):
     def get_jobs(self, obj):
         """Câte raporturi active are (de bază + cumul)."""
         return sum(1 for e in obj.employments.all() if e.status != "ended")
+
+    CONTRACT_WARN_DAYS = 30
+
+    def _absences(self):
+        """Absențele de azi ale angajaților din pagină — o singură cerere pentru toată lista."""
+        cache = self.context.setdefault("_absences_today", {})
+        if "_done" not in cache:
+            from django.utils import timezone
+
+            from apps.leave.models import Absence
+
+            page = getattr(self.parent, "instance", None) or []
+            today = timezone.localdate()
+            for a in Absence.objects.filter(employee__in=[e.pk for e in page], date_from__lte=today, date_to__gte=today):
+                cache.setdefault(a.employee_id, a)
+            cache["_done"] = True
+        return cache
+
+    def get_flags(self, obj):
+        """Semnele din prima coloană a listei: absent azi (felul, până când), în probă, contractul pe termen care expiră în
+        CONTRACT_WARN_DAYS zile, lipsește IDNP / IBAN (doar la angajații în muncă)."""
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        today = timezone.localdate()
+        out = {}
+        a = self._absences().get(obj.pk)
+        if a is not None:
+            out["absent"] = {"kind": a.kind, "label": a.get_kind_display(), "to": a.date_to}
+        m = self._main(obj)
+        if m is not None and m.status != "ended":
+            if m.probation_until and m.probation_until >= today:
+                out["probation"] = m.probation_until
+            if m.date_to and today <= m.date_to <= today + timedelta(days=self.CONTRACT_WARN_DAYS):
+                out["contract_ends"] = m.date_to
+        if obj.status in ("active", "suspended"):
+            missing = [name for name, value in (("idnp", obj.idnp), ("iban", obj.iban)) if not value]
+            if missing:
+                out["missing"] = missing
+        return out
 
 
 class EmployeeSerializer(RequiredFieldsMixin, MaskMixin, serializers.ModelSerializer):
@@ -312,6 +354,30 @@ class EmployeeSerializer(RequiredFieldsMixin, MaskMixin, serializers.ModelSerial
         if value and Employee.objects.filter(tab_number=value).exclude(pk=getattr(self.instance, "pk", None)).exists():
             raise serializers.ValidationError("Numărul de tabel este deja folosit.")
         return value
+
+    def _phone(self, value, field):
+        """Telefonul: cifre, cel mult un „+” la început (spațiile, cratimele, parantezele se scot); 8–15 cifre — numărul
+        moldovenesc 0XXXXXXXX sau +373XXXXXXXX, ori unul străin. Valoarea veche, neschimbată, nu se verifică din nou."""
+        import re
+
+        value = (value or "").strip()
+        if not value or (self.instance is not None and value == getattr(self.instance, field)):
+            return value
+        clean = re.sub(r"[\s\-().]", "", value)
+        if not re.fullmatch(r"\+?\d{8,15}", clean):
+            raise serializers.ValidationError("Telefonul: doar cifre (8–15), cu „+” la început pentru prefixul țării — "
+                                              "de ex. 069123456 sau +37369123456.")
+        if clean.startswith("+373") and len(clean) != 12:
+            raise serializers.ValidationError("Numărul moldovenesc are 8 cifre după +373 (de ex. +37369123456).")
+        if not clean.startswith("+") and clean.startswith("0") and len(clean) != 9:
+            raise serializers.ValidationError("Numărul moldovenesc are 9 cifre cu 0 la început (de ex. 069123456).")
+        return clean
+
+    def validate_phone(self, value):
+        return self._phone(value, "phone")
+
+    def validate_phone2(self, value):
+        return self._phone(value, "phone2")
 
     def validate_idnp(self, value):
         if value and Employee.objects.filter(idnp=value).exclude(pk=getattr(self.instance, "pk", None)).exists():

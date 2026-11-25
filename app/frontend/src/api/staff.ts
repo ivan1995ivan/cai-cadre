@@ -30,6 +30,8 @@ export interface EmployeeRow {
   rate: string
   date_from: string | null
   jobs: number
+  /** semnele din prima coloană a listei */
+  flags?: { absent?: { kind: string; label: string; to: string }; probation?: string; contract_ends?: string; missing?: ('idnp' | 'iban')[] }
 }
 
 export interface SeniorityPart { years: number; months: number; days: number; total_days: number; text: string }

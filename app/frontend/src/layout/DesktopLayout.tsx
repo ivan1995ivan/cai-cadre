@@ -141,7 +141,7 @@ function DesktopShell() {
   const [helpOpen, setHelpOpen] = useState(false)
   const { canBack, canForward } = useHistoryNav()
   const moved = movedTo(location.pathname, location.search)
-  const { tabs, close, closeAll } = useTabs()
+  const { tabs, close, closeAll, closeOthers } = useTabs()
   const { favorites, isFavorite, toggle: toggleFavorite } = useFavorites()
   const { sections, fnPanel, current, active } = useSectionChoice()
   const classifiers = useSectionClassifiers(sections)
@@ -258,6 +258,8 @@ function DesktopShell() {
       { kind: 'item', key: 'close', label: t('desk.closeWindow'), icon: <CloseOutlined />, shortcut: 'Esc', disabled: !activeTab,
         onSelect: () => activeTab && close(activeTab.path) },
       { kind: 'item', key: 'closeAll', label: t('tabs.closeAll'), disabled: tabs.length === 0, onSelect: closeAll },
+      { kind: 'item', key: 'closeOthers', label: t('tabs.closeOthers'), disabled: tabs.filter((x) => x.path !== activeTab?.path).length === 0,
+        onSelect: closeOthers },
       sep('w1'),
       { kind: 'item', key: 'back', label: t('header.back'), icon: <ArrowLeftOutlined />, shortcut: 'Alt+←', disabled: !canBack, onSelect: () => navigate(-1) },
       { kind: 'item', key: 'forward', label: t('header.forward'), icon: <ArrowRightOutlined />, shortcut: 'Alt+→', disabled: !canForward, onSelect: () => navigate(1) },

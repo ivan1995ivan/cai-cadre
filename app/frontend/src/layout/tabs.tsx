@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Button, Tabs, Tooltip } from 'antd'
 import dayjs from 'dayjs'
-import { CloseCircleOutlined, HomeOutlined, StarFilled, StarOutlined } from '@ant-design/icons'
+import { CloseCircleOutlined, CloseSquareOutlined, HomeOutlined, StarFilled, StarOutlined } from '@ant-design/icons'
 
 import { useFavorites } from './favorites'
 import { itemOfPath, ROUTE_ITEMS } from './menu'
@@ -39,12 +39,15 @@ interface TabsApi {
   setTitle: (path: string, title: TabTitle) => void
   close: (path: string) => void
   closeAll: () => void
+  /** Închide toate filele în afară de cea deschisă acum. */
+  closeOthers: () => void
   /** Plecarea de pe pagină a fost oprită (utilizatorul rămâne în formă): filele puse la închidere rămân. */
   keepClosing: () => void
 }
 
 const TabsContext = createContext<TabsApi>({
-  tabs: [], setTitle: () => undefined, close: () => undefined, closeAll: () => undefined, keepClosing: () => undefined,
+  tabs: [], setTitle: () => undefined, close: () => undefined, closeAll: () => undefined, closeOthers: () => undefined,
+  keepClosing: () => undefined,
 })
 
 function read(): OpenTab[] {
@@ -128,6 +131,10 @@ export function TabsProvider({ children }: { children: ReactNode }) {
     navigate(HOME)
   }, [current, tabs, navigate])
 
+  const closeOthers = useCallback(() => {
+    setTabs((cur) => cur.filter((x) => x.path === current))
+  }, [current])
+
   const keepClosing = useCallback(() => { closing.current = null }, [])
 
   const { t, i18n } = useTranslation()
@@ -139,8 +146,8 @@ export function TabsProvider({ children }: { children: ReactNode }) {
   }, [t, i18n.language])
   const titled = useMemo(() => tabs.map((x) => ({ path: x.path, title: x.title !== undefined ? render(x.title) : fallback(x.path) })),
     [tabs, fallback, render])
-  const value = useMemo(() => ({ tabs: titled, setTitle, close, closeAll, keepClosing }),
-    [titled, setTitle, close, closeAll, keepClosing])
+  const value = useMemo(() => ({ tabs: titled, setTitle, close, closeAll, closeOthers, keepClosing }),
+    [titled, setTitle, close, closeAll, closeOthers, keepClosing])
   return <TabsContext.Provider value={value}>{children}</TabsContext.Provider>
 }
 
@@ -162,7 +169,7 @@ export function useTabTitle(title: TabTitle | null | undefined) {
 /** Bara de jos cu ferestrele deschise: „Închide toate” lângă Pagina de start; steluța pune pagina curentă la favorite. */
 export function OpenTabsBar() {
   const { t } = useTranslation()
-  const { tabs, close, closeAll } = useContext(TabsContext)
+  const { tabs, close, closeAll, closeOthers } = useContext(TabsContext)
   const location = useLocation()
   const navigate = useNavigate()
   const { isFavorite, toggle } = useFavorites()
@@ -178,6 +185,10 @@ export function OpenTabsBar() {
       <Tooltip title={t('tabs.closeAllHint')}>
         <Button size="small" icon={<CloseCircleOutlined />} disabled={tabs.length === 0} onClick={closeAll} aria-label={t('tabs.closeAll')}
           style={{ marginBottom: 4 }}>{t('tabs.closeAll')}</Button>
+      </Tooltip>
+      <Tooltip title={t('tabs.closeOthersHint')}>
+        <Button size="small" icon={<CloseSquareOutlined />} disabled={tabs.filter((x) => x.path !== active).length === 0}
+          onClick={closeOthers} aria-label={t('tabs.closeOthers')} style={{ marginBottom: 4 }} />
       </Tooltip>
       <Tabs type="editable-card" hideAdd size="small" activeKey={active} style={{ flex: 1, minWidth: 0, marginBottom: 0 }}
         tabBarStyle={{ marginBottom: 0 }}

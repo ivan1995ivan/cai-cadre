@@ -34,7 +34,7 @@ def log_access(employee, user, action="view", detail=""):
 
 class EmployeeViewSet(DeletionMarkMixin, viewsets.ModelViewSet):
     perm_module = "employees"
-    perm_actions = {"seniority": "view", "summary": "view", "access_log": "view", "archive": "edit", "print": "view", "next_number": "create",
+    perm_actions = {"timeline": "view", "seniority": "view", "summary": "view", "access_log": "view", "archive": "edit", "print": "view", "next_number": "create",
                     "export_list": "export", "print_list": "view"}
     parser_classes = [JSONParser, MultiPartParser, FormParser]
 
@@ -45,6 +45,13 @@ class EmployeeViewSet(DeletionMarkMixin, viewsets.ModelViewSet):
         return {**super().get_serializer_context(), "with_seniority": self.action == "retrieve"}
 
     @action(detail=True, methods=["get"])
+    def timeline(self, request, pk=None):
+        """Cronologia angajatului: istoria raporturilor, ordinele, absențele, certificatele, formarea, cursele, salariul."""
+        from .timeline import events
+
+        return Response(events(self.get_object(), request))
+
+    @action(detail=True, methods=["get"])
     def photo(self, request, pk=None):
         """Fotografia angajatului (partea privată): cu dreptul de vizualizare și doar pentru angajații văzuți."""
         return serve(self.get_object().photo)
@@ -52,7 +59,7 @@ class EmployeeViewSet(DeletionMarkMixin, viewsets.ModelViewSet):
     def get_queryset(self):
         p = self.request.query_params
         qs = Employee.objects.prefetch_related(
-            Prefetch("employments", queryset=Employment.objects.select_related("subdivision", "occupation")))
+            Prefetch("employments", queryset=Employment.objects.select_related("subdivision", "occupation", "occupation__category")))
         qs = services.scope_employees(qs, self.request.user)
         if p.get("q"):
             q = p["q"].strip()
