@@ -8,7 +8,7 @@ SUA — 110 USD), Africa Centrală / de Sud și de Nord, Insulele Antile — se 
 from datetime import date
 from decimal import Decimal
 
-from .models import Country, PerDiemNorm
+from .models import Country, KpiIndicator, KpiScheme, KpiSchemeItem, PerDiemNorm
 
 SINCE = date(2024, 1, 1)
 SOURCE = "HG nr. 10/2012, anexa nr. 2 la Regulament (redacția HG nr. 1058/2023), categoria I"
@@ -205,7 +205,45 @@ NORMS = [
 FIRST = ["MD", "RO", "UA", "HU", "PL", "BG", "SK", "CZ", "AT", "DE", "IT", "FR", "NL", "BE", "ES", "TR", "LT", "LV", "EE", "GB"]
 
 
+# indicatorii KPI livrați (S6b pasul c): cod, RO, RU, EN, sursa, felurile evenimentelor, măsura, notarea, 100 % la, 0 % la,
+# unitatea, explicația. Valorile de notare sunt un punct de plecare — întreprinderea le pune după regulamentul ei.
+KPI_INDICATORS = [
+    ("CONSUM", "Consumul de combustibil față de normă", "Расход топлива к норме", "Fuel consumption against the norm", "fuel", [],
+     "count", "linear", "100", "110", "%",
+     "litrii consumați / consumul normat × 100, din cursele aprobate ale lunii (norma vehiculului × km / 100, cu corecția cursei)"),
+    ("DAUNE", "Daune și accidente din vina șoferului", "Ущерб и ДТП по вине водителя", "Damage and accidents caused by the driver",
+     "incidents", ["damage_cargo", "damage_vehicle", "accident"], "count", "linear", "0", "2", "",
+     "numărul evenimentelor lunii din vina șoferului: dauna mărfii, a vehiculului, accidentul"),
+    ("AMENZI", "Amenzile", "Штрафы", "Fines", "incidents", ["fine"], "count", "linear", "0", "2", "",
+     "numărul amenzilor lunii din vina șoferului"),
+    ("ACTE", "Actele cursei predate la timp", "Документы рейса сданы вовремя", "Trip documents handed in on time", "documents", [],
+     "count", "linear", "100", "80", "%",
+     "cursele aprobate ale lunii cu actele predate în C.kpi_docs_days zile de la întoarcere / cursele lunii × 100"),
+    ("TAHO", "Fără încălcări ale timpului de conducere și odihnă", "Без нарушений режима труда и отдыха",
+     "No driving / rest time infringements", "tacho", [], "count", "linear", "0", "4", "",
+     "numărul încălcărilor limitelor AETR din lună, de pe cardul de tahograf"),
+    ("EVAL", "Evaluarea conducătorului", "Оценка руководителя", "Manager's evaluation", "manual", [], "count", "linear", "100",
+     "0", "%", "nota scrisă de mână în fișa KPI (0–100)"),
+]
+# schema-model: baza 0 lei (prima nu se plătește până nu se scrie baza); se aplică funcțiilor din Setări → Schemele KPI
+KPI_SCHEME = ("SOFERI", "Prima KPI a șoferilor", [("CONSUM", "40"), ("DAUNE", "20"), ("AMENZI", "10"), ("ACTE", "15"), ("TAHO", "15")])
+
+
+def kpi():
+    for n, (code, ro, ru, en, source, kinds, measure, mode, full, zero, unit, text) in enumerate(KPI_INDICATORS, start=1):
+        KpiIndicator.objects.get_or_create(code=code, defaults={
+            "name_ro": ro, "name_ru": ru, "name_en": en, "source": source, "kinds": kinds, "measure": measure, "mode": mode,
+            "full_at": Decimal(full), "zero_at": Decimal(zero), "unit": unit, "description": text, "sort": n * 10})
+    code, name, items = KPI_SCHEME
+    scheme, created = KpiScheme.objects.get_or_create(code=code, defaults={"name": name, "base_kind": "fixed"})
+    if created:
+        for n, (ind, weight) in enumerate(items, start=1):
+            KpiSchemeItem.objects.create(scheme=scheme, indicator=KpiIndicator.objects.get(code=ind), weight=Decimal(weight),
+                                         sort=n * 10)
+
+
 def run():
+    kpi()
     for code, name, currency, amount in NORMS:
         sort = (FIRST.index(code) + 1) * 10 if code in FIRST else 1000
         country, _ = Country.objects.get_or_create(code=code, defaults={"name_ro": name, "sort": sort})

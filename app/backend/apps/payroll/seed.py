@@ -76,6 +76,11 @@ CONSTANTS = [
     ("per_diem_short_pct", "Transport: șoferii peste hotare până la 8 ore (% din normă)", "20", "%", "HG 10/2012, pct. 31 lit. a)", Y26),
     ("per_diem_day_pct", "Transport: șoferii peste hotare 8–24 de ore neîntrerupt (% din normă)", "40", "%", "HG 10/2012, pct. 31 lit. b)", Y26),
     ("per_diem_meals_pct", "Transport: masa asigurată de beneficiar, peste 8 ore (% din normă)", "20", "%", "HG 10/2012, pct. 33", Y26),
+    # KPI și GPS (S6b pasul c)
+    ("kpi_docs_days", "Transport, KPI: termenul predării actelor cursei (zile după întoarcere)", "3", "zile",
+     "Regulamentul intern / regulamentul de salarizare", Y26),
+    ("gps_km_tolerance_pct", "Transport: diferența admisă între km din foaia de parcurs și km din GPS", "5", "%",
+     "Setarea întreprinderii", Y26),
     ("per_diem_domestic_pay", "Transport: diurna în țară pentru cursele de mai multe zile (1 — da, 0 — nu)", "0", "",
      "HG 10/2012, pct. 3 (munca pe drum nu e deplasare), pct. 24; setarea întreprinderii", Y26),
     # regimul IT Park (se folosesc doar în lunile în regim — Setări → Constantele salarizării → Regimul fiscal)
@@ -142,6 +147,9 @@ TYPES = [
      "per_diem", "0", [], [], F, F, F, "0", "0", F, "", 147),
     ("DIURNAEX", "Diurna peste norme (impozabilă)", "Суточные сверх норм (облагаемые)", "Per diem above the norms (taxable)",
      "accrual", "auto", "per_diem_excess", "0", [], [], T, T, T, "0", "0", F, "SAL", 148),
+    # prima KPI a șoferilor (S6b pasul c): din fișa KPI aprobată a lunii — premiu, impozabil, cu CAS, în medie
+    ("KPI", "Prima KPI (indicatorii de performanță)", "Премия KPI (показатели эффективности)", "KPI bonus", "accrual", "auto",
+     "kpi", "0", [], [], T, T, T, "0", "0", T, "SAL", 135),
     ("CO", "Indemnizația de concediu de odihnă", "Отпускные", "Annual leave pay", "accrual", "auto", "leave", "0", [], [], T, T, T, "0", "0", F, "SAL", 100),
     ("COMP", "Compensarea concediului nefolosit", "Компенсация за неиспользованный отпуск", "Unused leave compensation", "accrual", "auto", "leave_comp", "0", [], [], T, T, T, "0", "0", F, "SAL", 110),
     ("BOALA", "Indemnizația de boală (zilele angajatorului)", "Больничный (дни работодателя)", "Sick pay (employer days)", "accrual", "auto", "sick", "0", [], [], T, F, T, "0", "0", F, "SAL", 120),

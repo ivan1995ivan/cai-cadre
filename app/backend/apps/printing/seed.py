@@ -24,6 +24,7 @@ SYSTEM_TEMPLATES: list = [
     ("production_report", "standard", "Raportul de producție (lucrările în acord)", "landscape", {}),
     ("meal_vouchers", "standard", "Borderoul tichetelor de masă", "landscape", {}),
     ("trip_sheet", "standard", "Foaia de parcurs (cursa, diurna)", "portrait", {}),
+    ("kpi_sheet", "standard", "Fișa KPI a lunii (prima șoferilor)", "landscape", {}),
     ("it_park_tax", "standard", "Impozitul unic IT Park — calculul lunii (IU17)", "portrait", {}),
     ("isapti17", "standard", "ISAPTI17 — salariile achitate de rezidentul IT Park", "portrait", {}),
     ("it_park_note", "standard", "Nota anuală pentru angajat (IT Park)", "portrait", {}),

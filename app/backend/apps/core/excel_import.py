@@ -9,7 +9,9 @@ Fiecare import se descrie cu un `Spec`: coloanele (antetul din șablon), funcți
 
 Antetul se recunoaște după text, fără să conteze ordinea coloanelor, majusculele sau diacriticele.
 """
+import csv
 import io
+import re
 import unicodedata
 from dataclasses import dataclass, field
 from datetime import date, datetime
@@ -45,7 +47,9 @@ class Spec:
 
 
 def _norm(text) -> str:
-    text = unicodedata.normalize("NFKD", str(text or "")).encode("ascii", "ignore").decode().lower()
+    """Fără diacritice și majuscule; literele chirilice rămân (antetele în rusă: „Пробег”, „Дата”)."""
+    text = unicodedata.normalize("NFKD", str(text or ""))
+    text = "".join(c for c in text if not unicodedata.combining(c)).lower()
     return " ".join(text.replace("*", " ").replace("_", " ").split())
 
 
@@ -64,22 +68,28 @@ def _cell(value, col: Column):
         except (InvalidOperation, ValueError):
             raise RowError(f"„{col.title}”: „{value}” nu este un număr întreg.") from None
     if col.kind == "decimal":
+        text = str(value).replace("\u00a0", " ").strip()
+        unit = re.match(r"^(-?[\d\s.,]+?)\s*(?:%|[^\W\d_]{1,4}\.?(?:\s*/\s*[^\W\d_]{1,4})?)$", text)  # „640,5 km”, „12 l”
+        if unit:
+            text = unit.group(1)
         try:
-            return Decimal(str(value).replace(" ", "").replace(",", ".").replace("%", "").strip())
+            return Decimal(text.replace(" ", "").replace(",", ".").replace("%", ""))
         except InvalidOperation:
             raise RowError(f"„{col.title}”: „{value}” nu este un număr.") from None
     if col.kind == "bool":
-        return _norm(value) in ("1", "da", "yes", "true", "x", "+", "дa", "da.")
+        return _norm(value) in ("1", "da", "yes", "true", "x", "+", "да", "da.")
     if col.kind == "date":
         if isinstance(value, datetime):
             return value.date()
         if isinstance(value, date):
             return value
-        for fmt in ("%d.%m.%Y", "%Y-%m-%d", "%d/%m/%Y", "%d.%m.%y"):
-            try:
-                return datetime.strptime(str(value).strip(), fmt).date()
-            except ValueError:
-                continue
+        text = str(value).strip()
+        for candidate in (text, text.split(" ")[0], text.split("T")[0]):  # „02.03.2026 00:00:00” din exporturi
+            for fmt in ("%d.%m.%Y", "%Y-%m-%d", "%d/%m/%Y", "%d.%m.%y"):
+                try:
+                    return datetime.strptime(candidate, fmt).date()
+                except ValueError:
+                    continue
         raise RowError(f"„{col.title}”: „{value}” nu este o dată (ZZ.LL.AAAA).")
     return value
 
@@ -110,16 +120,42 @@ def template(spec: Spec) -> bytes:
     return buf.getvalue()
 
 
-def read_rows(spec: Spec, data: bytes):
-    """Citește foaia: (antetul găsit, coloanele lipsă, rânduri [(nr. rând Excel, {cheie: valoare brută})])."""
-    from openpyxl import load_workbook
-
+def _csv_rows(data: bytes):
+    """Fișierul CSV (exportul altor programe): UTF-8 (cu sau fără BOM) sau Windows-1251; separatorul — „;”, „,” sau tab."""
+    if data[:4] == b"\xd0\xcf\x11\xe0":
+        raise RowError("Fișierul e în formatul Excel vechi (.xls): deschideți-l în Excel și salvați-l ca .xlsx sau .csv.")
+    if b"\x00" in data[:4096]:
+        raise RowError("Fișierul nu se poate citi: nu e Excel (.xlsx) și nici text CSV.")
+    for encoding in ("utf-8-sig", "cp1251"):
+        try:
+            text = data.decode(encoding)
+            break
+        except UnicodeDecodeError:
+            continue
+    else:
+        raise RowError("Fișierul nu se poate citi: nu e Excel (.xlsx) și nici CSV în UTF-8 / Windows-1251.")
+    sample = text[:4096]
     try:
-        wb = load_workbook(io.BytesIO(data), read_only=True, data_only=True)
-    except Exception as exc:  # noqa: BLE001 – fișier stricat sau alt format
-        raise RowError(f"Fișierul nu se poate citi ca Excel (.xlsx): {exc}") from exc
-    ws = wb[spec.sheet_title] if spec.sheet_title in wb.sheetnames else wb.worksheets[0]
-    rows = ws.iter_rows(values_only=True)
+        delimiter = csv.Sniffer().sniff(sample, delimiters=";,\t").delimiter
+    except csv.Error:
+        delimiter = ";" if sample.count(";") >= sample.count(",") else ","
+    return [tuple(r) for r in csv.reader(io.StringIO(text), delimiter=delimiter)]
+
+
+def read_rows(spec: Spec, data: bytes):
+    """Citește foaia (Excel .xlsx sau CSV): (antetul găsit, coloanele lipsă, rânduri [(nr. rând, {cheie: valoare brută})])."""
+    wb = None
+    if data[:2] == b"PK":
+        from openpyxl import load_workbook
+
+        try:
+            wb = load_workbook(io.BytesIO(data), read_only=True, data_only=True)
+        except Exception as exc:  # noqa: BLE001 – fișier stricat sau alt format
+            raise RowError(f"Fișierul nu se poate citi ca Excel (.xlsx): {exc}") from exc
+        ws = wb[spec.sheet_title] if spec.sheet_title in wb.sheetnames else wb.worksheets[0]
+        rows = ws.iter_rows(values_only=True)
+    else:
+        rows = iter(_csv_rows(data))
     header = next(rows, None) or ()
     lookup = {}
     for col in spec.columns:
@@ -136,7 +172,8 @@ def read_rows(spec: Spec, data: bytes):
         if not values or all(v is None or (isinstance(v, str) and not v.strip()) for v in values):
             continue
         out.append((n, {key: (values[i] if i < len(values) else None) for key, i in positions.items()}))
-    wb.close()
+    if wb is not None:
+        wb.close()
     return list(positions), missing, out
 
 

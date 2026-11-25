@@ -134,7 +134,52 @@ def problems(trip: Trip) -> list:
             out.append(f"{label}: Republica Moldova nu e segment în străinătate — timpul din țară e în afara segmentelor.")
     if trip.scope == "domestic" and legs:
         out.append("Cursa în țară nu are segmente în străinătate: alegeți aria „Internațional”.")
+    used = tank_fuel(trip)
+    if used is not None and used < 0:
+        out.append("Combustibilul: rămășița la întoarcere e mai mare decât rămășița la plecare plus alimentarea.")
+    if trip.fuel_used is not None and trip.fuel_used < 0:
+        out.append("Combustibilul consumat nu poate fi negativ.")
+    if trip.docs_submitted is not None and trip.docs_submitted < local_day(trip.departure):
+        out.append("Actele cursei sunt predate înaintea plecării.")
     return out
+
+
+# --- combustibilul -------------------------------------------------------------------------------------------------------
+def tank_fuel(trip: Trip):
+    """Consumul din rezervor: rămășița la plecare + alimentat − rămășița la întoarcere (None — lipsește o rămășiță)."""
+    if trip.fuel_out is None or trip.fuel_in is None:
+        return None
+    return trip.fuel_out + (trip.fuel_added or ZERO) - trip.fuel_in
+
+
+def fuel(trip: Trip) -> None:
+    """Consumul cursei și consumul normat: din rezervor (rămășițele foii) → scris de mână → din GPS (fiecare zi a cursei cu
+    combustibil); normat = norma vehiculului × km / 100 × (1 + corecția %). Nu salvează."""
+    from . import gps
+
+    used = tank_fuel(trip)
+    if used is not None:
+        trip.fuel_used, trip.fuel_source = q(used), "tank"
+    elif trip.fuel_used is not None and trip.fuel_source in ("", "manual"):
+        trip.fuel_source = "manual"
+    else:
+        g = gps.trip_fuel(trip)
+        trip.fuel_used, trip.fuel_source = (q(g), "gps") if g is not None else (None, "")
+    norm = trip.vehicle.fuel_norm if trip.vehicle_id else None
+    if norm and trip.km:
+        trip.fuel_norm_l = q(norm * trip.km / 100 * (1 + (trip.fuel_adj_pct or ZERO) / 100))
+    else:
+        trip.fuel_norm_l = None
+
+
+def docs_due(trip: Trip) -> date:
+    """Termenul predării actelor cursei: ziua întoarcerii + C.kpi_docs_days zile."""
+    from datetime import timedelta
+
+    from apps.payroll.engine import Constants
+
+    end = local_day(trip.arrival)
+    return end + timedelta(days=int(Constants(end)("kpi_docs_days", "3")))
 
 
 def compute(trip: Trip, strict: bool = False) -> list:
@@ -154,7 +199,8 @@ def compute(trip: Trip, strict: bool = False) -> list:
         trip.km_amount = q(trip.km * rate.rate)
         trip.how = (f"{fmt(trip.km)} km × {fmt(rate.rate)} lei/km = {fmt(trip.km_amount, 2)} lei"
                     + (f" ({rate.document})" if rate.document else ""))[:300]
-    trip.save(update_fields=["km", "km_rate", "km_amount", "how"])
+    fuel(trip)
+    trip.save(update_fields=["km", "km_rate", "km_amount", "how", "fuel_used", "fuel_source", "fuel_norm_l"])
     TripDiem.objects.filter(trip=trip).delete()
     try:
         rows = per_diem.calculate(trip)
@@ -177,6 +223,10 @@ def totals(trip: Trip) -> dict:
         people[d.employment_id]["amount"] += d.amount
         people[d.employment_id]["taxable"] += d.taxable
     return {"km": float(trip.km or 0), "km_amount": float(trip.km_amount or 0),
+            "fuel_used": float(trip.fuel_used) if trip.fuel_used is not None else None,
+            "fuel_norm": float(trip.fuel_norm_l) if trip.fuel_norm_l is not None else None,
+            "fuel_pct": round(float(trip.fuel_used / trip.fuel_norm_l * 100), 1) if trip.fuel_used is not None and trip.fuel_norm_l
+            else None, "fuel_source": trip.fuel_source, "docs_due": docs_due(trip),
             "per_diem": float(sum((d.amount for d in diems), ZERO)), "per_diem_taxable": float(sum((d.taxable for d in diems), ZERO)),
             "people": {str(k): {"amount": float(v["amount"]), "taxable": float(v["taxable"])} for k, v in people.items()}}
 

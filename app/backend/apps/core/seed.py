@@ -46,6 +46,7 @@ NUMBER_SERIES = {
     "pay_item_change": ("Modificarea acumulărilor planificate", "Изменение плановых начислений", "MA"),
     "meal_vouchers": ("Borderoul tichetelor de masă", "Ведомость талонов на питание", "TM"),
     "trip": ("Foaia de parcurs (cursa)", "Путевой лист (рейс)", "FP"),
+    "kpi_sheet": ("Fișa KPI a lunii (șoferii)", "Лист KPI за месяц (водители)", "KP"),
     "production_report": ("Raportul de producție", "Отчёт о выработке", "RP"),
     "payout": ("Achitare", "Выдача / перечисление", "AC"),
     "excel_import": ("Import din Excel", "Импорт из Excel", "IM"),

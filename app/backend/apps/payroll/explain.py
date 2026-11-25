@@ -134,6 +134,12 @@ AUTO_HOW = {
     "meal_voucher_offset": ("aceeași sumă ca partea impozabilă a tichetelor (sunt deja pe card, nu se plătesc în bani)",
                             "та же сумма, что облагаемая часть талонов (они уже на карте, деньгами не выплачиваются)",
                             "the same amount as the taxable part of the vouchers (already on the card, not paid in cash)"),
+    "kpi": ("prima din fișa KPI aprobată a lunii: baza schemei × punctajul indicatorilor (0–100 %); cu „proporțional cu timpul "
+            "lucrat” — × partea lucrată din normă",
+            "премия из утверждённого листа KPI за месяц: база схемы × балл по показателям (0–100 %); при «пропорционально "
+            "отработанному времени» — × отработанная доля нормы",
+            "the bonus from the month's approved KPI sheet: the scheme base × the indicator score (0–100 %); with “in proportion "
+            "to the time worked” — × the worked share of the norm"),
     "trip_km": ("km din cursele aprobate cu întoarcerea în lună × tariful pe km fixat la aprobare (fiecărui șofer al cursei)",
                 "км из утверждённых рейсов с возвращением в месяце × тариф за км, зафиксированный при утверждении (каждому водителю)",
                 "km of the approved trips returning in the month × the rate per km frozen on approval (for each driver)"),

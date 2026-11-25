@@ -82,6 +82,7 @@ class PayType(models.Model):
         ("trip_km", "Transport: plata pe km din cursele aprobate (km × tariful)"),
         ("per_diem", "Transport: diurna în limita normelor (neimpozabilă)"),
         ("per_diem_excess", "Transport: diurna peste norme (impozabilă)"),
+        ("kpi", "Transport: prima KPI din fișa KPI aprobată a lunii (baza × punctajul)"),
         ("none", "—"),
     ]
     code = models.CharField("Codul", max_length=24, unique=True)

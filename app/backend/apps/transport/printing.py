@@ -1,4 +1,6 @@
 """Tiparul cursei: foaia de parcurs cu segmentele pe țări, plata pe km și calculul diurnei pe zile."""
+from decimal import Decimal
+
 from django.utils import timezone
 
 from apps.printing.renderer import company_context
@@ -58,3 +60,44 @@ def sample_trip(request, lang, options):
     if trip is None:
         raise ValueError("Nu există încă curse (foi de parcurs).")
     return trip_context(request, trip, lang)
+
+
+# --- fișa KPI ------------------------------------------------------------------------------------------------------------
+def kpi_context(request, sheet, lang="ro") -> dict:
+    from . import kpi
+
+    def num(v, unit=""):
+        return "—" if v is None else fmt(v, 2) + (f" {unit}" if unit else "")
+
+    rows = []
+    for n, ln in enumerate(sheet.lines.select_related("employee", "employment__occupation", "scheme").order_by("sort", "id"), start=1):
+        items = [{"name": d["name"], "value": num(d["value"]), "unit": d.get("unit") or "",
+                  "score": num(d["score"], "%"), "weight": fmt(d["weight"]), "manual": d.get("manual")} for d in ln.details]
+        rows.append({"no": n, "tab_number": ln.employee.tab_number, "name": ln.employee.full_name(),
+                     "occupation": ln.employment.occupation.name_ro, "scheme": ln.scheme.code, "items": items,
+                     "base": _money(ln.base), "score": num(ln.score, "%"), "amount": _money(ln.amount)})
+    t = kpi.totals(sheet)
+    day = sheet.date.strftime("%d.%m.%Y")
+    return {"company": company_context(request, lang), "lang": lang, "options": {}, "rows": rows,
+            "doc": {"number": sheet.number, "date": day, "period": f"{sheet.month:02d}.{sheet.year}",
+                    "status": sheet.get_status_display(), "approved": sheet.status == "approved", "note": sheet.note,
+                    "subdivision": sheet.subdivision.name_ro if sheet.subdivision_id else ""},
+            "totals": {"amount": _money(Decimal(str(t["amount"])))}, "today": timezone.localdate().strftime("%d.%m.%Y"),
+            "placeholders": {"număr": sheet.number, "data": day}}
+
+
+def print_kpi(request, sheet):
+    from apps.payroll.payment_printing import _lang
+
+    lang = _lang(request)
+    return print_document(request, "kpi_sheet", kpi_context(request, sheet, lang), template_id=request.query_params.get("template"),
+                          title=f"Fișa KPI nr. {sheet.number}", lang=lang)
+
+
+def sample_kpi(request, lang, options):
+    from .models import KpiSheet
+
+    sheet = KpiSheet.objects.filter(lines__isnull=False).first()
+    if sheet is None:
+        raise ValueError("Nu există încă fișe KPI cu rânduri.")
+    return kpi_context(request, sheet, lang)

@@ -43,6 +43,7 @@ from apps.worktime import services as worktime
 from apps.worktime.models import HourType, JobHourRate, RosterLine, TimesheetLine
 from apps.production import services as production
 from apps.transport import services as transport
+from apps.transport import kpi as transport_kpi
 
 from . import dependencies, formula, it_park, meal_vouchers
 from .models import EmployeePayItem, PayConstant, Payroll, PayrollItem, PayrollLine, PayType
@@ -276,6 +277,7 @@ class Month:
         self.meals = meal_vouchers.month_lines(self.first, self.last)
         # cursele aprobate cu întoarcerea în lună (S6b): plata pe km și diurna, pe raport de muncă
         self.trips = transport.month_summary(self.first, self.last)
+        self.kpi = transport_kpi.month_lines(self.year, self.month)  # fișele KPI aprobate ale lunii (S6b pasul c)
         # orele pe tipuri, tarifele și cumulările (S4b) — pe raport
         self.hour_types = {t.code: t for t in HourType.objects.all()}
         self.guarantee_conf = hour_types.settings()
@@ -496,6 +498,7 @@ class LineCalc:
         self._guarantee()
         self._meal_vouchers()
         self._trips()
+        self._kpi()
         if self.is_main:
             self._sick()
             self._incentives()
@@ -674,6 +677,24 @@ class LineCalc:
             self.add(t.code, s.per_diem, quantity=s.days, note=f"diurna din {len(s.refs)} curse, în limita normelor (HG 10/2012)")
         for t in self.m.by_auto["per_diem_excess"][:1]:
             self.add(t.code, s.per_diem_taxable, note="diurna peste normele HG 10/2012 — venit impozabil (CF art. 20)")
+
+    def _kpi(self):
+        """Prima KPI din fișele KPI aprobate ale lunii: suma rândului (baza × punctajul), cu „proporțional cu timpul lucrat” —
+        × partea lucrată din normă (ca salariul de funcție)."""
+        types = self.m.by_auto["kpi"]
+        if not types or self.job.kind == "contractor":
+            return
+        for ln in self.m.kpi.get(self.job.pk, []):
+            if not ln.amount:
+                continue
+            score = production.fmt(ln.score, 2) if ln.score is not None else "—"
+            note = f"fișa KPI {ln.sheet.reference()}, schema {ln.scheme.code}: baza {production.fmt(ln.base, 2)} × {score} %"
+            if ln.prorate and self.worked_share != 1:
+                share = min(max(self.worked_share, ZERO), Decimal("1"))
+                self.add(types[0].code, ln.amount * share, base=ln.amount, percent=share * 100,
+                         note=f"{note} × {float(share) * 100:.4g} % lucrat din normă")
+            else:
+                self.add(types[0].code, ln.amount, base=ln.base, percent=ln.score, note=note)
 
     def _meal_vouchers(self):
         """Tichetele de masă din borderourile aprobate cu data în lună: partea peste valoarea neimpozabilă (facilitate
