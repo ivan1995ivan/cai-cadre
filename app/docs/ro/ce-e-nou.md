@@ -1,5 +1,14 @@
 # Ce e nou
 
+## Securitate: fișierele personale, adresa reală, blocarea contului
+
+- **Fotografiile și scanările actelor angajaților, scanările certificatelor medicale, semnătura și ștampila întreprinderii**
+  nu se mai deschid după adresă, fără autentificare: stau în partea privată și se dau doar prin program, cu dreptul de
+  vizualizare (scanările actelor — și cu „date sensibile”) și doar pentru angajații văzuți. Cele încărcate înainte s-au mutat
+  singure. PDF-urile și imaginile se deschid într-o filă nouă; alte tipuri de fișiere doar se descarcă.
+- **Adresa IP reală** în jurnalul de audit, în sesiuni și în consolă (până acum era mereu 127.0.0.1).
+- **Blocarea contului** după 5 parole greșite la rând, pe 15 minute; administratorul îl deblochează din Utilizatori.
+
 ## Etapa S6b, pasul (c): GPS-ul vehiculelor și KPI-ul șoferilor
 
 - **Combustibilul în foaia de parcurs**: rezervorul la plecare, alimentat, rezervorul la întoarcere — consumul se socotește singur

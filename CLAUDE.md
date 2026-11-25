@@ -227,6 +227,14 @@ pornească de unde s-a rămas, nu de la zero.
   288 de teste, typecheck, build. **De verificat:** un export GPS real al firmei; valorile KPI din regulamentul ei; prima KPI în
   salariul mediu. **Urmează:** conectorul GPS (furnizorul), apoi S6 aviația.
 
+- **Securitate** (2026-11-25, cerut de Anatol): fotografiile și scanările angajaților, certificatele medicale, semnătura și
+  ștampila — în `media/private/` (migrațiile `core 0012`, `staff 0009`, `leave 0007` le mută pe cele vechi), date doar prin API cu
+  drepturi (`apps/core/private_files.py`: `PrivateFileField` dă adresa endpoint-ului, `serve` — PDF / imagini în browser, restul
+  descărcare; în interfață `api/files.ts`); `/media/` public doar pentru `company/` (logo-uri). IP-ul real și blocarea contului —
+  vezi pașii 3 și 4. Verificat: 297 de teste, typecheck, build, `nginx-test.sh`.
+- **Ideile din sarcinile tehnice ale altui proiect** (2026-11-25): 27 de PDF-uri (CRM de vânzări) analizate și șterse, cum a
+  cerut Anatol; ideile de afișare potrivite pentru noi — de ales cu Anatol ce se face.
+
 ## Următorii pași (de aici pornește sesiunea următoare)
 
 0. **Deschiderea**: (a) ~~Public Hostname~~ — făcut. (b) ~~asistentul de
@@ -238,17 +246,17 @@ pornească de unde s-a rămas, nu de la zero.
    bază din `POSTGRES_*` când `config.json` lipsește (acum: asistentul); (b)
    `run.py` în loc de `launcher.py` în `Dockerfile` (o singură bază, fără proxy
    intern și fără `/__platform`); (c) `SECURE_PROXY_SSL_HEADER` pentru
-   `X-Forwarded-Proto` dacă aplicația va construi URL-uri absolute; (d)
-   `read_only` + `tmpfs` pe `app`.
-3. **IP-ul real nu ajunge în aplicație**: `AuditLog.ip` și `UserSession.ip` sunt
-   mereu `127.0.0.1` — waitress 3 șterge `X-Forwarded-For` de la un proxy
-   nedeclarat, iar `run.py` / `launcher.py` nu dau `trusted_proxy`. Repararea,
-   în `app/`: baza cu `trusted_proxy="127.0.0.1"` + `trusted_proxy_headers`,
-   launcher-ul cu proxy de încredere doar când e în spatele unuia (variabilă de
-   mediu), `audit.client_ip` pe `REMOTE_ADDR`. nginx trimite deja doar IP-ul
-   real ca `X-Forwarded-For`.
-4. **Limita pe cont la autentificare** (blocare după N parole greșite) — în
-   aplicație; nginx limitează doar pe IP.
+   `X-Forwarded-Proto` dacă aplicația va construi URL-uri absolute — rezolvat
+   altfel: waitress ia schema din `X-Forwarded-Proto` de la proxy-ul de încredere
+   (2026-11-25); (d) `read_only` + `tmpfs` pe `app`.
+3. ~~**IP-ul real nu ajunge în aplicație**~~ — făcut 2026-11-25: `config/proxy.py`
+   (`CRM_TRUSTED_PROXY`: `*` pe platformă în compose, `127.0.0.1` pe serverul bazei,
+   pus de platformă), `audit.client_ip` = `REMOTE_ADDR`; consola platformei nu ia
+   drept locală o cerere cu `X-Forwarded-For`. **De verificat după deploy** în
+   jurnalul de audit / „Cine e conectat” că apare IP-ul real.
+4. ~~**Limita pe cont la autentificare**~~ — făcut 2026-11-25: 5 parole greșite la
+   rând → 15 minute (`CRM_LOGIN_MAX_FAILURES` / `CRM_LOGIN_LOCK_MINUTES`),
+   deblocarea din Utilizatori.
 5. **Copia în afara serverului** — de hotărât de Ion unde; acum `./backups` e pe
    aceeași mașină. Web Analytics din Cloudflare trebuie oprit pentru
    `cai-cadre.integratii.md` (CSP-ul blochează scriptul lui).

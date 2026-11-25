@@ -13,6 +13,10 @@ Lista persoanelor care lucrează în sistem. Căutare după nume și filtru dup�
 
 La editare, câmpul **Parolă nouă** se lasă gol ca parola să rămână aceeași.
 
+**Contul blocat.** După 5 parole greșite la rând contul se blochează pe 15 minute — cât ține blocarea, nici parola bună nu
+intră (ecranul de intrare spune până la ce oră). În listă contul are eticheta roșie **blocat**; butonul **Deblochează** îl
+deschide imediat, iar o parolă nouă dată aici îl deblochează și ea. Fiecare blocare și deblocare stă în jurnalul de audit.
+
 ## Subdiviziunile utilizatorului (șeful subdiviziunii)
 Câmpul **Subdiviziunile lui** leagă utilizatorul de subdiviziunile pe care le conduce (șeful subdiviziunii, adjunctul
 lui). Rolurile cu vizibilitatea „doar ale mele” văd angajații, concediile, graficele, pontajul și rapoartele doar din

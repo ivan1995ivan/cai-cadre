@@ -136,7 +136,10 @@ acolo.
   (`CRM_INSTANCE_DIR`): `config.json` (conexiunea la bază, parola criptată),
   `secret.json` (cheia Fernet care descifrează parola din `config.json` și
   parola SMTP din bază; `SECRET_KEY` vine din `.env`), `bases.json` și
-  `platform-console.json` (platforma), `media/` (fișierele încărcate),
+  `platform-console.json` (platforma), `media/` (fișierele încărcate: public doar
+  logo-urile din `media/company/`; fotografiile și scanările angajaților, certificatele
+  medicale, semnătura, ștampila, fișierele tahografului stau în `media/private/` și se
+  dau doar prin API, cu drepturi — migrația din 2026-11-25 le-a mutat pe cele vechi),
   `static/` (se reface la pornire), `backups/` (copiile aplicației, mai jos).
 - Ștergerea volumului `cai-cadre-data` readuce aplicația în modul instalare și
   pierde cheia Fernet; ștergerea `cai-cadre-db` pierde datele. Ambele se refac
@@ -228,8 +231,9 @@ cheile din copie; la final o șterge. Stiva `cai-cadre` nu e atinsă.
   cu 20 în rafală, apoi 429 cu mesajul „Prea multe încercări…” pe ecranul de
   intrare. E pe IP: toată firma poate ieși printr-un singur IP, dar tokenul
   ține 7 zile, deci intrările sunt rare. Dacă oamenii văd mesajul la
-  începutul turei, se mărește `rate` / `burst`. Limita pe cont (blocarea după
-  N parole greșite) ține de aplicație.
+  începutul turei, se mărește `rate` / `burst`. Limita pe cont ține de aplicație:
+  după 5 parole greșite la rând contul se blochează 15 minute (`CRM_LOGIN_MAX_FAILURES`,
+  `CRM_LOGIN_LOCK_MINUTES`); îl deblochează administratorul din Utilizatori.
 - **Content-Security-Policy** pe HTML și SVG: scripturi doar din fișierele
   aplicației, stiluri inline (Ant Design), `data:` / `blob:` pentru imagini și
   descărcări. Verificat în browser pe toate ecranele (51 de pagini, rolurile
@@ -240,7 +244,11 @@ cheile din copie; la final o șterge. Stiva `cai-cadre` nu e atinsă.
   consola browserului apare o eroare — se oprește din panoul Cloudflare
   (Web Analytics / RUM pentru `cai-cadre.integratii.md`).
 - `X-Forwarded-For` spre aplicație = doar IP-ul real al vizitatorului (nu
-  lanțul primit, al cărui prim element îl scrie vizitatorul).
+  lanțul primit, al cărui prim element îl scrie vizitatorul). Aplicația îl crede
+  pentru că `CRM_TRUSTED_PROXY: "*"` (în `docker-compose.yml`) — portul 8000 e doar în
+  rețeaua stivei; fără variabilă waitress șterge antetul și jurnalul de audit arată
+  127.0.0.1. Platforma trece adresa mai departe serverului bazei; consola platformei
+  nu ia drept „locală” o cerere venită printr-un proxy.
 
 Înainte de `nginx -s reload` pe server (și în CI):
 
