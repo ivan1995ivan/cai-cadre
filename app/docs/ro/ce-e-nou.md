@@ -1,5 +1,22 @@
 # Ce e nou
 
+## Etapa S6b, pasul (c): GPS-ul vehiculelor și KPI-ul șoferilor
+
+- **Combustibilul în foaia de parcurs**: rezervorul la plecare, alimentat, rezervorul la întoarcere — consumul se socotește singur
+  (altfel de mână sau din GPS); consumul normat din norma vehiculului × km, cu corecția (iarna, munți); data predării actelor cursei.
+- **Salarizare → GPS-ul vehiculelor**: importul raportului zilnic exportat din orice sistem GPS (Excel sau CSV; antetul în
+  română, rusă, engleză se recunoaște; „ID în GPS” în fișa vehiculului); km, timpii, combustibilul, țările pe zile. În foaia de
+  parcurs — km din GPS față de km din foaie, butonul „Km din GPS”, avertismentul la diferență.
+- **Salarizare → Evenimentele șoferilor**: daunele, accidentele, amenzile, reclamațiile (din vina șoferului — în KPI).
+- **Salarizare → KPI-ul șoferilor** (seria KP): fișa lunii cu șoferii care au schemă KPI — consumul față de normă, daunele,
+  amenzile, actele la timp, încălcările de tahograf, evaluarea de mână; nota fiecărui indicator, punctajul ponderat, prima = baza ×
+  punctajul; valorile se pot scrie de mână; aprobată — rândul **KPI** în salariul lunii (proporțional cu timpul lucrat, dacă schema o
+  cere); tiparul cu semnăturile.
+- **Setări → Indicatorii KPI / Schemele KPI**: ce se măsoară și cum se notează (liniar sau prag); baza primei (sumă fixă sau % din
+  salariul de funcție), ponderile, pragul, cui se aplică (funcția sau raportul de muncă). Schema-model SOFERI are baza 0.
+- **Importul din Excel** (toate): se citesc și antetele în rusă (literele chirilice se pierdeau la comparare), valorile cu
+  unitatea („640,5 km”) și data cu ora.
+
 ## Etapa S6b, pasul (b): tahograful — cardul șoferului și limitele de conducere / odihnă
 
 - **Instrucțiunea pentru firma de transport**: documentul Word (de la angajat la salariu, cu capturi) și video-ul — în Ajutor (F1) →

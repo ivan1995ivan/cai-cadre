@@ -206,8 +206,26 @@ pornească de unde s-a rămas, nu de la zero.
   diurnă, tahograf — până la salariu; Word de descărcat + video care rulează într-o filă nouă, din program): `app/docs/files/`
   (`transport-instructiune.docx`, 28 de pagini, 28 de capturi; `transport-video.webm`, ~4 min, VP9, subtitrări), servite public de
   `/api/help/files/<nume>` (Word ca atașament, video cu Range), legate din Ajutor → Transportul (RO / RU). Se refac cu
-  `app/tools/ghid-transport/` (copia de probă cu date demo, Playwright, docx) — README acolo. **Urmează:** (c) GPS + KPI; apoi S6
-  aviația.
+  `app/tools/ghid-transport/` (copia de probă cu date demo, Playwright, docx) — README acolo. Instalate pe site cu pasul (b)
+  (2026-11-25, fără copie, baza demo).
+
+- **S6b „transportul”, pasul (c) „GPS + KPI” — gata** (2026-11-25, hotărât de Anatol: furnizor GPS cu API — numele și accesul le
+  cere de la firmă; KPI: consumul față de normă, daunele și amenzile, actele la timp, tahograful; prima = baza × punctajul). **Foaia
+  de parcurs**: `fuel_out` / `fuel_added` / `fuel_in` → `fuel_used` (`fuel_source` tank / manual / gps), `fuel_norm_l` = norma
+  vehiculului × km × (1 + `fuel_adj_pct`), `docs_submitted` (termenul — întoarcerea + `kpi_docs_days`). **GPS** (`apps/transport/gps.py`):
+  `Vehicle.gps_id`, `GpsDay` (vehicul + zi: km, timpii, pornire / oprire, combustibil, kilometraj, țări, sursa), importul din fișier
+  (Excel / CSV, antetul RO / RU / EN al exporturilor obișnuite, doar coloanele din fișier se actualizează), în foaie — km GPS față de
+  foaie (avertisment peste `gps_km_tolerance_pct` 5), „Km din GPS”, consumul din GPS când foaia nu-l are; **conectorul API — nefăcut,
+  până se știe furnizorul** (va scrie `GpsDay` cu `source`). **Evenimentele** (`DriverIncident`, din vina șoferului). **KPI**
+  (`apps/transport/kpi.py`): `KpiIndicator` (sursa fuel / incidents / documents / tacho / manual, liniar / prag, 100 % la / 0 % la —
+  seed CONSUM, DAUNE, AMENZI, ACTE, TAHO, EVAL), `KpiScheme` + `KpiSchemeItem` (ponderi, baza fixă / % din salariu, prag, pe timpul
+  lucrat; seed SOFERI cu baza 0), `KpiAssignment` (funcția sau raportul, de la / până la), `KpiSheet` / `KpiLine` (seria KP; fără date
+  — indicatorul iese din punctaj; valorile de mână în `overrides`; aprobarea fixează) → tipul **KPI** (auto `kpi`, × partea lucrată cu
+  `prorate`); tiparul `kpi_sheet`. **Reparat în importul Excel comun**: `_norm` păstrează chirilica (antetele RU nu se recunoșteau),
+  CSV, unitățile în celule, data cu ora; `ExcelImport` cu `accept`. Interfața: Salarizare → GPS-ul vehiculelor / Evenimentele șoferilor /
+  KPI-ul șoferilor, Setări → Indicatorii KPI / Schemele KPI, foaia de parcurs; `docs/ro|ru/transport.md` secțiunile 5–8. Verificat:
+  288 de teste, typecheck, build. **De verificat:** un export GPS real al firmei; valorile KPI din regulamentul ei; prima KPI în
+  salariul mediu. **Urmează:** conectorul GPS (furnizorul), apoi S6 aviația.
 
 ## Următorii pași (de aici pornește sesiunea următoare)
 

@@ -15,7 +15,8 @@ timpului de muncă — [docs/ro/factory-time.md](docs/ro/factory-time.md); tiche
 impozabilă în salariu) — [docs/ro/payroll/meal-vouchers.md](docs/ro/payroll/meal-vouchers.md).
 Pentru transportatori — modulul opțional **Transportul**: vehiculele, cursele (foaia de parcurs) cu țările parcurse, plata pe km
 și diurna șoferilor pe zile și țări după HG 10/2012, în salariu; tahograful — descărcările cardului de conducător (.ddd), zilele
-cu activitățile și încălcările limitelor de conducere / odihnă (AETR) — [docs/ro/transport.md](docs/ro/transport.md).
+cu activitățile și încălcările limitelor de conducere / odihnă (AETR); GPS-ul vehiculelor (importul zilelor din orice sistem),
+combustibilul cursei și KPI-ul șoferilor (fișa lunii, prima KPI în salariu) — [docs/ro/transport.md](docs/ro/transport.md).
 
 Produsul a fost făcut la început pentru un spital de stat (vezi istoricul de mai jos și [PLAN.md](PLAN.md)); trecerea la
 sectorul privat — [PLAN-SRL.md](PLAN-SRL.md) (etapa S1: fără Stemă, fondator și actele de stat).

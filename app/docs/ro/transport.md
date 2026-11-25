@@ -1,4 +1,4 @@
-# Transportul: cursele, diurnele șoferilor, plata pe km, tahograful
+# Transportul: cursele, diurnele șoferilor, plata pe km, tahograful, GPS-ul, KPI-ul
 
 *Modul opțional, pentru transportatori (marfă și pasageri, în țară și internațional).* Fiecare cursă se scrie într-o **foaie de
 parcurs**: șoferii, vehiculul, plecarea și întoarcerea, km și țările parcurse, cu ora trecerii frontierei. Cursa aprobată intră
@@ -121,6 +121,52 @@ cu încărcarea / descărcarea — se verifică, se completează masa, se salvea
 înainte), pentru angajații activi cu cardul în dosar; „Încălcări ale timpului de conducere / odihnă” — din ultimele 14 zile, câte una
 pe șofer și zi. Le primesc contabilitatea și șeful de subdiviziune (pentru șoferii lui).
 
+**5. Combustibilul cursei.** În foaia de parcurs: **rezervorul la plecare**, **alimentat în cursă**, **rezervorul la întoarcere** —
+consumul se socotește singur (plecare + alimentat − întoarcere). Fără rămășițe — consumul se scrie de mână sau se ia din GPS (când
+fiecare zi a cursei are combustibilul în GPS). **Consumul normat** = norma vehiculului (l / 100 km) × km × (1 + **corecția normei**,
+% — iarna, munți, aer condiționat). Sub câmp — consumul ca % din normă. **Actele predate la** — data când șoferul a predat CMR-urile,
+foaia de parcurs, bonurile (termenul se vede sub câmp: întoarcerea + `kpi_docs_days` zile).
+
+**6. GPS-ul vehiculelor** (*Salarizare → GPS-ul vehiculelor*) — zilele din sistemul de monitorizare: km, timpul în mișcare și cu
+motorul pornit, prima pornire și ultima oprire, combustibilul, kilometrajul, țările. **„Importă din GPS”** — raportul zilnic
+exportat din sistemul GPS (Excel sau CSV, în UTF-8 sau Windows-1251): un rând = un vehicul într-o zi. Antetul se recunoaște după
+text, în orice ordine — și cel în rusă sau engleză din exporturile obișnuite („Объект”, „Дата”, „Пробег”, „Время в движении”,
+„Моточасы”, „Расход топлива”; „Mileage”, „Moving time”…); unitățile din celule („640,5 км”, „201 л”) și data cu ora se citesc.
+Vehiculul — după **„ID în GPS”** din fișa lui sau după numărul de înmatriculare. Fișierul ales se verifică întâi (ce se adaugă, ce se
+actualizează, erorile pe rânduri), apoi „Importă”. Ziua importată din nou se **actualizează**: km și coloanele din fișier se înlocuiesc,
+celelalte rămân (un al doilea export, de ex. doar combustibilul, completează ziua). O zi greșită se șterge din listă.
+
+În **foaia de parcurs** — „GPS-ul vehiculului în zilele cursei”: km din GPS față de km din foaie (cu diferența în %), combustibilul,
+țările, zilele fără GPS; butonul **„Km din GPS”** pune km (și kilometrajul, dacă GPS-ul îl are) în formular — se verifică și se
+salvează. Avertismentele (nu opresc aprobarea): diferența peste `gps_km_tolerance_pct` % (5), zilele fără GPS. Zilele sunt
+întregi: în ziua plecării / întoarcerii GPS-ul are și km din afara cursei, dacă vehiculul a mai mers.
+
+**7. Evenimentele șoferilor** (*Salarizare → Evenimentele șoferilor*): dauna mărfii, a vehiculului, accidentul rutier, amenda,
+reclamația clientului, alt eveniment — data, șoferul, **din vina lui** (doar acestea intră în KPI), suma, cursa, actul
+(proces-verbal, decizie). Recuperarea pagubei (Codul muncii, art. 327 și urm.) nu se face de aici. Evenimentul dintr-o lună cu
+fișa KPI aprobată nu se mai schimbă (întâi se anulează aprobarea fișei).
+
+**8. KPI-ul șoferilor** (*Salarizare → KPI-ul șoferilor → „Fișă KPI nouă”*, seria **KP**): luna (și subdiviziunea, dacă e cazul) —
+fișa se completează singură cu șoferii care au **schemă KPI** în luna aceea și cu valorile indicatorilor:
+- **consumul față de normă** — litrii consumați / consumul normat × 100, din cursele aprobate cu întoarcerea în lună (cele cu
+  consumul și norma vehiculului); în cursa cu doi șoferi — ambilor;
+- **daunele și accidentele**, **amenzile** — numărul (sau suma) evenimentelor lunii din vina șoferului;
+- **actele la timp** — cursele cu actele predate în termen / cursele cu termenul trecut sau actele predate × 100 (cele cu termenul
+  încă neajuns nu se socotesc);
+- **fără încălcări de tahograf** — încălcările limitelor din lună (doar pentru cine are zile de pe card);
+- **evaluarea conducătorului** — se scrie de mână.
+
+Fiecare indicator primește o **notă 0–100 %**: liniar între valoarea cu nota 100 % și cea cu nota 0 % (de ex. consumul: ≤ 100 % din
+normă — 100, ≥ 110 % — 0, 105 % — 50) sau **prag** (îndeplinit — 100, altfel 0). Indicatorul **fără date** (fără curse cu consum,
+fără card) nu intră în punctaj — ponderile celorlalte se împart din nou. **Punctajul** = Σ pondere × nota / Σ ponderi; **prima** =
+baza × punctajul (sub pragul schemei — 0). Mausul pe celulă arată de unde e valoarea; orice valoare se poate **scrie de mână** (rămâne
+la „Completează” din nou; săgeata o întoarce la cea din date).
+
+**Aprobarea** socotește totul din nou și fixează fișa; prima intră în calculul salariului **aceleiași luni** — rândul **KPI**
+(„Prima KPI”, impozabilă, cu CAS, în salariul mediu), cu explicația „fișa KPI nr. …, schema …: baza × punctajul”; cu „pe timpul
+lucrat” — × partea lucrată din normă. Nu se aprobă: fișa fără rânduri, schema fără bază, un șofer cu prima KPI pe lună deja aprobată
+în altă fișă, calculul salariului lunii aprobat. Tiparul — „Fișa KPI a lunii”, cu semnăturile.
+
 ## Pentru cine configurează
 
 **Pornirea.** *Administrare → Setări → Constante → Module → „Modulul Transportul”*. Oprit (implicit), cursele, setările
@@ -162,6 +208,26 @@ direct. Alertele se pornesc / opresc și zilele lor se schimbă în *Setări →
 privată (se dau doar prin API, cu dreptul de vizualizare la transport), și intră în copia zilnică. Semnătura digitală a fișierului
 nu se verifică.
 
+**GPS-ul** n-are încă legătura directă cu furnizorul: zilele se aduc din fișierul exportat (orice sistem GPS). În fișa vehiculului —
+**„ID în GPS”** (IMEI-ul sau numele obiectului din sistem, unic). Legătura prin API-ul furnizorului se face când sunt cunoscute
+furnizorul, documentația și un acces de probă — va scrie aceleași zile.
+
+**KPI-ul** (*Setări → Indicatorii KPI*, *Setări → Schemele KPI*):
+- **indicatorii** livrați: CONSUM (100 % la ≤ 100, 0 la ≥ 110), DAUNE (dauna mărfii, a vehiculului, accidentul: 0 → 100 %, 2 → 0),
+  AMENZI (0 → 100 %, 2 → 0), ACTE (100 % → 100, 80 % → 0), TAHO (0 încălcări → 100 %, 4 → 0), EVAL (de mână) — valorile sunt un punct
+  de plecare: se pun după regulamentul întreprinderii; unul nou — cu sursa lui (consumul, evenimentele cu felurile alese — numărul sau
+  suma, actele, tahograful, de mână). Fără indicatori de viteză sau de distanță care împing șoferul să încalce regulile (CTR art. 142);
+- **schema** livrată SOFERI (CONSUM 40, DAUNE 20, AMENZI 10, ACTE 15, TAHO 15) are **baza 0** — prima nu se plătește până nu se
+  scrie baza: **sumă fixă** sau **% din salariul de funcție** (pentru norma raportului), **pragul** (sub el — 0), **„pe timpul
+  lucrat”**, **„cere curse”** (implicit: fără curse aprobate în lună prima nu se socotește — „0 daune, 0 amenzi” fără nicio
+  cursă nu e o performanță), temeiul; butonul **„Indicatorii”** — ponderile (nu trebuie să dea 100), alte valori de notare decât ale indicatorului
+  și **cui se aplică**: unei funcții (tuturor șoferilor cu ea) sau unui raport de muncă anume (are întâietate), de la / până la.
+
+**Constantele** noi: `kpi_docs_days` 3 — termenul predării actelor cursei (zile după întoarcere); `gps_km_tolerance_pct` 5 —
+diferența admisă între km din foaie și din GPS. Tipul de calcul nou **KPI** (automat, impozabil, cu CAS / CNAM, în medie). Numerotarea
+fișei — seria **KP**; tiparul — *Setări → Șabloane de tipar → Fișa KPI a lunii*. Drepturile — cele ale transportului (aprobarea fișei
+KPI — doar cine vede toate subdiviziunile).
+
 **De verificat de om / contabilitate:**
 - dacă minimul de 70 % (pct. 22¹) se aplică și peste procentele reduse ale șoferilor (20 % / 40 %) — programul îl aplică peste tot;
 - cum se împacă 20 % / 40 % (pct. 31) cu „100 % în ziua plecării și a sosirii” (pct. 24) — programul: la aflările până la 24 de
@@ -181,4 +247,9 @@ nu se verifică.
 - descărcarea cardului la 28 de zile (Reg. (UE) 581/2010) — de confirmat termenul pentru RM; regulile „pachetului de mobilitate” al
   UE (două odihne săptămânale reduse la rând în transportul internațional, întoarcerea acasă) — neaplicate (AETR).
 
-**Ce urmează:** pasul (c) — importul din GPS și indicatorii KPI.
+- **KPI**: indicatorii și valorile de notare din regulamentul de salarizare / contractul colectiv al firmei; dacă prima KPI se
+  plătește pe timpul lucrat; prima KPI în salariul mediu (am pus-o: premiu lunar);
+- **GPS**: un export real din sistemul firmei (coloanele, unitățile, ora în UTC sau locală); furnizorul și accesul la API-ul lui
+  pentru legătura directă.
+
+**Ce urmează:** S6 — aviația.
