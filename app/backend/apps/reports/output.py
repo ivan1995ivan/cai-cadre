@@ -30,6 +30,8 @@ def xlsx_response(data: dict, filename: str):
     if data.get("summary"):
         rows.append([])
         rows += [[s["label"], s["value"]] for s in data["summary"]]
+    if data.get("conclusion"):
+        rows += [[], [data["conclusion"]]]
     return xlsx(filename, [(data["title"][:31], head, rows)])
 
 
@@ -64,6 +66,7 @@ def print_context(data: dict) -> dict:
                         for s in data.get("summary", [])],
             # semnăturile proprii ale raportului (cartea de salarii: contabilul-șef și conducătorul); altfel — șeful cadrelor
             "signatures": data.get("signatures") or [],
+            "conclusion": data.get("conclusion", ""),
         },
         "count": no,
     }

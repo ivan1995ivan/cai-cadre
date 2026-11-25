@@ -1,7 +1,8 @@
 """Catalogul de rapoarte (PLAN.md §5.9): fiecare raport primește filtrele și întoarce același format pentru ecran, Excel și tipar.
 
 Formatul: {"title", "subtitle", "columns": [{"key", "title", "type"}], "rows": [{...} sau {"_section": "text"}],
-"totals": {...} | None, "summary": [{"label", "value"}]}. Tipurile coloanelor: text, int, num, date, pct.
+"totals": {...} | None, "summary": [{"label", "value"}], "conclusion": "concluzia în cuvinte" (opțional)}. Tipurile coloanelor:
+text, int, num, date, pct. Rândul cu `_link` (adresa din program) deschide documentul lui (dublu clic); `_subtotal` — îngroșat.
 """
 from dataclasses import dataclass, field
 from datetime import date
@@ -85,6 +86,7 @@ class Params:
     category: str = ""
     kinds: str = "main"  # main = doar raporturile de bază; all = și cumulul
     absence_kind: str = ""
+    employee: int | None = None  # rapoartele despre un singur angajat (fișa decontărilor)
     sub_ids: set | None = None  # subdiviziunile pe care le vede utilizatorul (None = toate)
 
     def t(self, text):
@@ -131,6 +133,13 @@ def parse(request) -> Params:
     p.category = q.get("category", "")
     p.kinds = "all" if q.get("kinds") == "all" else "main"
     p.absence_kind = q.get("absence_kind", "")
+    if q.get("employee"):
+        from apps.staff.models import Employee
+
+        emp = Employee.objects.filter(pk=q["employee"]).first() if str(q["employee"]).isdigit() else None
+        if emp is None or not staff.can_see(emp, request.user):
+            raise ValidationError({"employee": "Angajatul nu există sau nu este în subdiviziunile dvs."})
+        p.employee = emp.pk
     visible = staff.visible_subdivision_ids(request.user, "employees")
     if q.get("subdivision"):
         sub = Subdivision.objects.filter(pk=q["subdivision"]).first()
@@ -179,5 +188,6 @@ def run(key: str, p: Params) -> dict:
     data.setdefault("subtitle", "")
     data.setdefault("totals", None)
     data.setdefault("summary", [])
+    data.setdefault("conclusion", "")
     data["key"] = key
     return data

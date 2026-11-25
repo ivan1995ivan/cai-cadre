@@ -29,6 +29,7 @@
 </table>
 {% endif %}
 
+{% if report.conclusion %}<p style="margin:8px 0; font-weight:bold">{{ report.conclusion }}</p>{% endif %}
 {% if texts.footer %}<div class="doc-footer">{{ texts.footer|linebreaksbr }}</div>{% endif %}
 {% if report.signatures %}
 <div class="signatures">{% for s in report.signatures %}<div>{{ s.label }}<div class="line"></div><div class="who">{{ s.name }}</div></div>{% endfor %}</div>

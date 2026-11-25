@@ -7,6 +7,8 @@ export default {
   staff: { timeline: { title: 'Timeline', all: 'All', hint: 'Everything that happened to the employee, newest first; double-click opens the document.', date: 'Date', kind: 'Kind', what: 'What', detail: 'Details', kinds: { job: 'Employment', order: 'Order', absence: 'Absence', sick: 'Sickness', sanction: 'Sanction', incentive: 'Incentive', training: 'Training', trip: 'Trip', pay: 'Salary' } }, flags: { absent: '{{what}} until {{to}}', probation: 'On probation until {{to}}', contractEnds: 'Fixed-term contract ends on {{to}}', missing: 'Missing: {{what}}' } },
   tabs: { closeOthers: 'Close others', closeOthersHint: 'Close all open pages except the current one' },
   ord: { related: { title: 'Related documents', sources: 'Based on', made: 'Created on signing', what: 'Document', employee: 'Employee', detail: 'Details' } },
+  rep: { employee: 'Employee', chooseEmployee: 'Choose the employee — the report is about one employee.' },
+  pp: { settlement: 'Employee settlement statement' },
   kpi: {
     title: 'KPI sheet', new: 'New KPI sheet', create: 'Create and fill',
     hint: 'Per month: drivers with a KPI scheme, indicators from trips, incidents and the tachograph, the score and the bonus. Once approved, the bonus goes into the same month\'s payroll.',

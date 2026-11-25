@@ -8,6 +8,8 @@ export default {
   staff: { timeline: { title: 'Cronologia', all: 'Toate', hint: 'Tot ce s-a întâmplat cu angajatul, cele mai noi sus; dublu clic deschide documentul.', date: 'Data', kind: 'Felul', what: 'Ce', detail: 'Detalii', kinds: { job: 'Raportul de muncă', order: 'Ordin', absence: 'Absență', sick: 'Boală', sanction: 'Sancțiune', incentive: 'Stimulare', training: 'Formare', trip: 'Cursă', pay: 'Salariu' } }, flags: { absent: '{{what}} până la {{to}}', probation: 'În perioada de probă până la {{to}}', contractEnds: 'Contractul pe durată determinată expiră la {{to}}', missing: 'Lipsește: {{what}}' } },
   tabs: { closeOthers: 'Închide celelalte', closeOthersHint: 'Închide toate paginile deschise în afară de cea curentă' },
   ord: { related: { title: 'Documente legate', sources: 'De unde a pornit', made: 'Ce a rezultat la semnare', what: 'Documentul', employee: 'Angajatul', detail: 'Detalii' } },
+  rep: { employee: 'Angajatul', chooseEmployee: 'Alegeți angajatul — raportul e despre un singur angajat.' },
+  pp: { settlement: 'Fișa decontărilor cu angajatul' },
   kpi: {
     title: 'Fișa KPI', new: 'Fișă KPI nouă', create: 'Creează și completează',
     hint: 'Pe lună: șoferii cu schemă KPI, indicatorii din curse, evenimente și tahograf, punctajul și prima. Aprobată, prima intră în calculul salariului aceleiași luni.',

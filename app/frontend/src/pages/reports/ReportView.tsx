@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Alert, Button, Card, DatePicker, InputNumber, Select, Space, Statistic, Table, Typography, message } from 'antd'
 import { ArrowLeftOutlined, FileExcelOutlined, PrinterOutlined } from '@ant-design/icons'
 import dayjs, { type Dayjs } from 'dayjs'
@@ -16,9 +16,10 @@ import { useTabTitle } from '../../layout/tabs'
 import { REPORT_NAV } from '../../layout/nav'
 import type { CatalogItem } from './ReportsPage'
 import SubdivisionSelect from '../../components/SubdivisionSelect'
+import EmployeeSelect from '../../components/EmployeeSelect'
 
 interface Column { key: string; title: string; type: 'text' | 'int' | 'num' | 'date' | 'pct' }
-type Row = Record<string, unknown> & { _section?: string; _subtotal?: boolean }
+type Row = Record<string, unknown> & { _section?: string; _subtotal?: boolean; _link?: string }
 interface ReportData {
   title: string
   subtitle: string
@@ -26,6 +27,7 @@ interface ReportData {
   rows: Row[]
   totals: Row | null
   summary: { label: string; value: number | string }[]
+  conclusion?: string
 }
 
 const ABSENCES = ['annual', 'extra', 'unpaid', 'maternity', 'paternity', 'childcare', 'childcare_unpaid', 'study', 'days_off', 'travel',
@@ -64,6 +66,8 @@ export default function ReportView({ reportKey, embedded }: { reportKey?: string
   const staffCategories = useDict('staff_category')
   const [kinds, setKinds] = useState<'main' | 'all'>('main')
   const [absence, setAbsence] = useState<string | undefined>()
+  const [search] = useSearchParams()
+  const [employee, setEmployee] = useState<number | undefined>(Number(search.get('employee')) || undefined)  // din fișa angajatului
   const [printOpen, setPrintOpen] = useState(false)
 
   const params = useMemo(() => {
@@ -77,16 +81,21 @@ export default function ReportView({ reportKey, embedded }: { reportKey?: string
     if (has('category') && category) p.category = category
     if (has('kinds')) p.kinds = kinds
     if (has('absence_kind') && absence) p.absence_kind = absence
+    if (has('employee')) {
+      if (!employee) return null  // raportul despre un angajat: întâi se alege angajatul
+      p.employee = employee
+    }
     return p
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [info, period, onDate, month, year, subdivision, category, kinds, absence, i18n.language])
+  }, [info, period, onDate, month, year, subdivision, category, kinds, absence, employee, i18n.language])
   const { data, loading, error } = useFetch<ReportData>(params ? `/reports/${key}/` : null, params ?? undefined)
 
   const columns = (data?.columns ?? []).map((c, i) => ({
     title: c.title, dataIndex: c.key, key: c.key, align: (['int', 'num', 'pct'].includes(c.type) ? 'right' : 'left') as 'right' | 'left',
     onCell: (r: Row) => (r._section !== undefined ? { colSpan: i === 0 ? (data?.columns.length ?? 1) : 0 } : {}),
     render: (v: unknown, r: Row) => (r._section !== undefined ? (i === 0 ? <b>{r._section}</b> : null)
-      : r._subtotal ? <b>{fmt(v, c.type)}</b> : fmt(v, c.type)),
+      : r._subtotal ? <b>{fmt(v, c.type)}</b> : r._link && c.type === 'text' && i === (data?.columns.findIndex((x) => x.type === 'text') ?? -1)
+        ? <a onClick={() => navigate(r._link as string)}>{fmt(v, c.type)}</a> : fmt(v, c.type)),
   }))
   const excel = async () => {
     try {
@@ -105,6 +114,8 @@ export default function ReportView({ reportKey, embedded }: { reportKey?: string
       {info?.hint && <Typography.Paragraph type="secondary">{info.hint}</Typography.Paragraph>}
       <Space wrap style={{ marginBottom: 12 }}>
         {embedded && buttons}
+        {has('employee') && <EmployeeSelect style={{ width: 320 }} placeholder={t('rep.employee')} value={employee}
+          onChange={(v) => setEmployee(typeof v === 'number' ? v : undefined)} />}
         {has('period') && <PeriodPicker value={period} onChange={setPeriod} />}
         {has('on_date') && <DatePicker format="DD.MM.YYYY" value={onDate} allowClear={false} onChange={(v) => v && setOnDate(v)}
           prefix={t('rep.onDate')} />}
@@ -129,11 +140,14 @@ export default function ReportView({ reportKey, embedded }: { reportKey?: string
       <Table<Row> size="small" loading={loading} dataSource={data?.rows ?? []} columns={columns} scroll={{ x: 'max-content' }}
         rowKey={(r) => JSON.stringify(r)} pagination={(data?.rows.length ?? 0) > 200 ? { pageSize: 200 } : false}
         rowClassName={(r) => (r._section !== undefined ? 'doc-row-section' : '')}
+        onRow={(r) => ({ onDoubleClick: () => r._link && navigate(r._link) })}
         summary={() => data?.totals ? (
           <Table.Summary.Row>
             {data.columns.map((c, i) => <Table.Summary.Cell key={c.key} index={i} align={['int', 'num', 'pct'].includes(c.type) ? 'right' : 'left'}>
               <b>{fmt(data.totals?.[c.key], c.type)}</b></Table.Summary.Cell>)}
           </Table.Summary.Row>) : null} />
+      {has('employee') && !employee && <Typography.Paragraph type="secondary">{t('rep.chooseEmployee')}</Typography.Paragraph>}
+      {data?.conclusion && <Alert type="info" showIcon style={{ marginTop: 12 }} title={<b>{data.conclusion}</b>} />}
       <PrintDialog open={printOpen} onClose={() => setPrintOpen(false)} docType="report" url={`/reports/${key}/print/`}
         params={params ?? {}} optionKeys={[]} title={info?.title ?? ''} />
     </>

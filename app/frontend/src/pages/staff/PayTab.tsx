@@ -141,6 +141,7 @@ export default function PayTab({ employee }: { employee: number }) {
         <Select size="small" style={{ width: 90 }} value={cardYear} onChange={setCardYear}
           options={Array.from({ length: 5 }, (_, i) => dayjs().year() - i).map((y) => ({ value: y, label: y }))} />
         <Button size="small" icon={<FileTextOutlined />} onClick={() => setCardOpen(true)}>{t('lv.print')}</Button>
+        <Link to={`/reports/employee_settlement?employee=${employee}`}>{t('pp.settlement')}</Link>
       </Space>
       {cardOpen && <PrintDialog open onClose={() => setCardOpen(false)} docType="annual_card" url={`/payroll/annual-card/${employee}/`}
         params={{ year: cardYear, print: 1 }} optionKeys={[]} title={t('pp.annualCard')} />}
