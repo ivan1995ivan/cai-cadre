@@ -6,8 +6,7 @@ import {
   Typography, message,
 } from 'antd'
 import {
-  CalculatorOutlined, CheckOutlined, DeleteOutlined, DollarOutlined, EditOutlined, PlusOutlined, PrinterOutlined, RollbackOutlined,
-  SaveOutlined, UndoOutlined,
+  CalculatorOutlined, CheckOutlined, DeleteOutlined, DiffOutlined, DollarOutlined, EditOutlined, PlusOutlined, PrinterOutlined, RollbackOutlined, SaveOutlined, UndoOutlined,
 } from '@ant-design/icons'
 import dayjs, { type Dayjs } from 'dayjs'
 
@@ -23,6 +22,7 @@ import {
 } from '../../api/payroll'
 import { useApp, useLocalName } from '../../auth/AppContext'
 import { useTabTitle } from '../../layout/tabs'
+import RecalcCompare from './RecalcCompare'
 
 /** Ce se corectează: un rând calculat (se pune un rând de mână de același tip, care îl înlocuiește) sau un rând nou. */
 interface Editing { line: PayrollLine; item?: PayrollItem }
@@ -77,6 +77,7 @@ export default function PayrollEditor() {
   const title = data ? t('pay.heading', { number: data.number, date: dayjs(data.date).format('DD.MM.YYYY') }) : ''
   useTabTitle(data ? { key: 'desk.tab.payroll', params: { number: data.number } } : null)
 
+  const [compare, setCompare] = useState(false)
   if (!data) return <Card loading={loading}><Spin /></Card>
   const run = async (fn: () => Promise<unknown>, ok?: string) => {
     try {
@@ -154,6 +155,8 @@ export default function PayrollEditor() {
       {!data.deletion_mark && <>
         {editable && <Button icon={<SaveOutlined />} disabled={!dirty} onClick={saveHeader}>{t('common.save')}</Button>}
         {editable && <Button icon={<CalculatorOutlined />} onClick={() => post('calculate')}>{t('pay.calculate')}</Button>}
+        {editable && (data.totals?.lines ?? 0) > 0 && <Tooltip title={t('pay.cmp.buttonHint')}>
+          <Button icon={<DiffOutlined />} onClick={async () => { if (await saveHeader()) setCompare(true) }}>{t('pay.cmp.button')}</Button></Tooltip>}
         {editable && data.status === 'draft' && <Button onClick={() => post('check')}>{t('pay.check')}</Button>}
         {data.status !== 'approved' && hasPerm('payroll.approve') && <Popconfirm title={t('pay.approveConfirm')} onConfirm={() => post('approve')}>
           <Button type="primary" icon={<CheckOutlined />}>{t('pay.approve')}</Button></Popconfirm>}
@@ -220,6 +223,7 @@ export default function PayrollEditor() {
       </Modal>
       {print && <PrintDialog open onClose={() => setPrint(false)} docType="payroll_sheet" url={`/payroll/payrolls/${id}/print/`}
         params={{}} optionKeys={[]} title={t('pay.printSheet')} />}
+      <RecalcCompare payroll={data.id} open={compare} onClose={() => setCompare(false)} onApplied={reload} />
     </Card>
   )
 }

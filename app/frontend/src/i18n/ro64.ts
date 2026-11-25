@@ -3,7 +3,9 @@ export default {
   menu: { kpiSheets: 'KPI-ul șoferilor', driverIncidents: 'Evenimentele șoferilor', gpsDays: 'GPS-ul vehiculelor', kpiIndicators: 'Indicatorii KPI',
     kpiSchemes: 'Schemele KPI' },
   desk: { tab: { kpiSheet: 'Fișa KPI {{number}}' } },
-  pay: { type: { autos: { kpi: 'Transport: prima KPI (fișa KPI aprobată a lunii)' } } },
+  pay: {
+    cmp: { button: 'Compară recalcularea', buttonHint: 'Ce s-ar schimba dacă luna s-ar calcula acum, pe angajat — se aplică doar pentru cei aleși', title: 'Recalcularea: vechi → nou', hint: 'Calculul de acum față de cel salvat, doar angajații la care se schimbă ceva (nimic nu s-a scris încă). Bifați pe cine recalculați; ceilalți rămân cum sunt.', none: 'Recalcularea nu schimbă nimic.', apply: 'Recalculează bifații ({{n}})', applied: 'Recalculați: {{n}}', gross: 'Calculat (brut)', net: 'De plată', diff: 'Diferența', items: 'Rândurile care se schimbă', status: { new: 'nou', removed: 'iese din calcul' } },
+    type: { autos: { kpi: 'Transport: prima KPI (fișa KPI aprobată a lunii)' } } },
   users: { locked: 'blocat', lockedHint: 'Blocat până la {{time}} după parole greșite la rând', unlock: 'Deblochează', unlocked: 'Contul e deblocat.' },
   staff: { timeline: { title: 'Cronologia', all: 'Toate', hint: 'Tot ce s-a întâmplat cu angajatul, cele mai noi sus; dublu clic deschide documentul.', date: 'Data', kind: 'Felul', what: 'Ce', detail: 'Detalii', kinds: { job: 'Raportul de muncă', order: 'Ordin', absence: 'Absență', sick: 'Boală', sanction: 'Sancțiune', incentive: 'Stimulare', training: 'Formare', trip: 'Cursă', pay: 'Salariu' } }, flags: { absent: '{{what}} până la {{to}}', probation: 'În perioada de probă până la {{to}}', contractEnds: 'Contractul pe durată determinată expiră la {{to}}', missing: 'Lipsește: {{what}}' } },
   tabs: { closeOthers: 'Închide celelalte', closeOthersHint: 'Închide toate paginile deschise în afară de cea curentă' },

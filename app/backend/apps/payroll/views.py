@@ -236,7 +236,7 @@ class PayrollViewSet(DeletionMarkMixin, viewsets.ModelViewSet):
     perm_module = "payroll"
     serializer_class = PayrollSerializer
     perm_actions = {"calculate": "edit", "check": "edit", "approve": "approve", "reopen": "approve", "report": "view",
-                    "print": "view"}
+                    "print": "view", "preview": "edit", "apply": "edit"}
 
     def get_queryset(self):
         qs = Payroll.objects.select_related("subdivision").annotate(lines_count=Count("lines", distinct=True))
@@ -284,6 +284,33 @@ class PayrollViewSet(DeletionMarkMixin, viewsets.ModelViewSet):
         doc = self.get_object()
         self._editable(doc)
         return Response(engine.calculate(doc))
+
+    @action(detail=True, methods=["post"])
+    def preview(self, request, pk=None):
+        """Ce s-ar schimba la recalcularea de acum, pe angajat (vechi / nou), fără să se scrie nimic."""
+        from . import recalc
+
+        doc = self.get_object()
+        self._editable(doc)
+        visible = None
+        if staff.visible_subdivision_ids(request.user, "payroll") is not None:
+            visible = set(staff.scope_employees(Employee.objects.all(), request.user, "payroll").values_list("pk", flat=True))
+        return Response({"rows": recalc.preview(doc, visible)})
+
+    @action(detail=True, methods=["post"])
+    def apply(self, request, pk=None):
+        """Recalculează doar angajații aleși (din comparație); ceilalți rămân cum erau."""
+        from . import recalc
+
+        doc = self.get_object()
+        self._editable(doc)
+        ids = request.data.get("employees")
+        if not isinstance(ids, list) or not ids or not all(isinstance(x, int) for x in ids):
+            raise ValidationError({"employees": "Alegeți angajații de recalculat."})
+        visible = staff.scope_employees(Employee.objects.filter(pk__in=ids), request.user, "payroll")
+        if visible.count() != len(set(ids)):
+            raise PermissionDenied("Unii angajați nu sunt în subdiviziunile dvs.")
+        return Response(recalc.apply(doc, sorted(set(ids))))
 
     @action(detail=True, methods=["post"])
     def check(self, request, pk=None):

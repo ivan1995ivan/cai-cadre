@@ -2,7 +2,9 @@
 export default {
   menu: { kpiSheets: 'Driver KPI', driverIncidents: 'Driver incidents', gpsDays: 'Vehicle GPS', kpiIndicators: 'KPI indicators', kpiSchemes: 'KPI schemes' },
   desk: { tab: { kpiSheet: 'KPI sheet {{number}}' } },
-  pay: { type: { autos: { kpi: 'Transport: KPI bonus (the month\'s approved KPI sheet)' } } },
+  pay: {
+    cmp: { button: 'Compare recalculation', buttonHint: 'What would change if the month were calculated now, per employee — applied only to the chosen ones', title: 'Recalculation: old → new', hint: 'The calculation now against the saved one, only employees with changes (nothing written yet). Tick whom to recalculate; the others stay as they are.', none: 'Recalculating changes nothing.', apply: 'Recalculate ticked ({{n}})', applied: 'Recalculated: {{n}}', gross: 'Gross', net: 'To pay', diff: 'Difference', items: 'Rows that change', status: { new: 'new', removed: 'leaves the payroll' } },
+    type: { autos: { kpi: 'Transport: KPI bonus (the month\'s approved KPI sheet)' } } },
   users: { locked: 'locked', lockedHint: 'Locked until {{time}} after wrong passwords in a row', unlock: 'Unlock', unlocked: 'The account is unlocked.' },
   staff: { timeline: { title: 'Timeline', all: 'All', hint: 'Everything that happened to the employee, newest first; double-click opens the document.', date: 'Date', kind: 'Kind', what: 'What', detail: 'Details', kinds: { job: 'Employment', order: 'Order', absence: 'Absence', sick: 'Sickness', sanction: 'Sanction', incentive: 'Incentive', training: 'Training', trip: 'Trip', pay: 'Salary' } }, flags: { absent: '{{what}} until {{to}}', probation: 'On probation until {{to}}', contractEnds: 'Fixed-term contract ends on {{to}}', missing: 'Missing: {{what}}' } },
   tabs: { closeOthers: 'Close others', closeOthersHint: 'Close all open pages except the current one' },
