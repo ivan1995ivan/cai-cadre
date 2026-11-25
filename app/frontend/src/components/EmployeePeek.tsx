@@ -5,6 +5,7 @@ import { UserOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 
 import { api } from '../api/client'
+import { usePrivateUrl } from '../api/files'
 import { fmtRate } from './RateInput'
 
 export interface EmployeeSummary {
@@ -43,6 +44,7 @@ function Card({ id }: { id: number }) {
       .catch(() => { if (alive) setError(true) })
     return () => { alive = false }
   }, [id])
+  const photo = usePrivateUrl(data?.photo)
   if (error) return <Typography.Text type="secondary">{t('peek.error')}</Typography.Text>
   if (!data) return <div style={{ width: 360, textAlign: 'center', padding: 24 }}><Spin /></div>
   const sizes = [data.clothing_size && `${t('peek.clothing')} ${data.clothing_size}`, data.shoe_size && `${t('peek.shoes')} ${data.shoe_size}`,
@@ -50,7 +52,7 @@ function Card({ id }: { id: number }) {
   return (
     <div style={{ width: 400, maxWidth: '86vw' }}>
       <Space align="start" size={12} style={{ marginBottom: 8 }}>
-        <Avatar shape="square" size={84} src={data.photo || undefined} icon={!data.photo && <UserOutlined />} />
+        <Avatar shape="square" size={84} src={photo} icon={!photo && <UserOutlined />} />
         <div>
           <Typography.Text strong style={{ fontSize: 15 }}>{data.full_name}</Typography.Text>
           <div><Typography.Text type="secondary">{t('staff.tab')} {data.tab_number} · {data.status}</Typography.Text></div>

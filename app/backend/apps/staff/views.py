@@ -8,6 +8,8 @@ from rest_framework.exceptions import NotFound, PermissionDenied, ValidationErro
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 
+from apps.core.private_files import api_url, serve
+
 from apps.core.deletion import DeletionMarkMixin
 from apps.org.models import DictItem
 
@@ -41,6 +43,11 @@ class EmployeeViewSet(DeletionMarkMixin, viewsets.ModelViewSet):
 
     def get_serializer_context(self):
         return {**super().get_serializer_context(), "with_seniority": self.action == "retrieve"}
+
+    @action(detail=True, methods=["get"])
+    def photo(self, request, pk=None):
+        """Fotografia angajatului (partea privată): cu dreptul de vizualizare și doar pentru angajații văzuți."""
+        return serve(self.get_object().photo)
 
     def get_queryset(self):
         p = self.request.query_params
@@ -127,7 +134,7 @@ class EmployeeViewSet(DeletionMarkMixin, viewsets.ModelViewSet):
                 for j in e.employments.select_related("occupation", "subdivision").exclude(status="ended").order_by("date_from")]
         sen = services.seniority(e)
         seniority = {k: services.seniority_text(v, lang) for k, v in sen.items() if k != "on_date"}
-        out = {"id": e.pk, "full_name": e.full_name(), "tab_number": e.tab_number, "photo": e.photo.url if e.photo else None,
+        out = {"id": e.pk, "full_name": e.full_name(), "tab_number": e.tab_number, "photo": api_url(f"/staff/employees/{e.pk}/photo/", e.photo),
                "sex": e.sex, "birth_date": e.birth_date, "age": age, "status": e.get_status_display(), "phone": e.phone,
                "email": e.email, "jobs": jobs, "seniority": seniority,
                "clothing_size": e.clothing_size, "shoe_size": e.shoe_size, "height": e.height, "absence": None, "leave": None}
@@ -221,6 +228,11 @@ class DocumentViewSet(EmployeeChildViewSet):
     model = EmployeeDocument
     serializer_class = EmployeeDocumentSerializer
     sensitive = True
+
+    @action(detail=True, methods=["get"])
+    def file(self, request, pk=None):
+        """Scanarea actului (partea privată): cu dreptul la datele sensibile și doar pentru angajații văzuți."""
+        return serve(self.get_object().file)
 
     def get_queryset(self):
         return super().get_queryset().select_related("doc_type")

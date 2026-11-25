@@ -2,7 +2,7 @@
 from django.utils import timezone
 
 from apps.core.models import Company, NumberSeries
-from apps.printing.renderer import company_context
+from apps.printing.renderer import company_context, embedded
 from apps.printing.views import print_document
 
 from . import services
@@ -91,7 +91,7 @@ def employee_context(request, emp: Employee, lang: str, options: dict, doc: str)
             "address": "" if "address" in hidden else emp.address, "address_actual": "" if "address" in hidden else emp.address_actual,
             "phone": "" if "phone" in hidden else emp.phone, "email": "" if "email" in hidden else emp.email,
             "cnam_code": emp.cnam_code if show_idnp else "", "cpas": emp.cpas if show_idnp else "",
-            "photo": request.build_absolute_uri(emp.photo.url) if emp.photo and options.get("show_photo") else "",
+            "photo": embedded(emp.photo) if emp.photo and options.get("show_photo") else "",
             "status": emp.get_status_display(), "sex_code": emp.sex,
         },
         "identity": ({"name": _name(identity.doc_type, lang) or identity.title, "series": identity.series,

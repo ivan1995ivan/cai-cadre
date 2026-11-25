@@ -387,6 +387,13 @@ class SickLeaveViewSet(DeletionMarkMixin, viewsets.ModelViewSet):
     serializer_class = SickLeaveSerializer
     parser_classes = [JSONParser, MultiPartParser, FormParser]
 
+    @action(detail=True, methods=["get"])
+    def file(self, request, pk=None):
+        """Scanarea certificatului (partea privată, date despre sănătate): doar prin API, pentru angajații văzuți."""
+        from apps.core.private_files import serve
+
+        return serve(self.get_object().file)
+
     def get_queryset(self):
         qs = SickLeave.objects.select_related("employee", "continuation_of").prefetch_related(
             "employee__employments__subdivision",

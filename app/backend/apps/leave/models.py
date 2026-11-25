@@ -192,7 +192,8 @@ class LeaveRequest(models.Model):
 
 
 def _sick_upload(instance, filename):
-    return f"sick/{instance.employee_id or 'new'}/{timezone.now():%Y%m%d%H%M%S}-{filename}"
+    # partea privată (date despre sănătate): scanarea se dă doar prin API
+    return f"private/sick/{instance.employee_id or 'new'}/{timezone.now():%Y%m%d%H%M%S}-{filename}"
 
 
 class SickLeave(models.Model):

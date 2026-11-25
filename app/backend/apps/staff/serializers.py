@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from apps.core.private_files import PrivateFileField
 from apps.core.required import RequiredFieldsMixin
 from apps.org.serializers import user_lang
 
@@ -53,6 +54,8 @@ class EmployeeDocumentSerializer(RequiredFieldsMixin, serializers.ModelSerialize
     required_doc = "document"
 
     doc_type_name = serializers.SerializerMethodField()
+
+    file = PrivateFileField("/staff/documents/{pk}/file/", required=False, allow_null=True)
 
     class Meta:
         model = EmployeeDocument
@@ -272,6 +275,7 @@ class EmployeeSerializer(RequiredFieldsMixin, MaskMixin, serializers.ModelSerial
     status_label = serializers.CharField(source="get_status_display", read_only=True)
     nationality_name = serializers.SerializerMethodField()
     marital_status_name = serializers.SerializerMethodField()
+    photo = PrivateFileField("/staff/employees/{pk}/photo/", required=False, allow_null=True)
     seniority = serializers.SerializerMethodField()
 
     class Meta:

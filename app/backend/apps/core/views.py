@@ -146,6 +146,17 @@ class CompanyView(SettingsPermMixin, APIView):
         return Response(CompanySerializer(Company.get(), context={"request": request}).data)
 
 
+class CompanyImageView(SettingsPermMixin, APIView):
+    """Semnătura și ștampila din Constante (partea privată): le vede cine vede setările; în forme intră puse în pagină."""
+
+    def get(self, request, field):
+        from .private_files import serve
+
+        if field not in ("signature", "stamp"):
+            raise Http404
+        return serve(getattr(Company.get(), field))
+
+
 class BankAccountViewSet(SettingsPermMixin, viewsets.ModelViewSet):
     serializer_class = BankAccountSerializer
     pagination_class = None
@@ -459,16 +470,17 @@ class DashboardView(APIView):
 
 
 def media(request, path):
-    """Fișierele încărcate (logo-uri etc.), servite cu antete de siguranță (SVG fără scripturi). Cele din private/
-    (documentele produselor) se dau doar prin API, cu drepturi."""
+    """Logo-urile întreprinderii (company/), servite fără autentificare, cu antete de siguranță (SVG fără scripturi). Orice
+    alt fișier încărcat (fotografiile, scanările, semnătura, ștampila, fișierele tahografului — private/) se dă doar prin API,
+    cu drepturi (apps.core.private_files): aici — 404."""
     try:
         full = safe_join(str(settings.MEDIA_ROOT), path)
     except Exception as exc:  # noqa: BLE001
         raise Http404 from exc
     import os
 
-    private = os.path.normcase(os.path.join(os.path.realpath(settings.MEDIA_ROOT), "private")) + os.sep
-    if os.path.normcase(os.path.realpath(full)).startswith(private) or not os.path.isfile(full):
+    public = os.path.normcase(os.path.join(os.path.realpath(settings.MEDIA_ROOT), "company")) + os.sep
+    if not os.path.normcase(os.path.realpath(full)).startswith(public) or not os.path.isfile(full):
         raise Http404
     content_type, _ = mimetypes.guess_type(full)
     response = FileResponse(open(full, "rb"), content_type=content_type or "application/octet-stream")

@@ -2,6 +2,8 @@ import re
 
 from rest_framework import serializers
 
+from .private_files import PrivateFileField
+
 from .models import (AuditLog, BankAccount, Company, Currency, ExchangeRate, Notification, NumberSeries,
                      PaymentMethod, VatRate)
 
@@ -34,6 +36,9 @@ class BankAccountSerializer(serializers.ModelSerializer):
 
 class CompanySerializer(serializers.ModelSerializer):
     bank_accounts = BankAccountSerializer(many=True, read_only=True)
+
+    signature = PrivateFileField("/company/images/signature/", required=False, allow_null=True)
+    stamp = PrivateFileField("/company/images/stamp/", required=False, allow_null=True)
 
     class Meta:
         model = Company

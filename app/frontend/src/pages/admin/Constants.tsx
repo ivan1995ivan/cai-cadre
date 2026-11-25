@@ -7,6 +7,7 @@ import Table from '../../components/AppTable'
 import { DeleteOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons'
 
 import { api, errorText, fieldErrors } from '../../api/client'
+import { usePrivateUrl } from '../../api/files'
 import { LANG_LABELS, type BankAccount, type Company, type Currency } from '../../api/types'
 import BankInput, { applyBank, IbanInput } from '../../components/BankInput'
 import { useApp } from '../../auth/AppContext'
@@ -125,7 +126,7 @@ export default function Constants() {
                   ))}
               </Row>
             ) : (
-              <img src={url} alt="" style={{ maxHeight: 80, maxWidth: '100%' }} />
+              <PrivateImage path={url} />
             )
           ) : (
             <Typography.Text type="secondary">{t('constants.images.empty')}</Typography.Text>
@@ -294,4 +295,10 @@ export default function Constants() {
       </Modal>
     </Space>
   )
+}
+
+/** Semnătura / ștampila: fișiere private, cerute cu sesiunea (nu prin /media/). */
+function PrivateImage({ path }: { path: string }) {
+  const url = usePrivateUrl(path)
+  return url ? <img src={url} alt="" style={{ maxHeight: 80, maxWidth: '100%' }} /> : null
 }

@@ -19,6 +19,7 @@ import HistoryButton from '../../components/HistoryButton'
 import MarkButton, { MarkedBanner } from '../../components/MarkButton'
 import PrintDialog from '../../components/PrintDialog'
 import { api, errorText, fieldErrors } from '../../api/client'
+import { openPrivate, usePrivateUrl } from '../../api/files'
 import { useFetch } from '../../api/hooks'
 import type { Specialty } from '../../api/org'
 import { useDict, type AccessEntry, type Employee } from '../../api/staff'
@@ -51,6 +52,7 @@ export default function EmployeeCard() {
   const { hasPerm, me, branding } = useApp()
   const military = branding?.military_enabled === true  // modulul opțional „Evidența militară” (Constante → Module)
   const [emp, setEmp] = useState<Employee | null>(null)
+  const photo = usePrivateUrl(emp?.photo)
   const [search] = useSearchParams()
   const [tab, setTab] = useState(search.get('tab') || 'personal')
   const [form] = Form.useForm()
@@ -180,7 +182,7 @@ export default function EmployeeCard() {
         <Row gutter={[16, 12]} align="middle">
           <Col flex="none">
             <Upload accept=".jpg,.jpeg,.png,.webp" showUploadList={false} disabled={!canEdit} beforeUpload={uploadPhoto}>
-              <Avatar size={88} src={e.photo || undefined} icon={!e.photo && <UserOutlined />} style={{ cursor: canEdit ? 'pointer' : 'default' }} />
+              <Avatar size={88} src={photo} icon={!photo && <UserOutlined />} style={{ cursor: canEdit ? 'pointer' : 'default' }} />
               {canEdit && <div style={{ textAlign: 'center', fontSize: 12 }}><CameraOutlined /> {t('staff.photo')}</div>}
             </Upload>
           </Col>
@@ -313,7 +315,7 @@ function ScanButton({ id, file }: { id: number; file: string | null }) {
   }
   return (
     <Space size={4}>
-      {current && <a href={current} target="_blank" rel="noreferrer">{t('staff.doc.open')}</a>}
+      {current && <a onClick={() => openPrivate(current).catch((err) => message.error(errorText(err)))}>{t('staff.doc.open')}</a>}
       <Upload showUploadList={false} beforeUpload={upload}><Button size="small">{current ? t('staff.doc.replace') : t('staff.doc.scan')}</Button></Upload>
     </Space>
   )

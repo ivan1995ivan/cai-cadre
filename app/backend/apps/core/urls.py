@@ -18,6 +18,7 @@ router.register("banks", views.BankViewSet, basename="bank")
 urlpatterns = [
     path("public/branding/", views.BrandingView.as_view()),
     path("company/", views.CompanyView.as_view()),
+    path("company/images/<str:field>/", views.CompanyImageView.as_view()),
     path("settings/menu/", views.MenuLayoutView.as_view()),
     path("settings/localities/", views.LocalitiesLoadView.as_view()),
     path("settings/banks/", views.BanksLoadView.as_view()),

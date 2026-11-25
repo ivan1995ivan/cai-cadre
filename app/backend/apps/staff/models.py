@@ -23,7 +23,12 @@ def validate_idnp(value: str):
 
 
 def _upload_to(instance, filename):
-    return f"staff/{instance.employee_id or 'new'}/{timezone.now():%Y%m%d%H%M%S}-{filename}"
+    # partea privată: scanările actelor se dau doar prin API (apps.core.private_files)
+    return f"private/staff/{instance.employee_id or 'new'}/{timezone.now():%Y%m%d%H%M%S}-{filename}"
+
+
+def _photo_upload(instance, filename):
+    return f"private/staff/photos/{filename}"
 
 
 def _dict(kind, **extra):
@@ -47,7 +52,7 @@ class Employee(models.Model):
     citizenship = models.CharField("Cetățenia", max_length=80, blank=True, default="Republica Moldova")
     nationality = models.ForeignKey(**_dict("nationality"), verbose_name="Naționalitatea")
     marital_status = models.ForeignKey(**_dict("marital"), verbose_name="Starea familială")
-    photo = models.FileField("Fotografia", upload_to="staff/photos/", blank=True)
+    photo = models.FileField("Fotografia", upload_to=_photo_upload, blank=True)
     phone = models.CharField("Telefon", max_length=64, blank=True)
     phone2 = models.CharField("Telefon suplimentar", max_length=64, blank=True)
     email = models.EmailField("E-mail", blank=True)

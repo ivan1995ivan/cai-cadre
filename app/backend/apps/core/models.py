@@ -6,7 +6,11 @@ from django.utils import timezone
 
 
 def _upload_to(instance, filename):
-    return f"company/{filename}"
+    return f"company/{filename}"  # logo-urile: publice (pagina de login)
+
+
+def _private_upload(instance, filename):
+    return f"private/company/{filename}"  # semnătura și ștampila: doar prin API (apps.core.private_files)
 
 
 class Company(models.Model):
@@ -60,8 +64,8 @@ class Company(models.Model):
     logo = models.FileField(upload_to=_upload_to, blank=True)
     logo_small = models.FileField(upload_to=_upload_to, blank=True)
     logo_dark = models.FileField(upload_to=_upload_to, blank=True)
-    signature = models.FileField(upload_to=_upload_to, blank=True)
-    stamp = models.FileField(upload_to=_upload_to, blank=True)
+    signature = models.FileField(upload_to=_private_upload, blank=True)
+    stamp = models.FileField(upload_to=_private_upload, blank=True)
 
     default_theme = models.CharField(max_length=12, choices=THEMES, default="desktop")
     primary_color = models.CharField("Culoare principală proprie", max_length=7, blank=True)

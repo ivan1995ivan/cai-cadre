@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from apps.core.private_files import PrivateFileField
 from apps.org import calendar
 
 from .models import LeaveAdjustment, LeaveRequest, LeaveRight, LeaveSchedule, LeaveScheduleLine, SickLeave
@@ -115,6 +116,7 @@ class SickLeaveSerializer(serializers.ModelSerializer):
     subdivision = serializers.SerializerMethodField()
     kind_label = serializers.CharField(source="get_kind_display", read_only=True)
     continuation_label = serializers.SerializerMethodField()
+    file = PrivateFileField("/leave/sick-leaves/{pk}/file/", required=False, allow_null=True)
     continued_by = serializers.SerializerMethodField()
 
     class Meta:
