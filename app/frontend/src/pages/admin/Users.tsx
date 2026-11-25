@@ -86,6 +86,16 @@ export default function Users() {
     }
   }
 
+  const unlock = async (user: User) => {
+    try {
+      await api.post(`/users/${user.id}/unlock/`)
+      message.success(t('users.unlocked'))
+      load()
+    } catch (e) {
+      message.error(errorText(e))
+    }
+  }
+
   const remove = async (user: User) => {
     try {
       await api.delete(`/users/${user.id}/`)
@@ -125,16 +135,23 @@ export default function Users() {
             { title: t('users.subdivisions'), dataIndex: 'subdivisions', render: (ids: number[] = []) => ids.map((id) => <Tag key={id}>{subName(id)}</Tag>) },
             {
               title: t('users.active'), dataIndex: 'is_active', width: 90,
-              render: (v: boolean) => <Tag color={v ? 'green' : 'default'}>{v ? t('common.yes') : t('common.no')}</Tag>,
+              render: (v: boolean, u) => <>
+                <Tag color={v ? 'green' : 'default'}>{v ? t('common.yes') : t('common.no')}</Tag>
+                {u.locked_until && dayjs(u.locked_until).isAfter(dayjs()) && <Tag color="red"
+                  title={t('users.lockedHint', { time: dayjs(u.locked_until).format('DD.MM.YYYY HH:mm') })}>{t('users.locked')}</Tag>}
+              </>,
             },
             { title: t('users.lastLogin'), dataIndex: 'last_login', render: (v) => (v ? dayjs(v).format('DD.MM.YYYY HH:mm') : '—') },
             {
-              title: '', key: 'actions', width: 60,
-              render: (_, u) => hasPerm('users.delete') && u.id !== me?.id && (
-                <Popconfirm title={t('common.confirmDelete')} onConfirm={() => remove(u)}>
-                  <Button type="link" danger size="small">{t('common.delete')}</Button>
-                </Popconfirm>
-              ),
+              title: '', key: 'actions', width: 150,
+              render: (_, u) => <Space size={0}>
+                {hasPerm('users.edit') && u.locked_until && dayjs(u.locked_until).isAfter(dayjs()) && (
+                  <Button type="link" size="small" onClick={() => unlock(u)}>{t('users.unlock')}</Button>)}
+                {hasPerm('users.delete') && u.id !== me?.id && (
+                  <Popconfirm title={t('common.confirmDelete')} onConfirm={() => remove(u)}>
+                    <Button type="link" danger size="small">{t('common.delete')}</Button>
+                  </Popconfirm>)}
+              </Space>,
             },
           ]}
         />

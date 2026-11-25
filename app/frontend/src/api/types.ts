@@ -70,6 +70,7 @@ export interface User {
   last_login: string | null
   date_joined: string
   password?: string
+  locked_until?: string | null
 }
 
 export interface Branding {

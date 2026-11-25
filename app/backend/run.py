@@ -17,12 +17,13 @@ def serve(host: str, port: int, threads: int):
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
     from waitress import serve as waitress_serve
 
+    from config.proxy import waitress_options
     from config.wsgi import application
 
     start_background()
     print(f"CRM pornit: http://{host if host != '0.0.0.0' else 'localhost'}:{port}", flush=True)
     threading.Thread(target=warm_up, args=(port,), name="warm-up", daemon=True).start()
-    waitress_serve(application, host=host, port=port, threads=threads)
+    waitress_serve(application, host=host, port=port, threads=threads, **waitress_options())
 
 
 def warm_up(port: int):

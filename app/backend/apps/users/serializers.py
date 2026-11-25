@@ -70,8 +70,8 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ["id", "username", "first_name", "last_name", "middle_name", "full_name", "email", "phone",
                   "position", "language", "theme", "is_active", "roles", "subdivisions", "must_change_password",
-                  "last_login", "date_joined", "password"]
-        read_only_fields = ["last_login", "date_joined"]
+                  "last_login", "date_joined", "password", "locked_until"]
+        read_only_fields = ["last_login", "date_joined", "locked_until"]
 
     def get_full_name(self, obj):
         return str(obj)
@@ -120,6 +120,7 @@ class UserSerializer(serializers.ModelSerializer):
             setattr(instance, key, value)
         if password:
             instance.set_password(password)
+            instance.failed_logins, instance.locked_until = 0, None  # parola nouă dată de administrator deblochează
         instance.save()
         if roles is not None:
             instance.roles.set(roles)

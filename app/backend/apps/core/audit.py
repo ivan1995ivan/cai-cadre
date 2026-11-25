@@ -36,9 +36,8 @@ def get_current_ip():
 
 
 def client_ip(request) -> str:
-    forwarded = request.META.get("HTTP_X_FORWARDED_FOR")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
+    """Adresa omului: REMOTE_ADDR, pe care waitress o ia din X-Forwarded-For doar de la proxy-ul de încredere
+    (config.proxy). Antetul trimis de oricine altcineva nu se crede — s-ar putea scrie orice în jurnal."""
     return request.META.get("REMOTE_ADDR", "")
 
 

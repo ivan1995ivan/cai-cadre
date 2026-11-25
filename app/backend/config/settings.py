@@ -147,3 +147,8 @@ LOGGING = {
     "root": {"handlers": ["console"], "level": "WARNING"},
     "loggers": {"crm": {"handlers": ["console"], "level": "INFO", "propagate": False}},
 }
+
+# Blocarea contului la intrare: după atâtea parole greșite la rând contul se blochează pe atâtea minute (nginx limitează
+# separat numărul cererilor pe IP). Reușita șterge numărătoarea; administratorul poate debloca din Utilizatori.
+LOGIN_MAX_FAILURES = int(os.environ.get("CRM_LOGIN_MAX_FAILURES", "5"))
+LOGIN_LOCK_MINUTES = int(os.environ.get("CRM_LOGIN_LOCK_MINUTES", "15"))

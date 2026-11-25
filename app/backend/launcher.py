@@ -268,7 +268,8 @@ class Servers:
             if old is not None and old.returncode not in (0, None):
                 self.events = [*self.events[-49:], {"base": base["id"], "ts": time.time(), "code": old.returncode}]
             env = {**os.environ, "CRM_INSTANCE_DIR": base["dir"], "CRM_BASE_ID": base["id"],
-                   "CRM_BASE_NAME": base["name"], "PYTHONIOENCODING": "utf-8", "CRM_CONSOLE_TOKEN": self.console_token}
+                   "CRM_BASE_NAME": base["name"], "PYTHONIOENCODING": "utf-8", "CRM_CONSOLE_TOKEN": self.console_token,
+                   "CRM_TRUSTED_PROXY": "127.0.0.1"}  # proxy-ul serverului bazei e platforma (adresa reală vine de la ea)
             log = open(Path(base["dir"]) / "server.log", "ab")  # noqa: SIM115 – rămâne deschis cât trăiește procesul
             self.procs[base["id"]] = subprocess.Popen(
                 [self.python, str(BACKEND_DIR / "run.py"), "--host", "127.0.0.1", "--port", str(base["port"])],
@@ -423,7 +424,9 @@ class Platform:
 
     @staticmethod
     def _local(environ) -> bool:
-        return environ.get("REMOTE_ADDR") in ("127.0.0.1", "::1", "localhost")
+        """Cererea făcută chiar de pe server (consola fără parolă). Venită printr-un proxy (X-Forwarded-For) — niciodată
+        locală: cu proxy-ul de încredere (config.proxy) adresa e luată din antet și ar putea fi scrisă „127.0.0.1”."""
+        return environ.get("REMOTE_ADDR") in ("127.0.0.1", "::1", "localhost") and not environ.get("HTTP_X_FORWARDED_FOR")
 
     @staticmethod
     def _redirect(start_response, location, cookie=None):
@@ -692,7 +695,9 @@ def main():
     for sig in (signal.SIGINT, signal.SIGTERM, getattr(signal, "SIGBREAK", None)):
         if sig is not None:
             signal.signal(sig, lambda *_: sys.exit(0))
-    serve(Platform(registry, servers), host=args.host, port=args.port, threads=16)
+    from config.proxy import waitress_options
+
+    serve(Platform(registry, servers), host=args.host, port=args.port, threads=16, **waitress_options())
 
 
 if __name__ == "__main__":

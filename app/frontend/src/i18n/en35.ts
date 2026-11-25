@@ -3,6 +3,7 @@ export default {
   menu: { kpiSheets: 'Driver KPI', driverIncidents: 'Driver incidents', gpsDays: 'Vehicle GPS', kpiIndicators: 'KPI indicators', kpiSchemes: 'KPI schemes' },
   desk: { tab: { kpiSheet: 'KPI sheet {{number}}' } },
   pay: { type: { autos: { kpi: 'Transport: KPI bonus (the month\'s approved KPI sheet)' } } },
+  users: { locked: 'locked', lockedHint: 'Locked until {{time}} after wrong passwords in a row', unlock: 'Unlock', unlocked: 'The account is unlocked.' },
   kpi: {
     title: 'KPI sheet', new: 'New KPI sheet', create: 'Create and fill',
     hint: 'Per month: drivers with a KPI scheme, indicators from trips, incidents and the tachograph, the score and the bonus. Once approved, the bonus goes into the same month\'s payroll.',

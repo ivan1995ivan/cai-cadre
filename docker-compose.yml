@@ -49,6 +49,9 @@ x-app-env: &app-env
   CRM_INSTANCE_DIR: /data
   # consola platformei (/__platform/console), protejată cu parolă
   CRM_CONSOLE_PASSWORD: ${CRM_CONSOLE_PASSWORD:?completează CRM_CONSOLE_PASSWORD în .env}
+  # adresa reală a omului (jurnalul de audit, sesiunile): portul 8000 e doar în rețeaua stivei, iar în fața lui e nginx,
+  # care pune X-Forwarded-For din nou cu IP-ul vizitatorului — aplicația crede doar ultima adresă (app/backend/config/proxy.py)
+  CRM_TRUSTED_PROXY: "*"
 
 services:
   db:

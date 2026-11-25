@@ -4,6 +4,7 @@ export default {
     kpiSchemes: 'Schemele KPI' },
   desk: { tab: { kpiSheet: 'Fișa KPI {{number}}' } },
   pay: { type: { autos: { kpi: 'Transport: prima KPI (fișa KPI aprobată a lunii)' } } },
+  users: { locked: 'blocat', lockedHint: 'Blocat până la {{time}} după parole greșite la rând', unlock: 'Deblochează', unlocked: 'Contul e deblocat.' },
   kpi: {
     title: 'Fișa KPI', new: 'Fișă KPI nouă', create: 'Creează și completează',
     hint: 'Pe lună: șoferii cu schemă KPI, indicatorii din curse, evenimente și tahograf, punctajul și prima. Aprobată, prima intră în calculul salariului aceleiași luni.',

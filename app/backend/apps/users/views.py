@@ -1,4 +1,5 @@
 from django.db.models import Count, Q
+from django.utils import timezone
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -24,18 +25,54 @@ class LoginView(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         username = str(request.data.get("username", ""))[:150]
+        account = User.objects.filter(username=username).first()
+        if account is not None and account.locked_until and account.locked_until > timezone.now():
+            # blocat: parola nici nu se mai încearcă (cât ține blocarea, ghicitul nu avansează)
+            audit.write("login_failed", model_label="users.User", object_repr=f"{username} (cont blocat)", user=None)
+            return Response(locked_response(account.locked_until), status=status.HTTP_401_UNAUTHORIZED)
         try:
             serializer.is_valid(raise_exception=True)
         except Exception:
             audit.write("login_failed", model_label="users.User", object_repr=username, user=None)
+            if account is not None and register_failure(account):
+                return Response(locked_response(account.locked_until), status=status.HTTP_401_UNAUTHORIZED)
             return Response({"detail": "Utilizator sau parolă greșită."}, status=status.HTTP_401_UNAUTHORIZED)
         user = serializer.user
+        if user.failed_logins or user.locked_until:
+            User.objects.filter(pk=user.pk).update(failed_logins=0, locked_until=None)
         if console.blocked() and not user.is_crm_admin:
             return Response({"detail": console.block_message(), "code": "maintenance"},
                             status=status.HTTP_503_SERVICE_UNAVAILABLE)
         audit.write("login", user, user=user)
         console.open_session(RefreshToken(serializer.validated_data["refresh"])["sid"], user, request)
         return Response(serializer.validated_data)
+
+
+def locked_response(until) -> dict:
+    when = timezone.localtime(until)
+    return {"detail": f"Contul este blocat până la {when:%H:%M} ({when:%d.%m.%Y}): prea multe parole greșite la rând. "
+                      f"Încercați după această oră sau cereți administratorului să-l deblocheze.", "code": "locked",
+            "locked_until": until}
+
+
+def register_failure(account) -> bool:
+    """O parolă greșită pentru contul existent: numărătoarea crește (atomic); la a LOGIN_MAX_FAILURES-a contul se blochează
+    pe LOGIN_LOCK_MINUTES minute și numărătoarea începe din nou. Întoarce True dacă acum s-a blocat."""
+    from datetime import timedelta
+
+    from django.conf import settings
+    from django.db.models import F
+
+    User.objects.filter(pk=account.pk).update(failed_logins=F("failed_logins") + 1)
+    account.refresh_from_db(fields=["failed_logins", "locked_until"])
+    if account.failed_logins < settings.LOGIN_MAX_FAILURES:
+        return False
+    account.locked_until = timezone.now() + timedelta(minutes=settings.LOGIN_LOCK_MINUTES)
+    User.objects.filter(pk=account.pk).update(failed_logins=0, locked_until=account.locked_until)
+    audit.write("action", model_label="users.User", object_id=str(account.pk),
+                object_repr=f"{account.username}: cont blocat {settings.LOGIN_LOCK_MINUTES} min după "
+                            f"{settings.LOGIN_MAX_FAILURES} parole greșite la rând", user=None)
+    return True
 
 
 def _active_admins(exclude_pk=None):
@@ -195,6 +232,17 @@ class ChangePasswordView(APIView):
 class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     perm_module = "users"
+
+    perm_actions = {"unlock": "edit"}
+
+    @action(detail=True, methods=["post"])
+    def unlock(self, request, pk=None):
+        """Deblochează contul blocat după parole greșite (și șterge numărătoarea)."""
+        user = self.get_object()
+        User.objects.filter(pk=user.pk).update(failed_logins=0, locked_until=None)
+        audit.write("action", model_label="users.User", object_id=str(user.pk), object_repr=f"{user.username}: cont deblocat")
+        user.refresh_from_db()
+        return Response(self.get_serializer(user).data)
 
     def get_queryset(self):
         qs = User.objects.prefetch_related("roles", "subdivisions")

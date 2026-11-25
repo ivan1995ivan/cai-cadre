@@ -64,6 +64,9 @@ class User(AbstractUser):
     MARGIN_VISIBILITY = [("inherit", "După rol și firmă"), ("show", "Vede marja"), ("hide", "Nu vede marja")]
     margin_visibility = models.CharField(max_length=8, choices=MARGIN_VISIBILITY, default="inherit")
     must_change_password = models.BooleanField(default=False)
+    # blocarea contului după parole greșite la rând (settings.LOGIN_MAX_FAILURES, pe LOGIN_LOCK_MINUTES minute)
+    failed_logins = models.PositiveSmallIntegerField("Parole greșite la rând", default=0, db_default=0)
+    locked_until = models.DateTimeField("Blocat până la", null=True, blank=True)
     last_seen_version = models.CharField(max_length=20, blank=True)
     tours_done = models.JSONField(default=list, blank=True)
     # Favoritele din stânga jos: [{"path": "/offers", "key": "offers"} sau {"path": "/clients/5", "title": "..."}]
